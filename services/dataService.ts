@@ -37,10 +37,10 @@ export const dataService = {
     adminOrgId: string, 
     sevakData: { fullName: string; mobile: string; gender: string; age: number }
   ) {
-    // 1. Generate Username (simple logic)
-    const cleanName = sevakData.fullName.toLowerCase().replace(/\s+/g, '');
-    const randomSuffix = Math.floor(Math.random() * 1000);
-    const username = `${cleanName}${randomSuffix}@vsevak.in`;
+    // 1. Generate Username (Clean format: vishwashah@vsevak.in)
+    // Remove spaces and special characters to ensure valid email prefix
+    const cleanName = sevakData.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const username = `${cleanName}@vsevak.in`;
     const password = sevakData.mobile;
 
     // 2. Create Auth User via Netlify Function
@@ -65,6 +65,12 @@ export const dataService = {
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error("Failed to create auth user via Netlify Function:", errorData);
+        
+        // Handle specific duplicate email error to be user-friendly
+        if (errorData.error && errorData.error.includes("already registered")) {
+            throw new Error(`Username ${username} already exists. Please try adding a middle initial to the name.`);
+        }
+        
         throw new Error(errorData.error || "Could not create login credentials.");
     }
 
