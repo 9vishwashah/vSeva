@@ -1,26 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
 
-export default async function handler(req, context) {
-  // Check HTTP method (using 'req' as the event object typical in Netlify Functions)
-  const httpMethod = req.httpMethod || req.method;
-  
-  if (httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      body: "Method Not Allowed",
-    };
-  }
-
+export default async function handler(req) {
   try {
-    // Parse body - handling both raw string (Lambda style) or pre-parsed body if middleware exists
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    const { email, password, user_metadata } = body;
+    if (req.method !== "POST") {
+      return new Response("Method Not Allowed", { status: 405 });
+    }
+
+    const { email, password } = await req.json();
 
     if (!email || !password) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Missing email or password" }),
-      };
+      return new Response(
+        JSON.stringify({ error: "Missing email or password" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const supabaseAdmin = createClient(
@@ -32,28 +27,33 @@ export default async function handler(req, context) {
       email,
       password,
       email_confirm: true,
-      user_metadata: user_metadata || {} // Pass metadata if available
     });
 
     if (error) {
-      console.error("Supabase Create User Error:", error);
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: error.message }),
-      };
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        user_id: data.user.id,
-      }),
-    };
+    return new Response(
+      JSON.stringify({ user_id: data.user.id }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (err) {
-    console.error("Netlify Function Error:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Server error" }),
-    };
+    console.error("create-user error:", err);
+    return new Response(
+      JSON.stringify({ error: "Internal Server Error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }
