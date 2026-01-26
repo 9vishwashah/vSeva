@@ -1,0 +1,20 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "Mumbai",
+			"country": {
+				"code": "IN",
+				"name": "India"
+			},
+			"subdivision": {
+				"code": "MH",
+				"name": "Maharashtra"
+			},
+			"timezone": "Asia/Kolkata",
+			"latitude": 19.0748,
+			"longitude": 72.8856,
+			"postalCode": "400104"
+		},
+		"timestamp": 1769414569964
+	}
+}
