@@ -14,6 +14,8 @@ export const dataService = {
 
     if (error) {
       console.error('Error fetching profile:', error);
+      // Fallback: If RLS fails significantly, we might want to return null rather than crashing
+      // but usually we want to see the error.
       return null;
     }
     return data as UserProfile;
@@ -51,7 +53,11 @@ export const dataService = {
         email: username,
         password: password,
         email_confirm: true,
-        user_metadata: { full_name: sevakData.fullName }
+        user_metadata: { 
+          full_name: sevakData.fullName,
+          role: UserRole.SEVAK, // Adding role to metadata allows for JWT based policies later
+          organization_id: adminOrgId
+        }
       }
     });
 

@@ -69,15 +69,15 @@ const App: React.FC = () => {
       setCurrentPage={setCurrentPage}
     >
       {/* Admin Routes */}
-      {currentPage === 'dashboard' && user.role === UserRole.ADMIN && (
+      {currentPage === 'dashboard' && user.role === UserRole.ORG_ADMIN && (
         <Dashboard currentUser={user} />
       )}
       
-      {currentPage === 'new-entry' && user.role === UserRole.ADMIN && (
+      {currentPage === 'new-entry' && user.role === UserRole.ORG_ADMIN && (
         <NewEntry currentUser={user} onSubmit={() => setCurrentPage('dashboard')} />
       )}
 
-      {currentPage === 'add-sevak' && user.role === UserRole.ADMIN && (
+      {currentPage === 'add-sevak' && user.role === UserRole.ORG_ADMIN && (
         <AddSevak currentUser={user} />
       )}
 
