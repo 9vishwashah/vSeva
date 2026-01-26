@@ -34,81 +34,90 @@ export const dataService = {
   },
 
   async createSevak(
-    adminOrgId: string, 
-    sevakData: { fullName: string; mobile: string; gender: string; age: number }
-  ) {
-    // 1. Generate Username (Clean format: vishwashah@vsevak.in)
-    // Remove spaces and special characters to ensure valid email prefix
-    const cleanName = sevakData.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const username = `${cleanName}@vsevak.in`;
-    const password = sevakData.mobile;
+  adminOrgId: string, 
+  sevakData: { fullName: string; mobile: string; gender: string; age: number }
+) {
+  // 1. Generate Username
+  const cleanName = sevakData.fullName
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+  const username = `${cleanName}@vsevak.in`;
+  const password = sevakData.mobile;
 
-    // 2. Create Auth User via Netlify Function
-    // Replaced Supabase Edge Function with Netlify Function call
-    
-    const response = await fetch('/.netlify/functions/create-user', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: username,
-            password: password,
-            user_metadata: { 
-                full_name: sevakData.fullName,
-                role: UserRole.SEVAK, 
-                organization_id: adminOrgId
-            }
-        }),
-    });
+  // 2. Get Admin Session (REQUIRED)
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error("Failed to create auth user via Netlify Function:", errorData);
-        
-        // Handle specific duplicate email error to be user-friendly
-        if (errorData.error && errorData.error.includes("already registered")) {
-            throw new Error(`Username ${username} already exists. Please try adding a middle initial to the name.`);
-        }
-        
-        throw new Error(errorData.error || "Could not create login credentials.");
+  if (sessionError || !session?.access_token) {
+    throw new Error('Admin session not found. Please login again.');
+  }
+
+  // 3. Create Auth User via Netlify Function (ADMIN ONLY)
+  const response = await fetch('/.netlify/functions/create-user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`, // ✅ REQUIRED
+    },
+    body: JSON.stringify({
+      email: username,
+      password: password,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    console.error('Failed to create auth user via Netlify Function:', errorData);
+
+    if (
+      errorData.error &&
+      errorData.error.toLowerCase().includes('already')
+    ) {
+      throw new Error(
+        `Username ${username} already exists. Please modify the name slightly.`
+      );
     }
 
-    const { user_id } = await response.json();
-    const newUserId = user_id;
+    throw new Error(errorData.error || 'Could not create login credentials.');
+  }
 
-    if (!newUserId) throw new Error("No User ID returned from auth creation");
+  const { user_id: newUserId } = await response.json();
 
-    // 3. Create Profile
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: newUserId,
-        organization_id: adminOrgId,
-        role: UserRole.SEVAK,
-        full_name: sevakData.fullName,
-        username: username,
-        mobile: sevakData.mobile,
-        gender: sevakData.gender,
-        age: sevakData.age,
-        is_active: true
-      });
+  if (!newUserId) {
+    throw new Error('No User ID returned from auth creation');
+  }
 
-    if (profileError) throw profileError;
+  // 4. Create Profile (RLS-protected, admin allowed)
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .insert({
+      id: newUserId,
+      organization_id: adminOrgId,
+      role: UserRole.SEVAK,
+      full_name: sevakData.fullName,
+      username: username,
+      mobile: sevakData.mobile,
+      gender: sevakData.gender,
+      age: sevakData.age,
+      is_active: true,
+    });
 
-    // 4. Create Sevak Record
-    const { error: sevakError } = await supabase
-      .from('sevaks')
-      .insert({
-        id: newUserId,
-        organization_id: adminOrgId
-      });
-      
-    if (sevakError) throw sevakError;
+  if (profileError) throw profileError;
 
-    return { username, password };
-  },
+  // 5. Create Sevak Record
+  const { error: sevakError } = await supabase
+    .from('sevaks')
+    .insert({
+      id: newUserId,
+      organization_id: adminOrgId,
+    });
 
+  if (sevakError) throw sevakError;
+
+  return { username, password };
+},
   // --- Routes & Areas ---
 
   async getRoutes(): Promise<AreaRoute[]> {
