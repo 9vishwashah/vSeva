@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile, ViharEntry, UserRole } from '../types';
 import { dataService } from '../services/dataService';
 import StatCard from '../components/StatCard';
@@ -12,19 +12,37 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
-  // Memoize data calculation so it doesn't run on every render
-  const data = useMemo(() => {
-    let entries: ViharEntry[] = [];
-    if (currentUser.role === UserRole.ORG_ADMIN) {
-      entries = dataService.getEntriesForOrg(currentUser.organization_id);
-    } else {
-      entries = dataService.getEntriesForSevak(currentUser.name);
+  const [data, setData] = useState<{ entries: ViharEntry[], stats: any }>({
+    entries: [],
+    stats: {
+      totalVihars: 0,
+      totalKm: 0,
+      totalSadhu: 0,
+      totalSadhvi: 0,
+      longestVihar: 0,
+      streak: 0
     }
-    const stats = dataService.calculateStats(entries);
-    return { entries, stats };
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      let entries: ViharEntry[] = [];
+      try {
+        if (currentUser.role === UserRole.ORG_ADMIN) {
+          entries = await dataService.getEntries(currentUser.organization_id);
+        } else {
+          entries = await dataService.getSevakEntries(currentUser.username);
+        }
+        const stats = dataService.calculateStats(entries);
+        setData({ entries, stats });
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+      }
+    };
+    fetchData();
   }, [currentUser]);
 
-  const recentVihars = data.entries
+  const recentVihars = [...data.entries]
     .sort((a,b) => new Date(b.vihar_date).getTime() - new Date(a.vihar_date).getTime())
     .slice(0, 5);
 
@@ -49,7 +67,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
             <h1 className="text-3xl font-serif font-bold text-gray-900">
                 {currentUser.role === UserRole.ORG_ADMIN ? 'Organization Overview' : 'My Analytics'}
             </h1>
-            <p className="text-gray-500 mt-1">Jai Jinendra, {currentUser.name}</p>
+            <p className="text-gray-500 mt-1">Jai Jinendra, {currentUser.full_name}</p>
         </div>
         {/* Only Sevaks see share card immediately, Admins maybe elsewhere */}
         {currentUser.role === UserRole.SEVAK && (
@@ -76,7 +94,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                 <h3 className="text-lg font-bold text-gray-800 mb-6">Activity Volume</h3>
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={recentVihars.reverse()}>
+                        <BarChart data={[...recentVihars].reverse()}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="vihar_date" tickFormatter={(val) => val.slice(5)} />
                             <YAxis />
@@ -131,7 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                     
                     <StatCard 
                         stats={data.stats} 
-                        userName={currentUser.name} 
+                        userName={currentUser.full_name} 
                         orgName={currentUser.organization_id === 'org_1' ? 'Vashi Jain Sangh' : 'Jain Sangh'} 
                     />
                 </div>

@@ -1,20 +1,156 @@
-import { MOCK_ENTRIES, MOCK_ROUTES, MOCK_USERS } from '../constants';
-import { UserProfile, ViharEntry, StatSummary } from '../types';
-
-// In a real app, these functions would call Supabase
-// const { data } = await supabase.from('vihar_entries').select('*')...
+import { supabase } from './supabase';
+import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary } from '../types';
 
 export const dataService = {
-  getRoutes: () => MOCK_ROUTES,
+  
+  // --- Profiles & Sevaks ---
 
-  getSevaks: (orgId: string) => 
-    MOCK_USERS.filter(u => u.organization_id === orgId && u.role === 'SEVAK'),
+  async getProfile(userId: string): Promise<UserProfile | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-  getEntriesForOrg: (orgId: string) => 
-    MOCK_ENTRIES.filter(e => e.organization_id === orgId),
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return null;
+    }
+    return data as UserProfile;
+  },
 
-  getEntriesForSevak: (sevakName: string) => 
-    MOCK_ENTRIES.filter(e => e.sevaks.includes(sevakName)),
+  async getOrgSevaks(orgId: string): Promise<UserProfile[]> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('organization_id', orgId)
+      .eq('role', 'sevak')
+      .eq('is_active', true);
+
+    if (error) throw error;
+    return data as UserProfile[];
+  },
+
+  async createSevak(
+    adminOrgId: string, 
+    sevakData: { fullName: string; mobile: string; gender: string; age: number }
+  ) {
+    // 1. Generate Username (simple logic)
+    const cleanName = sevakData.fullName.toLowerCase().replace(/\s+/g, '');
+    const randomSuffix = Math.floor(Math.random() * 1000);
+    const username = `${cleanName}${randomSuffix}@vsevak.in`;
+    const password = sevakData.mobile;
+
+    // 2. Create Auth User
+    // NOTE: In a client-side app, calling auth.signUp signs the current user out.
+    // We MUST use a Supabase Edge Function for this in production.
+    // For this implementation, we assume a function 'create-user' exists.
+    
+    const { data: authData, error: authError } = await supabase.functions.invoke('create-user', {
+      body: {
+        email: username,
+        password: password,
+        email_confirm: true,
+        user_metadata: { full_name: sevakData.fullName }
+      }
+    });
+
+    if (authError) {
+      console.error("Failed to create auth user via Edge Function:", authError);
+      throw new Error("Could not create login credentials. Ensure 'create-user' function is deployed.");
+    }
+
+    const newUserId = authData?.user?.id;
+    if (!newUserId) throw new Error("No User ID returned from auth creation");
+
+    // 3. Create Profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: newUserId,
+        organization_id: adminOrgId,
+        role: UserRole.SEVAK,
+        full_name: sevakData.fullName,
+        username: username,
+        mobile: sevakData.mobile,
+        gender: sevakData.gender,
+        age: sevakData.age,
+        is_active: true
+      });
+
+    if (profileError) throw profileError;
+
+    // 4. Create Sevak Record
+    const { error: sevakError } = await supabase
+      .from('sevaks')
+      .insert({
+        id: newUserId,
+        organization_id: adminOrgId
+      });
+      
+    if (sevakError) throw sevakError;
+
+    return { username, password };
+  },
+
+  // --- Routes & Areas ---
+
+  async getRoutes(): Promise<AreaRoute[]> {
+    const { data, error } = await supabase
+      .from('area_routes')
+      .select('*');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getDistance(from: string, to: string): Promise<number> {
+    const { data, error } = await supabase
+      .from('area_routes')
+      .select('distance_km')
+      .eq('from_name', from)
+      .eq('to_name', to)
+      .single();
+    
+    return data ? data.distance_km : 0;
+  },
+
+  // --- Vihar Entries ---
+
+  async createViharEntry(entry: ViharEntry) {
+    const { data, error } = await supabase
+      .from('vihar_entries')
+      .insert(entry)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  },
+
+  async getEntries(orgId: string): Promise<ViharEntry[]> {
+    const { data, error } = await supabase
+      .from('vihar_entries')
+      .select('*')
+      .eq('organization_id', orgId)
+      .order('vihar_date', { ascending: false });
+    
+    if (error) throw error;
+    return data as ViharEntry[];
+  },
+  
+  async getSevakEntries(username: string): Promise<ViharEntry[]> {
+    // We filter where the username is in the text[] array 'sevaks'
+    const { data, error } = await supabase
+      .from('vihar_entries')
+      .select('*')
+      .contains('sevaks', [username])
+      .order('vihar_date', { ascending: false });
+
+    if (error) throw error;
+    return data as ViharEntry[];
+  },
+
+  // --- Analytics ---
 
   calculateStats: (entries: ViharEntry[]): StatSummary => {
     let totalKm = 0;
@@ -30,13 +166,23 @@ export const dataService = {
       if (km > longestVihar) longestVihar = km;
     });
 
-    // Simple streak calculation (mock logic)
-    // Sort by date desc
-    const sorted = [...entries].sort((a,b) => new Date(b.vihar_date).getTime() - new Date(a.vihar_date).getTime());
+    // Simple streak logic
     let streak = 0;
-    if(sorted.length > 0) {
-        streak = 1; 
-        // Logic to check consecutive days would go here
+    if (entries.length > 0) {
+      // Assuming entries are sorted desc
+      streak = 1;
+      for (let i = 0; i < entries.length - 1; i++) {
+        const curr = new Date(entries[i].vihar_date);
+        const prev = new Date(entries[i+1].vihar_date);
+        const diffTime = Math.abs(curr.getTime() - prev.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        if (diffDays === 1) {
+          streak++;
+        } else if (diffDays > 1) {
+          break;
+        }
+      }
     }
 
     return {

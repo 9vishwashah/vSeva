@@ -1,96 +1,123 @@
-import React, { useState } from 'react';
-import { UserRole, UserProfile, ViharEntry } from './types';
-import { MOCK_USERS } from './constants';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './services/supabase';
+import { UserRole, UserProfile } from './types';
+import { dataService } from './services/dataService';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import NewEntry from './pages/NewEntry';
+import AddSevak from './pages/AddSevak';
+import Login from './pages/Login';
+import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
-  // Auth State
   const [user, setUser] = useState<UserProfile | null>(null);
-  
-  // Navigation State
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
 
-  // Simple Login Mock
-  const handleLogin = (role: UserRole) => {
-    // Find first user of this role for demo
-    const mockUser = MOCK_USERS.find(u => u.role === role);
-    if (mockUser) {
-      setUser(mockUser);
-      setCurrentPage(role === UserRole.SEVAK ? 'analytics' : 'dashboard');
-    }
+  useEffect(() => {
+    // Check active session on load
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+         try {
+             const profile = await dataService.getProfile(session.user.id);
+             if (profile) {
+                 setUser(profile);
+                 // Redirect based on role if at root
+                 setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
+             }
+         } catch (e) {
+             console.error("Profile load failed", e);
+             await supabase.auth.signOut();
+         }
+      }
+      setLoading(false);
+    };
+    checkSession();
+  }, []);
+
+  const handleLoginSuccess = (profile: UserProfile) => {
+    setUser(profile);
+    setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
   };
 
-  const handleEntrySubmit = (entry: ViharEntry) => {
-    console.log("Saving Entry to Supabase...", entry);
-    // Here we would push to DB
-    alert("Vihar Entry Saved Successfully!");
-    setCurrentPage('dashboard');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-8">
-           <div className="text-center">
-              <h1 className="text-4xl font-serif font-bold text-saffron-600 mb-2">vSeva</h1>
-              <p className="text-gray-500">Vihar Tracking & Analytics SaaS</p>
-           </div>
-           
-           <div className="space-y-4">
-              <button onClick={() => handleLogin(UserRole.ORG_ADMIN)} className="w-full bg-gray-800 hover:bg-gray-900 text-white py-3 rounded-lg font-medium transition-colors">
-                Login as Org Admin
-              </button>
-              <button onClick={() => handleLogin(UserRole.SEVAK)} className="w-full bg-saffron-500 hover:bg-saffron-600 text-white py-3 rounded-lg font-medium transition-colors">
-                Login as Sevak
-              </button>
-           </div>
-           
-           <div className="text-center text-xs text-gray-400 mt-8">
-              <p>Demo Mode • v1.0.0</p>
-           </div>
-        </div>
-      </div>
-    );
+  if (loading) {
+      return (
+          <div className="h-screen flex items-center justify-center bg-saffron-50">
+              <Loader2 className="animate-spin text-saffron-600" size={48} />
+          </div>
+      );
   }
 
-  const getInitials = (name: string) => name.substring(0,2).toUpperCase();
+  if (!user) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  const getInitials = (name: string) => name ? name.substring(0,2).toUpperCase() : 'VS';
 
   return (
     <Layout 
       role={user.role} 
-      userInitials={getInitials(user.name)} 
-      onLogout={() => setUser(null)}
+      userInitials={getInitials(user.full_name)} 
+      onLogout={handleLogout}
       currentPage={currentPage}
       setCurrentPage={setCurrentPage}
     >
-      {currentPage === 'dashboard' && user.role === UserRole.ORG_ADMIN && (
+      {/* Admin Routes */}
+      {currentPage === 'dashboard' && user.role === UserRole.ADMIN && (
         <Dashboard currentUser={user} />
       )}
+      
+      {currentPage === 'new-entry' && user.role === UserRole.ADMIN && (
+        <NewEntry currentUser={user} onSubmit={() => setCurrentPage('dashboard')} />
+      )}
+
+      {currentPage === 'add-sevak' && user.role === UserRole.ADMIN && (
+        <AddSevak currentUser={user} />
+      )}
+
+      {/* Sevak Routes */}
       {currentPage === 'analytics' && (
         <Dashboard currentUser={user} />
       )}
-      {currentPage === 'new-entry' && user.role === UserRole.ORG_ADMIN && (
-        <NewEntry currentUser={user} onSubmit={handleEntrySubmit} />
-      )}
+      
       {currentPage === 'profile' && (
-        <div className="bg-white p-8 rounded-xl shadow-sm">
-           <h2 className="text-2xl font-bold text-gray-800 mb-4">My Profile</h2>
-           <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="text-gray-500">Name</div>
-              <div className="font-medium">{user.name}</div>
-              <div className="text-gray-500">Mobile</div>
-              <div className="font-medium">{user.mobile}</div>
-              <div className="text-gray-500">Organization ID</div>
-              <div className="font-medium">{user.organization_id}</div>
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+           <div className="flex items-center space-x-4 mb-6">
+                <div className="w-16 h-16 bg-saffron-100 rounded-full flex items-center justify-center text-2xl font-bold text-saffron-600">
+                    {getInitials(user.full_name)}
+                </div>
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-800">{user.full_name}</h2>
+                    <p className="text-gray-500 uppercase text-xs tracking-wider">{user.role}</p>
+                </div>
            </div>
-        </div>
-      )}
-       {currentPage === 'add-sevak' && (
-        <div className="bg-white p-8 rounded-xl shadow-sm text-center">
-           <h2 className="text-2xl font-bold text-gray-800 mb-4">Add Sevak</h2>
-           <p className="text-gray-500">Form to create new users goes here.</p>
+           
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm border-t border-gray-100 pt-6">
+              <div>
+                  <p className="text-gray-500 mb-1">Mobile Number</p>
+                  <p className="font-medium text-lg">{user.mobile}</p>
+              </div>
+              <div>
+                  <p className="text-gray-500 mb-1">Username</p>
+                  <p className="font-medium text-lg">{user.username}</p>
+              </div>
+              <div>
+                  <p className="text-gray-500 mb-1">Organization ID</p>
+                  <p className="font-medium text-lg font-mono bg-gray-50 p-2 rounded inline-block">{user.organization_id}</p>
+              </div>
+              <div>
+                   <p className="text-gray-500 mb-1">Status</p>
+                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                     Active
+                   </span>
+              </div>
+           </div>
         </div>
       )}
     </Layout>

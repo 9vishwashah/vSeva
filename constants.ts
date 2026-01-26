@@ -2,36 +2,38 @@ import { AreaRoute, Organization, UserProfile, UserRole, ViharEntry } from './ty
 
 export const MOCK_ORG: Organization = {
   id: 'org_1',
-  name: 'Vashi Jain Sangh',
-  code: 'VASHI'
+  name: 'Vashi Jain Sangh'
 };
 
 export const MOCK_USERS: UserProfile[] = [
   {
     id: 'admin_1',
     role: UserRole.ORG_ADMIN,
-    name: 'Jay Arihant',
+    full_name: 'Jay Arihant',
     username: 'admin@vihar.com',
     organization_id: 'org_1',
-    mobile: '9999999999'
+    mobile: '9999999999',
+    is_active: true
   },
   {
     id: 'sevak_1',
     role: UserRole.SEVAK,
-    name: 'Vishwa Shah',
+    full_name: 'Vishwa Shah',
     username: 'vishwashah@vsevak.in',
     organization_id: 'org_1',
     mobile: '9594503214',
-    gender: 'Male'
+    gender: 'Male',
+    is_active: true
   },
   {
     id: 'sevak_2',
     role: UserRole.SEVAK,
-    name: 'Kavita Jain',
+    full_name: 'Kavita Jain',
     username: 'kavitajain@vsevak.in',
     organization_id: 'org_1',
     mobile: '9876543210',
-    gender: 'Female'
+    gender: 'Female',
+    is_active: true
   }
 ];
 
@@ -47,7 +49,7 @@ export const MOCK_ENTRIES: ViharEntry[] = [
   {
     id: 101,
     vihar_date: '2023-10-25',
-    vihar_type: 'Morning',
+    vihar_type: 'morning',
     group_sadhu: true,
     group_sadhvi: false,
     no_sadhubhagwan: 2,
@@ -56,12 +58,13 @@ export const MOCK_ENTRIES: ViharEntry[] = [
     sevaks: ["Vishwa Shah", "Kavita Jain"],
     wheelchair: false,
     distance_km: 1.2,
-    organization_id: 'org_1'
+    organization_id: 'org_1',
+    created_by: 'admin_1'
   },
   {
     id: 102,
     vihar_date: '2023-10-26',
-    vihar_type: 'Morning',
+    vihar_type: 'morning',
     group_sadhu: true,
     group_sadhvi: true,
     no_sadhubhagwan: 2,
@@ -71,12 +74,13 @@ export const MOCK_ENTRIES: ViharEntry[] = [
     sevaks: ["Vishwa Shah"],
     wheelchair: true,
     distance_km: 3.8,
-    organization_id: 'org_1'
+    organization_id: 'org_1',
+    created_by: 'admin_1'
   },
     {
     id: 103,
     vihar_date: '2023-10-28',
-    vihar_type: 'Evening',
+    vihar_type: 'evening',
     group_sadhu: false,
     group_sadhvi: true,
     no_sadhvijibhagwan: 4,
@@ -85,7 +89,8 @@ export const MOCK_ENTRIES: ViharEntry[] = [
     sevaks: ["Vishwa Shah", "Amit Jain"],
     wheelchair: false,
     distance_km: 2.5,
-    organization_id: 'org_1'
+    organization_id: 'org_1',
+    created_by: 'admin_1'
   }
 ];
 
