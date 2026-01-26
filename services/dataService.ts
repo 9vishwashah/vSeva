@@ -64,6 +64,11 @@ export const dataService = {
     body: JSON.stringify({
       email: username,
       password: password,
+      user_metadata: { // Added this back to ensure metadata is passed as per previous logic for profile creation consistency if needed by function, though function handles creation.
+          full_name: sevakData.fullName,
+          role: UserRole.SEVAK, 
+          organization_id: adminOrgId
+      }
     }),
   });
 

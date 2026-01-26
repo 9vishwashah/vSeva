@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { dataService } from '../services/dataService';
-import { UserPlus, Loader2, CheckCircle } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle, Users } from 'lucide-react';
 
 interface AddSevakProps {
   currentUser: UserProfile;
@@ -18,6 +18,27 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<{username: string, password: string} | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // State for the list of existing sevaks
+  const [sevaks, setSevaks] = useState<UserProfile[]>([]);
+  const [loadingSevaks, setLoadingSevaks] = useState(true);
+
+  const fetchSevaks = async () => {
+    try {
+      setLoadingSevaks(true);
+      const data = await dataService.getOrgSevaks(currentUser.organization_id);
+      setSevaks(data);
+    } catch (err) {
+      console.error("Failed to load sevaks", err);
+    } finally {
+      setLoadingSevaks(false);
+    }
+  };
+
+  // Fetch sevaks on mount
+  useEffect(() => {
+    fetchSevaks();
+  }, [currentUser.organization_id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +56,8 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       
       setSuccess(creds);
       setFormData({ fullName: '', mobile: '', gender: 'Male', age: '' });
+      // Refresh the list after successful addition
+      fetchSevaks();
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to add sevak. Ensure backend functions are deployed.");
@@ -44,7 +67,9 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-8">
+      
+      {/* Form Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-6 border-b border-gray-100 bg-gray-50">
           <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -134,6 +159,59 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
             <span>{loading ? "Creating Profile..." : "Create Sevak Account"}</span>
           </button>
         </form>
+      </div>
+
+      {/* Existing Members Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 border-b border-gray-100 bg-gray-50">
+          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Users size={24} className="text-saffron-600" />
+            Organization Members
+          </h2>
+          <p className="text-sm text-gray-500">Currently active sevaks in {currentUser.organization_id}</p>
+        </div>
+
+        <div className="overflow-x-auto">
+          {loadingSevaks ? (
+             <div className="p-8 text-center text-gray-500 flex flex-col items-center">
+               <Loader2 className="animate-spin mb-2 text-saffron-600" />
+               Loading members...
+             </div>
+          ) : sevaks.length === 0 ? (
+             <div className="p-8 text-center text-gray-500">No members found. Add your first member above.</div>
+          ) : (
+             <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-50 text-gray-900 font-semibold border-b border-gray-100">
+                    <tr>
+                        <th className="p-4">Name</th>
+                        <th className="p-4">Username</th>
+                        <th className="p-4">Mobile</th>
+                        <th className="p-4">Role</th>
+                        <th className="p-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                    {sevaks.map(sevak => (
+                        <tr key={sevak.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="p-4 font-medium text-gray-900">{sevak.full_name}</td>
+                            <td className="p-4 font-mono text-xs">{sevak.username}</td>
+                            <td className="p-4">{sevak.mobile}</td>
+                            <td className="p-4 capitalize">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                    {sevak.role}
+                                </span>
+                            </td>
+                            <td className="p-4">
+                                <span className={`inline-flex px-2 py-0.5 text-xs rounded-full font-medium ${sevak.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {sevak.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+             </table>
+          )}
+        </div>
       </div>
     </div>
   );
