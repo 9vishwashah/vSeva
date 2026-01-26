@@ -43,30 +43,34 @@ export const dataService = {
     const username = `${cleanName}${randomSuffix}@vsevak.in`;
     const password = sevakData.mobile;
 
-    // 2. Create Auth User
-    // NOTE: In a client-side app, calling auth.signUp signs the current user out.
-    // We MUST use a Supabase Edge Function for this in production.
-    // For this implementation, we assume a function 'create-user' exists.
+    // 2. Create Auth User via Netlify Function
+    // Replaced Supabase Edge Function with Netlify Function call
     
-    const { data: authData, error: authError } = await supabase.functions.invoke('create-user', {
-      body: {
-        email: username,
-        password: password,
-        email_confirm: true,
-        user_metadata: { 
-          full_name: sevakData.fullName,
-          role: UserRole.SEVAK, // Adding role to metadata allows for JWT based policies later
-          organization_id: adminOrgId
-        }
-      }
+    const response = await fetch('/.netlify/functions/create-user', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: username,
+            password: password,
+            user_metadata: { 
+                full_name: sevakData.fullName,
+                role: UserRole.SEVAK, 
+                organization_id: adminOrgId
+            }
+        }),
     });
 
-    if (authError) {
-      console.error("Failed to create auth user via Edge Function:", authError);
-      throw new Error("Could not create login credentials. Ensure 'create-user' function is deployed.");
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error("Failed to create auth user via Netlify Function:", errorData);
+        throw new Error(errorData.error || "Could not create login credentials.");
     }
 
-    const newUserId = authData?.user?.id;
+    const { user_id } = await response.json();
+    const newUserId = user_id;
+
     if (!newUserId) throw new Error("No User ID returned from auth creation");
 
     // 3. Create Profile
