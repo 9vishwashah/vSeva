@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary } from '../types';
+import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary, Organization } from '../types';
 
 export const dataService = {
   
@@ -19,6 +19,20 @@ export const dataService = {
       return null;
     }
     return data as UserProfile;
+  },
+
+  async getOrganization(orgId: string): Promise<Organization | null> {
+    const { data, error } = await supabase
+      .from('organizations')
+      .select('*')
+      .eq('id', orgId)
+      .single();
+
+    if (error) {
+        console.warn("Could not fetch org details:", error.message);
+        return null; 
+    }
+    return data as Organization;
   },
 
   async getOrgSevaks(orgId: string): Promise<UserProfile[]> {
@@ -123,6 +137,32 @@ export const dataService = {
 
   return { username, password };
 },
+
+  async deleteSevak(userId: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // Call Netlify function to delete from Auth (service role required)
+    const response = await fetch('/.netlify/functions/delete-user', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({ user_id: userId })
+    });
+
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Failed to delete user");
+    }
+
+    // Optionally delete from public profiles if cascade isn't set up
+    // We attempt it, but ignore 404s or permissions issues if auth delete succeeded
+    await supabase.from('profiles').delete().eq('id', userId);
+    
+    return true;
+  },
+
   // --- Routes & Areas ---
 
   async getRoutes(): Promise<AreaRoute[]> {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, Organization } from '../types';
 import { dataService } from '../services/dataService';
-import { UserPlus, Loader2, CheckCircle, Users } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle } from 'lucide-react';
 
 interface AddSevakProps {
   currentUser: UserProfile;
@@ -22,22 +22,34 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   // State for the list of existing sevaks
   const [sevaks, setSevaks] = useState<UserProfile[]>([]);
   const [loadingSevaks, setLoadingSevaks] = useState(true);
+  
+  // Org Details
+  const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
+  
+  // UI State for copy feedback
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  // UI State for delete
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const fetchSevaks = async () => {
+  const fetchData = async () => {
     try {
       setLoadingSevaks(true);
-      const data = await dataService.getOrgSevaks(currentUser.organization_id);
-      setSevaks(data);
+      const [sevaksData, orgData] = await Promise.all([
+          dataService.getOrgSevaks(currentUser.organization_id),
+          dataService.getOrganization(currentUser.organization_id)
+      ]);
+      setSevaks(sevaksData);
+      setOrgDetails(orgData);
     } catch (err) {
-      console.error("Failed to load sevaks", err);
+      console.error("Failed to load data", err);
     } finally {
       setLoadingSevaks(false);
     }
   };
 
-  // Fetch sevaks on mount
+  // Fetch on mount
   useEffect(() => {
-    fetchSevaks();
+    fetchData();
   }, [currentUser.organization_id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,13 +69,37 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       setSuccess(creds);
       setFormData({ fullName: '', mobile: '', gender: 'Male', age: '' });
       // Refresh the list after successful addition
-      fetchSevaks();
+      fetchData();
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to add sevak. Ensure backend functions are deployed.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopy = (text: string, id: string) => {
+      navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDelete = async (userId: string, userName: string) => {
+      if (!window.confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+          return;
+      }
+      
+      setDeletingId(userId);
+      try {
+          await dataService.deleteSevak(userId);
+          // Remove from local state immediately
+          setSevaks(prev => prev.filter(s => s.id !== userId));
+      } catch (err: any) {
+          alert(`Failed to delete user: ${err.message}`);
+          console.error(err);
+      } finally {
+          setDeletingId(null);
+      }
   };
 
   return (
@@ -82,7 +118,8 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           
           {error && (
-            <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm">
+            <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm flex items-center gap-2">
+              <AlertTriangle size={16} />
               {error}
             </div>
           )}
@@ -168,7 +205,9 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
             <Users size={24} className="text-saffron-600" />
             Organization Members
           </h2>
-          <p className="text-sm text-gray-500">Currently active sevaks in {currentUser.organization_id}</p>
+          <p className="text-sm text-gray-500">
+             Currently active sevaks in <span className="font-semibold text-gray-700">{orgDetails ? `${orgDetails.name}, ${orgDetails.city || ''}` : currentUser.organization_id}</span>
+          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -186,25 +225,50 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
                         <th className="p-4">Name</th>
                         <th className="p-4">Username</th>
                         <th className="p-4">Mobile</th>
-                        <th className="p-4">Role</th>
+                        <th className="p-4">Gender</th>
                         <th className="p-4">Status</th>
+                        <th className="p-4 text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                     {sevaks.map(sevak => (
-                        <tr key={sevak.id} className="hover:bg-gray-50 transition-colors">
+                        <tr key={sevak.id} className="hover:bg-gray-50 transition-colors group">
                             <td className="p-4 font-medium text-gray-900">{sevak.full_name}</td>
-                            <td className="p-4 font-mono text-xs">{sevak.username}</td>
-                            <td className="p-4">{sevak.mobile}</td>
-                            <td className="p-4 capitalize">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                                    {sevak.role}
-                                </span>
+                            
+                            {/* Stylized Username with Copy */}
+                            <td className="p-4">
+                                <div className="flex items-center space-x-2">
+                                    <code className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-gray-700 border border-gray-200">
+                                        {sevak.username}
+                                    </code>
+                                    <button 
+                                        onClick={() => handleCopy(sevak.username, sevak.id)}
+                                        className="text-gray-400 hover:text-saffron-600 transition-colors p-1"
+                                        title="Copy Username"
+                                    >
+                                        {copiedId === sevak.id ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                                    </button>
+                                </div>
                             </td>
+                            
+                            <td className="p-4">{sevak.mobile}</td>
+                            <td className="p-4">{sevak.gender || '-'}</td>
+                            
                             <td className="p-4">
                                 <span className={`inline-flex px-2 py-0.5 text-xs rounded-full font-medium ${sevak.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                     {sevak.is_active ? 'Active' : 'Inactive'}
                                 </span>
+                            </td>
+
+                            <td className="p-4 text-center">
+                                <button 
+                                    onClick={() => handleDelete(sevak.id, sevak.full_name)}
+                                    disabled={deletingId === sevak.id}
+                                    className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded transition-colors disabled:opacity-50"
+                                    title="Delete Member"
+                                >
+                                    {deletingId === sevak.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                </button>
                             </td>
                         </tr>
                     ))}
