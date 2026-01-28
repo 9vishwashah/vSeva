@@ -3,13 +3,17 @@ import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UserProfile, ViharEntry, AreaRoute } from '../types';
 import { Save, Loader2, MapPin } from 'lucide-react';
+import { Organization } from '../types';
 
 interface NewEntryProps {
   currentUser: UserProfile;
   onSubmit: () => void;
 }
 
+
+
 const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
+  const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
   const [formData, setFormData] = useState<Partial<ViharEntry>>({
     vihar_date: new Date().toISOString().split('T')[0],
     vihar_type: 'morning',
@@ -27,30 +31,29 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
   const [distanceInfo, setDistanceInfo] = useState<string | null>(null);
 
   // Load Data on Mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [sevaks, routes] = await Promise.all([
-          dataService.getOrgSevaks(currentUser.organization_id),
-          dataService.getRoutes()
-        ]);
-        setOrgSevaks(sevaks);
-        setAvailableRoutes(routes);
-        
-        // Extract unique locations for dropdowns
-        const areas = new Set<string>();
-        routes.forEach(r => {
-            areas.add(r.from_name);
-            areas.add(r.to_name);
-        });
-        setUniqueAreas(Array.from(areas).sort());
+useEffect(() => {
+  const fetchData = async () => {
+    const [sevaks, routes, org] = await Promise.all([
+      dataService.getOrgSevaks(currentUser.organization_id),
+      dataService.getRoutes(),
+      dataService.getOrganization(currentUser.organization_id),
+    ]);
 
-      } catch (err) {
-        console.error("Failed to load dependency data", err);
-      }
-    };
-    fetchData();
-  }, [currentUser]);
+    setOrgSevaks(sevaks);
+    setAvailableRoutes(routes);
+    setOrgDetails(org);
+
+    // 🔴 THIS WAS MISSING
+    const areas = new Set<string>();
+    routes.forEach(r => {
+      if (r.from_name) areas.add(r.from_name);
+      if (r.to_name) areas.add(r.to_name);
+    });
+    setUniqueAreas(Array.from(areas).sort());
+  };
+
+  fetchData();
+}, [currentUser.organization_id]);
 
   // Distance Calculation
   useEffect(() => {
@@ -113,10 +116,20 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="p-6 border-b border-gray-100 bg-gray-50">
-        <h2 className="text-xl font-bold text-gray-800">New Vihar Entry</h2>
-        <p className="text-sm text-gray-500">Log a journey for {currentUser.organization_id}</p>
-      </div>
+<div className="p-6 border-b border-gray-100 bg-gray-50">
+  <h2 className="text-xl font-bold text-gray-800">New Vihar Entry</h2>
+
+  <p className="text-sm text-gray-500 mt-1">
+    Log a journey for{" "}
+    <span className="font-semibold text-saffron-600">
+      {orgDetails
+        ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ""}`
+        : "Loading..."}
+    </span>
+  </p>
+</div>
+
+
 
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         

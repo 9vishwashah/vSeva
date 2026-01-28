@@ -143,7 +143,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
                 type="text"
                 required
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none"
-                placeholder="e.g. Rahul Jain"
+                placeholder="e.g. Vishwa Shah"
                 value={formData.fullName}
                 onChange={e => setFormData({...formData, fullName: e.target.value})}
               />

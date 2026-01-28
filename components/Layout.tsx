@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { LogOut, Home, UserPlus, FilePlus, BarChart2 } from 'lucide-react';
+import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2 } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -42,6 +42,7 @@ const Layout: React.FC<LayoutProps> = ({
           {role === UserRole.ORG_ADMIN && (
             <>
               <NavItem page="dashboard" icon={BarChart2} label="Dashboard" />
+              <NavItem page="view-entries" icon={Table2} label="View Entries" />
               <NavItem page="new-entry" icon={FilePlus} label="New Entry" />
               <NavItem page="add-sevak" icon={UserPlus} label="Add Sevaks" />
             </>
@@ -89,6 +90,9 @@ const Layout: React.FC<LayoutProps> = ({
               <button onClick={() => setCurrentPage('dashboard')} className={`${currentPage === 'dashboard' ? 'text-saffron-600' : 'text-gray-400'}`}>
                 <BarChart2 size={24} />
               </button>
+               <button onClick={() => setCurrentPage('view-entries')} className={`${currentPage === 'view-entries' ? 'text-saffron-600' : 'text-gray-400'}`}>
+                <Table2 size={24} />
+              </button>
               <button onClick={() => setCurrentPage('new-entry')} className={`${currentPage === 'new-entry' ? 'text-saffron-600' : 'text-gray-400'}`}>
                 <div className="bg-saffron-500 text-white p-3 rounded-full -mt-8 shadow-lg border-4 border-white">
                   <FilePlus size={24} />
@@ -119,7 +123,7 @@ const Layout: React.FC<LayoutProps> = ({
 
       {/* Main Content */}
       <main className="flex-1 pt-16 md:pt-0 pb-20 md:pb-0 overflow-y-auto h-screen">
-        <div className="max-w-4xl mx-auto p-4 md:p-8">
+        <div className="max-w-7xl mx-auto p-4 md:p-8">
           {children}
         </div>
       </main>

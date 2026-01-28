@@ -26,7 +26,7 @@ export const dataService = {
       .from('organizations')
       .select('*')
       .eq('id', orgId)
-      .single();
+      .maybeSingle();
 
     if (error) {
         console.warn("Could not fetch org details:", error.message);

@@ -3,6 +3,8 @@ import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UserProfile } from '../types';
 import { LogIn, Loader2 } from 'lucide-react';
+// import vSevaLogo from '../assets/vseva-logo.png';
+import vSevaLogo from '../assets/vseva-logo.png';
 
 interface LoginProps {
   onLoginSuccess: (profile: UserProfile) => void;
@@ -52,11 +54,26 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
-        <div className="text-center">
-          <h1 className="text-4xl font-serif font-bold text-saffron-600 mb-2">vSeva</h1>
-          <p className="text-gray-500">Sign in to your account</p>
-        </div>
+      {/* <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6"> */}
+        <div className="max-w-md w-full bg-white rounded-[28px] shadow-2xl p-10 space-y-8">
+
+      <div className="text-center space-y-4">
+  <img
+    src={vSevaLogo}
+    alt="vSeva Logo"
+    className="mx-auto w-32 h-auto rounded-2xl"
+  />
+
+  <h1 className="text-5xl font-serif font-bold text-saffron-600">
+    vSeva
+  </h1>
+
+  <p className="text-gray-500 text-lg">
+    Sign in to your account
+  </p>
+</div>
+
+
 
         {error && (
           <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center">
@@ -70,7 +87,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             <input
               type="text"
               required
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+              // className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+              className="w-full p-4 border border-gray-300 rounded-xl
+           focus:ring-2 focus:ring-saffron-500 focus:border-saffron-500
+           bg-saffron-50/40"
+
               placeholder="admin@org.com or name@vsevak.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
