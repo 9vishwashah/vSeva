@@ -79,27 +79,37 @@ const Layout: React.FC<LayoutProps> = ({
       {/* Mobile Header & Bottom Nav */}
       <div className="md:hidden fixed top-0 w-full bg-white z-20 border-b border-gray-200 px-4 py-3 flex justify-between items-center">
          <h1 className="text-xl font-serif font-bold text-saffron-600">vSeva</h1>
-         <div className="w-8 h-8 rounded-full bg-saffron-100 text-saffron-600 flex items-center justify-center font-bold text-sm">
-              {userInitials}
-        </div>
+         <div className="flex items-center gap-3">
+             <div className="w-8 h-8 rounded-full bg-saffron-100 text-saffron-600 flex items-center justify-center font-bold text-sm">
+                  {userInitials}
+            </div>
+         </div>
       </div>
 
       <div className="md:hidden fixed bottom-0 w-full bg-white z-20 border-t border-gray-200 flex justify-around py-3 pb-safe">
           {role === UserRole.ORG_ADMIN && (
             <>
-              <button onClick={() => setCurrentPage('dashboard')} className={`${currentPage === 'dashboard' ? 'text-saffron-600' : 'text-gray-400'}`}>
+              <button onClick={() => setCurrentPage('dashboard')} className={`flex flex-col items-center ${currentPage === 'dashboard' ? 'text-saffron-600' : 'text-gray-400'}`}>
                 <BarChart2 size={24} />
+                <span className="text-[10px] mt-1">Stats</span>
               </button>
-               <button onClick={() => setCurrentPage('view-entries')} className={`${currentPage === 'view-entries' ? 'text-saffron-600' : 'text-gray-400'}`}>
+               <button onClick={() => setCurrentPage('view-entries')} className={`flex flex-col items-center ${currentPage === 'view-entries' ? 'text-saffron-600' : 'text-gray-400'}`}>
                 <Table2 size={24} />
+                <span className="text-[10px] mt-1">Entries</span>
               </button>
-              <button onClick={() => setCurrentPage('new-entry')} className={`${currentPage === 'new-entry' ? 'text-saffron-600' : 'text-gray-400'}`}>
+              <button onClick={() => setCurrentPage('new-entry')} className={`flex flex-col items-center ${currentPage === 'new-entry' ? 'text-saffron-600' : 'text-gray-400'}`}>
                 <div className="bg-saffron-500 text-white p-3 rounded-full -mt-8 shadow-lg border-4 border-white">
                   <FilePlus size={24} />
                 </div>
+                <span className="text-[10px] mt-1 font-semibold text-saffron-600">Add</span>
               </button>
-              <button onClick={() => setCurrentPage('add-sevak')} className={`${currentPage === 'add-sevak' ? 'text-saffron-600' : 'text-gray-400'}`}>
+              <button onClick={() => setCurrentPage('add-sevak')} className={`flex flex-col items-center ${currentPage === 'add-sevak' ? 'text-saffron-600' : 'text-gray-400'}`}>
                 <UserPlus size={24} />
+                <span className="text-[10px] mt-1">Sevaks</span>
+              </button>
+              <button onClick={onLogout} className="flex flex-col items-center text-gray-400 hover:text-red-500">
+                <LogOut size={24} />
+                <span className="text-[10px] mt-1">Exit</span>
               </button>
             </>
           )}
@@ -113,7 +123,7 @@ const Layout: React.FC<LayoutProps> = ({
                 <BarChart2 size={24} />
                 <span className="text-[10px] mt-1">Stats</span>
               </button>
-              <button onClick={onLogout} className="flex flex-col items-center text-gray-400">
+              <button onClick={onLogout} className="flex flex-col items-center text-gray-400 hover:text-red-500">
                 <LogOut size={24} />
                 <span className="text-[10px] mt-1">Exit</span>
               </button>

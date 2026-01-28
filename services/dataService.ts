@@ -26,7 +26,7 @@ export const dataService = {
       .from('organizations')
       .select('*')
       .eq('id', orgId)
-      .maybeSingle();
+      .single();
 
     if (error) {
         console.warn("Could not fetch org details:", error.message);
@@ -222,11 +222,12 @@ export const dataService = {
 
   // --- Analytics ---
 
-  calculateStats: (entries: ViharEntry[]): StatSummary => {
+  calculateStats: (entries: ViharEntry[], currentUsername?: string, nameMap?: Record<string, string>): StatSummary => {
     let totalKm = 0;
     let totalSadhu = 0;
     let totalSadhvi = 0;
     let longestVihar = 0;
+    const synergyMap: Record<string, number> = {};
 
     entries.forEach(e => {
       const km = Number(e.distance_km || 0);
@@ -234,7 +235,37 @@ export const dataService = {
       totalSadhu += e.no_sadhubhagwan || 0;
       totalSadhvi += e.no_sadhvijibhagwan || 0;
       if (km > longestVihar) longestVihar = km;
+
+      // Synergy Calculation
+      if (currentUsername && e.sevaks) {
+        e.sevaks.forEach(sevak => {
+          if (sevak !== currentUsername) {
+            synergyMap[sevak] = (synergyMap[sevak] || 0) + 1;
+          }
+        });
+      }
     });
+
+    // Find highest synergy
+    let vSynergy = "N/A";
+    if (currentUsername) {
+      let maxCount = 0;
+      let topSevaks: string[] = [];
+      
+      Object.entries(synergyMap).forEach(([sevak, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          topSevaks = [sevak];
+        } else if (count === maxCount) {
+          topSevaks.push(sevak);
+        }
+      });
+
+      if (topSevaks.length > 0) {
+        // Map usernames to full names if map provided
+        vSynergy = topSevaks.map(u => nameMap ? (nameMap[u] || u.split('@')[0]) : u.split('@')[0]).join(', ');
+      }
+    }
 
     // Simple streak logic
     let streak = 0;
@@ -261,7 +292,38 @@ export const dataService = {
       totalSadhu,
       totalSadhvi,
       longestVihar,
-      streak
+      streak,
+      vSynergy,
+      vRank: "N/A" // Populated separately
     };
+  },
+
+  calculateRank: (allEntries: ViharEntry[], currentUsername: string): number | string => {
+    // 1. Group by Sevak
+    const sevakStats: Record<string, { count: number, km: number }> = {};
+    
+    allEntries.forEach(e => {
+      (e.sevaks || []).forEach(sevak => {
+        if (!sevakStats[sevak]) sevakStats[sevak] = { count: 0, km: 0 };
+        sevakStats[sevak].count += 1;
+        sevakStats[sevak].km += Number(e.distance_km || 0);
+      });
+    });
+
+    // 2. Convert to Array
+    const leaderboard = Object.entries(sevakStats).map(([username, stats]) => ({
+      username,
+      ...stats
+    }));
+
+    // 3. Sort (Desc Count, then Desc Km)
+    leaderboard.sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return b.km - a.km;
+    });
+
+    // 4. Find Rank
+    const rank = leaderboard.findIndex(s => s.username === currentUsername);
+    return rank !== -1 ? rank + 1 : "N/A";
   }
 };

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { UserProfile, Organization } from '../types';
 import { dataService } from '../services/dataService';
 import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 interface AddSevakProps {
   currentUser: UserProfile;
 }
 
 const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     fullName: '',
     mobile: '',
@@ -42,6 +44,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       setOrgDetails(orgData);
     } catch (err) {
       console.error("Failed to load data", err);
+      showToast("Could not load organization members", 'error');
     } finally {
       setLoadingSevaks(false);
     }
@@ -67,12 +70,15 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       });
       
       setSuccess(creds);
+      showToast(`Sevak ${formData.fullName} added successfully!`, 'success');
       setFormData({ fullName: '', mobile: '', gender: 'Male', age: '' });
       // Refresh the list after successful addition
       fetchData();
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Failed to add sevak. Ensure backend functions are deployed.");
+      const msg = err.message || "Failed to add sevak. Ensure backend functions are deployed.";
+      setError(msg);
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -81,6 +87,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const handleCopy = (text: string, id: string) => {
       navigator.clipboard.writeText(text);
       setCopiedId(id);
+      showToast("Username copied to clipboard", 'info');
       setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -94,8 +101,9 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
           await dataService.deleteSevak(userId);
           // Remove from local state immediately
           setSevaks(prev => prev.filter(s => s.id !== userId));
+          showToast(`${userName} has been removed.`, 'success');
       } catch (err: any) {
-          alert(`Failed to delete user: ${err.message}`);
+          showToast(`Failed to delete user: ${err.message}`, 'error');
           console.error(err);
       } finally {
           setDeletingId(null);
@@ -129,7 +137,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
               <CheckCircle className="mx-auto text-green-600 mb-2" size={32} />
               <h3 className="text-lg font-bold text-green-800">Sevak Added Successfully!</h3>
               <p className="text-sm text-gray-600 mt-2">Share these credentials with the sevak:</p>
-              <div className="mt-4 bg-white p-4 rounded border border-green-100 inline-block text-left">
+              <div className="mt-4 bg-white p-4 rounded border border-green-100 inline-block text-left shadow-sm">
                  <p className="text-sm"><strong>Username:</strong> {success.username}</p>
                  <p className="text-sm"><strong>Password:</strong> {success.password}</p>
               </div>
@@ -143,7 +151,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
                 type="text"
                 required
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none"
-                placeholder="e.g. Vishwa Shah"
+                placeholder="e.g. Rahul Jain"
                 value={formData.fullName}
                 onChange={e => setFormData({...formData, fullName: e.target.value})}
               />

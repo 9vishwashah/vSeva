@@ -8,6 +8,8 @@ import NewEntry from './pages/NewEntry';
 import AddSevak from './pages/AddSevak';
 import Login from './pages/Login';
 import { Loader2 } from 'lucide-react';
+import ViewEntries from './pages/ViewEntries';
+
 
 const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -85,7 +87,10 @@ const App: React.FC = () => {
       {currentPage === 'analytics' && (
         <Dashboard currentUser={user} />
       )}
-      
+      {currentPage === 'view-entries' && user.role === UserRole.ORG_ADMIN && (
+        <ViewEntries currentUser={user} />
+      )}
+
       {currentPage === 'profile' && (
         <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
            <div className="flex items-center space-x-4 mb-6">

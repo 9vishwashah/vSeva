@@ -1,3 +1,4 @@
+
 export enum UserRole {
   ORG_ADMIN = 'admin',
   SEVAK = 'sevak'
@@ -58,4 +59,6 @@ export interface StatSummary {
   totalSadhvi: number;
   longestVihar: number;
   streak: number;
+  vSynergy?: string;
+  vRank?: number | string;
 }

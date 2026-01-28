@@ -3,8 +3,7 @@ import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UserProfile } from '../types';
 import { LogIn, Loader2 } from 'lucide-react';
-// import vSevaLogo from '../assets/vseva-logo.png';
-import vSevaLogo from '../assets/vseva-logo.png';
+import { useToast } from '../context/ToastContext';
 
 interface LoginProps {
   onLoginSuccess: (profile: UserProfile) => void;
@@ -14,12 +13,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
     try {
       // 1. Auth with Supabase
@@ -42,11 +40,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         throw new Error("Account is inactive.");
       }
 
+      showToast(`Welcome back, ${profile.full_name}!`, 'success');
       onLoginSuccess(profile);
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Login failed");
+      showToast(err.message || "Login failed. Please check credentials.", 'error');
     } finally {
       setLoading(false);
     }
@@ -54,32 +53,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center p-4">
-      {/* <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6"> */}
-        <div className="max-w-md w-full bg-white rounded-[28px] shadow-2xl p-10 space-y-8">
-
-      <div className="text-center space-y-4">
-  <img
-    src={vSevaLogo}
-    alt="vSeva Logo"
-    className="mx-auto w-32 h-auto rounded-2xl"
-  />
-
-  <h1 className="text-5xl font-serif font-bold text-saffron-600">
-    vSeva
-  </h1>
-
-  <p className="text-gray-500 text-lg">
-    Sign in to your account
-  </p>
-</div>
-
-
-
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center">
-            {error}
-          </div>
-        )}
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-serif font-bold text-saffron-600 mb-2">vSeva</h1>
+          <p className="text-gray-500">Sign in to your account</p>
+        </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
@@ -87,11 +65,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             <input
               type="text"
               required
-              // className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-              className="w-full p-4 border border-gray-300 rounded-xl
-           focus:ring-2 focus:ring-saffron-500 focus:border-saffron-500
-           bg-saffron-50/40"
-
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
               placeholder="admin@org.com or name@vsevak.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
