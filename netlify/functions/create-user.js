@@ -1,70 +1,69 @@
 import { createClient } from '@supabase/supabase-js';
 
-export default async function handler(request) {
+export async function handler(event, context) {
   try {
-    // 1. Only allow POST
-    if (request.method !== 'POST') {
-      return new Response(
-        JSON.stringify({ error: 'Method Not Allowed' }),
-        { status: 405 }
-      );
+    // 1. Allow POST only
+    if (event.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({ error: 'Method Not Allowed' }),
+      };
     }
 
-    // 2. Authorization header required
-    const authHeader = request.headers.get('authorization');
+    // 2. Authorization header
+    const authHeader = event.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Missing Authorization header' }),
-        { status: 401 }
-      );
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Missing Authorization header' }),
+      };
     }
 
     const jwt = authHeader.replace('Bearer ', '');
 
-    // 3. Supabase admin client (service role)
+    // 3. Supabase admin client
     const supabaseAdmin = createClient(
       process.env.VITE_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 4. Verify admin user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseAdmin.auth.getUser(jwt);
+    // 4. Verify user
+    const { data, error: authError } =
+      await supabaseAdmin.auth.getUser(jwt);
 
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid or expired token' }),
-        { status: 401 }
-      );
+    if (authError || !data?.user) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid or expired token' }),
+      };
     }
 
-    // 5. Check admin role from profiles
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // 5. Check admin role
+    const { data: profile, error: profileError } =
+      await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
 
-    if (profileError || profile?.role !== 'admin') {
-      return new Response(
-        JSON.stringify({ error: 'Admin access required' }),
-        { status: 403 }
-      );
+    if (profileError || profile.role !== 'admin') {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Admin access required' }),
+      };
     }
 
-    // 6. Parse request body
-    const { email, password } = await request.json();
+    // 6. Parse body
+    const { email, password } = JSON.parse(event.body);
 
     if (!email || !password) {
-      return new Response(
-        JSON.stringify({ error: 'Email and password are required' }),
-        { status: 400 }
-      );
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Email and password required' }),
+      };
     }
 
-    // 7. Create auth user
+    // 7. Create user
     const { data: newUser, error: createError } =
       await supabaseAdmin.auth.admin.createUser({
         email,
@@ -73,23 +72,22 @@ export default async function handler(request) {
       });
 
     if (createError) {
-      return new Response(
-        JSON.stringify({ error: createError.message }),
-        { status: 400 }
-      );
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: createError.message }),
+      };
     }
 
-    // 8. SUCCESS — return Response (THIS IS CRITICAL)
-    return new Response(
-      JSON.stringify({ user_id: newUser.user.id }),
-      { status: 200 }
-    );
-
+    // 8. Success
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ user_id: newUser.user.id }),
+    };
   } catch (err) {
     console.error('create-user error:', err);
-    return new Response(
-      JSON.stringify({ error: 'Internal Server Error' }),
-      { status: 500 }
-    );
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Internal Server Error' }),
+    };
   }
 }
