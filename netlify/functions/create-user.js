@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-export async function handler(event, context) {
+export async function handler(event) {
   try {
-    // 1. Allow POST only
     if (event.httpMethod !== 'POST') {
       return {
         statusCode: 405,
@@ -10,9 +9,8 @@ export async function handler(event, context) {
       };
     }
 
-    // 2. Authorization header
     const authHeader = event.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Missing Authorization header' }),
@@ -21,70 +19,56 @@ export async function handler(event, context) {
 
     const jwt = authHeader.replace('Bearer ', '');
 
-    // 3. Supabase admin client
     const supabaseAdmin = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 4. Verify user
-    const { data, error: authError } =
+    const { data: { user }, error: authError } =
       await supabaseAdmin.auth.getUser(jwt);
 
-    if (authError || !data?.user) {
+    if (authError || !user) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ error: 'Invalid or expired token' }),
+        body: JSON.stringify({ error: 'Invalid token' }),
       };
     }
 
-    // 5. Check admin role
-    const { data: profile, error: profileError } =
-      await supabaseAdmin
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
 
-    if (profileError || profile.role !== 'admin') {
+    if (profile?.role !== 'admin') {
       return {
         statusCode: 403,
         body: JSON.stringify({ error: 'Admin access required' }),
       };
     }
 
-    // 6. Parse body
     const { email, password } = JSON.parse(event.body);
 
-    if (!email || !password) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Email and password required' }),
-      };
-    }
-
-    // 7. Create user
-    const { data: newUser, error: createError } =
+    const { data, error } =
       await supabaseAdmin.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
       });
 
-    if (createError) {
+    if (error) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: createError.message }),
+        body: JSON.stringify({ error: error.message }),
       };
     }
 
-    // 8. Success
     return {
       statusCode: 200,
-      body: JSON.stringify({ user_id: newUser.user.id }),
+      body: JSON.stringify({ user_id: data.user.id }),
     };
   } catch (err) {
-    console.error('create-user error:', err);
+    console.error(err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Internal Server Error' }),
