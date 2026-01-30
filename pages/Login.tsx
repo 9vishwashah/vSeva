@@ -4,6 +4,7 @@ import { dataService } from '../services/dataService';
 import { UserProfile } from '../types';
 import { LogIn, Loader2 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import vSevaLogo from '../assets/vseva-logo.png';
 
 interface LoginProps {
   onLoginSuccess: (profile: UserProfile) => void;
@@ -13,6 +14,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const { showToast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -31,7 +34,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
       // 2. Fetch Profile to get Role
       const profile = await dataService.getProfile(authData.user.id);
-      
+
       if (!profile) {
         throw new Error("Profile not found. Contact Admin.");
       }
@@ -51,11 +54,46 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  if (isRegistering) {
+    return (
+      <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+          {/* Lazy load to avoid circular dependency if any, though regular import is fine */}
+          <React.Suspense fallback={<Loader2 className="animate-spin" />}>
+            <RegisterAdminView onBack={() => setIsRegistering(false)} onSuccess={() => setIsRegistering(false)} />
+          </React.Suspense>
+        </div>
+      </div>
+    );
+  }
+
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+          <React.Suspense fallback={<Loader2 className="animate-spin" />}>
+            <ForgotPasswordView onBack={() => setIsForgotPassword(false)} />
+          </React.Suspense>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
         <div className="text-center">
-          <h1 className="text-4xl font-serif font-bold text-saffron-600 mb-2">vSeva</h1>
+          <div className="flex justify-center mb-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-saffron-400/20 blur-xl rounded-full"></div>
+              <img
+                src={vSevaLogo}
+                alt="vSeva Logo"
+                className="relative h-20 w-20 object-contain drop-shadow-lg"
+              />
+            </div>
+          </div>
+          <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent mb-2">vSeva</h1>
           <p className="text-gray-500">Sign in to your account</p>
         </div>
 
@@ -81,6 +119,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <div className="flex justify-end mt-1">
+              <button
+                type="button"
+                onClick={() => setIsForgotPassword(true)}
+                className="text-xs text-saffron-600 hover:underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
           </div>
 
           <button
@@ -92,6 +139,17 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </button>
         </form>
 
+        <div className="border-t pt-4 text-center space-y-2">
+          <p className="text-sm text-gray-600">Want to create a new Organization?</p>
+          <button
+            type="button"
+            onClick={() => setIsRegistering(true)}
+            className="text-saffron-600 font-medium hover:underline text-sm"
+          >
+            Create Admin Account
+          </button>
+        </div>
+
         <div className="text-center text-xs text-gray-400 mt-4">
           <p>Protected by vSeva Security</p>
         </div>
@@ -99,5 +157,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     </div>
   );
 };
+
+// Import at the top usually, but for this edit I'll add the components.
+// Accessing RegisterAdmin via import
+import RegisterAdminView from './RegisterAdmin';
+import ForgotPasswordView from './ForgotPassword';
 
 export default Login;

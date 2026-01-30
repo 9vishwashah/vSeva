@@ -62,3 +62,29 @@ export interface StatSummary {
   vSynergy?: string;
   vRank?: number | string;
 }
+
+export interface UserNotification {
+  id: string;
+  user_id: string;
+  organization_id?: string;
+  type: 'password_reset' | 'info' | 'alert' | 'alert_upcoming';
+  title: string;
+  message: string;
+  payload?: any;
+  is_read: boolean;
+  created_at: string;
+}
+
+
+export interface UpcomingVihar {
+  id: string;
+  organization_id: string;
+  created_by: string;
+  vihar_date: string;
+  from_location: string;
+  to_location: string;
+  vihar_type: 'morning' | 'evening';
+  sadhu_count: number;
+  sadhvi_count: number;
+  created_at: string;
+}

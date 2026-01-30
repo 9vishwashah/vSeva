@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary, Organization } from '../types';
 
 export const dataService = {
-  
+
   // --- Profiles & Sevaks ---
 
   async getProfile(userId: string): Promise<UserProfile | null> {
@@ -29,8 +29,8 @@ export const dataService = {
       .single();
 
     if (error) {
-        console.warn("Could not fetch org details:", error.message);
-        return null; 
+      console.warn("Could not fetch org details:", error.message);
+      return null;
     }
     return data as Organization;
   },
@@ -48,118 +48,118 @@ export const dataService = {
   },
 
   async createSevak(
-  adminOrgId: string, 
-  sevakData: { fullName: string; mobile: string; gender: string; age: number }
-) {
-  // 1. Generate Username
-  const cleanName = sevakData.fullName
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
-  const username = `${cleanName}@vsevak.in`;
-  const password = sevakData.mobile;
+    adminOrgId: string,
+    sevakData: { fullName: string; mobile: string; gender: string; age: number }
+  ) {
+    // 1. Generate Username
+    const cleanName = sevakData.fullName
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
+    const username = `${cleanName}@vsevak.in`;
+    const password = sevakData.mobile;
 
-  // 2. Get Admin Session (REQUIRED)
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+    // 2. Get Admin Session (REQUIRED)
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-  if (sessionError || !session?.access_token) {
-    throw new Error('Admin session not found. Please login again.');
-  }
-
-  // 3. Create Auth User via Netlify Function (ADMIN ONLY)
-  const response = await fetch('/.netlify/functions/create-user', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`, // ✅ REQUIRED
-    },
-    body: JSON.stringify({
-      email: username,
-      password: password,
-      user_metadata: { // Added this back to ensure metadata is passed as per previous logic for profile creation consistency if needed by function, though function handles creation.
-          full_name: sevakData.fullName,
-          role: UserRole.SEVAK, 
-          organization_id: adminOrgId
-      }
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    console.error('Failed to create auth user via Netlify Function:', errorData);
-
-    if (
-      errorData.error &&
-      errorData.error.toLowerCase().includes('already')
-    ) {
-      throw new Error(
-        `Username ${username} already exists. Please modify the name slightly.`
-      );
+    if (sessionError || !session?.access_token) {
+      throw new Error('Admin session not found. Please login again.');
     }
 
-    throw new Error(errorData.error || 'Could not create login credentials.');
-  }
-
-  const { user_id: newUserId } = await response.json();
-
-  if (!newUserId) {
-    throw new Error('No User ID returned from auth creation');
-  }
-
-  // 4. Create Profile (RLS-protected, admin allowed)
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .insert({
-      id: newUserId,
-      organization_id: adminOrgId,
-      role: UserRole.SEVAK,
-      full_name: sevakData.fullName,
-      username: username,
-      mobile: sevakData.mobile,
-      gender: sevakData.gender,
-      age: sevakData.age,
-      is_active: true,
-    });
-
-  if (profileError) throw profileError;
-
-  // 5. Create Sevak Record
-  const { error: sevakError } = await supabase
-    .from('sevaks')
-    .insert({
-      id: newUserId,
-      organization_id: adminOrgId,
-    });
-
-  if (sevakError) throw sevakError;
-
-  return { username, password };
-},
-
-  async deleteSevak(userId: string) {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // Call Netlify function to delete from Auth (service role required)
-    const response = await fetch('/.netlify/functions/delete-user', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token || ''}`
-        },
-        body: JSON.stringify({ user_id: userId })
+    // 3. Create Auth User via Netlify Function (ADMIN ONLY)
+    const response = await fetch('/.netlify/functions/create-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`, // ✅ REQUIRED
+      },
+      body: JSON.stringify({
+        email: username,
+        password: password,
+        user_metadata: { // Added this back to ensure metadata is passed as per previous logic for profile creation consistency if needed by function, though function handles creation.
+          full_name: sevakData.fullName,
+          role: UserRole.SEVAK,
+          organization_id: adminOrgId
+        }
+      }),
     });
 
     if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Failed to delete user");
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('Failed to create auth user via Netlify Function:', errorData);
+
+      if (
+        errorData.error &&
+        errorData.error.toLowerCase().includes('already')
+      ) {
+        throw new Error(
+          `Username ${username} already exists. Please modify the name slightly.`
+        );
+      }
+
+      throw new Error(errorData.error || 'Could not create login credentials.');
+    }
+
+    const { user_id: newUserId } = await response.json();
+
+    if (!newUserId) {
+      throw new Error('No User ID returned from auth creation');
+    }
+
+    // 4. Create Profile (RLS-protected, admin allowed)
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: newUserId,
+        organization_id: adminOrgId,
+        role: UserRole.SEVAK,
+        full_name: sevakData.fullName,
+        username: username,
+        mobile: sevakData.mobile,
+        gender: sevakData.gender,
+        age: sevakData.age,
+        is_active: true,
+      });
+
+    if (profileError) throw profileError;
+
+    // 5. Create Sevak Record
+    const { error: sevakError } = await supabase
+      .from('sevaks')
+      .insert({
+        id: newUserId,
+        organization_id: adminOrgId,
+      });
+
+    if (sevakError) throw sevakError;
+
+    return { username, password };
+  },
+
+  async deleteSevak(userId: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    // Call Netlify function to delete from Auth (service role required)
+    const response = await fetch('/.netlify/functions/delete-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token || ''}`
+      },
+      body: JSON.stringify({ user_id: userId })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || "Failed to delete user");
     }
 
     // Optionally delete from public profiles if cascade isn't set up
     // We attempt it, but ignore 404s or permissions issues if auth delete succeeded
     await supabase.from('profiles').delete().eq('id', userId);
-    
+
     return true;
   },
 
@@ -180,7 +180,7 @@ export const dataService = {
       .eq('from_name', from)
       .eq('to_name', to)
       .single();
-    
+
     return data ? data.distance_km : 0;
   },
 
@@ -192,7 +192,7 @@ export const dataService = {
       .insert(entry)
       .select()
       .single();
-      
+
     if (error) throw error;
     return data;
   },
@@ -203,11 +203,11 @@ export const dataService = {
       .select('*')
       .eq('organization_id', orgId)
       .order('vihar_date', { ascending: false });
-    
+
     if (error) throw error;
     return data as ViharEntry[];
   },
-  
+
   async getSevakEntries(username: string): Promise<ViharEntry[]> {
     // We filter where the username is in the text[] array 'sevaks'
     const { data, error } = await supabase
@@ -251,7 +251,7 @@ export const dataService = {
     if (currentUsername) {
       let maxCount = 0;
       let topSevaks: string[] = [];
-      
+
       Object.entries(synergyMap).forEach(([sevak, count]) => {
         if (count > maxCount) {
           maxCount = count;
@@ -274,10 +274,10 @@ export const dataService = {
       streak = 1;
       for (let i = 0; i < entries.length - 1; i++) {
         const curr = new Date(entries[i].vihar_date);
-        const prev = new Date(entries[i+1].vihar_date);
+        const prev = new Date(entries[i + 1].vihar_date);
         const diffTime = Math.abs(curr.getTime() - prev.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-        
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
         if (diffDays === 1) {
           streak++;
         } else if (diffDays > 1) {
@@ -299,31 +299,69 @@ export const dataService = {
   },
 
   calculateRank: (allEntries: ViharEntry[], currentUsername: string): number | string => {
-    // 1. Group by Sevak
-    const sevakStats: Record<string, { count: number, km: number }> = {};
-    
-    allEntries.forEach(e => {
-      (e.sevaks || []).forEach(sevak => {
-        if (!sevakStats[sevak]) sevakStats[sevak] = { count: 0, km: 0 };
+    const sevakStats: Record<string, { count: number; km: number }> = {};
+
+    // 1. Aggregate stats per sevak
+    allEntries.forEach(entry => {
+      (entry.sevaks || []).forEach(sevak => {
+        if (!sevakStats[sevak]) {
+          sevakStats[sevak] = { count: 0, km: 0 };
+        }
         sevakStats[sevak].count += 1;
-        sevakStats[sevak].km += Number(e.distance_km || 0);
+        sevakStats[sevak].km += Number(entry.distance_km || 0);
       });
     });
 
-    // 2. Convert to Array
+    // 2. Convert to array
     const leaderboard = Object.entries(sevakStats).map(([username, stats]) => ({
       username,
-      ...stats
+      count: stats.count,
+      km: stats.km
     }));
 
-    // 3. Sort (Desc Count, then Desc Km)
+    if (leaderboard.length === 0) return "N/A";
+
+    // 3. Sort: Desc Vihar count, Desc KM
     leaderboard.sort((a, b) => {
       if (b.count !== a.count) return b.count - a.count;
       return b.km - a.km;
     });
 
-    // 4. Find Rank
-    const rank = leaderboard.findIndex(s => s.username === currentUsername);
-    return rank !== -1 ? rank + 1 : "N/A";
+    // 4. Assign ranks
+    let rank = 1;
+    let lastCount = leaderboard[0].count;
+    let lastKm = leaderboard[0].km;
+
+    for (let i = 0; i < leaderboard.length; i++) {
+      if (
+        leaderboard[i].count !== lastCount ||
+        leaderboard[i].km !== lastKm
+      ) {
+        rank = i + 1;
+        lastCount = leaderboard[i].count;
+        lastKm = leaderboard[i].km;
+      }
+
+      if (leaderboard[i].username === currentUsername) {
+        return rank;
+      }
+    }
+
+    return "N/A";
+  },
+
+  async getSevakRank(orgId: string, username: string): Promise<number | string> {
+    const { data, error } = await supabase.rpc('get_sevak_rank', {
+      org_id: orgId,
+      sevak_username: username
+    });
+
+    if (error) {
+      console.error("Error fetching rank:", error);
+      // Fallback to "N/A" instead of breaking
+      return "N/A";
+    }
+    return data || "N/A";
   }
+
 };
