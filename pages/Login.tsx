@@ -151,7 +151,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </div>
 
         <div className="text-center text-xs text-gray-400 mt-4">
-          <p>Protected by vSeva Security</p>
+          <p>vSeva by Vishwa Alpesh Shah</p>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2 } from 'lucide-react';
+import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map } from 'lucide-react';
 
 import NotificationBell from './NotificationBell';
 import { supabase } from '../services/supabase';
@@ -49,7 +49,7 @@ const Layout: React.FC<LayoutProps> = ({
             <img src={vSevaLogo} alt="vSeva" className="h-10 w-10 object-contain" />
             <div>
               <h1 className="text-2xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
-              <p className="text-xs text-gray-400 mt-0.5 uppercase tracking-wide">Vihar Tracking</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">by Vishwa Alpesh Shah</p>
             </div>
           </div>
         </div>
@@ -59,6 +59,7 @@ const Layout: React.FC<LayoutProps> = ({
             <>
               <NavItem page="dashboard" icon={BarChart2} label="Dashboard" />
               <NavItem page="view-entries" icon={Table2} label="View Entries" />
+              <NavItem page="manage-routes" icon={Map} label="Manage Routes" />
               <NavItem page="new-entry" icon={FilePlus} label="New Entry" />
               <NavItem page="add-sevak" icon={UserPlus} label="Add Sevaks" />
             </>

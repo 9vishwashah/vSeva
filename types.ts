@@ -25,9 +25,11 @@ export interface UserProfile {
 
 export interface AreaRoute {
   id: number;
+  organization_id: string;
   from_name: string;
   to_name: string;
   distance_km: number;
+  note?: string;
 }
 
 // Matching public.vihar_entries

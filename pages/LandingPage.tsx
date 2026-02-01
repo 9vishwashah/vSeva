@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     MapPin, Users, TrendingUp, Bell, Shield, BarChart3,
     ArrowRight, CheckCircle2, Sparkles, BookOpen, UserCheck,
-    Lock, Activity, FileText, Download, Menu, X, Smartphone
+    Lock, Activity, FileText, Download, Menu, X, Smartphone, Instagram
 } from 'lucide-react';
 import vSevaLogo from '../assets/vseva-logo.png';
 import { usePWAInstall } from '../hooks/usePWAInstall';
@@ -105,8 +105,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     <div className="text-center max-w-4xl mx-auto">
                         {/* Logo */}
                         <div className="flex justify-center mb-8">
-                            <div className="p-6 bg-saffron-50 rounded-3xl shadow-sm border border-saffron-100 animate-fade-in-up">
-                                <img src={vSevaLogo} alt="vSeva" className="h-24 w-24 object-contain" />
+                            <div className="p-4 bg-saffron-50 rounded-3xl shadow-sm border border-saffron-100 animate-fade-in-up">
+                                <img src={vSevaLogo} alt="vSeva" className="h-40 w-40 object-contain" />
                             </div>
                         </div>
 
@@ -337,7 +337,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </div>
             </div>
 
-            {/* 8️⃣ FOOTER */}
+            {/* 8️⃣ SOCIAL FOLLOW */}
+            <div className="py-12 bg-white text-center border-t border-slate-100">
+                <p className="text-gray-400 mb-4">Join our community for user guides and updates</p>
+                <a
+                    href="https://instagram.com/the.vseva"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-tr from-purple-600 to-pink-600 text-white rounded-full font-bold shadow-lg hover:shadow-pink-500/30 transition-all hover:-translate-y-1"
+                >
+                    <Instagram size={20} className="stroke-2" />
+                    Follow @the.vseva
+                </a>
+            </div>
+
+            {/* 9️⃣ FOOTER */}
             <footer className="bg-white py-8 border-t border-slate-100">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-2 opacity-80">
@@ -345,7 +359,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         <span className="font-serif font-bold text-slate-700">vSeva</span>
                     </div>
                     <p className="text-slate-400 text-sm">Built with devotion & technology</p>
-                    <p className="text-slate-400 text-sm">© 2026 vSeva – All Rights Reserved</p>
+                    <div className="text-right">
+                        <p className="text-slate-400 text-sm">© 2026 vSeva – All Rights Reserved</p>
+                        <p className="text-slate-500 text-xs mt-1">vSeva by Vishwa Alpesh Shah</p>
+                    </div>
                 </div>
             </footer>
 

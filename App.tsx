@@ -9,15 +9,36 @@ import AddSevak from './pages/AddSevak';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
 import { Loader2 } from 'lucide-react';
+import ManageRoutes from './pages/ManageRoutes';
 import ViewEntries from './pages/ViewEntries';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+
 import vSevaLogo from './assets/vseva-logo.png';
 
 
+// Suppress XAxis/YAxis defaultProps warning from Recharts in React 18+
+// This is a known issue with the library and safe to ignore until they release a fix.
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('Support for defaultProps will be removed from function components')) {
+    return;
+  }
+  originalConsoleError(...args);
+};
+
 const App: React.FC = () => {
+  // Check PWA standalone mode
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
-  const [showLanding, setShowLanding] = useState(true);
+  // Show landing page only if NOT in standalone mode (PWA)
+  const [showLanding, setShowLanding] = useState(!isStandalone);
+
+  // Check for public routes
+  const path = window.location.pathname;
+  const isSuperAdmin = path === '/super-admin';
 
   useEffect(() => {
     // Check active session on load
@@ -63,6 +84,12 @@ const App: React.FC = () => {
     );
   }
 
+  // Route: Super Admin (Protected-ish)
+  if (isSuperAdmin) {
+    if (!user && !loading) return <Login onLoginSuccess={handleLoginSuccess} />;
+    return <SuperAdminDashboard />;
+  }
+
   if (!user) {
     if (showLanding) {
       return <LandingPage onGetStarted={() => setShowLanding(false)} />;
@@ -70,7 +97,14 @@ const App: React.FC = () => {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
-  const getInitials = (name: string) => name ? name.substring(0, 2).toUpperCase() : 'VS';
+  const getInitials = (name: string) => {
+    if (!name) return 'VS';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
 
   return (
     <Layout
@@ -87,6 +121,10 @@ const App: React.FC = () => {
 
       {currentPage === 'new-entry' && user.role === UserRole.ORG_ADMIN && (
         <NewEntry currentUser={user} onSubmit={() => setCurrentPage('dashboard')} />
+      )}
+
+      {currentPage === 'manage-routes' && user.role === UserRole.ORG_ADMIN && (
+        <ManageRoutes currentUser={user} />
       )}
 
       {currentPage === 'add-sevak' && user.role === UserRole.ORG_ADMIN && (
@@ -131,6 +169,29 @@ const App: React.FC = () => {
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 Active
               </span>
+            </div>
+          </div>
+          <div className="mt-8 border-t border-gray-100 pt-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">App Settings</h3>
+
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium text-gray-900">Push Notifications</p>
+                <p className="text-xs text-gray-500">Receive updates about new entries and approvals</p>
+              </div>
+              <button
+                onClick={() => {
+                  import('./services/notificationService').then(({ notificationService }) => {
+                    notificationService.requestPermission().then(perm => {
+                      if (perm === 'granted') alert("Notifications enabled!");
+                      else alert("Notifications blocked. Please enable them in browser settings.");
+                    });
+                  });
+                }}
+                className="px-4 py-2 bg-white border border-gray-200 shadow-sm text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 active:scale-95 transition-transform"
+              >
+                Enable
+              </button>
             </div>
           </div>
         </div>

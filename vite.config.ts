@@ -23,19 +23,19 @@ export default defineConfig(({ mode }) => {
           theme_color: '#4F46E5',
           icons: [
             {
-              src: 'pwa-192x192.svg',
+              src: 'vseva-logo.png',
               sizes: '192x192',
-              type: 'image/svg+xml'
+              type: 'image/png'
             },
             {
-              src: 'pwa-512x512.svg',
+              src: 'vseva-logo.png',
               sizes: '512x512',
-              type: 'image/svg+xml'
+              type: 'image/png'
             },
             {
-              src: 'maskable-icon.svg',
+              src: 'vseva-logo.png',
               sizes: '512x512',
-              type: 'image/svg+xml',
+              type: 'image/png',
               purpose: 'any maskable'
             }
           ]

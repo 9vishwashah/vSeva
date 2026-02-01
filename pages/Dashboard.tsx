@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { UserProfile, ViharEntry, UserRole, Organization, AreaRoute } from '../types';
 import { dataService } from '../services/dataService';
 import StatCard from '../components/StatCard';
-import { Trophy, Users, MapPin, Activity, Download, FileText, Table, Heart, UserCheck, Medal } from 'lucide-react';
+import LeaderboardCard from '../components/LeaderboardCard';
+import { Trophy, Users, MapPin, Footprints, Download, FileText, Table, Heart, UserCheck, Medal, Sparkles, Handshake } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import jsPDF from 'jspdf';
+import vSevaLogo from '../assets/vseva-logo.png';
+import * as XLSX from 'xlsx';
+
 import autoTable from 'jspdf-autotable';
 import { useToast } from '../context/ToastContext';
 import { supabase } from '../services/supabase';
@@ -18,7 +22,8 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [data, setData] = useState<{ entries: ViharEntry[], stats: any }>({
+  const [sevakMap, setSevakMap] = useState<Record<string, string>>({}); // Add this state
+  const [data, setData] = useState<{ entries: ViharEntry[], stats: any, leaderboard?: { male: any[], female: any[] } }>({
     entries: [],
     stats: {
       totalVihars: 0,
@@ -29,7 +34,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
       streak: 0,
       vSynergy: "N/A",
       vRank: "N/A"
-    }
+    },
+    leaderboard: { male: [], female: [] }
   });
 
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
@@ -79,11 +85,10 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        // Fetch Org Details & Sevaks (for name mapping)
         const [org, orgSevaks, routes] = await Promise.all([
           dataService.getOrganization(currentUser.organization_id),
           dataService.getOrgSevaks(currentUser.organization_id),
-          dataService.getRoutes()
+          dataService.getRoutes(currentUser.organization_id)
         ]);
         setOrgDetails(org);
         setAvailableRoutes(routes);
@@ -99,6 +104,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         // Create username -> fullname map for Synergy display
         const nameMap: Record<string, string> = {};
         orgSevaks.forEach(s => { nameMap[s.username] = s.full_name.split(' ')[0]; });
+        setSevakMap(nameMap);
 
         // To calculate RANK, we need ALL entries for the organization
         const allOrgEntries = await dataService.getEntries(currentUser.organization_id);
@@ -120,16 +126,52 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         const stats = dataService.calculateStats(myEntries, currentUser.username, nameMap);
         stats.vRank = rank;
 
-        setData({ entries: myEntries, stats });
+        // Fetch Leaderboard for Admin
+        let leaderboard = { male: [], female: [] };
+        if (currentUser.role === UserRole.ORG_ADMIN) {
+          leaderboard = await dataService.getTopSevaks(currentUser.organization_id);
+        }
+
+        setData({ entries: myEntries, stats, leaderboard });
       } catch (e) {
-        console.error(e);
-        showToast("Failed to load dashboard data", 'error');
+        // ...
       } finally {
         setIsLoading(false);
       }
     };
     loadData();
   }, [currentUser]);
+
+  // Helper for names
+  const getSevakName = (username: string) => {
+    return sevakMap[username] || username.split('@')[0];
+  };
+
+  const prepareExportData = () => {
+    return data.entries.map((entry, index) => {
+      let group = '-';
+      if (entry.group_sadhu && entry.group_sadhvi) group = 'Both';
+      else if (entry.group_sadhu) group = 'Sadhu';
+      else if (entry.group_sadhvi) group = 'Sadhvi';
+
+      const sevakNames = (entry.sevaks || []).map(u => getSevakName(u)).join(', ');
+
+      return {
+        srNo: index + 1,
+        date: entry.vihar_date,
+        group: group,
+        from: entry.vihar_from,
+        to: entry.vihar_to,
+        sadhu: entry.no_sadhubhagwan || 0,
+        sadhvi: entry.no_sadhvijibhagwan || 0,
+        sevaks: sevakNames,
+        wheelchair: entry.wheelchair ? 'Yes' : 'No',
+        samuday: entry.samuday || '-',
+        type: entry.vihar_type === 'morning' ? 'Morning' : 'Evening',
+        kms: entry.distance_km
+      };
+    });
+  };
 
   // Prepare Chart Data (Last 7 Days)
   const chartData = data.entries
@@ -143,65 +185,101 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
   const downloadPDF = () => {
     try {
       const doc = new jsPDF();
-      doc.setFontSize(18);
-      doc.text("Vihar Entry Report", 14, 20);
-      doc.setFontSize(11);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+      const exportData = prepareExportData();
 
-      const tableData = data.entries.map(row => [
-        row.vihar_date,
-        row.vihar_from,
-        row.vihar_to,
-        row.distance_km?.toString() || '0',
-        (row.no_sadhubhagwan || 0) + (row.no_sadhvijibhagwan || 0),
-        row.sevaks.join(', ')
-      ]);
+      if (exportData.length === 0) {
+        showToast("No entries found to export", 'info');
+        return;
+      }
+
+      // Add Logo (As Base64 or Image) - Using the imported image directly might rely on bundler
+      // Ideally we load it into an image object first or verify if jspdf accepts URL
+      // For now, let's try adding it. If it fails, we might need to fetch it.
+      // Since it's imported via Vite/Webpack, it's a URL.
+      // We will assume standard addImage works with that URL in browser environment or we need to convert.
+      // Safe bet: load image to dataURL first.
+
+      const img = new Image();
+      img.src = vSevaLogo;
+
+      // We need to wait for image load if we weren't sure, but it's likely cached/loaded. 
+      // Better approach: simple addImage with the imported path often works in modern bundlers if it's a data URI or valid URL.
+      // Let's rely on doc.addImage(vSevaLogo, ...)
+
+      doc.addImage(vSevaLogo, 'PNG', 14, 10, 15, 15);
+
+      // Title & Credits
+      doc.setFontSize(18);
+      doc.setTextColor(234, 88, 12); // Saffron
+
+      const title = orgDetails?.name ? `${orgDetails.name} entries report` : "vSeva entries report";
+      doc.text(title, 35, 18);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text("by Vishwa Alpesh Shah", 35, 24);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()} for ${orgDetails?.name || ''}`, 14, 35);
 
       autoTable(doc, {
-        head: [['Date', 'From', 'To', 'Km', 'Gurus', 'Sevaks']],
-        body: tableData,
-        startY: 35,
+        startY: 40,
+        head: [['Sr No', 'Date', 'Group', 'From', 'To', 'Sadhu', 'Sadhvi', 'Sevaks', 'Wheelchair', 'Samuday', 'Type', 'Kms']],
+        body: exportData.map(item => [
+          item.srNo,
+          item.date,
+          item.group,
+          item.from,
+          item.to,
+          item.sadhu,
+          item.sadhvi,
+          item.sevaks,
+          item.wheelchair,
+          item.samuday,
+          item.type,
+          item.kms
+        ]),
+        styles: { fontSize: 7 },
+        headStyles: { fillColor: [234, 88, 12], textColor: 255 },
       });
 
-      doc.save(`Vihar_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+      doc.save(`vSeva_Report_${new Date().toISOString().split('T')[0]}.pdf`);
       showToast("PDF Report downloaded successfully", 'success');
       setShowDownloadMenu(false);
     } catch (error) {
+      console.error(error);
       showToast("Failed to generate PDF", 'error');
     }
   };
 
-  const downloadCSV = () => {
+  const downloadExcel = () => {
     try {
-      const headers = ['Date', 'Type', 'From', 'To', 'Distance(km)', 'Sadhu', 'Sadhvi', 'Sevaks', 'Wheelchair', 'Notes'];
-      const rows = data.entries.map(e => [
-        e.vihar_date,
-        e.vihar_type,
-        e.vihar_from,
-        e.vihar_to,
-        e.distance_km,
-        e.no_sadhubhagwan,
-        e.no_sadhvijibhagwan,
-        `"${e.sevaks.join(', ')}"`, // Handle commas in names
-        e.wheelchair ? 'Yes' : 'No',
-        `"${e.notes || ''}"`
-      ]);
+      const data = prepareExportData();
+      const excelData = data.map(item => ({
+        'Sr No': item.srNo,
+        'Date': item.date,
+        'Group': item.group,
+        'From': item.from,
+        'To': item.to,
+        'No of Sadhu': item.sadhu,
+        'No of Sadhvi': item.sadhvi,
+        'Sevaks': item.sevaks,
+        'Wheelchair': item.wheelchair,
+        'Samuday': item.samuday,
+        'Type': item.type,
+        'Kms': item.kms
+      }));
 
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(r => r.join(','))
-      ].join('\n');
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Vihar Entries");
+      XLSX.writeFile(wb, `vSeva_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
 
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `Vihar_Export_${new Date().toISOString().split('T')[0]}.csv`;
-      link.click();
-
-      showToast("CSV Export downloaded successfully", 'success');
+      showToast("Excel Export downloaded successfully", 'success');
       setShowDownloadMenu(false);
     } catch (error) {
-      showToast("Failed to export CSV", 'error');
+      showToast("Failed to export Excel", 'error');
     }
   };
 
@@ -298,10 +376,10 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      <div className={`flex flex-col md:flex-row justify-between items-start md:items-end gap-4 p-6 rounded-2xl ${currentUser.role === UserRole.ORG_ADMIN ? 'bg-gradient-to-r from-saffron-50 via-white to-saffron-50 border border-saffron-100' : 'bg-white'}`}>
         <div>
           <h1 className="text-3xl font-bold text-gray-800 font-serif">
-            Namaste, {currentUser.full_name.split(' ')[0]} 🙏
+            Jai Jinendra, {currentUser.full_name.split(' ')[0]}
           </h1>
           <p className="text-gray-500 mt-1">
             Overview for {orgDetails?.name || currentUser.organization_id}
@@ -332,9 +410,9 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                     <FileText size={16} className="text-red-500" />
                     <span>Download PDF</span>
                   </button>
-                  <button onClick={downloadCSV} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700 border-t border-gray-50">
+                  <button onClick={downloadExcel} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700 border-t border-gray-50">
                     <Table size={16} className="text-green-500" />
-                    <span>Export CSV</span>
+                    <span>Export Excel</span>
                   </button>
                 </div>
               )}
@@ -346,88 +424,149 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
+
+
         {/* Left Col: Stats & Chart */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Quick Stats Grid - Updated to 6 Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Quick Stats Grid - Modern Minimalistic */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* 1. Total Km */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center space-x-2 text-saffron-600 mb-2">
-                <Activity size={18} className="shrink-0" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Total Km</span>
+            <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                <Footprints size={48} className="text-saffron-600" />
               </div>
-              {isLoading ? <SkeletonLoader /> : <p className="text-2xl font-bold text-gray-800">{data.stats.totalKm}</p>}
+              <div className="flex flex-col h-full justify-between relative z-10">
+                <div className="flex items-center space-x-2 text-saffron-600 mb-3">
+                  <div className="p-1.5 bg-saffron-50 rounded-lg">
+                    <Footprints size={16} className="shrink-0" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-saffron-600 transition-colors">Total Km</span>
+                </div>
+                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-bold text-gray-900 tracking-tight">{data.stats.totalKm}</p>}
+              </div>
             </div>
 
             {/* 2. Total Vihars */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center space-x-2 text-blue-600 mb-2">
-                <MapPin size={18} className="shrink-0" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Vihars</span>
+            <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                <MapPin size={48} className="text-blue-600" />
               </div>
-              {isLoading ? <SkeletonLoader /> : <p className="text-2xl font-bold text-gray-800">{data.stats.totalVihars}</p>}
+              <div className="flex flex-col h-full justify-between relative z-10">
+                <div className="flex items-center space-x-2 text-blue-600 mb-3">
+                  <div className="p-1.5 bg-blue-50 rounded-lg">
+                    <MapPin size={16} className="shrink-0" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-blue-600 transition-colors">Vihars</span>
+                </div>
+                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-bold text-gray-900 tracking-tight">{data.stats.totalVihars}</p>}
+              </div>
             </div>
 
             {/* 3. Sadhubhagwant */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center space-x-2 text-red-600 mb-2">
-                <Users size={18} className="shrink-0" />
-                <span className="text-[10px] font-bold uppercase tracking-wider truncate" title="SADHUBHAGWANT">Sadhubhagwant</span>
+            <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                <Users size={48} className="text-red-600" />
               </div>
-              {isLoading ? <SkeletonLoader /> : <p className="text-2xl font-bold text-gray-800">{data.stats.totalSadhu}</p>}
+              <div className="flex flex-col h-full justify-between relative z-10">
+                <div className="flex items-center space-x-2 text-red-600 mb-3">
+                  <div className="p-1.5 bg-red-50 rounded-lg">
+                    <Users size={16} className="shrink-0" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-red-600 transition-colors truncate" title="SADHUBHAGWANT">Sadhu</span>
+                </div>
+                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-bold text-gray-900 tracking-tight">{data.stats.totalSadhu}</p>}
+              </div>
             </div>
 
             {/* 4. Sadhvijibhagwant */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center space-x-2 text-pink-600 mb-2">
-                <Users size={18} className="shrink-0" />
-                <span className="text-[10px] font-bold uppercase tracking-wider truncate" title="SADHVIJIBHAGWANT">Sadhvijibhagwant</span>
+            <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                <Users size={48} className="text-pink-600" />
               </div>
-              {isLoading ? <SkeletonLoader /> : <p className="text-2xl font-bold text-gray-800">{data.stats.totalSadhvi}</p>}
-            </div>
-
-            {/* 5. VSynergy */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 col-span-1 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center space-x-2 text-purple-600 mb-2">
-                  <Heart size={18} className="shrink-0" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">VSynergy</span>
-                </div>
-                {isLoading ? <SkeletonLoader width="w-24" /> : (
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {data.stats.vSynergy !== "N/A" && data.stats.vSynergy ? (
-                      data.stats.vSynergy.split(',').slice(0, 2).map((name: string, i: number) => (
-                        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700 capitalize border border-purple-200">
-                          {name.trim().split(' ')[0]}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-gray-400 font-medium">-</span>
-                    )}
+              <div className="flex flex-col h-full justify-between relative z-10">
+                <div className="flex items-center space-x-2 text-pink-600 mb-3">
+                  <div className="p-1.5 bg-pink-50 rounded-lg">
+                    <Users size={16} className="shrink-0" />
                   </div>
-                )}
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-pink-600 transition-colors truncate" title="SADHVIJIBHAGWANT">Sadhvi</span>
+                </div>
+                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-bold text-gray-900 tracking-tight">{data.stats.totalSadhvi}</p>}
               </div>
-              <p className="text-[10px] text-gray-400 mt-2">Top Partner</p>
             </div>
 
-            {/* 6. vRank */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative group">
-              <div className="flex items-center space-x-2 text-orange-500 mb-2">
-                <Medal size={18} className="shrink-0" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">vRank</span>
-              </div>
-              {isLoading ? <SkeletonLoader width="w-12" /> : (
-                <div>
-                  <p className="text-2xl font-bold text-gray-800">#{data.stats.vRank}</p>
-                  <p className="text-[10px] text-gray-400">Org Leaderboard</p>
+            {/* 5. Rank (Sevaks Only) */}
+            {currentUser.role !== UserRole.ORG_ADMIN && (
+              <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                  <Medal size={48} className="text-yellow-600" />
                 </div>
-              )}
-              {/* Info Tooltip */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-800 text-white text-[10px] p-2 rounded hidden group-hover:block z-50 text-center shadow-lg">
-                Rank based on total Vihars. Ties broken by Total Km.
+                <div className="flex flex-col h-full justify-between relative z-10">
+                  <div className="flex items-center space-x-2 text-yellow-600 mb-3">
+                    <div className="p-1.5 bg-yellow-50 rounded-lg">
+                      <Medal size={16} className="shrink-0" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-yellow-600 transition-colors">Rank</span>
+                  </div>
+                  {isLoading ? <SkeletonLoader /> : (
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-bold text-gray-900 tracking-tight">#{data.stats.vRank}</span>
+                      <span className="text-xs text-gray-400 font-medium">Global</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* 6. Synergy (Sevaks Only) */}
+            {currentUser.role !== UserRole.ORG_ADMIN && (
+              <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                  <Handshake size={48} className="text-saffron-600" />
+                </div>
+                <div className="flex flex-col h-full justify-between relative z-10">
+                  <div className="flex items-center space-x-2 text-saffron-600 mb-3">
+                    <div className="p-1.5 bg-saffron-50 rounded-lg">
+                      <Handshake size={16} className="shrink-0" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-saffron-600 transition-colors">Synergy</span>
+                  </div>
+                  {isLoading ? <SkeletonLoader /> : (
+                    <div className="flex flex-wrap gap-1">
+                      {data.stats.vSynergy && data.stats.vSynergy !== "N/A" ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-saffron-50 text-saffron-600 border border-saffron-100">
+                          {data.stats.vSynergy.split(',')[0]}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-400 italic">Find a partner</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Leaderboards - ADMIN ONLY */}
+          {currentUser.role === UserRole.ORG_ADMIN && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <LeaderboardCard
+                title="Top 10 Male Sevaks"
+                icon={<Trophy size={20} />}
+                items={data.leaderboard?.male || []}
+                colorClass="text-blue-600"
+                bgClass="bg-blue-50"
+                loading={isLoading}
+              />
+              <LeaderboardCard
+                title="Top 10 Female Sevaks"
+                icon={<Trophy size={20} />}
+                items={data.leaderboard?.female || []}
+                colorClass="text-pink-600"
+                bgClass="bg-pink-50"
+                loading={isLoading}
+              />
+            </div>
+          )}
 
           {/* Chart */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -468,15 +607,18 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
               userName={currentUser.full_name}
               orgName={orgDetails?.name || 'vSeva'}
               loading={isLoading}
+              isAdmin={currentUser.role === UserRole.ORG_ADMIN}
             />
             <p className="text-xs text-gray-400 mt-4 text-center">
               Share this card on social media to inspire others.
             </p>
           </div>
-        </div>
 
+        </div>
       </div>
+
     </div>
+
   );
 };
 
