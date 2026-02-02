@@ -31,6 +31,7 @@ const App: React.FC = () => {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [orgName, setOrgName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
   // Show landing page only if NOT in standalone mode (PWA)
@@ -49,6 +50,8 @@ const App: React.FC = () => {
           const profile = await dataService.getProfile(session.user.id);
           if (profile) {
             setUser(profile);
+            const org = await dataService.getOrganization(profile.organization_id);
+            if (org) setOrgName(org.name);
             // Redirect based on role if at root
             setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
           }
@@ -161,8 +164,8 @@ const App: React.FC = () => {
               <p className="font-medium text-lg">{user.username}</p>
             </div>
             <div>
-              <p className="text-gray-500 mb-1">Organization ID</p>
-              <p className="font-medium text-lg font-mono bg-gray-50 p-2 rounded inline-block">{user.organization_id}</p>
+              <p className="text-gray-500 mb-1">Organization</p>
+              <p className="font-medium text-lg">{orgName || user.organization_id}</p>
             </div>
             <div>
               <p className="text-gray-500 mb-1">Status</p>
@@ -195,6 +198,10 @@ const App: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {currentPage === 'my-vihars' && (
+        <ViewEntries currentUser={user} />
       )}
     </Layout>
   );

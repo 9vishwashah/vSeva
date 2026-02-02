@@ -239,7 +239,8 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                     <div className="p-6">
                         <div className="space-y-4">
                             {/* Headers */}
-                            <div className="grid grid-cols-12 gap-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">
+                            {/* Headers - Hidden on Mobile */}
+                            <div className="hidden md:grid grid-cols-12 gap-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">
                                 <div className="col-span-5 md:col-span-4">From Area</div>
                                 <div className="col-span-1 hidden md:block text-center"></div>
                                 <div className="col-span-5 md:col-span-4">To Area</div>
@@ -248,43 +249,51 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                             </div>
 
                             {tempRoutes.map((route, index) => (
-                                <div key={route.id} className="grid grid-cols-12 gap-2 md:gap-4 items-center bg-gray-50 p-2 rounded-xl group hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
+                                <div key={route.id} className="flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 items-stretch md:items-center bg-gray-50 p-4 md:p-2 rounded-xl group hover:bg-white hover:shadow-md transition-all border border-gray-100 md:border-transparent hover:border-gray-100 relative">
+
+                                    {/* Mobile helper label */}
+                                    <div className="md:hidden absolute top-2 right-2 text-xs text-gray-300 font-mono">#{index + 1}</div>
+
                                     {/* From */}
-                                    <div className="col-span-5 md:col-span-4 relative">
-                                        <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Start Location"
-                                            list="area-suggestions"
-                                            className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
-                                            value={route.from_name}
-                                            onChange={e => updateRow(route.id, 'from_name', e.target.value)}
-                                            autoFocus={index === 0}
-                                        />
-                                        {route.from_name && <div className="text-[10px] text-gray-400 mt-1 md:hidden">From</div>}
+                                    <div className="w-full md:col-span-4 relative">
+                                        <label className="text-xs font-bold text-gray-400 mb-1 block md:hidden">From</label>
+                                        <div className="relative">
+                                            <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Start Location"
+                                                list="area-suggestions"
+                                                className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
+                                                value={route.from_name}
+                                                onChange={e => updateRow(route.id, 'from_name', e.target.value)}
+                                            />
+                                        </div>
                                     </div>
 
                                     {/* Arrow (Desktop) */}
-                                    <div className="col-span-1 hidden md:flex justify-center text-gray-400">
+                                    <div className="hidden md:flex col-span-1 justify-center text-gray-400">
                                         <ArrowRight size={16} />
                                     </div>
 
                                     {/* To */}
-                                    <div className="col-span-5 md:col-span-4 relative">
-                                        <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="End Location"
-                                            list="area-suggestions"
-                                            className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
-                                            value={route.to_name}
-                                            onChange={e => updateRow(route.id, 'to_name', e.target.value)}
-                                        />
-                                        {route.to_name && <div className="text-[10px] text-gray-400 mt-1 md:hidden">To</div>}
+                                    <div className="w-full md:col-span-4 relative">
+                                        <label className="text-xs font-bold text-gray-400 mb-1 block md:hidden">To</label>
+                                        <div className="relative">
+                                            <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="End Location"
+                                                list="area-suggestions"
+                                                className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
+                                                value={route.to_name}
+                                                onChange={e => updateRow(route.id, 'to_name', e.target.value)}
+                                            />
+                                        </div>
                                     </div>
 
                                     {/* Km */}
-                                    <div className="col-span-2">
+                                    <div className="w-full md:col-span-2">
+                                        <label className="text-xs font-bold text-gray-400 mb-1 block md:hidden">Distance (Km)</label>
                                         <input
                                             type="number"
                                             step="0.1"
@@ -296,12 +305,13 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                     </div>
 
                                     {/* Delete */}
-                                    <div className="col-span-1 flex justify-center">
+                                    <div className="flex md:col-span-1 justify-end md:justify-center mt-2 md:mt-0">
                                         <button
                                             onClick={() => removeRow(route.id)}
-                                            className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50"
+                                            className="text-red-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 flex items-center gap-2"
                                             tabIndex={-1}
                                         >
+                                            <span className="md:hidden text-xs font-bold uppercase">Remove</span>
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
@@ -347,7 +357,83 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left">
+                        {/* Mobile Card List */}
+                        <div className="md:hidden space-y-3 p-4">
+                            {filteredRoutes.length > 0 ? filteredRoutes.map(route => (
+                                <div key={route.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col gap-3 relative">
+                                    {editingId === route.id ? (
+                                        // Mobile Edit Mode
+                                        <div className="flex flex-col gap-3">
+                                            <div>
+                                                <label className="text-[10px] uppercase font-bold text-gray-400">From</label>
+                                                <input
+                                                    className="w-full p-2 border rounded-lg text-sm bg-white"
+                                                    value={editValues.from_name}
+                                                    onChange={e => setEditValues({ ...editValues, from_name: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] uppercase font-bold text-gray-400">To</label>
+                                                <input
+                                                    className="w-full p-2 border rounded-lg text-sm bg-white"
+                                                    value={editValues.to_name}
+                                                    onChange={e => setEditValues({ ...editValues, to_name: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] uppercase font-bold text-gray-400">KM</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.1"
+                                                    className="w-full p-2 border rounded-lg text-sm bg-white"
+                                                    value={editValues.distance_km}
+                                                    onChange={e => setEditValues({ ...editValues, distance_km: parseFloat(e.target.value) })}
+                                                />
+                                            </div>
+                                            <div className="flex justify-end gap-2 mt-2">
+                                                <button onClick={cancelEditing} className="p-2 border rounded-lg text-sm">Cancel</button>
+                                                <button onClick={saveEdit} className="p-2 bg-saffron-600 text-white rounded-lg text-sm font-bold">Save</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        // Mobile View Mode
+                                        <>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-gray-800 font-medium">
+                                                    <MapPin size={16} className="text-saffron-500" />
+                                                    <span>{route.from_name}</span>
+                                                </div>
+                                                <ArrowRight size={14} className="text-gray-300" />
+                                                <div className="flex items-center gap-2 text-gray-800 font-medium">
+                                                    <span>{route.to_name}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between pt-2 border-t border-gray-200/50">
+                                                <span className="bg-saffron-50 text-saffron-700 px-3 py-1 rounded-full text-xs font-bold">
+                                                    {route.distance_km} km
+                                                </span>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => startEditing(route)} className="p-2 text-gray-400 hover:text-saffron-600">
+                                                        <Pencil size={18} />
+                                                    </button>
+                                                    <button onClick={() => handleDelete(route.id)} className="p-2 text-gray-400 hover:text-red-500">
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )) : (
+                                <div className="text-center py-8 text-gray-400">
+                                    No routes found.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Desktop Table View */}
+                        <table className="hidden md:table w-full text-left">
                             <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-bold tracking-wider">
                                 <tr>
                                     <th className="p-4">From</th>

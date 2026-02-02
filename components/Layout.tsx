@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map } from 'lucide-react';
+import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints } from 'lucide-react';
 
 import NotificationBell from './NotificationBell';
 import { supabase } from '../services/supabase';
@@ -20,6 +20,7 @@ const Layout: React.FC<LayoutProps> = ({
   children, role, userInitials, onLogout, currentPage, setCurrentPage
 }) => {
   const [currentUserId, setCurrentUserId] = React.useState<string | undefined>(undefined);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = React.useState(false);
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -69,6 +70,7 @@ const Layout: React.FC<LayoutProps> = ({
             <>
               <NavItem page="profile" icon={Home} label="My Profile" />
               <NavItem page="analytics" icon={BarChart2} label="Analytics" />
+              <NavItem page="my-vihars" icon={Footprints} label="My Vihars" />
             </>
           )}
         </nav>
@@ -102,11 +104,35 @@ const Layout: React.FC<LayoutProps> = ({
           <img src={vSevaLogo} alt="vSeva" className="h-8 w-8 object-contain" />
           <h1 className="text-xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative">
           <NotificationBell userId={currentUserId} />
-          <div className="w-8 h-8 rounded-full bg-saffron-100 text-saffron-600 flex items-center justify-center font-bold text-sm">
+
+          <button
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className="w-8 h-8 rounded-full bg-saffron-100 text-saffron-600 flex items-center justify-center font-bold text-sm border border-saffron-200"
+          >
             {userInitials}
-          </div>
+          </button>
+
+          {/* Profile Dropdown */}
+          {isProfileMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setIsProfileMenuOpen(false)}></div>
+              <div className="absolute right-0 top-12 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                <div className="p-3 border-b border-gray-50 bg-gray-50/50">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Account</p>
+                  <p className="text-sm font-medium text-gray-700 capitalize truncate">{role.replace('_', ' ').toLowerCase()}</p>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-500 flex items-center gap-2 text-sm font-medium transition-colors"
+                >
+                  <LogOut size={16} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -127,13 +153,13 @@ const Layout: React.FC<LayoutProps> = ({
               </div>
               <span className="text-[10px] mt-1 font-semibold text-saffron-600">Add</span>
             </button>
+            <button onClick={() => setCurrentPage('manage-routes')} className={`flex flex-col items-center ${currentPage === 'manage-routes' ? 'text-saffron-600' : 'text-gray-400'}`}>
+              <Map size={24} />
+              <span className="text-[10px] mt-1">Routes</span>
+            </button>
             <button onClick={() => setCurrentPage('add-sevak')} className={`flex flex-col items-center ${currentPage === 'add-sevak' ? 'text-saffron-600' : 'text-gray-400'}`}>
               <UserPlus size={24} />
               <span className="text-[10px] mt-1">Sevaks</span>
-            </button>
-            <button onClick={onLogout} className="flex flex-col items-center text-gray-400 hover:text-red-500">
-              <LogOut size={24} />
-              <span className="text-[10px] mt-1">Exit</span>
             </button>
           </>
         )}
@@ -147,9 +173,9 @@ const Layout: React.FC<LayoutProps> = ({
               <BarChart2 size={24} />
               <span className="text-[10px] mt-1">Stats</span>
             </button>
-            <button onClick={onLogout} className="flex flex-col items-center text-gray-400 hover:text-red-500">
-              <LogOut size={24} />
-              <span className="text-[10px] mt-1">Exit</span>
+            <button onClick={() => setCurrentPage('my-vihars')} className={`flex flex-col items-center ${currentPage === 'my-vihars' ? 'text-saffron-600' : 'text-gray-400'}`}>
+              <Footprints size={24} />
+              <span className="text-[10px] mt-1">My Vihars</span>
             </button>
           </>
         )}

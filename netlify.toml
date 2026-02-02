@@ -14,7 +14,4 @@
   targetPort = 3000
   port = 8888
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+

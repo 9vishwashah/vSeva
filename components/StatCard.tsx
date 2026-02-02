@@ -186,7 +186,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
                     <span className="text-[10px] font-bold uppercase tracking-widest text-saffron-600">VSynergy</span>
                   </div>
                   {loading ? <SkeletonValue width="w-24" /> : (
-                    <div className="text-sm font-medium text-gray-800 truncate max-w-[140px]">
+                    <div className="text-sm font-medium text-gray-800">
                       {stats.vSynergy && stats.vSynergy !== "N/A" ? (
                         <span className="flex items-center gap-1">
                           <span>Top:</span>
@@ -219,16 +219,14 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
             {/* 4. Inspirational Footer */}
             <div className={`mt-4 text-center pb-2 ${isAdmin ? 'mt-auto' : ''}`}>
               <div className="w-8 h-[1px] bg-gray-200 mx-auto mb-3"></div>
-              <p className="font-serif italic text-lg text-gray-600 leading-relaxed drop-shadow-sm">
-                "Seva is the highest form of devotion."
-              </p>
+
               <div className="flex flex-col items-center justify-center gap-1 mt-3">
                 <div className="flex items-center gap-2">
                   <Sparkles size={12} className="text-saffron-400" />
-                  <span className="text-[10px] uppercase tracking-[0.3em] font-medium text-gray-400">vSeva App</span>
+                  <span className="text-xs uppercase tracking-[0.3em] font-bold text-gray-600">vSeva App</span>
                   <Sparkles size={12} className="text-saffron-400" />
                 </div>
-                <p className="text-[9px] font-light text-gray-400 mt-1">vSeva by Vishwa Alpesh Shah</p>
+                <p className="text-[10px] font-medium text-gray-500 mt-1">vSeva by Vishwa Alpesh Shah</p>
               </div>
             </div>
           </div>

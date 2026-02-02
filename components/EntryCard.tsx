@@ -1,15 +1,16 @@
 import React, { useRef, useState } from 'react';
 import { ViharEntry } from '../types';
-import { MapPin, Navigation, MessageCircle, Download } from 'lucide-react';
+import { MapPin, Navigation, MessageCircle, Download, Trash2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { useToast } from '../context/ToastContext';
 
 interface EntryCardProps {
     entry: ViharEntry;
     getSevakName: (username: string) => string;
+    onDelete?: (id: number) => void;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName }) => {
+const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName, onDelete }) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const [isSharing, setIsSharing] = useState(false);
     const { showToast } = useToast();
@@ -157,6 +158,15 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName }) => {
                     )}
                     <span>Share</span>
                 </button>
+                {onDelete && (
+                    <button
+                        onClick={() => onDelete(entry.id)}
+                        className="flex items-center gap-1.5 bg-red-50 text-red-500 px-4 py-2 rounded-full text-xs font-bold hover:bg-red-100 transition-colors ml-2"
+                    >
+                        <Trash2 size={16} />
+                        <span className="md:hidden">Delete</span>
+                    </button>
+                )}
             </div>
         </div>
     );

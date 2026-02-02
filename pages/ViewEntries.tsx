@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, ViharEntry } from '../types';
 import { dataService } from '../services/dataService';
-import { Search, MessageCircle, MapPin, Loader2, Calendar, User, Clock, Navigation } from 'lucide-react';
-import { Organization } from '../types';
-import EntriesSkeleton from '../components/EntriesSkeleton';
+import { Search, MessageCircle, MapPin, Loader2, Calendar, User, Clock, Navigation, Trash2 } from 'lucide-react';
+import { Organization, UserRole } from '../types';
 import EntryCard from '../components/EntryCard';
+import EntriesSkeleton from '../components/EntriesSkeleton';
+import { useToast } from '../context/ToastContext';
 
 
 interface ViewEntriesProps {
@@ -12,6 +13,7 @@ interface ViewEntriesProps {
 }
 
 const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser }) => {
+  const { showToast } = useToast();
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
   const [org, setOrg] = useState<Organization | null>(null);
@@ -29,7 +31,11 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser }) => {
           dataService.getOrganization(currentUser.organization_id),
         ]);
 
-        setEntries(data || []);
+        let filteredData = data || [];
+        if (currentUser.role === UserRole.SEVAK) {
+          filteredData = filteredData.filter(e => (e.sevaks || []).includes(currentUser.username));
+        }
+        setEntries(filteredData);
 
         const map: Record<string, string> = {};
         (sevaks || []).forEach(s => (map[s.username] = s.full_name));
@@ -79,22 +85,35 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser }) => {
     return fullName.split('@')[0]; // Simple clean up if it's an email
   };
 
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this entry?")) return;
+    try {
+      await dataService.deleteViharEntry(id);
+      showToast("Entry deleted successfully", "success");
+      setEntries(prev => prev.filter(e => e.id !== id));
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to delete entry", "error");
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-20 md:pb-0">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Calendar className="text-saffron-600" size={24} /> Vihar Entries
+            <Calendar className="text-saffron-600" size={24} />
+            {currentUser.role === UserRole.SEVAK ? 'My Entries' : 'Vihar Entries'}
           </h1>
           <p className="text-gray-500 text-xs md:text-sm mt-1 flex items-center gap-2">
-            Manage and view all recorded journeys for
-            {org ? (
+            {currentUser.role === UserRole.SEVAK ? 'Your personal Vihar journey log' : 'Manage and view all recorded journeys for'}
+            {currentUser.role !== UserRole.SEVAK && (org ? (
               <span className="font-semibold text-saffron-600">
                 {org.name}{org.city ? `, ${org.city}` : ''}
               </span>
             ) : (
               <span className="inline-block h-4 w-40 rounded bg-gray-200 animate-pulse" />
-            )}
+            ))}
           </p>
 
         </div>
@@ -217,6 +236,15 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser }) => {
                         >
                           <MessageCircle size={18} />
                         </a>
+                        {currentUser.role === UserRole.ORG_ADMIN && (
+                          <button
+                            onClick={() => handleDelete(entry.id)}
+                            className="text-red-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-full inline-block transition-colors ml-1"
+                            title="Delete Entry"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -228,7 +256,12 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser }) => {
           {/* Mobile Card View */}
           <div className="md:hidden grid grid-cols-1 gap-4">
             {filteredEntries.map(entry => (
-              <EntryCard key={entry.id} entry={entry} getSevakName={getSevakName} />
+              <EntryCard
+                key={entry.id}
+                entry={entry}
+                getSevakName={getSevakName}
+                onDelete={currentUser.role === UserRole.ORG_ADMIN ? handleDelete : undefined}
+              />
             ))}
           </div>
 

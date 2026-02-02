@@ -212,7 +212,9 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
       doc.setFontSize(18);
       doc.setTextColor(234, 88, 12); // Saffron
 
-      const title = orgDetails?.name ? `${orgDetails.name} entries report` : "vSeva entries report";
+      const orgName = orgDetails?.name || 'Organization';
+      const orgCity = orgDetails?.city ? `, ${orgDetails.city}` : '';
+      const title = `vSeva - ${orgName}${orgCity} Reports`;
       doc.text(title, 35, 18);
 
       doc.setFontSize(10);

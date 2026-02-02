@@ -303,6 +303,16 @@ export const dataService = {
     return data as ViharEntry[];
   },
 
+  async deleteViharEntry(entryId: number) {
+    const { error } = await supabase
+      .from('vihar_entries')
+      .delete()
+      .eq('id', entryId);
+
+    if (error) throw error;
+    return true;
+  },
+
   // --- Analytics ---
 
   calculateStats: (entries: ViharEntry[], currentUsername?: string, nameMap?: Record<string, string>): StatSummary => {
