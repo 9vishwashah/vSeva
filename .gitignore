@@ -25,3 +25,29 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# Node
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+
+# Env
+.env
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+
+# Java / JDK
+jdk-link/
+
+# Netlify
+.netlify/
+
+# OS
+.DS_Store
+Thumbs.db
