@@ -18,6 +18,7 @@ create or replace function public.create_upcoming_alert(
 returns json
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   new_vihar_id uuid;

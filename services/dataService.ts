@@ -152,8 +152,15 @@ export const dataService = {
     });
 
     if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || "Failed to delete user");
+      const text = await response.text();
+      let errorMsg = "Failed to delete user";
+      try {
+        const err = JSON.parse(text);
+        errorMsg = err.error || errorMsg;
+      } catch {
+        errorMsg = text || errorMsg;
+      }
+      throw new Error(errorMsg);
     }
 
     // Optionally delete from public profiles if cascade isn't set up
@@ -518,7 +525,12 @@ export const dataService = {
       .slice(0, limit)
       .map((s, i) => ({ ...s, rank: i + 1, km: parseFloat(s.km.toFixed(2)) }));
 
-    return { male: maleSevaks, female: femaleSevaks };
+    const overall = allStats
+      .sort(sorter)
+      .slice(0, limit)
+      .map((s, i) => ({ ...s, rank: i + 1, km: parseFloat(s.km.toFixed(2)) }));
+
+    return { male: maleSevaks, female: femaleSevaks, overall: overall };
   }
 
 };

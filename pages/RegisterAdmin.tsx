@@ -15,7 +15,6 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
         city: '',
         fullName: '',
         email: '',
-        password: '',
         mobile: ''
     });
     const [loading, setLoading] = useState(false);
@@ -40,7 +39,7 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                     full_name: formData.fullName,
                     mobile: formData.mobile,
                     email: formData.email,
-                    password: formData.password // Storing temporarily for approval process
+                    password: formData.mobile // Setting Mobile Number as Password per requirement
                 });
 
             if (error) throw error;
@@ -182,20 +181,9 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                         />
                     </div>
 
-                    <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                        <input
-                            name="password"
-                            type="password"
-                            required
-                            minLength={6}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="••••••••"
-                            value={formData.password}
-                            onChange={handleChange}
-                        />
-                    </div>
                 </div>
+
+
 
                 <button
                     type="submit"
@@ -204,8 +192,8 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                 >
                     {loading ? <Loader2 className="animate-spin" size={20} /> : "Create Organization"}
                 </button>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 };
 
