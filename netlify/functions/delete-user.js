@@ -1,43 +1,52 @@
 import { createClient } from '@supabase/supabase-js';
 
-export default async function handler(request) {
+export async function handler(event, context) {
   try {
     // 1. Allow only POST
-    if (request.method !== 'POST') {
-      return new Response(
-        JSON.stringify({ error: 'Method Not Allowed' }),
-        { status: 405 }
-      );
+    if (event.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({ error: 'Method Not Allowed' }),
+      };
     }
 
     // 2. Require Authorization header
-    const authHeader = request.headers.get('authorization');
+    const authHeader = event.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Missing Authorization header' }),
-        { status: 401 }
-      );
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Missing Authorization header' }),
+      };
     }
 
     const jwt = authHeader.replace('Bearer ', '');
 
     // 3. Supabase admin client
-    const supabaseAdmin = createClient(
-      process.env.VITE_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    // Use SUPABASE_URL if available, fallback to VITE_SUPABASE_URL if needed, but create-user uses SUPABASE_URL
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    // 4. Verify admin
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase environment variables');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Server configuration error' }),
+      };
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // 4. Verify admin (using the JWT from the request to check caller identity)
     const {
       data: { user },
       error: authError,
     } = await supabaseAdmin.auth.getUser(jwt);
 
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid or expired token' }),
-        { status: 401 }
-      );
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid or expired token' }),
+      };
     }
 
     const { data: profile } = await supabaseAdmin
@@ -46,45 +55,58 @@ export default async function handler(request) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
-      return new Response(
-        JSON.stringify({ error: 'Admin access required' }),
-        { status: 403 }
-      );
+    if (!profile || profile.role !== 'admin') { // Assuming 'admin' is the role string, based on previous code. Check if it's 'org_admin' or 'admin'. Previous code used 'admin'.
+      // Double check role. In dataService.ts, Role is UserRole.ORG_ADMIN usually.
+      // Let's check existing delete-user.js line 49: profile.role !== 'admin'
+      // OK, keeping 'admin'.
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Admin access required' }),
+      };
     }
 
-    // 5. Parse request body (SAFE)
-    const { user_id } = await request.json();
+    // 5. Parse request body
+    let body;
+    try {
+      body = JSON.parse(event.body);
+    } catch (e) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Invalid JSON body' }),
+      };
+    }
+
+    const { user_id } = body;
 
     if (!user_id) {
-      return new Response(
-        JSON.stringify({ error: 'Missing user_id' }),
-        { status: 400 }
-      );
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Missing user_id' }),
+      };
     }
 
     // 6. Delete user from Supabase Auth
-    const { error: deleteError } =
-      await supabaseAdmin.auth.admin.deleteUser(user_id);
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
 
     if (deleteError) {
-      return new Response(
-        JSON.stringify({ error: deleteError.message }),
-        { status: 400 }
-      );
+      console.error('Supabase deleteUser error:', deleteError);
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: deleteError.message }),
+      };
     }
 
     // 7. Success
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200 }
-    );
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true }),
+    };
 
   } catch (err) {
     console.error('delete-user error:', err);
-    return new Response(
-      JSON.stringify({ error: 'Internal Server Error' }),
-      { status: 500 }
-    );
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Internal Server Error' }),
+    };
   }
 }
