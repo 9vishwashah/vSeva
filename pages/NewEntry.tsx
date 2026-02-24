@@ -9,9 +9,11 @@ import { Organization } from '../types';
 interface NewEntryProps {
   currentUser: UserProfile;
   onSubmit: () => void;
+  entry?: ViharEntry; // If provided, edit mode
 }
 
-const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
+const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, entry: editEntry }) => {
+  const isEditing = !!editEntry;
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
 
   const { showToast } = useToast();
@@ -60,6 +62,27 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
 
     fetchData();
   }, [currentUser.organization_id]);
+
+  // Pre-fill form data when editing
+  useEffect(() => {
+    if (editEntry) {
+      setFormData({
+        vihar_date: editEntry.vihar_date,
+        vihar_type: editEntry.vihar_type,
+        group_sadhu: editEntry.group_sadhu,
+        group_sadhvi: editEntry.group_sadhvi,
+        no_sadhubhagwan: editEntry.no_sadhubhagwan,
+        no_sadhvijibhagwan: editEntry.no_sadhvijibhagwan,
+        vihar_from: editEntry.vihar_from,
+        vihar_to: editEntry.vihar_to,
+        sevaks: editEntry.sevaks || [],
+        wheelchair: editEntry.wheelchair,
+        samuday: editEntry.samuday,
+        distance_km: editEntry.distance_km,
+        notes: editEntry.notes,
+      });
+    }
+  }, [editEntry]);
 
 
   // Distance Calculation
@@ -113,19 +136,22 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
 
     setLoading(true);
     try {
-      // Prepare Entry Payload
-      const entry: ViharEntry = {
+      const entryPayload: ViharEntry = {
         ...formData as ViharEntry,
         organization_id: currentUser.organization_id,
         created_by: currentUser.id,
-        // Ensure numbers are numbers
         no_sadhubhagwan: formData.group_sadhu && formData.no_sadhubhagwan ? Number(formData.no_sadhubhagwan) : 0,
         no_sadhvijibhagwan: formData.group_sadhvi && formData.no_sadhvijibhagwan ? Number(formData.no_sadhvijibhagwan) : 0,
       };
 
-      await dataService.createViharEntry(entry);
-      showToast("Vihar Entry Saved Successfully!", 'success');
-      onSubmit(); // Navigate back
+      if (isEditing && editEntry?.id) {
+        await dataService.updateViharEntry(editEntry.id, entryPayload);
+        showToast("Vihar Entry Updated Successfully!", 'success');
+      } else {
+        await dataService.createViharEntry(entryPayload);
+        showToast("Vihar Entry Saved Successfully!", 'success');
+      }
+      onSubmit();
     } catch (err: any) {
       console.error(err);
       showToast(`Error saving entry: ${err.message}`, 'error');
@@ -149,7 +175,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
           <FilePlus size={24} strokeWidth={2.5} />
         </div>
         <div>
-          <h2 className="text-2xl font-serif font-bold text-gray-800">New Vihar Entry</h2>
+          <h2 className="text-2xl font-serif font-bold text-gray-800">{isEditing ? 'Edit Vihar Entry' : 'New Vihar Entry'}</h2>
           {/* <p className="text-sm text-gray-500">Log a Vihar for <span className="font-semibold text-saffron-600">{currentUser.organization_id}</span></p> */}
           <p className="text-sm text-gray-500">
             Log a Vihar for{' '}
@@ -192,8 +218,8 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
                   type="button"
                   onClick={() => setFormData({ ...formData, vihar_type: type as any })}
                   className={`flex-1 py-2.5 rounded-lg text-sm font-semibold capitalize transition-all ${formData.vihar_type === type
-                      ? 'bg-white text-saffron-600 shadow-sm scale-[1.02]'
-                      : 'text-gray-400 hover:text-gray-600'
+                    ? 'bg-white text-saffron-600 shadow-sm scale-[1.02]'
+                    : 'text-gray-400 hover:text-gray-600'
                     }`}
                 >
                   {type}
@@ -211,8 +237,8 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
             <div
               onClick={() => setFormData(prev => ({ ...prev, group_sadhu: !prev.group_sadhu }))}
               className={`cursor-pointer border-2 rounded-xl p-4 transition-all relative ${formData.group_sadhu
-                  ? 'border-saffron-500 bg-saffron-50/50'
-                  : 'border-gray-100 hover:border-saffron-200 bg-white'
+                ? 'border-saffron-500 bg-saffron-50/50'
+                : 'border-gray-100 hover:border-saffron-200 bg-white'
                 }`}
             >
               <div className="flex flex-col items-center gap-2">
@@ -239,8 +265,8 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
             <div
               onClick={() => setFormData(prev => ({ ...prev, group_sadhvi: !prev.group_sadhvi }))}
               className={`cursor-pointer border-2 rounded-xl p-4 transition-all relative ${formData.group_sadhvi
-                  ? 'border-pink-500 bg-pink-50/50'
-                  : 'border-gray-100 hover:border-pink-200 bg-white'
+                ? 'border-pink-500 bg-pink-50/50'
+                : 'border-gray-100 hover:border-pink-200 bg-white'
                 }`}
             >
               <div className="flex flex-col items-center gap-2">
@@ -421,7 +447,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit }) => {
           className="w-full bg-gradient-to-r from-saffron-600 to-saffron-700 hover:from-saffron-700 hover:to-saffron-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl flex justify-center items-center space-x-2 text-lg transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-4"
         >
           {loading ? <Loader2 className="animate-spin" /> : <Save size={24} />}
-          <span>{loading ? "Saving Entry..." : "Submit Entry"}</span>
+          <span>{loading ? (isEditing ? 'Updating...' : 'Saving Entry...') : (isEditing ? 'Update Entry' : 'Submit Entry')}</span>
         </button>
 
       </form>

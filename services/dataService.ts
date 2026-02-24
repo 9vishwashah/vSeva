@@ -320,6 +320,18 @@ export const dataService = {
     return true;
   },
 
+  async updateViharEntry(entryId: number, updates: Partial<ViharEntry>) {
+    const { data, error } = await supabase
+      .from('vihar_entries')
+      .update(updates)
+      .eq('id', entryId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
   // --- Analytics ---
 
   calculateStats: (entries: ViharEntry[], currentUsername?: string, nameMap?: Record<string, string>): StatSummary => {

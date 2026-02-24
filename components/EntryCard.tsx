@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { ViharEntry } from '../types';
-import { MapPin, Navigation, MessageCircle, Download, Trash2 } from 'lucide-react';
+import { MapPin, Navigation, MessageCircle, Download, Trash2, Pencil } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { useToast } from '../context/ToastContext';
 
@@ -8,9 +8,10 @@ interface EntryCardProps {
     entry: ViharEntry;
     getSevakName: (username: string) => string;
     onDelete?: (id: number) => void;
+    onEdit?: (entry: ViharEntry) => void;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName, onDelete }) => {
+const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName, onDelete, onEdit }) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const [isSharing, setIsSharing] = useState(false);
     const { showToast } = useToast();
@@ -158,6 +159,15 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName, onDelete }) 
                     )}
                     <span>Share</span>
                 </button>
+                {onEdit && (
+                    <button
+                        onClick={() => onEdit(entry)}
+                        className="flex items-center gap-1.5 bg-blue-50 text-blue-500 px-4 py-2 rounded-full text-xs font-bold hover:bg-blue-100 transition-colors ml-2"
+                    >
+                        <Pencil size={16} />
+                        <span className="md:hidden">Edit</span>
+                    </button>
+                )}
                 {onDelete && (
                     <button
                         onClick={() => onDelete(entry.id)}

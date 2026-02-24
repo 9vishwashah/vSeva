@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, ViharEntry } from '../types';
 import { dataService } from '../services/dataService';
-import { Search, MessageCircle, MapPin, Loader2, Calendar, User, Clock, Navigation, Trash2 } from 'lucide-react';
+import { Search, MessageCircle, MapPin, Loader2, Calendar, User, Clock, Navigation, Trash2, Pencil } from 'lucide-react';
 import { Organization, UserRole } from '../types';
 import EntryCard from '../components/EntryCard';
 import EntriesSkeleton from '../components/EntriesSkeleton';
@@ -10,9 +10,10 @@ import { useToast } from '../context/ToastContext';
 
 interface ViewEntriesProps {
   currentUser: UserProfile;
+  onEdit?: (entry: ViharEntry) => void;
 }
 
-const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser }) => {
+const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
   const { showToast } = useToast();
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
@@ -236,6 +237,15 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser }) => {
                         >
                           <MessageCircle size={18} />
                         </a>
+                        {currentUser.role === UserRole.ORG_ADMIN && onEdit && (
+                          <button
+                            onClick={() => onEdit(entry)}
+                            className="text-blue-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-full inline-block transition-colors ml-1"
+                            title="Edit Entry"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                        )}
                         {currentUser.role === UserRole.ORG_ADMIN && (
                           <button
                             onClick={() => handleDelete(entry.id)}
@@ -261,6 +271,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser }) => {
                 entry={entry}
                 getSevakName={getSevakName}
                 onDelete={currentUser.role === UserRole.ORG_ADMIN ? handleDelete : undefined}
+                onEdit={currentUser.role === UserRole.ORG_ADMIN && onEdit ? onEdit : undefined}
               />
             ))}
           </div>

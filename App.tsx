@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabase';
-import { UserRole, UserProfile } from './types';
+import { UserRole, UserProfile, ViharEntry } from './types';
 import { dataService } from './services/dataService';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -34,8 +34,14 @@ const App: React.FC = () => {
   const [orgName, setOrgName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
+  const [editingEntry, setEditingEntry] = useState<ViharEntry | null>(null);
   // Show landing page only if NOT in standalone mode (PWA)
   const [showLanding, setShowLanding] = useState(!isStandalone);
+
+  const handleEditEntry = (entry: ViharEntry) => {
+    setEditingEntry(entry);
+    setCurrentPage('new-entry');
+  };
 
   // Check for public routes
   const path = window.location.pathname;
@@ -123,7 +129,14 @@ const App: React.FC = () => {
       )}
 
       {currentPage === 'new-entry' && user.role === UserRole.ORG_ADMIN && (
-        <NewEntry currentUser={user} onSubmit={() => setCurrentPage('dashboard')} />
+        <NewEntry
+          currentUser={user}
+          entry={editingEntry || undefined}
+          onSubmit={() => {
+            setEditingEntry(null);
+            setCurrentPage('dashboard');
+          }}
+        />
       )}
 
       {currentPage === 'manage-routes' && user.role === UserRole.ORG_ADMIN && (
@@ -139,7 +152,7 @@ const App: React.FC = () => {
         <Dashboard currentUser={user} />
       )}
       {currentPage === 'view-entries' && user.role === UserRole.ORG_ADMIN && (
-        <ViewEntries currentUser={user} />
+        <ViewEntries currentUser={user} onEdit={handleEditEntry} />
       )}
 
       {currentPage === 'profile' && (
@@ -201,7 +214,7 @@ const App: React.FC = () => {
       )}
 
       {currentPage === 'my-vihars' && (
-        <ViewEntries currentUser={user} />
+        <ViewEntries currentUser={user} onEdit={user.role === UserRole.ORG_ADMIN ? handleEditEntry : undefined} />
       )}
     </Layout>
   );

@@ -214,16 +214,31 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
       const orgName = orgDetails?.name || 'Organization';
       const orgCity = orgDetails?.city ? `, ${orgDetails.city}` : '';
-      const title = `vSeva - ${orgName}${orgCity} Reports`;
+      const title = `${orgName}${orgCity}`;
       doc.text(title, 35, 18);
 
       doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text("by Vishwa Alpesh Shah", 35, 24);
+      doc.setTextColor(150); // grey
+      doc.text("vSeva by Vishwa Alpesh Shah", 35, 24);
 
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(100);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()} for ${orgDetails?.name || ''}`, 14, 35);
+      const now = new Date();
+      const generatedAt = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+      doc.text(`Generated on: ${generatedAt}`, 14, 35);
+
+      // Helper to draw watermark on a page
+      const drawWatermark = () => {
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
+        const wmSize = 100; // mm
+        const wmX = (pageW - wmSize) / 2;
+        const wmY = (pageH - wmSize) / 2;
+        (doc as any).saveGraphicsState();
+        (doc as any).setGState(new (doc as any).GState({ opacity: 0.12 }));
+        doc.addImage(vSevaLogo, 'PNG', wmX, wmY, wmSize, wmSize);
+        (doc as any).restoreGraphicsState();
+      };
 
       autoTable(doc, {
         startY: 40,
@@ -242,8 +257,14 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
           item.type,
           item.kms
         ]),
-        styles: { fontSize: 7 },
+        styles: {
+          fontSize: 7,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.2,
+        },
         headStyles: { fillColor: [234, 88, 12], textColor: 255 },
+        alternateRowStyles: { fillColor: [255, 250, 245] },
+        didDrawPage: () => drawWatermark(),
       });
 
       doc.save(`vSeva_Report_${new Date().toISOString().split('T')[0]}.pdf`);
