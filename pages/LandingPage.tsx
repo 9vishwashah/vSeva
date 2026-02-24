@@ -5,14 +5,13 @@ import {
     Lock, Activity, FileText, Download, Menu, X, Smartphone, Instagram
 } from 'lucide-react';
 import vSevaLogo from '../assets/vseva-logo.png';
-import { usePWAInstall } from '../hooks/usePWAInstall';
+import { InstallPWA } from '../components/InstallPWA';
 
 interface LandingPageProps {
     onGetStarted: () => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
-    const { install, isInstallable } = usePWAInstall();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -42,7 +41,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     );
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
 
             {/* HEADER */}
             <header
@@ -130,16 +129,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                                 Login to vSeva
                                 <ArrowRight size={20} />
                             </button>
-
-                            {isInstallable && (
-                                <button
-                                    onClick={install}
-                                    className="px-8 py-4 bg-white border border-saffron-200 hover:bg-saffron-50 text-saffron-700 rounded-full font-medium text-lg shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-2 w-full sm:w-auto justify-center"
-                                >
-                                    <Smartphone size={20} />
-                                    Install App
-                                </button>
-                            )}
                         </div>
 
                         {/* Minimal Illustration: Footsteps/Path */}
@@ -375,6 +364,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           animation: fade-in-up 0.8s ease-out forwards;
         }
       `}</style>
+
+            {/* Persistent sticky install banner (Android + iOS) */}
+            <InstallPWA />
         </div>
     );
 };

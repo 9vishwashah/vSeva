@@ -7,16 +7,37 @@ interface BeforeInstallPromptEvent extends Event {
 
 export const usePWAInstall = () => {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-    const [isInstallable, setIsInstallable] = useState(false);
+    const [isAndroidInstallable, setIsAndroidInstallable] = useState(false);
+    const [isAppInstalled, setIsAppInstalled] = useState(false);
+
+    // Detect iOS (iPhone / iPad)
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
+    // Detect if already running as installed PWA (standalone mode)
+    const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true;
 
     useEffect(() => {
+        // Check if already installed as PWA
+        if (isStandalone) {
+            setIsAppInstalled(true);
+            return;
+        }
+
         const handler = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e as BeforeInstallPromptEvent);
-            setIsInstallable(true);
+            setIsAndroidInstallable(true);
         };
 
         window.addEventListener('beforeinstallprompt', handler);
+
+        // Fires when installed via the prompt
+        window.addEventListener('appinstalled', () => {
+            setIsAppInstalled(true);
+            setIsAndroidInstallable(false);
+            setDeferredPrompt(null);
+        });
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handler);
@@ -25,15 +46,18 @@ export const usePWAInstall = () => {
 
     const install = async () => {
         if (!deferredPrompt) return;
-
         deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-
-        if (outcome === 'accepted') {
-            setIsInstallable(false);
-            setDeferredPrompt(null);
-        }
+        await deferredPrompt.userChoice;
+        // Do NOT hide banner on dismiss — user can try again later
     };
 
-    return { install, isInstallable };
+    return {
+        install,
+        isAndroidInstallable,
+        isIOS,
+        isStandalone,
+        isAppInstalled,
+        // Convenience: show banner if there's any install mechanism available and app not installed
+        shouldShowBanner: !isAppInstalled && !isStandalone && (isAndroidInstallable || isIOS),
+    };
 };
