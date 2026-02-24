@@ -22,28 +22,34 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
+        devOptions: {
+          enabled: true, // Enable SW in dev so install prompt fires on localhost
+        },
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
         manifest: {
           name: 'vSeva - Vihar Tracking SaaS',
           short_name: 'vSeva',
           description: 'Vihar Tracking and Management System',
-          theme_color: '#4F46E5',
+          theme_color: '#EA580C',
+          background_color: '#ffffff',
+          display: 'standalone',
+          start_url: '/',
           icons: [
             {
-              src: 'vseva-logo.png',
+              src: '/pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png'
             },
             {
-              src: 'vseva-logo.png',
+              src: '/pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png'
             },
             {
-              src: 'vseva-logo.png',
+              src: '/pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
-              purpose: 'any maskable'
+              purpose: 'maskable'
             }
           ]
         },

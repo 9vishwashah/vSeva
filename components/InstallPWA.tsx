@@ -4,23 +4,54 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 import vSevaLogo from '../assets/vseva-logo.png';
 
 export const InstallPWA: React.FC = () => {
-    const { install, isAndroidInstallable, isIOS, shouldShowBanner } = usePWAInstall();
+    const { install, isAndroidInstallable, isIOS } = usePWAInstall();
     const [showIOSGuide, setShowIOSGuide] = useState(false);
     const [dismissed, setDismissed] = useState(false);
+    const [showDesktopTip, setShowDesktopTip] = useState(false);
 
-    // Don't render at all if already installed as PWA
-    if (!shouldShowBanner || dismissed) return null;
+    // Always show the banner — even if installed (user may want to reinstall / guide others)
+    if (dismissed) return null;
 
     const handleInstallClick = () => {
         if (isAndroidInstallable) {
             install();
         } else if (isIOS) {
             setShowIOSGuide(true);
+        } else {
+            // Desktop: show tip to use browser's address bar install icon
+            setShowDesktopTip(true);
+            setTimeout(() => setShowDesktopTip(false), 4000);
         }
     };
 
     return (
         <>
+            {/* ── Desktop Install Tip Toast ── */}
+            {showDesktopTip && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '80px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 10001,
+                    background: '#1e293b',
+                    color: '#fff',
+                    borderRadius: '12px',
+                    padding: '12px 20px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+                    whiteSpace: 'nowrap',
+                    border: '1px solid #EA580C',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    animation: 'fadeInUp 0.25s ease',
+                }}>
+                    <span style={{ fontSize: '16px' }}>💡</span>
+                    Look for the <strong style={{ color: '#F97316', margin: '0 4px' }}>⊕ install icon</strong> in your browser's address bar
+                </div>
+            )}
             {/* ── Sticky Footer Banner ── */}
             <div
                 style={{
@@ -38,6 +69,8 @@ export const InstallPWA: React.FC = () => {
                     justifyContent: 'space-between',
                     gap: '12px',
                     fontFamily: 'inherit',
+                    // Safe area for iPhone home indicator
+                    paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
                 }}
             >
                 {/* Left: Logo + text */}
@@ -62,6 +95,7 @@ export const InstallPWA: React.FC = () => {
                 {/* Right: Install button + dismiss */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     <button
+                        id="pwa-install-btn"
                         onClick={handleInstallClick}
                         style={{
                             background: 'linear-gradient(135deg, #EA580C, #F97316)',
@@ -89,7 +123,7 @@ export const InstallPWA: React.FC = () => {
                     <button
                         onClick={() => setDismissed(true)}
                         aria-label="Dismiss install banner"
-                        title="Dismiss (will reappear on next visit)"
+                        title="Dismiss"
                         style={{
                             background: 'transparent',
                             border: 'none',
@@ -128,6 +162,8 @@ export const InstallPWA: React.FC = () => {
                             width: '100%',
                             maxWidth: '480px',
                             boxShadow: '0 -8px 32px rgba(0,0,0,0.2)',
+                            // Safe area for iPhone home indicator
+                            paddingBottom: 'max(40px, calc(env(safe-area-inset-bottom) + 20px))',
                         }}
                         onClick={e => e.stopPropagation()}
                     >
@@ -153,14 +189,10 @@ export const InstallPWA: React.FC = () => {
                                 }}>1</div>
                                 <div>
                                     <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: '#1e293b' }}>
-                                        Tap the Share button
+                                        Open in Safari
                                     </p>
                                     <p style={{ margin: 0, fontSize: '12px', color: '#64748b', marginTop: '3px' }}>
-                                        At the bottom of Safari, tap the{' '}
-                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#3b82f6', fontWeight: 600 }}>
-                                            <Share size={13} /> Share
-                                        </span>{' '}
-                                        icon
+                                        Make sure you're using <strong>Safari</strong> — PWA install only works in Safari on iPhone
                                     </p>
                                 </div>
                             </div>
@@ -175,13 +207,14 @@ export const InstallPWA: React.FC = () => {
                                 }}>2</div>
                                 <div>
                                     <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: '#1e293b' }}>
-                                        Tap "Add to Home Screen"
+                                        Tap the Share button
                                     </p>
                                     <p style={{ margin: 0, fontSize: '12px', color: '#64748b', marginTop: '3px' }}>
-                                        Scroll down in the share sheet and tap{' '}
-                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#1e293b', fontWeight: 600 }}>
-                                            <Plus size={13} /> Add to Home Screen
-                                        </span>
+                                        At the bottom of Safari, tap the{' '}
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#3b82f6', fontWeight: 600 }}>
+                                            <Share size={13} /> Share
+                                        </span>{' '}
+                                        icon
                                     </p>
                                 </div>
                             </div>
@@ -196,10 +229,14 @@ export const InstallPWA: React.FC = () => {
                                 }}>3</div>
                                 <div>
                                     <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: '#1e293b' }}>
-                                        Tap "Add"
+                                        Tap "Add to Home Screen"
                                     </p>
                                     <p style={{ margin: 0, fontSize: '12px', color: '#64748b', marginTop: '3px' }}>
-                                        Confirm the name and tap <strong>Add</strong>. vSeva will appear on your Home Screen!
+                                        Scroll down in the share sheet, tap{' '}
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#1e293b', fontWeight: 600 }}>
+                                            <Plus size={13} /> Add to Home Screen
+                                        </span>
+                                        , then tap <strong>Add</strong>. Done! 🎉
                                     </p>
                                 </div>
                             </div>

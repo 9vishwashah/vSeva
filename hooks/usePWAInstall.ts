@@ -57,7 +57,7 @@ export const usePWAInstall = () => {
         isIOS,
         isStandalone,
         isAppInstalled,
-        // Convenience: show banner if there's any install mechanism available and app not installed
-        shouldShowBanner: !isAppInstalled && !isStandalone && (isAndroidInstallable || isIOS),
+        // Always show banner — visibility controlled by dismissed state in InstallPWA
+        shouldShowBanner: true,
     };
 };

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     MapPin, Users, TrendingUp, Bell, Shield, BarChart3,
     ArrowRight, CheckCircle2, Sparkles, BookOpen, UserCheck,
-    Lock, Activity, FileText, Download, Menu, X, Smartphone, Instagram
+    Lock, Activity, FileText, Download, Menu, X, Smartphone, Instagram, LogIn
 } from 'lucide-react';
 import vSevaLogo from '../assets/vseva-logo.png';
 import { InstallPWA } from '../components/InstallPWA';
@@ -104,13 +104,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     <div className="text-center max-w-4xl mx-auto">
                         {/* Logo */}
                         <div className="flex justify-center mb-8">
-                            <div className="p-4 bg-saffron-50 rounded-3xl shadow-sm border border-saffron-100 animate-fade-in-up">
-                                <img src={vSevaLogo} alt="vSeva" className="h-40 w-40 object-contain" />
+                            <div className="bg-saffron-50 rounded-2xl shadow-sm border border-saffron-100 animate-fade-in-up overflow-hidden">
+                                <img src={vSevaLogo} alt="vSeva" className="h-28 w-28 object-cover" />
                             </div>
                         </div>
 
-                        <h1 className="text-5xl md:text-7xl font-serif font-bold text-slate-900 mb-6 leading-tight">
-                            Digitizing Vihar Seva<br className="hidden md:block" />
+                        <h1 className="text-6xl md:text-8xl font-serif font-bold text-saffron-600 mb-6 leading-tight">
+                            vSeva
                             <span className="block mt-2 text-3xl md:text-4xl font-light text-slate-600 italic">
                                 "Your Steps. Your Seva. Your Legacy."
                             </span>
@@ -121,13 +121,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                             Bridging tradition with technology.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <div className="flex flex-col gap-3 justify-center items-center w-full max-w-xs mx-auto">
+                            {/* Primary: Install App */}
+                            <button
+                                onClick={() => {
+                                    // Scroll to bottom or trigger install banner click
+                                    const banner = document.getElementById('pwa-install-btn');
+                                    if (banner) banner.click();
+                                    else window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                                }}
+                                className="px-8 py-4 bg-saffron-600 hover:bg-saffron-700 text-white rounded-full font-bold text-lg shadow-lg shadow-saffron-200 hover:shadow-xl transition-all duration-300 flex items-center gap-2 transform hover:-translate-y-1 w-full justify-center"
+                            >
+                                <Download size={20} />
+                                Install App
+                            </button>
+                            {/* Secondary: Login */}
                             <button
                                 onClick={onGetStarted}
-                                className="px-8 py-4 bg-saffron-600 hover:bg-saffron-700 text-white rounded-full font-medium text-lg shadow-lg shadow-saffron-200 hover:shadow-xl transition-all duration-300 flex items-center gap-2 transform hover:-translate-y-1 w-full sm:w-auto justify-center"
+                                className="px-8 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-full font-medium text-base shadow-sm transition-all duration-300 flex items-center gap-2 w-full justify-center hover:-translate-y-0.5"
                             >
+                                <LogIn size={18} />
                                 Login to vSeva
-                                <ArrowRight size={20} />
                             </button>
                         </div>
 
@@ -309,22 +323,102 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     </h2>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <button
-                            onClick={onGetStarted}
-                            className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold text-lg shadow-xl transition-all duration-300"
+                            onClick={() => {
+                                const banner = document.getElementById('pwa-install-btn');
+                                if (banner) banner.click();
+                            }}
+                            className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold text-lg shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
                         >
-                            Login to vSeva
+                            <Download size={20} />
+                            Install App
                         </button>
-                        <a
-                            href="https://wa.me/919594503214"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <button
+                            onClick={onGetStarted}
                             className="px-8 py-4 bg-white hover:bg-white/80 text-slate-700 border border-slate-200 rounded-full font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2"
                         >
-                            Contact Admin
-                        </a>
+                            <LogIn size={18} />
+                            Login to vSeva
+                        </button>
                     </div>
                 </div>
             </div>
+
+            {/* 🌟 FIRST CLIENT — THANK YOU SECTION */}
+            <div className="py-20 relative overflow-hidden" style={{ background: '#fdf4e7' }}>
+                {/* Subtle blobs */}
+                <div className="absolute top-0 right-0 w-72 h-72 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(251,191,36,0.15)' }} />
+                <div className="absolute bottom-0 left-0 w-56 h-56 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(234,88,12,0.08)' }} />
+
+                <div className="max-w-2xl mx-auto px-4 text-center relative z-10">
+                    {/* Label pill */}
+                    <div className="inline-flex items-center gap-2 text-saffron-700 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-8"
+                        style={{ background: 'rgba(234,88,12,0.1)', border: '1px solid rgba(234,88,12,0.2)' }}>
+                        <Sparkles size={13} />
+                        Our First Vihar Organization
+                    </div>
+
+                    {/* Light card */}
+                    <div style={{
+                        background: '#ffffff',
+                        borderRadius: '28px',
+                        boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
+                        border: '1px solid rgba(234,88,12,0.12)',
+                        padding: '40px 32px',
+                    }}>
+                        <div className="flex justify-center mb-4">
+                            <span className="text-5xl">🙏</span>
+                        </div>
+
+                        <p style={{ color: '#EA580C' }} className="text-xs font-bold uppercase tracking-widest mb-2">With Deepest Gratitude</p>
+                        <h3 className="text-slate-900 text-2xl md:text-3xl font-serif font-bold mb-2 leading-snug">
+                            Shree Jain Shwetambar<br />Murtipujak Sangh, Vashi
+                        </h3>
+                        <p className="text-slate-500 text-sm mb-8 max-w-sm mx-auto">
+                            Thank you for trusting vSeva as your digital Vihar Seva partner — and for being our very first! 🧡
+                        </p>
+
+                        {/* Stats */}
+                        <div className="grid grid-cols-3 gap-3 mb-8">
+                            {[
+                                { value: '50+', label: 'Active Sevaks' },
+                                { value: '100+', label: 'Vihars Logged' },
+                                { value: '200+', label: 'Sadhu / Sadhvi' },
+                            ].map((stat, i) => (
+                                <div key={i} style={{
+                                    background: '#fff7ed',
+                                    border: '1px solid rgba(234,88,12,0.18)',
+                                    borderRadius: '16px',
+                                    padding: '14px 8px',
+                                }}>
+                                    <p style={{ color: '#EA580C' }} className="text-2xl font-bold">{stat.value}</p>
+                                    <p className="text-slate-500 text-xs mt-1">{stat.label}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Admins */}
+                        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}>
+                            <p className="text-slate-400 text-xs uppercase tracking-widest mb-3">Managed by</p>
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {['Vijay Mehta', 'Rakhi Jain', 'Namya Mehta'].map((name) => (
+                                    <span key={name} style={{
+                                        background: '#f8fafc',
+                                        border: '1px solid #e2e8f0',
+                                    }} className="px-4 py-1.5 text-slate-700 text-sm font-medium rounded-full">
+                                        {name}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <p className="mt-6 text-sm italic" style={{ color: 'rgba(120,80,20,0.6)' }}>
+                        "Every great journey begins with one step — and one organization."
+                    </p>
+                </div>
+            </div>
+
+
 
             {/* 8️⃣ SOCIAL FOLLOW */}
             <div className="py-12 bg-white text-center border-t border-slate-100">
