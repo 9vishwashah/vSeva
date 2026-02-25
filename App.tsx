@@ -71,14 +71,24 @@ const App: React.FC = () => {
     checkSession();
   }, []);
 
-  const handleLoginSuccess = (profile: UserProfile) => {
+  const handleLoginSuccess = async (profile: UserProfile) => {
     setUser(profile);
+    setShowLanding(false);
     setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
+    // Also fetch org name so it appears correctly in profile page
+    try {
+      const org = await dataService.getOrganization(profile.organization_id);
+      if (org) setOrgName(org.name);
+    } catch (e) {
+      console.warn('Could not fetch org name:', e);
+    }
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setOrgName('');
+    if (!isStandalone) setShowLanding(true);
   };
 
   if (loading) {
