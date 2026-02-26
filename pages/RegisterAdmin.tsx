@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import vSevaLogo from '../assets/vseva-logo.png';
+import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 
 interface RegisterAdminProps {
     onBack: () => void;

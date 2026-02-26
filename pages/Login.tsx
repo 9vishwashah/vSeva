@@ -4,7 +4,7 @@ import { dataService } from '../services/dataService';
 import { UserProfile } from '../types';
 import { LogIn, Loader2 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import vSevaLogo from '../assets/vseva-logo.png';
+import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 
 interface LoginProps {
   onLoginSuccess: (profile: UserProfile) => void;
@@ -14,6 +14,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const { showToast } = useToast();
@@ -21,11 +22,14 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg(null);
+
+    const safeEmail = email.trim().toLowerCase();
 
     try {
       // 1. Auth with Supabase
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: safeEmail,
         password,
       });
 
@@ -48,7 +52,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || "Login failed. Please check credentials.", 'error');
+      const msg = err.message || "Login failed. Please check credentials.";
+      setErrorMsg(msg);
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -89,7 +95,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               <img
                 src={vSevaLogo}
                 alt="vSeva Logo"
-                className="relative h-20 w-20 object-contain drop-shadow-lg"
+                className="relative h-24 w-24 md:h-28 md:w-28 object-contain drop-shadow-lg"
               />
             </div>
           </div>
@@ -137,6 +143,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : "Sign In"}
           </button>
+
+          {errorMsg && (
+            <div className="p-3 mt-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg animate-fade-in-up">
+              {errorMsg}
+            </div>
+          )}
         </form>
 
         <div className="border-t pt-4 text-center space-y-2">

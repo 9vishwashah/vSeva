@@ -13,7 +13,7 @@ import ManageRoutes from './pages/ManageRoutes';
 import ViewEntries from './pages/ViewEntries';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 
-import vSevaLogo from './assets/vseva-logo.png';
+import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
 
 
 // Suppress XAxis/YAxis defaultProps warning from Recharts in React 18+
@@ -95,7 +95,7 @@ const App: React.FC = () => {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-br from-saffron-50 to-orange-50">
         <div className="mb-6">
-          <img src={vSevaLogo} alt="vSeva" className="h-24 w-24 object-contain animate-pulse" />
+          <img src={vSevaLogo} alt="vSeva" className="h-24 w-24 md:h-32 md:w-32 object-contain animate-pulse drop-shadow-lg" />
         </div>
         <Loader2 className="animate-spin text-saffron-600" size={48} />
         <p className="mt-4 text-gray-600 font-medium">Loading vSeva...</p>

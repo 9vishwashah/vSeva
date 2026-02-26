@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { StatSummary } from '../types';
-import { Share2, MapPin, Users, Heart, Medal, Sparkles, Instagram, Download } from 'lucide-react';
+import { Share2, MapPin, Users, Heart, Medal, Sparkles, Instagram, Download, Footprints } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 
 interface StatCardProps {
   stats: StatSummary;
@@ -114,6 +115,11 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
           {/* Content Container */}
           <div className="flex-1 flex flex-col p-6 z-10 relative h-full">
 
+            {/* Top-Left Logo */}
+            <div className="absolute top-4 left-4 z-20">
+              <img src={vSevaLogo} alt="vSeva Logo" className="h-28 w-28 object-contain drop-shadow-md" />
+            </div>
+
             {/* 1. Header (Identity) */}
             <div className="flex flex-col items-center text-center mt-2 mb-4">
               <div className="relative mb-3">
@@ -217,14 +223,14 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
             </div>
 
             {/* 4. Inspirational Footer */}
-            <div className={`mt-4 text-center pb-2 ${isAdmin ? 'mt-auto' : ''}`}>
+            <div className={`mt-4 text-center pb-2 ${isAdmin ? 'mt-auto' : ''} relative z-20`}>
               <div className="w-8 h-[1px] bg-gray-200 mx-auto mb-3"></div>
 
-              <div className="flex flex-col items-center justify-center gap-1 mt-3">
+              <div className="flex flex-col items-center justify-center gap-1 mt-3 pb-2">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={12} className="text-saffron-400" />
-                  <span className="text-xs uppercase tracking-[0.3em] font-bold text-gray-600">vSeva App</span>
-                  <Sparkles size={12} className="text-saffron-400" />
+                  <Footprints size={14} className="text-saffron-500" />
+                  <span className="text-sm font-bold tracking-[0.15em] text-gray-800 drop-shadow-sm">vSeva</span>
+                  <Footprints size={14} className="text-saffron-500" />
                 </div>
                 <p className="text-[10px] font-medium text-gray-500 mt-1">vSeva by Vishwa Alpesh Shah</p>
               </div>

@@ -4,7 +4,7 @@ import {
     ArrowRight, CheckCircle2, Sparkles, BookOpen, UserCheck,
     Lock, Activity, FileText, Download, Menu, X, Smartphone, Instagram, LogIn
 } from 'lucide-react';
-import vSevaLogo from '../assets/vseva-logo.png';
+import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import { InstallPWA } from '../components/InstallPWA';
 
 interface LandingPageProps {

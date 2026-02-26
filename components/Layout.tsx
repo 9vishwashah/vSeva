@@ -4,8 +4,8 @@ import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints } 
 
 import NotificationBell from './NotificationBell';
 import { supabase } from '../services/supabase';
-import vSevaLogo from '../assets/vseva-logo.png';
-import { InstallPWA } from './InstallPWA';
+import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+// InstallPWA global import removed
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -47,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <img src={vSevaLogo} alt="vSeva" className="h-10 w-10 object-contain" />
+            <img src={vSevaLogo} alt="vSeva" className="h-16 w-16 md:h-20 md:w-20 object-contain drop-shadow-sm" />
             <div>
               <h1 className="text-2xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">by Vishwa Alpesh Shah</p>
@@ -101,7 +101,7 @@ const Layout: React.FC<LayoutProps> = ({
       {/* Mobile Header & Bottom Nav */}
       <div className="md:hidden fixed top-0 w-full bg-white z-20 border-b border-gray-200 px-4 py-3 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <img src={vSevaLogo} alt="vSeva" className="h-8 w-8 object-contain" />
+          <img src={vSevaLogo} alt="vSeva" className="h-10 w-10 object-contain drop-shadow-sm scale-150 origin-left ml-2" />
           <h1 className="text-xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
         </div>
         <div className="flex items-center gap-3 relative">
@@ -187,7 +187,6 @@ const Layout: React.FC<LayoutProps> = ({
           {children}
         </div>
       </main>
-      <InstallPWA />
     </div>
   );
 };
