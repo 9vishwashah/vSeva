@@ -319,26 +319,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="py-24 bg-gradient-to-br from-saffron-50 to-orange-50">
                 <div className="max-w-4xl mx-auto px-4 text-center">
                     <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 mb-8">
-                        Continue Your Seva, Digitally
+                        Create Your Organization
                     </h2>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button
-                            onClick={() => {
-                                const banner = document.getElementById('pwa-install-btn');
-                                if (banner) banner.click();
-                            }}
-                            className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold text-lg shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
+                        <a
+                            href="https://wa.me/919930985532?text=Jai%20Jinendra%20vSeva%20Team!%20%F0%9F%99%8F%0A%0AWe%20would%20like%20to%20register%20our%20Jain%20organization%20on%20the%20vSeva%20platform%20to%20start%20logging%20our%20daily%20Vihars.%0A%0AOrganization%20Name%3A%20%0AContact%20Person%3A%20%0ACity%3A%20%0A%0APlease%20guide%20us%20with%20the%20next%20steps.%0A%0AThank%20You."
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-8 py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-full font-bold text-lg shadow-xl shadow-green-200 transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-1"
                         >
-                            <Download size={20} />
-                            Install App
-                        </button>
-                        <button
-                            onClick={onGetStarted}
-                            className="px-8 py-4 bg-white hover:bg-white/80 text-slate-700 border border-slate-200 rounded-full font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2"
-                        >
-                            <LogIn size={18} />
-                            Login to vSeva
-                        </button>
+                            <i className="fa-brands fa-whatsapp text-2xl" aria-hidden="true"></i>
+                            Contact Us on WhatsApp
+                        </a>
                     </div>
                 </div>
             </div>

@@ -120,29 +120,34 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
 
   const generateWhatsAppMessage = (sevak: UserProfile) => {
     const orgName = orgDetails ? `${orgDetails.name}, ${orgDetails.city || ''}` : '';
-    const message = `Jai Jinendra 🙏
+    const message = `Pranam ${sevak.full_name}
 
-You have been successfully added to vSeva under the organization ${orgName}.
+You have been successfully added to vSeva under the organization
+\`${orgName}\`.
 
-You can now view your personal Vihar summary, track your seva journey, and share your contribution.
+You can now view your Vihar summary and share your contribution.
 
 Login Details:
-👤 Username: ${sevak.username}
-🔐 Password: ${sevak.mobile}
+Username: \`${sevak.username}\`
+Password: \`${sevak.mobile}\`
 
-All Vihar entries are managed and recorded by ${currentUser.full_name}.
+All Vihar entries are managed by Namya Mehta.
 
-🌐 Login to vSeva:
+If any changes in entries contact Vijay Mehta or Rakhi Jain
+
+Login to vSeva:
 https://vseva.netlify.app
 
-📱 Android users can also install vSeva as an app directly from the website for easier access.
+Install vSeva App.
 
-📸 Follow vSeva for updates and inspiration:
+Follow vSeva for updates and inspiration:
 https://instagram.com/the.vseva
 
-"When Seva is visible, it inspires more Seva."
+"Inspire every steps"
 
-vSeva developed by Vishwa Alpesh Shah`;
+vSeva
+by Vishwa Alpesh Shah`;
+
     return encodeURIComponent(message);
   };
 
