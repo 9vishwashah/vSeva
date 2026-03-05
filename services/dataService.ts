@@ -14,8 +14,6 @@ export const dataService = {
 
     if (error) {
       console.error('Error fetching profile:', error);
-      // Fallback: If RLS fails significantly, we might want to return null rather than crashing
-      // but usually we want to see the error.
       return null;
     }
     return data as UserProfile;
@@ -477,72 +475,42 @@ export const dataService = {
   },
 
   async getTopSevaks(orgId: string, limit: number = 10) {
-    // 1. Fetch all Organisation Sevaks (to get Gender)
-    const sevaks = await this.getOrgSevaks(orgId);
-    if (!sevaks || sevaks.length === 0) return { male: [], female: [] };
+    try {
+      // Use RPC to bypass RLS and get all org stats
+      const { data, error } = await supabase.rpc('get_top_sevaks_leaderboard', {
+        org_id: orgId,
+        limit_val: limit
+      });
 
-    // 2. Fetch all Entries
-    const entries = await this.getEntries(orgId);
-
-    // 3. Aggregate Stats
-    const statsMap: Record<string, { count: number; km: number; name: string; gender: string }> = {};
-
-    // Initialize map with all sevaks (so even those with 0 vihars appear if needed, though usually we only want active ones. 
-    // Requirement says "Top 10", implies performance. Let's include everyone but sort 0s to bottom, or just active.
-    // Let's stick to active (those who did vihars) or map everyone?
-    // User wants "Top 10 Sevaks". Usually implies activity.
-    // However, getting gender requires looking up the profile.
-
-    sevaks.forEach(s => {
-      statsMap[s.username] = {
-        count: 0,
-        km: 0,
-        name: s.full_name,
-        gender: s.gender || 'Male' // Default to Male if undefined, or handle 'Female'
-      };
-    });
-
-    entries.forEach(e => {
-      if (e.sevaks) {
-        e.sevaks.forEach(username => {
-          if (statsMap[username]) {
-            statsMap[username].count += 1;
-            statsMap[username].km += Number(e.distance_km || 0);
-          }
-        });
+      if (error) {
+        throw new Error("RPC failed: " + error.message);
       }
-    });
 
-    // 4. Convert to Array and Sort
-    const allStats = Object.entries(statsMap).map(([username, data]) => ({
-      username,
-      ...data
-    }));
+      // The RPC returns { male: [], female: [], overall: [] } JSON
+      // Remap SQL column names (full_name, gender_rank) to what LeaderboardCard expects (name, rank)
+      if (data) {
+        const remap = (arr: any[], useGenderRank = false) =>
+          (arr || []).map((s: any) => ({
+            username: s.username,
+            name: s.full_name,
+            km: parseFloat(parseFloat(s.km || 0).toFixed(2)),
+            count: Number(s.count || 0),
+            gender: s.gender,
+            rank: useGenderRank ? Number(s.gender_rank) : Number(s.overall_rank)
+          }));
 
-    // Sort by Count (Desc) -> Km (Desc)
-    const sorter = (a: any, b: any) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return b.km - a.km;
-    };
+        return {
+          male: remap(data.male, true),
+          female: remap(data.female, true),
+          overall: remap(data.overall, false)
+        };
+      }
 
-    const maleSevaks = allStats
-      .filter(s => s.gender.toLowerCase() === 'male')
-      .sort(sorter)
-      .slice(0, limit)
-      .map((s, i) => ({ ...s, rank: i + 1, km: parseFloat(s.km.toFixed(2)) }));
-
-    const femaleSevaks = allStats
-      .filter(s => s.gender.toLowerCase() === 'female')
-      .sort(sorter)
-      .slice(0, limit)
-      .map((s, i) => ({ ...s, rank: i + 1, km: parseFloat(s.km.toFixed(2)) }));
-
-    const overall = allStats
-      .sort(sorter)
-      .slice(0, limit)
-      .map((s, i) => ({ ...s, rank: i + 1, km: parseFloat(s.km.toFixed(2)) }));
-
-    return { male: maleSevaks, female: femaleSevaks, overall: overall };
+      return { male: [], female: [], overall: [] };
+    } catch (err) {
+      console.error(err);
+      return { male: [], female: [], overall: [] };
+    }
   }
 
 };

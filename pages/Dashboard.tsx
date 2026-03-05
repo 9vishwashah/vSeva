@@ -126,10 +126,11 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         const stats = dataService.calculateStats(myEntries, currentUser.username, nameMap);
         stats.vRank = rank;
 
-        // Fetch Leaderboard for Admin
-        let leaderboard = { male: [], female: [] };
-        if (currentUser.role === UserRole.ORG_ADMIN) {
-          leaderboard = await dataService.getTopSevaks(currentUser.organization_id);
+        // Fetch Leaderboard for Everyone
+        let leaderboard = await dataService.getTopSevaks(currentUser.organization_id);
+        if (currentUser.role !== UserRole.ORG_ADMIN) {
+          leaderboard.male = leaderboard.male.slice(0, 3);
+          leaderboard.female = leaderboard.female.slice(0, 3);
         }
 
         setData({ entries: myEntries, stats, leaderboard });
@@ -533,7 +534,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold text-gray-900 tracking-tight">#{data.stats.vRank}</span>
-                      <span className="text-xs text-gray-400 font-medium">Global</span>
+                      <span className="text-xs text-gray-400 font-medium">Org</span>
                     </div>
                   )}
                 </div>
@@ -579,6 +580,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                 colorClass="text-blue-600"
                 bgClass="bg-blue-50"
                 loading={isLoading}
+                orgName={orgDetails?.name || ''}
               />
               <LeaderboardCard
                 title="Top 10 Female Sevaks"
@@ -587,6 +589,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                 colorClass="text-pink-600"
                 bgClass="bg-pink-50"
                 loading={isLoading}
+                orgName={orgDetails?.name || ''}
               />
             </div>
           )}
@@ -619,6 +622,30 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
               )}
             </div>
           </div>
+
+          {/* Leaderboards - SEVAK ONLY (Top 3) */}
+          {currentUser.role !== UserRole.ORG_ADMIN && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              <LeaderboardCard
+                title="Top 3 Male Sevaks"
+                icon={<Trophy size={20} />}
+                items={data.leaderboard?.male || []}
+                colorClass="text-blue-600"
+                bgClass="bg-blue-50"
+                loading={isLoading}
+                orgName={orgDetails?.name || ''}
+              />
+              <LeaderboardCard
+                title="Top 3 Female Sevaks"
+                icon={<Trophy size={20} />}
+                items={data.leaderboard?.female || []}
+                colorClass="text-pink-600"
+                bgClass="bg-pink-50"
+                loading={isLoading}
+                orgName={orgDetails?.name || ''}
+              />
+            </div>
+          )}
         </div>
 
         {/* Right Col: Stat Card Preview */}
@@ -631,6 +658,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
               orgName={orgDetails?.name || 'vSeva'}
               loading={isLoading}
               isAdmin={currentUser.role === UserRole.ORG_ADMIN}
+              topSevak={(data.leaderboard as any)?.overall?.[0] || null}
             />
             <p className="text-xs text-gray-400 mt-4 text-center">
               Share this card on social media to inspire others.
