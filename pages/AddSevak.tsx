@@ -1,12 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, Organization } from '../types';
 import { dataService } from '../services/dataService';
-import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 interface AddSevakProps {
   currentUser: UserProfile;
 }
+
+// Formats a UTC ISO timestamp into a human-readable relative string
+const formatLastLogin = (isoString?: string): { label: string; color: string } => {
+  if (!isoString) return { label: 'Never', color: 'text-gray-400' };
+
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  let label: string;
+  if (mins < 1) label = 'Just now';
+  else if (mins < 60) label = `${mins}m ago`;
+  else if (hours < 24) label = `${hours}h ago`;
+  else if (days === 1) label = 'Yesterday';
+  else if (days < 7) label = `${days} days ago`;
+  else if (days < 30) label = `${Math.floor(days / 7)}w ago`;
+  else label = new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+
+  const color = days < 7 ? 'text-green-600' : days < 30 ? 'text-yellow-600' : 'text-gray-500';
+  return { label, color };
+};
 
 const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const { showToast } = useToast();
@@ -286,11 +308,17 @@ by Vishwa Alpesh Shah`;
             <table className="w-full text-left text-sm text-gray-600">
               <thead className="bg-gray-50 text-gray-900 font-semibold border-b border-gray-100">
                 <tr>
-                  <th className="p-4 w-16">Sr. No</th>
+                  <th className="p-4 w-12">Sr.</th>
                   <th className="p-4">Name</th>
                   <th className="p-4">Username</th>
                   <th className="p-4">Mobile</th>
                   <th className="p-4">Gender</th>
+                  <th className="p-4">
+                    <div className="flex items-center gap-1">
+                      <Clock size={14} className="text-saffron-500" />
+                      Last Login
+                    </div>
+                  </th>
                   <th className="p-4 text-center">WhatsApp</th>
                   <th className="p-4 text-center">Action</th>
                 </tr>
@@ -298,7 +326,7 @@ by Vishwa Alpesh Shah`;
               <tbody className="divide-y divide-gray-100">
                 {filteredSevaks.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-gray-500">
+                    <td colSpan={8} className="p-8 text-center text-gray-500">
                       No members found matching "{searchQuery}"
                     </td>
                   </tr>
@@ -326,6 +354,20 @@ by Vishwa Alpesh Shah`;
 
                       <td className="p-4">{sevak.mobile}</td>
                       <td className="p-4">{sevak.gender || '-'}</td>
+
+                      {/* Last Login */}
+                      <td className="p-4">
+                        {(() => {
+                          const { label, color } = formatLastLogin(sevak.last_login_at);
+                          return (
+                            <span className={`text-xs font-medium ${color} flex items-center gap-1`}>
+                              <Clock size={11} />
+                              {label}
+                            </span>
+                          );
+                        })()}
+                      </td>
+
 
                       <td className="p-4 text-center">
                         <a

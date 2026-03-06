@@ -21,6 +21,7 @@ export interface UserProfile {
   gender?: string;
   age?: number;
   is_active: boolean;
+  last_login_at?: string; // ISO timestamp, updated on each login
 }
 
 export interface AreaRoute {

@@ -31,19 +31,21 @@ export default defineConfig(({ mode }) => {
           short_name: 'vSeva',
           description: 'Vihar Tracking and Management System',
           theme_color: '#EA580C',
-          background_color: '#ffffff',
+          background_color: '#FDFBF7',
           display: 'standalone',
           start_url: '/',
           icons: [
             {
               src: '/pwa-192x192.png',
               sizes: '192x192',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any'
             },
             {
               src: '/pwa-512x512.png',
               sizes: '512x512',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any'
             },
             {
               src: '/pwa-512x512.png',

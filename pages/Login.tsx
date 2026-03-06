@@ -47,6 +47,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         throw new Error("Account is inactive.");
       }
 
+      // Track last login time (fire-and-forget, don't block login on failure)
+      supabase
+        .from('profiles')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('id', authData.user.id)
+        .then(({ error }) => {
+          if (error) console.warn('Could not update last_login_at:', error.message);
+        });
+
       showToast(`Welcome back, ${profile.full_name}!`, 'success');
       onLoginSuccess(profile);
 
