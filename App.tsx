@@ -61,6 +61,14 @@ const App: React.FC = () => {
             if (org) setOrgName(org.name);
             // Redirect based on role if at root
             setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
+            // Track app open time (fire-and-forget)
+            supabase
+              .from('profiles')
+              .update({ last_login_at: new Date().toISOString() })
+              .eq('id', session.user.id)
+              .then(({ error }) => {
+                if (error) console.warn('Could not update last_login_at:', error.message);
+              });
           }
         } catch (e) {
           console.error("Profile load failed", e);
