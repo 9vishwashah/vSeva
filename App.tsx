@@ -13,6 +13,9 @@ import ManageRoutes from './pages/ManageRoutes';
 import ViewEntries from './pages/ViewEntries';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import ProfileSection from './components/ProfileSection';
+import Contacts from './pages/Contacts';
+import AdminContacts from './pages/AdminContacts';
+
 
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
 
@@ -42,6 +45,14 @@ const App: React.FC = () => {
   const handleEditEntry = (entry: ViharEntry) => {
     setEditingEntry(entry);
     setCurrentPage('new-entry');
+  };
+
+  // Wrap setCurrentPage so navigating away from new-entry always clears the editing state
+  const handleSetCurrentPage = (page: string) => {
+    if (page !== 'new-entry') {
+      setEditingEntry(null);
+    }
+    setCurrentPage(page);
   };
 
   // Check for public routes
@@ -140,7 +151,7 @@ const App: React.FC = () => {
       userInitials={getInitials(user.full_name)}
       onLogout={handleLogout}
       currentPage={currentPage}
-      setCurrentPage={setCurrentPage}
+      setCurrentPage={handleSetCurrentPage}
     >
       {/* Admin Routes */}
       {currentPage === 'dashboard' && user.role === UserRole.ORG_ADMIN && (
@@ -151,6 +162,10 @@ const App: React.FC = () => {
         <NewEntry
           currentUser={user}
           entry={editingEntry || undefined}
+          onCancel={() => {
+            setEditingEntry(null);
+            setCurrentPage(editingEntry ? 'view-entries' : 'dashboard');
+          }}
           onSubmit={() => {
             setEditingEntry(null);
             setCurrentPage('dashboard');
@@ -180,6 +195,14 @@ const App: React.FC = () => {
 
       {currentPage === 'my-vihars' && (
         <ViewEntries currentUser={user} onEdit={user.role === UserRole.ORG_ADMIN ? handleEditEntry : undefined} />
+      )}
+
+      {currentPage === 'contacts' && user.role === UserRole.ORG_ADMIN && (
+        <AdminContacts currentUser={user} />
+      )}
+
+      {currentPage === 'contacts' && user.role === UserRole.SEVAK && (
+        <Contacts currentUser={user} />
       )}
     </Layout>
   );

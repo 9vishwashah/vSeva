@@ -100,35 +100,51 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
 
   return (
     <div className="space-y-6 animate-fade-in pb-20 md:pb-0">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Calendar className="text-saffron-600" size={24} />
-            {currentUser.role === UserRole.SEVAK ? 'My Entries' : 'Vihar Entries'}
-          </h1>
-          <p className="text-gray-500 text-xs md:text-sm mt-1 flex items-center gap-2">
-            {currentUser.role === UserRole.SEVAK ? 'Your personal Vihar journey log' : 'Manage and view all recorded journeys for'}
-            {currentUser.role !== UserRole.SEVAK && (org ? (
-              <span className="font-semibold text-saffron-600">
-                {org.name}{org.city ? `, ${org.city}` : ''}
+      {/* Orange Gradient Banner Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
+        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Calendar size={22} className="text-white" />
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {currentUser.role === UserRole.SEVAK ? 'My Entries' : 'Vihar Entries'}
+              </h1>
+            </div>
+            <p className="text-white/80 text-sm mt-1 ml-1">
+              {currentUser.role === UserRole.SEVAK
+                ? 'Your personal Vihar journey log'
+                : <>Manage and view all recorded journeys for{' '}
+                  {org
+                    ? <span className="font-semibold text-white">{org.name}{org.city ? `, ${org.city}` : ''}</span>
+                    : <span className="inline-block h-4 w-32 rounded bg-white/30 animate-pulse align-middle" />
+                  }
+                </>
+              }
+            </p>
+            {!loading && (
+              <span className="mt-3 inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
+                {entries.length} {entries.length === 1 ? 'Entry' : 'Entries'}
               </span>
-            ) : (
-              <span className="inline-block h-4 w-40 rounded bg-gray-200 animate-pulse" />
-            ))}
-          </p>
-
-        </div>
-        <div className="relative w-full md:w-64">
-          <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search entries..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none text-sm bg-gray-50"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
+            )}
+          </div>
+          {/* Search */}
+          <div className="relative w-full md:w-64 shrink-0">
+            <Search className="absolute left-3 top-2.5 text-white/60" size={18} />
+            <input
+              type="text"
+              placeholder="Search entries..."
+              className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
       </div>
+      {/* Date filters */}
       <div className="grid grid-cols-2 md:flex md:flex-row gap-4 w-full md:w-auto items-end">
         <div>
           <label className="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">From</label>

@@ -91,3 +91,12 @@ export interface UpcomingVihar {
   sadhvi_count: number;
   created_at: string;
 }
+
+export interface ContactNumber {
+  id: number;
+  organization_id: string;
+  label: string;  // Contact name / role
+  phone: string;  // digits only
+  description?: string; // optional note / reason about the contact
+  created_at?: string;
+}

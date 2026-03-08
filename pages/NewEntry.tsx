@@ -9,10 +9,13 @@ import { Organization } from '../types';
 interface NewEntryProps {
   currentUser: UserProfile;
   onSubmit: () => void;
+  onCancel?: () => void;  // Go back without saving
   entry?: ViharEntry; // If provided, edit mode
 }
 
-const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, entry: editEntry }) => {
+
+const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, entry: editEntry }) => {
+
   const isEditing = !!editEntry;
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
 
@@ -171,12 +174,21 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, entry: editE
     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-w-3xl mx-auto animate-fade-in-up">
       {/* Header */}
       <div className="bg-gradient-to-r from-saffron-50 to-white p-6 border-b border-gray-100 flex items-center gap-4">
-        <div className="w-12 h-12 bg-saffron-100 rounded-xl flex items-center justify-center text-saffron-600 shadow-sm transform -rotate-3">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="shrink-0 p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+            title="Go back"
+          >
+            <X size={22} />
+          </button>
+        )}
+        <div className="w-12 h-12 bg-saffron-100 rounded-xl flex items-center justify-center text-saffron-600 shadow-sm transform -rotate-3 shrink-0">
           <FilePlus size={24} strokeWidth={2.5} />
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <h2 className="text-2xl font-serif font-bold text-gray-800">{isEditing ? 'Edit Vihar Entry' : 'New Vihar Entry'}</h2>
-          {/* <p className="text-sm text-gray-500">Log a Vihar for <span className="font-semibold text-saffron-600">{currentUser.organization_id}</span></p> */}
           <p className="text-sm text-gray-500">
             Log a Vihar for{' '}
             <span className="font-semibold text-saffron-600">
@@ -190,8 +202,6 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, entry: editE
               )}
             </span>
           </p>
-
-
         </div>
       </div>
 

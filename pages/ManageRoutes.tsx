@@ -191,26 +191,40 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800 font-serif">Manage Routes</h1>
-                    <p className="text-gray-500 mt-1">Configure area distances for Vihar calculations</p>
-                </div>
-
-                <div className="flex bg-gray-100 p-1 rounded-lg">
-                    <button
-                        onClick={() => setActiveTab('add')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'add' ? 'bg-white shadow text-saffron-600' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                        <div className="flex items-center gap-2"><Plus size={16} /> Add Routes</div>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('list')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'list' ? 'bg-white shadow text-saffron-600' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                        <div className="flex items-center gap-2"><Table size={16} /> View All</div>
-                    </button>
+            {/* Orange Gradient Banner Header */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
+                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
+                <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
+                <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                                <Map size={22} className="text-white" />
+                            </div>
+                            <h1 className="text-2xl font-bold tracking-tight">Manage Routes</h1>
+                        </div>
+                        <p className="text-white/80 text-sm mt-1 ml-1">Configure area distances for Vihar calculations</p>
+                        {!loading && (
+                            <span className="mt-3 inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
+                                {existingRoutes.length} {existingRoutes.length === 1 ? 'Route' : 'Routes'}
+                            </span>
+                        )}
+                    </div>
+                    {/* Tab switcher */}
+                    <div className="flex bg-white/20 backdrop-blur-sm p-1 rounded-xl shrink-0 border border-white/30">
+                        <button
+                            onClick={() => setActiveTab('add')}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'add' ? 'bg-white text-saffron-600 shadow' : 'text-white hover:bg-white/20'}`}
+                        >
+                            <div className="flex items-center gap-2"><Plus size={16} /> Add Routes</div>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('list')}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'list' ? 'bg-white text-saffron-600 shadow' : 'text-white hover:bg-white/20'}`}
+                        >
+                            <div className="flex items-center gap-2"><Table size={16} /> View All</div>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -229,7 +243,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                             />
                             <button
                                 onClick={handleSetRows}
-                                className="bg-gray-800 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-700"
+                                className="bg-saffron-600 hover:bg-saffron-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
                             >
                                 Generate Fields
                             </button>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints } from 'lucide-react';
+import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall } from 'lucide-react';
+
 
 import NotificationBell from './NotificationBell';
 import { supabase } from '../services/supabase';
@@ -63,6 +64,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="manage-routes" icon={Map} label="Manage Routes" />
               <NavItem page="new-entry" icon={FilePlus} label="New Entry" />
               <NavItem page="add-sevak" icon={UserPlus} label="Add Sevaks" />
+              <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
             </>
           )}
 
@@ -71,6 +73,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="profile" icon={Home} label="My Profile" />
               <NavItem page="analytics" icon={BarChart2} label="Analytics" />
               <NavItem page="my-vihars" icon={Footprints} label="My Vihars" />
+              <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
             </>
           )}
         </nav>
@@ -123,6 +126,15 @@ const Layout: React.FC<LayoutProps> = ({
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Account</p>
                     <p className="text-sm font-medium text-gray-700 capitalize truncate">{role.replace('_', ' ').toLowerCase()}</p>
                   </div>
+                  {role === UserRole.ORG_ADMIN && (
+                    <button
+                      onClick={() => { setCurrentPage('contacts'); setIsProfileMenuOpen(false); }}
+                      className="w-full text-left px-4 py-3 hover:bg-saffron-50 text-saffron-600 flex items-center gap-2 text-sm font-medium transition-colors border-b border-gray-50"
+                    >
+                      <PhoneCall size={16} />
+                      <span>Contacts</span>
+                    </button>
+                  )}
                   <button
                     onClick={onLogout}
                     className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-500 flex items-center gap-2 text-sm font-medium transition-colors"
@@ -131,6 +143,7 @@ const Layout: React.FC<LayoutProps> = ({
                     <span>Sign Out</span>
                   </button>
                 </div>
+
               </>
             )}
           </div>
@@ -146,53 +159,59 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         </main>
 
-        {/* Mobile Bottom Nav — fixed at bottom of the flex column */}
+        {/* Mobile Bottom Nav — floating pill */}
         <nav
-          className="md:hidden flex-shrink-0 bg-white border-t border-gray-200 flex justify-around items-center z-20"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)', minHeight: '60px' }}
+          className="md:hidden flex-shrink-0 z-20 px-4 pb-3 pt-1"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
         >
-          {role === UserRole.ORG_ADMIN && (
-            <>
-              <button onClick={() => setCurrentPage('dashboard')} className={`flex flex-col items-center py-2 px-3 ${currentPage === 'dashboard' ? 'text-saffron-600' : 'text-gray-400'}`}>
-                <BarChart2 size={22} />
-                <span className="text-[10px] mt-0.5">Stats</span>
-              </button>
-              <button onClick={() => setCurrentPage('view-entries')} className={`flex flex-col items-center py-2 px-3 ${currentPage === 'view-entries' ? 'text-saffron-600' : 'text-gray-400'}`}>
-                <Table2 size={22} />
-                <span className="text-[10px] mt-0.5">Entries</span>
-              </button>
-              <button onClick={() => setCurrentPage('new-entry')} className="flex flex-col items-center px-3">
-                <div className={`p-3 rounded-full shadow-lg border-4 border-white -mt-6 ${currentPage === 'new-entry' ? 'bg-saffron-600' : 'bg-saffron-500'} text-white`}>
-                  <FilePlus size={22} />
-                </div>
-                <span className="text-[10px] mt-0.5 font-semibold text-saffron-600">Add</span>
-              </button>
-              <button onClick={() => setCurrentPage('manage-routes')} className={`flex flex-col items-center py-2 px-3 ${currentPage === 'manage-routes' ? 'text-saffron-600' : 'text-gray-400'}`}>
-                <Map size={22} />
-                <span className="text-[10px] mt-0.5">Routes</span>
-              </button>
-              <button onClick={() => setCurrentPage('add-sevak')} className={`flex flex-col items-center py-2 px-3 ${currentPage === 'add-sevak' ? 'text-saffron-600' : 'text-gray-400'}`}>
-                <UserPlus size={22} />
-                <span className="text-[10px] mt-0.5">Sevaks</span>
-              </button>
-            </>
-          )}
-          {role === UserRole.SEVAK && (
-            <>
-              <button onClick={() => setCurrentPage('profile')} className={`flex flex-col items-center py-2 px-3 ${currentPage === 'profile' ? 'text-saffron-600' : 'text-gray-400'}`}>
-                <Home size={22} />
-                <span className="text-[10px] mt-0.5">Home</span>
-              </button>
-              <button onClick={() => setCurrentPage('analytics')} className={`flex flex-col items-center py-2 px-3 ${currentPage === 'analytics' ? 'text-saffron-600' : 'text-gray-400'}`}>
-                <BarChart2 size={22} />
-                <span className="text-[10px] mt-0.5">Stats</span>
-              </button>
-              <button onClick={() => setCurrentPage('my-vihars')} className={`flex flex-col items-center py-2 px-3 ${currentPage === 'my-vihars' ? 'text-saffron-600' : 'text-gray-400'}`}>
-                <Footprints size={22} />
-                <span className="text-[10px] mt-0.5">My Vihars</span>
-              </button>
-            </>
-          )}
+          <div
+            className="bg-orange-50 border border-orange-200 rounded-3xl flex justify-around items-center px-3 shadow-md shadow-orange-100"
+            style={{ minHeight: '62px' }}
+          >
+            {role === UserRole.ORG_ADMIN && (() => {
+              const items = [
+                { page: 'dashboard', icon: <BarChart2 size={20} />, label: 'Stats' },
+                { page: 'view-entries', icon: <Table2 size={20} />, label: 'Entries' },
+                { page: 'new-entry', icon: <FilePlus size={22} />, label: 'Add', isCta: true },
+                { page: 'manage-routes', icon: <Map size={20} />, label: 'Routes' },
+                { page: 'add-sevak', icon: <UserPlus size={20} />, label: 'Sevaks' },
+              ];
+              return items.map(item =>
+                item.isCta ? (
+                  <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center -mt-7 active:scale-90 transition-transform">
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-saffron-500 to-orange-500 shadow-lg shadow-orange-300/50 text-white ring-4 ring-orange-50">
+                      {item.icon}
+                    </div>
+                    <span className="text-[9px] mt-1 font-bold text-saffron-600">{item.label}</span>
+                  </button>
+                ) : (
+                  <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center py-2 px-2 active:scale-95 transition-transform">
+                    <div className={`px-3 py-2 rounded-2xl transition-all flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-md shadow-saffron-200' : ''}`}>
+                      <span className={currentPage === item.page ? 'text-white' : 'text-gray-400'}>{item.icon}</span>
+                      <span className={`text-[9px] font-semibold leading-none ${currentPage === item.page ? 'text-white' : 'text-gray-400'}`}>{item.label}</span>
+                    </div>
+                  </button>
+                )
+              );
+            })()}
+
+            {role === UserRole.SEVAK && (() => {
+              const items = [
+                { page: 'profile', icon: <Home size={20} />, label: 'Home' },
+                { page: 'analytics', icon: <BarChart2 size={20} />, label: 'Stats' },
+                { page: 'my-vihars', icon: <Footprints size={20} />, label: 'My Vihars' },
+                { page: 'contacts', icon: <PhoneCall size={20} />, label: 'Contacts' },
+              ];
+              return items.map(item => (
+                <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center py-2 px-2 active:scale-95 transition-transform">
+                  <div className={`px-3 py-2 rounded-2xl transition-all flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-md shadow-saffron-200' : ''}`}>
+                    <span className={currentPage === item.page ? 'text-white' : 'text-gray-400'}>{item.icon}</span>
+                    <span className={`text-[9px] font-semibold leading-none ${currentPage === item.page ? 'text-white' : 'text-gray-400'}`}>{item.label}</span>
+                  </div>
+                </button>
+              ));
+            })()}
+          </div>
         </nav>
 
       </div>

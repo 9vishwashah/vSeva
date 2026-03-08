@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, ViharEntry, UserRole, Organization, AreaRoute } from '../types';
 import { dataService } from '../services/dataService';
 import StatCard from '../components/StatCard';
@@ -40,6 +40,18 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close download menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target as Node)) {
+        setShowDownloadMenu(false);
+      }
+    };
+    if (showDownloadMenu) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDownloadMenu]);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [availableRoutes, setAvailableRoutes] = useState<AreaRoute[]>([]);
   const [uniqueAreas, setUniqueAreas] = useState<string[]>([]);
@@ -399,50 +411,69 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         </div>
       )}
 
-      {/* Header */}
-      <div className={`flex flex-col md:flex-row justify-between items-start md:items-end gap-4 p-6 rounded-2xl ${currentUser.role === UserRole.ORG_ADMIN ? 'bg-gradient-to-r from-saffron-50 via-white to-saffron-50 border border-saffron-100' : 'bg-white'}`}>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 font-serif">
-            Jai Jinendra, {currentUser.full_name.split(' ')[0]}
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Overview for {orgDetails?.name || currentUser.organization_id}
-          </p>
+      {/* Header - Orange Gradient Banner */}
+      <div className="relative rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
+        {/* Decorative circles — clipped inside their own container so dropdown isn't cut */}
+        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+          <div className="absolute -top-10 -right-10 w-52 h-52 rounded-full bg-white/10" />
+          <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-white/10" />
+          <div className="absolute top-4 right-32 w-16 h-16 rounded-full bg-white/5" />
         </div>
 
-        {currentUser.role === UserRole.ORG_ADMIN && (
-          <div className="flex gap-2">
-            <button
-              onClick={() => setIsAlertOpen(true)}
-              className="flex items-center space-x-2 bg-saffron-600 hover:bg-saffron-700 text-white px-4 py-2 rounded-lg shadow-lg shadow-saffron-200 transition-all animate-pulse-slow"
-            >
-              <MapPin size={18} />
-              <span className="font-bold">Alert Upcoming Vihar</span>
-            </button>
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+          {/* Left: greeting + org */}
+          <div>
+            <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-1">
+              🙏 Welcome back
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight leading-tight">
+              Jai Jinendra, {currentUser.full_name.split(' ')[0]}
+            </h1>
+            <p className="text-white/80 text-sm mt-1.5 flex items-center gap-1.5">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/60" />
+              {orgDetails
+                ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}`
+                : currentUser.organization_id}
+            </p>
 
-            <div className="relative">
-              <button
-                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-                className="flex items-center space-x-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-sm transition-all"
-              >
-                <Download size={18} />
-                <span>Download Report</span>
-              </button>
-              {showDownloadMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                  <button onClick={downloadPDF} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700">
-                    <FileText size={16} className="text-red-500" />
-                    <span>Download PDF</span>
-                  </button>
-                  <button onClick={downloadExcel} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700 border-t border-gray-50">
-                    <Table size={16} className="text-green-500" />
-                    <span>Export Excel</span>
-                  </button>
-                </div>
-              )}
-            </div>
+
           </div>
-        )}
+
+          {/* Right: action buttons (admin only) */}
+          {currentUser.role === UserRole.ORG_ADMIN && (
+            <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
+              <button
+                onClick={() => setIsAlertOpen(true)}
+                className="flex items-center justify-center gap-2 bg-white text-saffron-600 hover:bg-saffron-50 font-bold px-4 py-2.5 rounded-xl shadow-lg transition-all active:scale-95"
+              >
+                <MapPin size={18} />
+                <span>Alert Upcoming Vihar</span>
+              </button>
+
+              <div ref={downloadMenuRef} className="relative">
+                <button
+                  onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                  className="flex items-center justify-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-white font-semibold px-4 py-2.5 rounded-xl transition-all w-full active:scale-95"
+                >
+                  <Download size={18} />
+                  <span>Download Report</span>
+                </button>
+                {showDownloadMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                    <button onClick={downloadPDF} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700">
+                      <FileText size={16} className="text-red-500" />
+                      <span>Download PDF</span>
+                    </button>
+                    <button onClick={downloadExcel} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700 border-t border-gray-50">
+                      <Table size={16} className="text-green-500" />
+                      <span>Export Excel</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Grid */}

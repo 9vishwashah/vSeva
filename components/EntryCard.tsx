@@ -60,14 +60,16 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName, onDelete, on
     };
 
     return (
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow relative overflow-hidden">
+            {/* Left orange accent stripe */}
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-saffron-400 to-orange-500 rounded-l-2xl" />
             {/* Capture Area */}
-            <div ref={cardRef} className="bg-white p-2 rounded-xl">
+            <div ref={cardRef} className="bg-white p-4 pl-5 rounded-2xl">
                 {/* Top Row: Date & Type */}
                 <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-2">
-                        <div className="bg-gray-100 p-2 rounded-lg text-center min-w-[50px]">
-                            <span className="block text-xs text-gray-500 uppercase">{new Date(entry.vihar_date).toLocaleString('default', { month: 'short' })}</span>
+                        <div className="bg-saffron-50 border border-saffron-100 p-2 rounded-xl text-center min-w-[50px]">
+                            <span className="block text-[10px] text-saffron-500 uppercase font-bold">{new Date(entry.vihar_date).toLocaleString('default', { month: 'short' })}</span>
                             <span className="block text-lg font-bold text-gray-800 leading-none">{new Date(entry.vihar_date).getDate()}</span>
                         </div>
                         <div>
@@ -98,34 +100,35 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName, onDelete, on
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-lg mb-3">
-                    <div className="text-center border-r border-gray-200">
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide">Sadhu</p>
+                <div className="grid grid-cols-3 gap-2 bg-gradient-to-r from-saffron-50 to-orange-50 border border-orange-100 p-3 rounded-xl mb-3">
+                    <div className="text-center border-r border-orange-100">
+                        <p className="text-[10px] text-saffron-500 uppercase tracking-wide font-semibold">Sadhu</p>
                         <p className="font-bold text-gray-800">{entry.no_sadhubhagwan || 0}</p>
                     </div>
-                    <div className="text-center border-r border-gray-200">
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide">Sadhvi</p>
+                    <div className="text-center border-r border-orange-100">
+                        <p className="text-[10px] text-saffron-500 uppercase tracking-wide font-semibold">Sadhvi</p>
                         <p className="font-bold text-gray-800">{entry.no_sadhvijibhagwan || 0}</p>
                     </div>
                     <div className="text-center">
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide">Sevaks</p>
+                        <p className="text-[10px] text-saffron-500 uppercase tracking-wide font-semibold">Sevaks</p>
                         <p className="font-bold text-gray-800">{(entry.sevaks || []).length}</p>
                     </div>
                 </div>
 
-                {/* Sevaks List */}
+                {/* Sevaks List — single row, horizontally scrollable */}
                 <div className="mb-3">
-                    <div className="flex flex-wrap gap-1.5">
-                        {(entry.sevaks || []).slice(0, 4).map((u, i) => (
-                            <span key={i} className="text-[10px] px-2 py-1 bg-gray-100 text-gray-600 rounded-full border border-gray-200">
+                    <div
+                        className="flex flex-nowrap gap-1.5 overflow-x-auto pb-1"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                        {(entry.sevaks || []).map((u, i) => (
+                            <span
+                                key={i}
+                                className="shrink-0 text-[10px] px-2.5 py-1 bg-saffron-50 text-saffron-700 rounded-full border border-saffron-200 font-semibold whitespace-nowrap"
+                            >
                                 {getSevakName(u)}
                             </span>
                         ))}
-                        {(entry.sevaks || []).length > 4 && (
-                            <span className="text-[10px] px-2 py-1 bg-gray-100 text-gray-500 rounded-full border border-gray-200">
-                                +{(entry.sevaks || []).length - 4}
-                            </span>
-                        )}
                     </div>
                 </div>
 
@@ -144,7 +147,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName, onDelete, on
             </div>
 
             {/* Footer: Action Buttons (Outside Image Capture) */}
-            <div className="flex items-center justify-end pt-3 border-t border-gray-100 mt-[-10px]"> {/* Negative margin to pull it up if needed, but 'mt-2' gap is fine */}
+            <div className="flex items-center justify-end pt-3 px-4 pb-3 border-t border-gray-100">
                 <button
                     onClick={handleShare}
                     disabled={isSharing}

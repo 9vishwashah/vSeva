@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary, Organization } from '../types';
+import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary, Organization, ContactNumber } from '../types';
+
 
 export const dataService = {
 
@@ -511,6 +512,36 @@ export const dataService = {
       console.error(err);
       return { male: [], female: [], overall: [] };
     }
-  }
+  },
+
+  // --- Contact Numbers ---
+
+  async getContactNumbers(orgId: string): Promise<ContactNumber[]> {
+    const { data, error } = await supabase
+      .from('contact_numbers')
+      .select('*')
+      .eq('organization_id', orgId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data as ContactNumber[];
+  },
+
+  async addContactNumber(contact: { organization_id: string; label: string; phone: string; description?: string }): Promise<ContactNumber> {
+    const { data, error } = await supabase
+      .from('contact_numbers')
+      .insert(contact)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as ContactNumber;
+  },
+
+  async deleteContactNumber(id: number): Promise<void> {
+    const { error } = await supabase
+      .from('contact_numbers')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
 
 };
