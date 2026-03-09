@@ -39,8 +39,9 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
   const [editingEntry, setEditingEntry] = useState<ViharEntry | null>(null);
-  // Show landing page only if NOT in standalone mode (PWA)
-  const [showLanding, setShowLanding] = useState(!isStandalone);
+  // Show landing page only if NOT in standalone mode (PWA) and not on /login
+  const isLoginRoute = window.location.pathname === '/login';
+  const [showLanding, setShowLanding] = useState(!isStandalone && !isLoginRoute);
 
   const handleEditEntry = (entry: ViharEntry) => {
     setEditingEntry(entry);
@@ -131,7 +132,7 @@ const App: React.FC = () => {
 
   if (!user) {
     if (showLanding) {
-      return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+      return <LandingPage onGetStarted={() => { window.location.href = '/login'; }} />;
     }
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }

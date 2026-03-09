@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UserProfile } from '../types';
-import { LogIn, Loader2 } from 'lucide-react';
+import { LogIn, Loader2, Instagram, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 
@@ -95,16 +95,24 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   }
 
   return (
-    <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
+    <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center px-4 pt-24 pb-24 relative">
+      <button
+        onClick={() => window.location.href = '/'}
+        className="absolute top-6 left-4 md:left-8 flex items-center gap-2 text-saffron-600 hover:text-white hover:bg-saffron-600 font-bold transition-all bg-white/100 backdrop-blur-sm px-5 py-2.5 rounded-full shadow-md border border-saffron-200 hover:-translate-y-0.5 z-50 group text-sm"
+      >
+        <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
+        <span>View More</span>
+      </button>
+
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6 z-10">
         <div className="text-center">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-6">
             <div className="relative">
               <div className="absolute inset-0 bg-saffron-400/20 blur-xl rounded-full"></div>
               <img
                 src={vSevaLogo}
                 alt="vSeva Logo"
-                className="relative h-24 w-24 md:h-28 md:w-28 object-contain drop-shadow-lg"
+                className="relative h-32 w-32 md:h-40 md:w-40 object-contain drop-shadow-lg"
               />
             </div>
           </div>
@@ -175,6 +183,20 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <p>vSeva by Vishwa Alpesh Shah</p>
         </div>
       </div>
+
+      {/* Instagram fixed popup */}
+      <a
+        href="https://www.instagram.com/the.vseva/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-xl border border-slate-200 flex items-center gap-3 w-max z-50 hover:-translate-y-1 hover:shadow-2xl transition-all cursor-pointer group"
+      >
+        <Instagram size={20} className="text-pink-600 group-hover:scale-110 transition-transform" />
+        <span className="text-sm font-medium text-slate-700">Follow us on</span>
+        <span className="text-sm font-bold bg-gradient-to-tr from-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
+          Instagram
+        </span>
+      </a>
     </div>
   );
 };
