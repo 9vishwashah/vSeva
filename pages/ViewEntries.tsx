@@ -111,7 +111,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                 <Calendar size={22} className="text-white" />
               </div>
               <h1 className="text-2xl font-bold tracking-tight">
-                {currentUser.role === UserRole.SEVAK ? 'My Entries' : 'Vihar Entries'}
+                {currentUser.role === UserRole.SEVAK ? 'My Vihars' : 'Vihar Entries'}
               </h1>
             </div>
             <p className="text-white/80 text-sm mt-1 ml-1">
@@ -133,7 +133,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
           </div>
           {/* Search */}
           <div className="relative w-full md:w-64 shrink-0">
-            <Search className="absolute left-3 top-2.5 text-white/60" size={18} />
+            <Search className="absolute left-3 top-2.5 text-white/60 z-10 pointer-events-none" size={18} />
             <input
               type="text"
               placeholder="Search entries..."
