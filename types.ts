@@ -64,6 +64,7 @@ export interface StatSummary {
   streak: number;
   vSynergy?: string;
   vRank?: number | string;
+  totalOrgSevaks?: number;
 }
 
 export interface UserNotification {

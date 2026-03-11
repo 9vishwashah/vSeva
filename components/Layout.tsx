@@ -42,6 +42,14 @@ const Layout: React.FC<LayoutProps> = ({
     </button>
   );
 
+  const mainRef = React.useRef<HTMLElement>(null);
+
+  React.useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTo(0, 0);
+    }
+  }, [currentPage]);
+
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 font-sans">
       {/* Sidebar for Desktop */}
@@ -151,6 +159,7 @@ const Layout: React.FC<LayoutProps> = ({
 
         {/* Main Content — fills remaining height, scrolls independently */}
         <main
+          ref={mainRef}
           className="flex-1 overflow-y-auto min-h-0"
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
@@ -176,23 +185,14 @@ const Layout: React.FC<LayoutProps> = ({
                 { page: 'manage-routes', icon: <Map size={20} />, label: 'Routes' },
                 { page: 'add-sevak', icon: <UserPlus size={20} />, label: 'Sevaks' },
               ];
-              return items.map(item =>
-                item.isCta ? (
-                  <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center -mt-7 active:scale-90 transition-transform">
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-saffron-500 to-orange-500 shadow-lg shadow-orange-300/50 text-white ring-4 ring-orange-50">
-                      {item.icon}
-                    </div>
-                    <span className="text-[9px] mt-1 font-bold text-saffron-600">{item.label}</span>
-                  </button>
-                ) : (
-                  <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center py-2 px-2 active:scale-95 transition-transform">
+              return items.map(item => (
+                  <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center py-2 px-2 w-16 active:scale-95 transition-transform">
                     <div className={`px-3 py-2 rounded-2xl transition-all flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-md shadow-saffron-200' : ''}`}>
                       <span className={currentPage === item.page ? 'text-white' : 'text-gray-400'}>{item.icon}</span>
                       <span className={`text-[9px] font-semibold leading-none ${currentPage === item.page ? 'text-white' : 'text-gray-400'}`}>{item.label}</span>
                     </div>
                   </button>
-                )
-              );
+              ));
             })()}
 
             {role === UserRole.SEVAK && (() => {

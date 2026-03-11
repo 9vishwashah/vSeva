@@ -9,6 +9,8 @@ import {
 } from 'recharts';
 import jsPDF from 'jspdf';
 import vSevaLogo from '../assets/vseva-logo.png';
+import { NotoSansDevanagariBase64 } from '../assets/NotoSansDevanagari-Regular';
+import { NotoSansGujaratiBase64 } from '../assets/NotoSansGujarati-Regular';
 import * as XLSX from 'xlsx';
 
 import autoTable from 'jspdf-autotable';
@@ -99,7 +101,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         setIsLoading(true);
         const [org, orgSevaks, routes] = await Promise.all([
           dataService.getOrganization(currentUser.organization_id),
-          dataService.getOrgSevaks(currentUser.organization_id),
+          dataService.getAllOrgUsers(currentUser.organization_id, true),
           dataService.getRoutes(currentUser.organization_id)
         ]);
         setOrgDetails(org);
@@ -115,7 +117,10 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
         // Create username -> fullname map for Synergy display
         const nameMap: Record<string, string> = {};
-        orgSevaks.forEach(s => { nameMap[s.username] = s.full_name.split(' ')[0]; });
+        orgSevaks.forEach(s => {
+          nameMap[s.username] = s.full_name;
+          nameMap[s.username.split('@')[0]] = s.full_name;
+        });
         setSevakMap(nameMap);
 
         // To calculate RANK, we need ALL entries for the organization
@@ -123,20 +128,30 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
         let myEntries: ViharEntry[] = [];
         let rank: number | string = "N/A";
+        let totalCount: number | null = null;
 
         if (currentUser.role === UserRole.ORG_ADMIN) {
           // Admin sees org stats
           myEntries = allOrgEntries;
           rank = "Admin";
+          totalCount = orgSevaks.length;
         } else {
           // Sevak sees own stats
           myEntries = allOrgEntries.filter(e => (e.sevaks || []).includes(currentUser.username));
-          // Calculate Rank
-          rank = await dataService.getSevakRank(currentUser.organization_id, currentUser.username);
+          // Calculate Rank & Total count (using RPC to bypass RLS)
+          const [rankRes, totalRes] = await Promise.all([
+            dataService.getSevakRank(currentUser.organization_id, currentUser.username),
+            dataService.getTotalOrgSevaks(currentUser.organization_id)
+          ]);
+          rank = rankRes;
+          totalCount = totalRes;
         }
 
         const stats = dataService.calculateStats(myEntries, currentUser.username, nameMap);
         stats.vRank = rank;
+        if (totalCount !== null) {
+          stats.totalOrgSevaks = totalCount;
+        }
 
         // Fetch Leaderboard for Everyone
         let leaderboard = await dataService.getTopSevaks(currentUser.organization_id);
@@ -157,43 +172,58 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
   // Helper for names
   const getSevakName = (username: string) => {
-    return sevakMap[username] || username.split('@')[0];
+    const plainUsername = username.split('@')[0];
+    return sevakMap[username] || sevakMap[plainUsername] || plainUsername;
   };
 
   const prepareExportData = () => {
     return data.entries.map((entry, index) => {
-      let group = '-';
-      if (entry.group_sadhu && entry.group_sadhvi) group = 'Both';
-      else if (entry.group_sadhu) group = 'Sadhu';
-      else if (entry.group_sadhvi) group = 'Sadhvi';
-
       const sevakNames = (entry.sevaks || []).map(u => getSevakName(u)).join(', ');
 
       return {
         srNo: index + 1,
-        date: entry.vihar_date,
-        group: group,
+        date: entry.vihar_date ? entry.vihar_date.split('-').reverse().join('-') : '-',
         from: entry.vihar_from,
         to: entry.vihar_to,
         sadhu: entry.no_sadhubhagwan || 0,
         sadhvi: entry.no_sadhvijibhagwan || 0,
-        sevaks: sevakNames,
-        wheelchair: entry.wheelchair ? 'Yes' : 'No',
         samuday: entry.samuday || '-',
+        wheelchair: entry.wheelchair ? 'Yes' : 'No',
         type: entry.vihar_type === 'morning' ? 'Morning' : 'Evening',
-        kms: entry.distance_km
+        kms: entry.distance_km,
+        sevaks: sevakNames
       };
     });
   };
 
-  // Prepare Chart Data (Last 7 Days)
-  const chartData = data.entries
+  // Prepare Chart Data (Aggregated by Date)
+  const groupedData: Record<string, { km: number, count: number, _rawDate: Date }> = {};
+
+  data.entries.forEach(e => {
+    const rawDate = new Date(e.vihar_date);
+    // Use ISO string base to cleanly group identical days regardless of timezone shifts
+    const key = rawDate.toISOString().split('T')[0];
+
+    if (!groupedData[key]) {
+      groupedData[key] = { km: 0, count: 0, _rawDate: rawDate };
+    }
+    groupedData[key].km += Number(e.distance_km || 0);
+    groupedData[key].count += 1;
+  });
+
+  // Convert to array, sort by date descending (newest first), take top 7, then reverse for L-to-R chronological chart
+  const recentDays = Object.values(groupedData)
+    .sort((a, b) => b._rawDate.getTime() - a._rawDate.getTime())
     .slice(0, 7)
-    .reverse()
-    .map(e => ({
-      date: new Date(e.vihar_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
-      km: e.distance_km
-    }));
+    .reverse();
+
+  const chartData = recentDays.map(d => ({
+    date: d._rawDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+    km: parseFloat(d.km.toFixed(2)),
+    count: d.count
+  }));
+
+  const maxKm = chartData.length > 0 ? Math.max(...chartData.map(d => d.km)) : 0;
 
   const downloadPDF = () => {
     try {
@@ -204,6 +234,11 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         showToast("No entries found to export", 'info');
         return;
       }
+
+      doc.addFileToVFS('NotoSansDevanagari-Regular.ttf', NotoSansDevanagariBase64);
+      doc.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
+      doc.addFileToVFS('NotoSansGujarati-Regular.ttf', NotoSansGujaratiBase64);
+      doc.addFont('NotoSansGujarati-Regular.ttf', 'NotoSansGujarati', 'normal');
 
       // Add Logo (As Base64 or Image) - Using the imported image directly might rely on bundler
       // Ideally we load it into an image object first or verify if jspdf accepts URL
@@ -222,6 +257,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
       doc.addImage(vSevaLogo, 'PNG', 14, 10, 15, 15);
 
       // Title & Credits
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(18);
       doc.setTextColor(234, 88, 12); // Saffron
 
@@ -237,8 +273,13 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
       doc.setFontSize(9);
       doc.setTextColor(100);
       const now = new Date();
-      const generatedAt = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
-      doc.text(`Generated on: ${generatedAt}`, 14, 35);
+      const timeString = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+      const generatedAt = `${now.toLocaleDateString('en-GB')} ${timeString}`;
+      doc.text(`Generated on: ${generatedAt}`, 14, 38);
+
+      doc.setTextColor(234, 88, 12); // Saffron
+      const managerText = `Managed by: ${currentUser.full_name}`;
+      doc.text(managerText, doc.internal.pageSize.getWidth() - 14, 38, { align: 'right' });
 
       // Helper to draw watermark on a page
       const drawWatermark = () => {
@@ -253,30 +294,77 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         (doc as any).restoreGraphicsState();
       };
 
-      autoTable(doc, {
-        startY: 40,
-        head: [['Sr No', 'Date', 'Group', 'From', 'To', 'Sadhu', 'Sadhvi', 'Sevaks', 'Wheelchair', 'Samuday', 'Type', 'Kms']],
-        body: exportData.map(item => [
+      let totalSadhu = 0;
+      let totalSadhvi = 0;
+      let totalKms = 0;
+
+      const bodyData = exportData.map(item => {
+        totalSadhu += Number(item.sadhu) || 0;
+        totalSadhvi += Number(item.sadhvi) || 0;
+        totalKms += Number(item.kms) || 0;
+        return [
           item.srNo,
           item.date,
-          item.group,
           item.from,
           item.to,
           item.sadhu,
           item.sadhvi,
-          item.sevaks,
-          item.wheelchair,
           item.samuday,
+          item.wheelchair,
           item.type,
-          item.kms
-        ]),
+          item.kms,
+          item.sevaks
+        ];
+      });
+
+      // Add Total Row
+      bodyData.push([
+        '',
+        'TOTAL',
+        '',
+        '',
+        totalSadhu,
+        totalSadhvi,
+        '',
+        '',
+        '',
+        parseFloat(totalKms.toFixed(2)),
+        ''
+      ]);
+
+      autoTable(doc, {
+        startY: 45,
+        head: [['Sr No', 'Date', 'From', 'To', 'Sadhu', 'Sadhvi', 'Samuday', 'Wheelchair', 'Type', 'Kms', 'Sevaks']],
+        body: bodyData,
         styles: {
           fontSize: 7,
           lineColor: [200, 200, 200],
           lineWidth: 0.2,
+          textColor: [30, 30, 30]
         },
         headStyles: { fillColor: [234, 88, 12], textColor: 255 },
         alternateRowStyles: { fillColor: [255, 250, 245] },
+        didParseCell: (hookData) => {
+          const text = hookData.cell.raw != null ? String(hookData.cell.raw) : '';
+          const hasHindi = /[\u0900-\u097F]/.test(text);
+          const hasGujarati = /[\u0A80-\u0AFF]/.test(text);
+          if (hasGujarati) {
+            hookData.cell.styles.font = 'NotoSansGujarati';
+          } else if (hasHindi) {
+            hookData.cell.styles.font = 'NotoSansDevanagari';
+          }
+          
+          // Style for the Total row
+          if (hookData.section === 'body' && hookData.row.index === bodyData.length - 1) {
+            hookData.cell.styles.fillColor = [254, 235, 219]; // Light saffron/orange bg
+            hookData.cell.styles.textColor = [234, 88, 12]; // Saffron text
+            hookData.cell.styles.fontStyle = 'bold';
+            // Custom fonts might not have bold, fallback to normal for non-English if needed
+            if (!hasHindi && !hasGujarati) {
+               hookData.cell.styles.font = 'helvetica';
+            }
+          }
+        },
         didDrawPage: () => drawWatermark(),
       });
 
@@ -295,16 +383,15 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
       const excelData = data.map(item => ({
         'Sr No': item.srNo,
         'Date': item.date,
-        'Group': item.group,
         'From': item.from,
         'To': item.to,
         'No of Sadhu': item.sadhu,
         'No of Sadhvi': item.sadhvi,
-        'Sevaks': item.sevaks,
-        'Wheelchair': item.wheelchair,
         'Samuday': item.samuday,
+        'Wheelchair': item.wheelchair,
         'Type': item.type,
-        'Kms': item.kms
+        'Kms': item.kms,
+        'Sevaks': item.sevaks
       }));
 
       const ws = XLSX.utils.json_to_sheet(excelData);
@@ -565,7 +652,10 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold text-gray-900 tracking-tight">#{data.stats.vRank}</span>
-                      <span className="text-xs text-gray-400 font-medium">Org</span>
+                      {data.stats.totalOrgSevaks && (
+                        <span className="text-sm text-gray-400 font-medium">/ {data.stats.totalOrgSevaks}</span>
+                      )}
+                      <span className="text-xs text-gray-400 font-medium ml-1">Org</span>
                     </div>
                   )}
                 </div>
@@ -605,7 +695,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
           {currentUser.role === UserRole.ORG_ADMIN && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <LeaderboardCard
-                title="Top 10 Male Sevaks"
+                title="Top 10 Sevaks"
                 icon={<Trophy size={20} />}
                 items={data.leaderboard?.male || []}
                 colorClass="text-blue-600"
@@ -614,7 +704,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                 orgName={orgDetails?.name || ''}
               />
               <LeaderboardCard
-                title="Top 10 Female Sevaks"
+                title="Top 10 Sevikas"
                 icon={<Trophy size={20} />}
                 items={data.leaderboard?.female || []}
                 colorClass="text-pink-600"
@@ -627,7 +717,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
           {/* Chart */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-6">Activity (Last 7 Days)</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-6">Recent Vihar Activity</h3>
             <div className="h-64 w-full">
               {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -637,11 +727,31 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
                     <Tooltip
                       cursor={{ fill: '#f9fafb' }}
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white border border-gray-100 p-3 rounded-xl shadow-lg">
+                              <p className="font-bold text-gray-800 mb-1">{payload[0].payload.date}</p>
+                              <div className="flex items-center gap-3">
+                                <div>
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Distance</p>
+                                  <p className="text-saffron-600 font-bold">{payload[0].value} km</p>
+                                </div>
+                                <div className="h-8 w-px bg-gray-100"></div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vihars</p>
+                                  <p className="text-gray-700 font-bold">{payload[0].payload.count}</p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
                     />
                     <Bar dataKey="km" radius={[4, 4, 0, 0]}>
                       {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={index === chartData.length - 1 ? '#ea580c' : '#fdba74'} />
+                        <Cell key={`cell-${index}`} fill={entry.km === maxKm && maxKm > 0 ? '#ea580c' : '#fdba74'} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -658,7 +768,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
           {currentUser.role !== UserRole.ORG_ADMIN && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
               <LeaderboardCard
-                title="Top 3 Male Sevaks"
+                title="Top 3 Sevaks"
                 icon={<Trophy size={20} />}
                 items={data.leaderboard?.male || []}
                 colorClass="text-blue-600"
@@ -667,7 +777,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                 orgName={orgDetails?.name || ''}
               />
               <LeaderboardCard
-                title="Top 3 Female Sevaks"
+                title="Top 3 Sevikas"
                 icon={<Trophy size={20} />}
                 items={data.leaderboard?.female || []}
                 colorClass="text-pink-600"
@@ -691,9 +801,6 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
               isAdmin={currentUser.role === UserRole.ORG_ADMIN}
               topSevak={(data.leaderboard as any)?.overall?.[0] || null}
             />
-            <p className="text-xs text-gray-400 mt-4 text-center">
-              Share this card on social media to inspire others.
-            </p>
           </div>
 
         </div>

@@ -23,6 +23,7 @@
         "npm:react-dom@^18.2.0",
         "npm:react@^18.2.0",
         "npm:recharts@2.12.3",
+        "npm:sharp@~0.34.5",
         "npm:typescript@~5.8.2",
         "npm:vite-plugin-pwa@^1.2.0",
         "npm:vite@^6.2.0",

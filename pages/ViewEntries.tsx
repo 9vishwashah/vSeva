@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, ViharEntry } from '../types';
 import { dataService } from '../services/dataService';
-import { Search, MessageCircle, MapPin, Loader2, Calendar, User, Clock, Navigation, Trash2, Pencil } from 'lucide-react';
+import { Search, MessageCircle, MapPin, Loader2, Calendar, User, Clock, Navigation, Trash2, Pencil, X } from 'lucide-react';
 import { Organization, UserRole } from '../types';
 import EntryCard from '../components/EntryCard';
 import EntriesSkeleton from '../components/EntriesSkeleton';
@@ -28,7 +28,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
       try {
         const [data, sevaks, organization] = await Promise.all([
           dataService.getEntries(currentUser.organization_id),
-          dataService.getOrgSevaks(currentUser.organization_id),
+          dataService.getAllOrgUsers(currentUser.organization_id, true),
           dataService.getOrganization(currentUser.organization_id),
         ]);
 
@@ -39,7 +39,10 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
         setEntries(filteredData);
 
         const map: Record<string, string> = {};
-        (sevaks || []).forEach(s => (map[s.username] = s.full_name));
+        (sevaks || []).forEach(s => {
+          map[s.username] = s.full_name;
+          map[s.username.split('@')[0]] = s.full_name;
+        });
         setSevakMap(map);
 
         setOrg(organization);
@@ -82,8 +85,8 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
   };
 
   const getSevakName = (username: string) => {
-    const fullName = sevakMap[username] || username;
-    return fullName.split('@')[0]; // Simple clean up if it's an email
+    const plainUsername = username.split('@')[0];
+    return sevakMap[username] || sevakMap[plainUsername] || plainUsername;
   };
 
   const handleDelete = async (id: number) => {
@@ -104,7 +107,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
         <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
         <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
-        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="relative flex flex-col xl:flex-row xl:items-end justify-between gap-6 w-full">
           <div>
             <div className="flex items-center gap-3 mb-1">
               <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -114,7 +117,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                 {currentUser.role === UserRole.SEVAK ? 'My Vihars' : 'Vihar Entries'}
               </h1>
             </div>
-            <p className="text-white/80 text-sm mt-1 ml-1">
+            <p className="text-white/80 text-sm mt-1 ml-1 mb-3 xl:mb-0">
               {currentUser.role === UserRole.SEVAK
                 ? 'Your personal Vihar journey log'
                 : <>Manage and view all recorded journeys for{' '}
@@ -126,57 +129,63 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
               }
             </p>
             {!loading && (
-              <span className="mt-3 inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
+              <span className="hidden xl:inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full mt-2">
                 {entries.length} {entries.length === 1 ? 'Entry' : 'Entries'}
               </span>
             )}
           </div>
-          {/* Search */}
-          <div className="relative w-full md:w-64 shrink-0">
-            <Search className="absolute left-3 top-2.5 text-white/60 z-10 pointer-events-none" size={18} />
-            <input
-              type="text"
-              placeholder="Search entries..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
+          
+          <div className="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full xl:w-auto mt-4 xl:mt-0">
+            {/* Date filters inside banner */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white/10 p-3 rounded-2xl backdrop-blur-md border border-white/20 shadow-sm w-full md:w-auto">
+              <div className="w-full sm:flex-1 md:w-36">
+                <label className="block text-[10px] font-bold text-white/90 uppercase mb-1.5 ml-1 tracking-wider">From</label>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#fff8eb] text-gray-800 focus:ring-2 focus:ring-white border-none outline-none font-medium text-sm shadow-inner transition-shadow"
+                />
+              </div>
+              <div className="w-full sm:flex-1 md:w-36">
+                <label className="block text-[10px] font-bold text-white/90 uppercase mb-1.5 ml-1 tracking-wider">To</label>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#fff8eb] text-gray-800 focus:ring-2 focus:ring-white border-none outline-none font-medium text-sm shadow-inner transition-shadow"
+                />
+              </div>
+              {(fromDate || toDate) && (
+                <button
+                  onClick={() => {
+                    setFromDate('');
+                    setToDate('');
+                  }}
+                  className="text-white hover:text-red-200 p-1 sm:mb-1 self-end sm:self-end transition-colors mt-1 sm:mt-0"
+                  title="Clear Dates"
+                >
+                  <X size={20} />
+                </button>
+              )}
+            </div>
+
+            {/* Search */}
+            <div className="relative w-full md:w-56 shrink-0 h-full">
+              <label className="hidden md:block text-[10px] font-bold text-white/0 uppercase mb-1 ml-1 pointer-events-none">Search</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-[11px] text-white/60 z-10 pointer-events-none" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search entries..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/80 focus:outline-none focus:ring-2 focus:ring-white text-sm"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      {/* Date filters */}
-      <div className="grid grid-cols-2 md:flex md:flex-row gap-4 w-full md:w-auto items-end">
-        <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">From</label>
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-saffron-500 outline-none border-gray-200"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">To</label>
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-saffron-500 outline-none border-gray-200"
-          />
-        </div>
-
-        {(fromDate || toDate) && (
-          <button
-            onClick={() => {
-              setFromDate('');
-              setToDate('');
-            }}
-            className="col-span-2 md:col-span-1 text-xs text-saffron-600 hover:text-saffron-700 font-medium mb-3 hover:underline text-right md:text-left"
-          >
-            Clear dates
-          </button>
-        )}
       </div>
 
       {loading ? (
@@ -190,7 +199,6 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                 <thead className="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider border-b border-gray-100">
                   <tr>
                     <th className="p-4">Date</th>
-                    <th className="p-4">Group</th>
                     <th className="p-4">From</th>
                     <th className="p-4">To</th>
                     <th className="p-4 text-center">Sadhu</th>
@@ -200,20 +208,14 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                     <th className="p-4">Samuday</th>
                     <th className="p-4">Type</th>
                     <th className="p-4 text-center">Kms</th>
-                    <th className="p-4">Notes</th>
                     <th className="p-4 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-gray-700">
                   {filteredEntries.map(entry => (
                     <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="p-4 font-medium">{entry.vihar_date}</td>
-                      <td className="p-4">
-                        <div className="flex gap-1">
-                          {entry.group_sadhu && <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold">SADHU</span>}
-                          {entry.group_sadhvi && <span className="px-2 py-0.5 bg-pink-100 text-pink-700 rounded text-[10px] font-bold">SADHVI</span>}
-                          {!entry.group_sadhu && !entry.group_sadhvi && <span className="text-gray-300">-</span>}
-                        </div>
+                      <td className="p-4 font-medium whitespace-nowrap">
+                        {entry.vihar_date ? entry.vihar_date.split('-').reverse().join('-') : '-'}
                       </td>
                       <td className="p-4">{entry.vihar_from}</td>
                       <td className="p-4">{entry.vihar_to}</td>
@@ -242,7 +244,6 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                       <td className="p-4 text-center font-bold text-blue-600">
                         {entry.distance_km}
                       </td>
-                      <td className="p-4 max-w-[150px] truncate text-xs text-gray-500">{entry.notes || '-'}</td>
                       <td className="p-4 text-center">
                         <a
                           href={formatWhatsAppLink(entry)}

@@ -89,7 +89,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({ title, icon, items, c
                 </div>
 
                 {/* Scrollable list */}
-                <div className="flex-1 overflow-y-auto max-h-[420px]">
+                <div className="flex-1 overflow-y-auto max-h-[295px]">
                     {loading ? (
                         <div className="p-4 space-y-3">
                             {[1, 2, 3].map(i => (

@@ -1,7 +1,7 @@
 {
 	"geolocation": {
 		"data": {
-			"city": "Pune",
+			"city": "Uran",
 			"country": {
 				"code": "IN",
 				"name": "India"
@@ -11,10 +11,10 @@
 				"name": "Maharashtra"
 			},
 			"timezone": "Asia/Kolkata",
-			"latitude": 18.5211,
-			"longitude": 73.8502,
-			"postalCode": "411001"
+			"latitude": 18.8832,
+			"longitude": 72.9409,
+			"postalCode": "400702"
 		},
-		"timestamp": 1771339037119
+		"timestamp": 1773238330154
 	}
 }
