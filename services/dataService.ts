@@ -46,6 +46,21 @@ export const dataService = {
     return data as UserProfile[];
   },
 
+  async getAllOrgUsers(orgId: string, includeInactive: boolean = false): Promise<UserProfile[]> {
+    let query = supabase
+      .from('profiles')
+      .select('*')
+      .eq('organization_id', orgId);
+
+    if (!includeInactive) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data as UserProfile[];
+  },
+
   async createSevak(
     adminOrgId: string,
     sevakData: { fullName: string; mobile: string; gender: string; age: number }
@@ -169,6 +184,42 @@ export const dataService = {
     return true;
   },
 
+  async updateSevakMobile(userId: string, newMobile: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('Admin session not found. Please login again.');
+    }
+
+    // 1. Call Netlify function to update Auth password
+    const response = await fetch('/.netlify/functions/update-user-phone', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        new_mobile: newMobile
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || 'Could not update contact number in Auth.');
+    }
+
+    // 2. Update Profile table
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ mobile: newMobile })
+      .eq('id', userId);
+
+    if (profileError) throw profileError;
+
+    return true;
+  },
+
   async approveOrgAdmin(request: {
     id: string;
     org_name: string;
@@ -248,6 +299,25 @@ export const dataService = {
       // Handle unique violation gracefully if needed, or let UI handle it
       throw error;
     }
+
+    // Auto-update any existing Vihar Entries that have these locations but 0 km (or any km really)
+    if (data && data.organization_id) {
+      await supabase
+        .from('vihar_entries')
+        .update({ distance_km: route.distance_km })
+        .eq('organization_id', data.organization_id)
+        .eq('vihar_from', route.from_name)
+        .eq('vihar_to', route.to_name);
+
+      // Optionally update the reverse direction too if needed, but strict matching is better
+      await supabase
+        .from('vihar_entries')
+        .update({ distance_km: route.distance_km })
+        .eq('organization_id', data.organization_id)
+        .eq('vihar_from', route.to_name)
+        .eq('vihar_to', route.from_name);
+    }
+
     return data;
   },
 
@@ -270,6 +340,24 @@ export const dataService = {
       .single();
 
     if (error) throw error;
+
+    // Auto-update existing Vihar Entries if distance has changed
+    if (data && data.organization_id && updates.distance_km !== undefined) {
+      await supabase
+        .from('vihar_entries')
+        .update({ distance_km: updates.distance_km })
+        .eq('organization_id', data.organization_id)
+        .eq('vihar_from', data.from_name)
+        .eq('vihar_to', data.to_name);
+
+      await supabase
+        .from('vihar_entries')
+        .update({ distance_km: updates.distance_km })
+        .eq('organization_id', data.organization_id)
+        .eq('vihar_from', data.to_name)
+        .eq('vihar_to', data.from_name);
+    }
+
     return data;
   },
 
@@ -473,6 +561,18 @@ export const dataService = {
       return "N/A";
     }
     return data || "N/A";
+  },
+
+  async getTotalOrgSevaks(orgId: string): Promise<number | null> {
+    const { data, error } = await supabase.rpc('get_total_org_sevaks', {
+      org_id: orgId
+    });
+
+    if (error) {
+      console.error("Error fetching total org sevaks:", error);
+      return null;
+    }
+    return data as number;
   },
 
   async getTopSevaks(orgId: string, limit: number = 10) {

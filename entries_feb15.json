@@ -1,0 +1,25 @@
+[
+  {
+    "id": 128,
+    "organization_id": "72c04793-dafd-4d38-b56f-1270ef5cd196",
+    "created_by": "0f25dc65-658e-4805-8cb2-9d89bfb098c8",
+    "vihar_date": "2026-02-15",
+    "group_sadhu": true,
+    "group_sadhvi": false,
+    "no_sadhubhagwan": 6,
+    "no_sadhvijibhagwan": 0,
+    "vihar_from": "SECTOR 9",
+    "vihar_to": "WADHVA",
+    "sevaks": [
+      "manishgundecha@vsevak.in",
+      "namyamehta@vsevak.in"
+    ],
+    "notes": null,
+    "wheelchair": false,
+    "samuday": null,
+    "distance_km": 4.6,
+    "haversine_km": null,
+    "vihar_type": "morning",
+    "created_at": "2026-03-03T06:40:46.084311+00:00"
+  }
+]

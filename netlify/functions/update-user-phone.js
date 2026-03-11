@@ -47,14 +47,20 @@ export async function handler(event) {
       };
     }
 
-    const { email, password } = JSON.parse(event.body);
+    const { user_id, new_mobile } = JSON.parse(event.body);
 
-    const { data, error } =
-      await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
+    if (!user_id || !new_mobile) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Missing user_id or new_mobile' }),
+      };
+    }
+
+    // Update the user's password in auth
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
+      user_id,
+      { password: new_mobile }
+    );
 
     if (error) {
       return {
@@ -65,7 +71,7 @@ export async function handler(event) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ user_id: data.user.id }),
+      body: JSON.stringify({ message: "Phone number and password updated successfully" }),
     };
   } catch (err) {
     console.error(err);

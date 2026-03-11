@@ -335,10 +335,6 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
           )}
         </button>
       </div>
-
-      <p className="text-xs text-gray-400 max-w-[300px] text-center">
-        Tap to share on Status/Stories directly
-      </p>
     </div>
   );
 };

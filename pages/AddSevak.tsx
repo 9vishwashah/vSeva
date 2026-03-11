@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, Organization, ContactNumber } from '../types';
 import { dataService } from '../services/dataService';
-import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Phone, PhoneCall, PlusCircle } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Phone, PhoneCall, PlusCircle, Edit2, X, Download } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 
@@ -54,6 +54,10 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   // UI State
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editMobile, setEditMobile] = useState('');
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState<{ id: string, name: string } | null>(null);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -125,11 +129,15 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   };
 
   const handleDelete = async (userId: string, userName: string) => {
-    if (!window.confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
-      return;
-    }
+    setShowDeleteModal({ id: userId, name: userName });
+  };
 
+  const confirmDelete = async () => {
+    if (!showDeleteModal) return;
+    const { id: userId, name: userName } = showDeleteModal;
+    
     setDeletingId(userId);
+    setShowDeleteModal(null);
     try {
       await dataService.deleteSevak(userId);
       // Remove from local state immediately
@@ -143,11 +151,60 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     }
   };
 
+  const handleSaveMobile = async (userId: string, userName: string) => {
+    if (editMobile.length !== 10) {
+      showToast("Mobile number must be exactly 10 digits", "error");
+      return;
+    }
+    setSavingId(userId);
+    try {
+      await dataService.updateSevakMobile(userId, editMobile);
+      setSevaks(prev => prev.map(s => s.id === userId ? { ...s, mobile: editMobile } : s));
+      showToast(`Phone number updated! User can now login with this number.`, 'success');
+      setEditingId(null);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update phone number', 'error');
+      console.error(err);
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   const filteredSevaks = sevaks.filter(sevak =>
     sevak.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     sevak.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
     sevak.mobile.includes(searchQuery)
   );
+
+  const downloadCSV = () => {
+    if (sevaks.length === 0) {
+      showToast("No members to download", 'error');
+      return;
+    }
+
+    const headers = ["Sr. No", "Name", "Username", "Mobile", "Gender", "Age"];
+    const csvContent = [
+      headers.join(","),
+      ...sevaks.map((s, i) => [
+        i + 1,
+        `"${s.full_name}"`,
+        s.username,
+        s.mobile,
+        s.gender || '-',
+        s.age || '-'
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `sevaks_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleAddContact = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,15 +376,26 @@ Password: ${sevak.mobile}
             </p>
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <input
-              type="text"
-              placeholder="Search sevaks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:border-saffron-500 outline-none text-sm"
-            />
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <input
+                type="text"
+                placeholder="Search sevaks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:border-saffron-500 outline-none text-sm"
+              />
+              <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+            </div>
+            
+            <button
+              onClick={downloadCSV}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
+              title="Download as CSV"
+            >
+              <Download size={16} className="text-gray-500" />
+              Export
+            </button>
           </div>
         </div>
 
@@ -347,7 +415,6 @@ Password: ${sevak.mobile}
                   <th className="p-4">Name</th>
                   <th className="p-4">Username</th>
                   <th className="p-4">Mobile</th>
-                  <th className="p-4">Gender</th>
                   <th className="p-4">
                     <div className="flex items-center gap-1">
                       <Clock size={14} className="text-saffron-500" />
@@ -369,7 +436,17 @@ Password: ${sevak.mobile}
                   filteredSevaks.map((sevak, index) => (
                     <tr key={sevak.id} className="hover:bg-gray-50 transition-colors group">
                       <td className="p-4 text-gray-500 font-mono text-xs">{index + 1}</td>
-                      <td className="p-4 font-medium text-gray-900">{sevak.full_name}</td>
+                      <td className="p-4 font-medium">
+                        <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-lg ${
+                          sevak.gender?.toLowerCase() === 'male' 
+                            ? 'bg-blue-50 text-blue-700 border border-blue-100' 
+                            : sevak.gender?.toLowerCase() === 'female'
+                              ? 'bg-pink-50 text-pink-700 border border-pink-100'
+                              : 'bg-gray-50 text-gray-700 border border-gray-100'
+                        }`}>
+                          {sevak.full_name}
+                        </span>
+                      </td>
 
                       {/* Stylized Username with Copy */}
                       <td className="p-4">
@@ -387,8 +464,22 @@ Password: ${sevak.mobile}
                         </div>
                       </td>
 
-                      <td className="p-4">{sevak.mobile}</td>
-                      <td className="p-4">{sevak.gender || '-'}</td>
+                      {/* Mobile Column with Edit Support */}
+                      <td className="p-4">
+                        {editingId === sevak.id ? (
+                          <input
+                            type="tel"
+                            maxLength={10}
+                            value={editMobile}
+                            onChange={(e) => setEditMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                            className="w-28 p-1.5 border border-saffron-300 rounded text-sm focus:ring-2 focus:ring-saffron-500 outline-none font-mono"
+                            autoFocus
+                            placeholder="10 digits"
+                          />
+                        ) : (
+                          sevak.mobile
+                        )}
+                      </td>
 
                       {/* Last Login */}
                       <td className="p-4">
@@ -417,14 +508,53 @@ Password: ${sevak.mobile}
                       </td>
 
                       <td className="p-4 text-center">
-                        <button
-                          onClick={() => handleDelete(sevak.id, sevak.full_name)}
-                          disabled={deletingId === sevak.id}
-                          className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded transition-colors disabled:opacity-50"
-                          title="Delete Member"
-                        >
-                          {deletingId === sevak.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                        </button>
+                        <div className="flex items-center justify-center gap-1">
+                          {editingId === sevak.id ? (
+                            <>
+                              <button
+                                onClick={() => handleSaveMobile(sevak.id, sevak.full_name)}
+                                disabled={savingId === sevak.id}
+                                className="text-green-600 hover:bg-green-50 p-1.5 rounded transition-colors disabled:opacity-50"
+                                title="Save changes"
+                              >
+                                {savingId === sevak.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingId(null);
+                                  setEditMobile('');
+                                }}
+                                disabled={savingId === sevak.id}
+                                className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors disabled:opacity-50"
+                                title="Cancel"
+                              >
+                                <X size={16} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setEditingId(sevak.id);
+                                  setEditMobile(sevak.mobile);
+                                }}
+                                disabled={deletingId === sevak.id}
+                                className="text-gray-400 hover:text-saffron-600 hover:bg-saffron-50 p-2 rounded transition-colors disabled:opacity-50"
+                                title="Edit Mobile"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(sevak.id, sevak.full_name)}
+                                disabled={deletingId === sevak.id}
+                                className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded transition-colors disabled:opacity-50"
+                                title="Delete Member"
+                              >
+                                {deletingId === sevak.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -533,6 +663,40 @@ Password: ${sevak.mobile}
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slide-up">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Sevak?</h3>
+              <p className="text-gray-500 mb-6">
+                Are you sure you want to delete <span className="font-semibold text-gray-800">{showDeleteModal.name}</span>? 
+                This action will clear all their data and cannot be undone.
+              </p>
+              
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowDeleteModal(null)}
+                  className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm shadow-red-200"
+                >
+                  <Trash2 size={18} />
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
