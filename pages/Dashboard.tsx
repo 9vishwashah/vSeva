@@ -3,7 +3,7 @@ import { UserProfile, ViharEntry, UserRole, Organization, AreaRoute } from '../t
 import { dataService } from '../services/dataService';
 import StatCard from '../components/StatCard';
 import LeaderboardCard from '../components/LeaderboardCard';
-import { Trophy, Users, MapPin, Footprints, Download, FileText, Table, Heart, UserCheck, Medal, Sparkles, Handshake } from 'lucide-react';
+import { Trophy, Users, MapPin, Footprints, Download, FileText, Table, Medal, Handshake } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
@@ -510,20 +510,19 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
           {/* Left: greeting + org */}
           <div>
-            <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-1">
-              🙏 Welcome back
+            <p className="text-white/95 text-xl font-bold tracking-wide mb-1 flex items-center gap-2 drop-shadow-sm">
+              <span className="text-2xl">🙏</span>
+              <span className="font-serif italic">Jai Jinendra,</span>
             </p>
-            <h1 className="text-3xl font-bold tracking-tight leading-tight">
-              Jai Jinendra, {currentUser.full_name.split(' ')[0]}
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight drop-shadow-md">
+              {currentUser.full_name}
             </h1>
-            <p className="text-white/80 text-sm mt-1.5 flex items-center gap-1.5">
+            <p className="text-white/80 text-sm mt-2 flex items-center gap-1.5 font-medium">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/60" />
               {orgDetails
                 ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}`
                 : currentUser.organization_id}
             </p>
-
-
           </div>
 
           {/* Right: action buttons (admin only) */}
@@ -570,92 +569,97 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
         {/* Left Col: Stats & Chart */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Quick Stats Grid - Modern Minimalistic */}
+          {/* Quick Stats Grid - Rich Modern */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* 1. Total Km */}
-            <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
-                <Footprints size={48} className="text-saffron-600" />
+            <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(234,88,12,0.15)] transition-all duration-300 border border-gray-100 hover:border-saffron-200 relative overflow-hidden hover:-translate-y-0.5">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 to-saffron-500 rounded-t-2xl" />
+              <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
+                <Footprints size={56} className="text-saffron-600" />
               </div>
-              <div className="flex flex-col h-full justify-between relative z-10">
-                <div className="flex items-center space-x-2 text-saffron-600 mb-3">
-                  <div className="p-1.5 bg-saffron-50 rounded-lg">
-                    <Footprints size={16} className="shrink-0" />
+              <div className="p-5 pt-6 relative z-10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-orange-50 to-saffron-100 rounded-xl border border-saffron-100 shadow-sm">
+                    <Footprints size={15} className="text-saffron-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-saffron-600 transition-colors">Total Km</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Km</span>
                 </div>
-                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-bold text-gray-900 tracking-tight">{data.stats.totalKm}</p>}
+                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalKm}<span className="text-sm font-semibold text-saffron-400 ml-1">km</span></p>}
               </div>
             </div>
 
             {/* 2. Total Vihars */}
-            <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
-                <MapPin size={48} className="text-blue-600" />
+            <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(59,130,246,0.15)] transition-all duration-300 border border-gray-100 hover:border-blue-200 relative overflow-hidden hover:-translate-y-0.5">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-t-2xl" />
+              <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
+                <MapPin size={56} className="text-blue-600" />
               </div>
-              <div className="flex flex-col h-full justify-between relative z-10">
-                <div className="flex items-center space-x-2 text-blue-600 mb-3">
-                  <div className="p-1.5 bg-blue-50 rounded-lg">
-                    <MapPin size={16} className="shrink-0" />
+              <div className="p-5 pt-6 relative z-10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl border border-blue-100 shadow-sm">
+                    <MapPin size={15} className="text-blue-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-blue-600 transition-colors">Vihars</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Vihars</span>
                 </div>
-                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-bold text-gray-900 tracking-tight">{data.stats.totalVihars}</p>}
+                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalVihars}</p>}
               </div>
             </div>
 
             {/* 3. Sadhubhagwant */}
-            <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
-                <Users size={48} className="text-red-600" />
+            <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(239,68,68,0.15)] transition-all duration-300 border border-gray-100 hover:border-red-200 relative overflow-hidden hover:-translate-y-0.5">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-400 to-rose-500 rounded-t-2xl" />
+              <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
+                <Users size={56} className="text-red-600" />
               </div>
-              <div className="flex flex-col h-full justify-between relative z-10">
-                <div className="flex items-center space-x-2 text-red-600 mb-3">
-                  <div className="p-1.5 bg-red-50 rounded-lg">
-                    <Users size={16} className="shrink-0" />
+              <div className="p-5 pt-6 relative z-10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-red-50 to-rose-100 rounded-xl border border-red-100 shadow-sm">
+                    <Users size={15} className="text-red-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-red-600 transition-colors truncate" title="SADHUBHAGWANT">Sadhu</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400" title="SADHUBHAGWANT">Sadhu</span>
                 </div>
-                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-bold text-gray-900 tracking-tight">{data.stats.totalSadhu}</p>}
+                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalSadhu}</p>}
               </div>
             </div>
 
             {/* 4. Sadhvijibhagwant */}
-            <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
-                <Users size={48} className="text-pink-600" />
+            <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(236,72,153,0.15)] transition-all duration-300 border border-gray-100 hover:border-pink-200 relative overflow-hidden hover:-translate-y-0.5">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-400 to-fuchsia-500 rounded-t-2xl" />
+              <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
+                <Users size={56} className="text-pink-600" />
               </div>
-              <div className="flex flex-col h-full justify-between relative z-10">
-                <div className="flex items-center space-x-2 text-pink-600 mb-3">
-                  <div className="p-1.5 bg-pink-50 rounded-lg">
-                    <Users size={16} className="shrink-0" />
+              <div className="p-5 pt-6 relative z-10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-pink-50 to-fuchsia-100 rounded-xl border border-pink-100 shadow-sm">
+                    <Users size={15} className="text-pink-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-pink-600 transition-colors truncate" title="SADHVIJIBHAGWANT">Sadhvi</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400" title="SADHVIJIBHAGWANT">Sadhvi</span>
                 </div>
-                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-bold text-gray-900 tracking-tight">{data.stats.totalSadhvi}</p>}
+                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalSadhvi}</p>}
               </div>
             </div>
 
             {/* 5. Rank (Sevaks Only) */}
             {currentUser.role !== UserRole.ORG_ADMIN && (
-              <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
-                  <Medal size={48} className="text-yellow-600" />
+              <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(234,179,8,0.15)] transition-all duration-300 border border-gray-100 hover:border-yellow-200 relative overflow-hidden hover:-translate-y-0.5">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-t-2xl" />
+                <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
+                  <Medal size={56} className="text-yellow-600" />
                 </div>
-                <div className="flex flex-col h-full justify-between relative z-10">
-                  <div className="flex items-center space-x-2 text-yellow-600 mb-3">
-                    <div className="p-1.5 bg-yellow-50 rounded-lg">
-                      <Medal size={16} className="shrink-0" />
+                <div className="p-5 pt-6 relative z-10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 bg-gradient-to-br from-yellow-50 to-amber-100 rounded-xl border border-yellow-100 shadow-sm">
+                      <Medal size={15} className="text-yellow-600 shrink-0" />
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-yellow-600 transition-colors">Rank</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Rank</span>
                   </div>
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-gray-900 tracking-tight">#{data.stats.vRank}</span>
+                      <span className="text-3xl font-extrabold text-gray-900 tracking-tight">#{data.stats.vRank}</span>
                       {data.stats.totalOrgSevaks && (
-                        <span className="text-sm text-gray-400 font-medium">/ {data.stats.totalOrgSevaks}</span>
+                        <span className="text-sm text-gray-400 font-semibold">/ {data.stats.totalOrgSevaks}</span>
                       )}
-                      <span className="text-xs text-gray-400 font-medium ml-1">Org</span>
+                      <span className="text-xs text-amber-400 font-bold ml-1 bg-amber-50 px-1.5 py-0.5 rounded-full">Org</span>
                     </div>
                   )}
                 </div>
@@ -664,21 +668,22 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
             {/* 6. Synergy (Sevaks Only) */}
             {currentUser.role !== UserRole.ORG_ADMIN && (
-              <div className="group bg-white p-5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all border border-transparent hover:border-gray-50 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
-                  <Handshake size={48} className="text-saffron-600" />
+              <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(234,88,12,0.15)] transition-all duration-300 border border-gray-100 hover:border-saffron-200 relative overflow-hidden hover:-translate-y-0.5">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-saffron-400 to-orange-500 rounded-t-2xl" />
+                <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
+                  <Handshake size={56} className="text-saffron-600" />
                 </div>
-                <div className="flex flex-col h-full justify-between relative z-10">
-                  <div className="flex items-center space-x-2 text-saffron-600 mb-3">
-                    <div className="p-1.5 bg-saffron-50 rounded-lg">
-                      <Handshake size={16} className="shrink-0" />
+                <div className="p-5 pt-6 relative z-10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 bg-gradient-to-br from-orange-50 to-saffron-100 rounded-xl border border-saffron-100 shadow-sm">
+                      <Handshake size={15} className="text-saffron-600 shrink-0" />
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-saffron-600 transition-colors">Synergy</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Synergy</span>
                   </div>
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex flex-wrap gap-1">
                       {data.stats.vSynergy && data.stats.vSynergy !== "N/A" ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-saffron-50 text-saffron-600 border border-saffron-100">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-saffron-50 to-orange-50 text-saffron-700 border border-saffron-200 shadow-sm">
                           {data.stats.vSynergy.split(',')[0]}
                         </span>
                       ) : (
