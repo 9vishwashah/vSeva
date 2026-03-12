@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, ViharEntry } from '../types';
+import { UserProfile, ViharEntry, Organization, UserRole } from '../types';
 import { dataService } from '../services/dataService';
-import { Search, MessageCircle, MapPin, Loader2, Calendar, User, Clock, Navigation, Trash2, Pencil, X } from 'lucide-react';
-import { Organization, UserRole } from '../types';
+import { Search, Calendar, User, MessageCircle, Trash2, Pencil, X } from 'lucide-react';
 import EntryCard from '../components/EntryCard';
 import EntriesSkeleton from '../components/EntriesSkeleton';
 import { useToast } from '../context/ToastContext';
+import { supabase } from '../services/supabase';
 
 
 interface ViewEntriesProps {
@@ -26,9 +26,8 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [data, sevaks, organization] = await Promise.all([
+        const [data, organization] = await Promise.all([
           dataService.getEntries(currentUser.organization_id),
-          dataService.getAllOrgUsers(currentUser.organization_id, true),
           dataService.getOrganization(currentUser.organization_id),
         ]);
 
@@ -37,15 +36,27 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
           filteredData = filteredData.filter(e => (e.sevaks || []).includes(currentUser.username));
         }
         setEntries(filteredData);
-
-        const map: Record<string, string> = {};
-        (sevaks || []).forEach(s => {
-          map[s.username] = s.full_name;
-          map[s.username.split('@')[0]] = s.full_name;
-        });
-        setSevakMap(map);
-
         setOrg(organization);
+
+        // Collect all unique usernames across all entries, then do a single targeted query
+        const allUsernames = Array.from(
+          new Set(filteredData.flatMap(e => e.sevaks || []))
+        );
+
+        if (allUsernames.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('username, full_name')
+            .in('username', allUsernames);
+
+          const map: Record<string, string> = {};
+          (profiles || []).forEach((p: { username: string; full_name: string }) => {
+            map[p.username] = p.full_name;               // exact match
+            map[p.username.split('@')[0]] = p.full_name; // part before @
+          });
+          setSevakMap(map);
+        }
+
       } catch (err) {
         console.error('Failed to load entries', err);
       } finally {
@@ -86,7 +97,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
 
   const getSevakName = (username: string) => {
     const plainUsername = username.split('@')[0];
-    return sevakMap[username] || sevakMap[plainUsername] || plainUsername;
+    return sevakMap[username] || sevakMap[username.toLowerCase()] || sevakMap[plainUsername] || sevakMap[plainUsername.toLowerCase()] || plainUsername;
   };
 
   const handleDelete = async (id: number) => {

@@ -6,7 +6,6 @@ import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, P
 import NotificationBell from './NotificationBell';
 import { supabase } from '../services/supabase';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
-// InstallPWA global import removed
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -163,50 +162,50 @@ const Layout: React.FC<LayoutProps> = ({
           className="flex-1 overflow-y-auto min-h-0"
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
-          <div className="max-w-7xl mx-auto p-4 md:p-8">
+          <div className="max-w-7xl mx-auto p-4 md:p-8 pb-28 md:pb-8">
             {children}
           </div>
         </main>
 
-        {/* Mobile Bottom Nav — floating pill */}
+        {/* Mobile Bottom Nav — true floating iOS pill */}
         <nav
-          className="md:hidden flex-shrink-0 z-20 px-4 pb-3 pt-1"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
+          className="md:hidden fixed bottom-0 left-0 right-0 z-30 px-4"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 10px)' }}
         >
           <div
-            className="bg-orange-50 border border-orange-200 rounded-3xl flex justify-around items-center px-3 shadow-md shadow-orange-100"
-            style={{ minHeight: '62px' }}
+            className="bg-white/80 backdrop-blur-xl rounded-[28px] flex justify-around items-center px-2 shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] border border-white/60"
+            style={{ minHeight: '64px' }}
           >
             {role === UserRole.ORG_ADMIN && (() => {
               const items = [
-                { page: 'dashboard', icon: <BarChart2 size={20} />, label: 'Stats' },
-                { page: 'view-entries', icon: <Table2 size={20} />, label: 'Entries' },
-                { page: 'new-entry', icon: <FilePlus size={22} />, label: 'Add', isCta: true },
-                { page: 'manage-routes', icon: <Map size={20} />, label: 'Routes' },
-                { page: 'add-sevak', icon: <UserPlus size={20} />, label: 'Sevaks' },
+                { page: 'dashboard', icon: <BarChart2 size={21} />, label: 'Stats' },
+                { page: 'view-entries', icon: <Table2 size={21} />, label: 'Entries' },
+                { page: 'new-entry', icon: <FilePlus size={23} />, label: 'Add', isCta: true },
+                { page: 'manage-routes', icon: <Map size={21} />, label: 'Routes' },
+                { page: 'add-sevak', icon: <UserPlus size={21} />, label: 'Sevaks' },
               ];
               return items.map(item => (
-                  <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center py-2 px-2 w-16 active:scale-95 transition-transform">
-                    <div className={`px-3 py-2 rounded-2xl transition-all flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-md shadow-saffron-200' : ''}`}>
-                      <span className={currentPage === item.page ? 'text-white' : 'text-gray-400'}>{item.icon}</span>
-                      <span className={`text-[9px] font-semibold leading-none ${currentPage === item.page ? 'text-white' : 'text-gray-400'}`}>{item.label}</span>
-                    </div>
-                  </button>
+                <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center py-2 px-1 min-w-[56px] active:scale-90 transition-transform duration-150">
+                  <div className={`px-3 py-2 rounded-2xl transition-all duration-200 flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-lg shadow-saffron-300/50 scale-105' : ''}`}>
+                    <span className={`transition-colors ${currentPage === item.page ? 'text-white' : 'text-gray-800'}`}>{item.icon}</span>
+                    <span className={`text-[9px] font-bold leading-none tracking-wide ${currentPage === item.page ? 'text-white' : 'text-gray-800'}`}>{item.label}</span>
+                  </div>
+                </button>
               ));
             })()}
 
             {role === UserRole.SEVAK && (() => {
               const items = [
-                { page: 'profile', icon: <Home size={20} />, label: 'Home' },
-                { page: 'analytics', icon: <BarChart2 size={20} />, label: 'Stats' },
-                { page: 'my-vihars', icon: <Footprints size={20} />, label: 'My Vihars' },
-                { page: 'contacts', icon: <PhoneCall size={20} />, label: 'Contacts' },
+                { page: 'profile', icon: <Home size={21} />, label: 'Home' },
+                { page: 'analytics', icon: <BarChart2 size={21} />, label: 'Stats' },
+                { page: 'my-vihars', icon: <Footprints size={21} />, label: 'My Vihars' },
+                { page: 'contacts', icon: <PhoneCall size={21} />, label: 'Contacts' },
               ];
               return items.map(item => (
-                <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center py-2 px-2 active:scale-95 transition-transform">
-                  <div className={`px-3 py-2 rounded-2xl transition-all flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-md shadow-saffron-200' : ''}`}>
-                    <span className={currentPage === item.page ? 'text-white' : 'text-gray-400'}>{item.icon}</span>
-                    <span className={`text-[9px] font-semibold leading-none ${currentPage === item.page ? 'text-white' : 'text-gray-400'}`}>{item.label}</span>
+                <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center py-2 px-1 min-w-[64px] active:scale-90 transition-transform duration-150">
+                  <div className={`px-3 py-2 rounded-2xl transition-all duration-200 flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-lg shadow-saffron-300/50 scale-105' : ''}`}>
+                    <span className={`transition-colors ${currentPage === item.page ? 'text-white' : 'text-gray-800'}`}>{item.icon}</span>
+                    <span className={`text-[9px] font-bold leading-none tracking-wide ${currentPage === item.page ? 'text-white' : 'text-gray-800'}`}>{item.label}</span>
                   </div>
                 </button>
               ));
