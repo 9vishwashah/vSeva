@@ -43,6 +43,5 @@ To trigger the `send-push` Netlify function when a new notification is inserted,
 8. HTTP Request URL: `https://your-domain.netlify.app/.netlify/functions/send-push` 
    (If local testing, use your ngrok or local dev server URL, e.g., `http://localhost:9999/.netlify/functions/send-push`)
 9. HTTP Headers: 
-   - Add Header: `Content-type: application/json`
    - (Optional but recommended) Add an `Authorization` header with a secret token to verify the request in your Netlify function. e.g. `Bearer YOUR_SUPABASE_WEBHOOK_SECRET`
 */
