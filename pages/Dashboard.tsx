@@ -155,10 +155,6 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
         // Fetch Leaderboard for Everyone
         let leaderboard = await dataService.getTopSevaks(currentUser.organization_id);
-        if (currentUser.role !== UserRole.ORG_ADMIN) {
-          leaderboard.male = leaderboard.male.slice(0, 3);
-          leaderboard.female = leaderboard.female.slice(0, 3);
-        }
 
         setData({ entries: myEntries, stats, leaderboard });
       } catch (e) {
@@ -700,7 +696,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
           {currentUser.role === UserRole.ORG_ADMIN && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <LeaderboardCard
-                title="Top 10 Sevaks"
+                title="Top Sevaks"
                 icon={<Trophy size={20} />}
                 items={data.leaderboard?.male || []}
                 colorClass="text-blue-600"
@@ -709,7 +705,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                 orgName={orgDetails?.name || ''}
               />
               <LeaderboardCard
-                title="Top 10 Sevikas"
+                title="All Sevikas"
                 icon={<Trophy size={20} />}
                 items={data.leaderboard?.female || []}
                 colorClass="text-pink-600"
@@ -769,29 +765,38 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
             </div>
           </div>
 
-          {/* Leaderboards - SEVAK ONLY (Top 3) */}
-          {currentUser.role !== UserRole.ORG_ADMIN && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-              <LeaderboardCard
-                title="Top 3 Sevaks"
-                icon={<Trophy size={20} />}
-                items={data.leaderboard?.male || []}
-                colorClass="text-blue-600"
-                bgClass="bg-blue-50"
-                loading={isLoading}
-                orgName={orgDetails?.name || ''}
-              />
-              <LeaderboardCard
-                title="Top 3 Sevikas"
-                icon={<Trophy size={20} />}
-                items={data.leaderboard?.female || []}
-                colorClass="text-pink-600"
-                bgClass="bg-pink-50"
-                loading={isLoading}
-                orgName={orgDetails?.name || ''}
-              />
-            </div>
-          )}
+          {/* Leaderboards - SEVAK ONLY (Gender Specific) */}
+          {currentUser.role !== UserRole.ORG_ADMIN && (() => {
+            const gender = (currentUser.gender || '').toLowerCase();
+            const showMale = gender !== 'female'; // show male card for males or if gender unknown
+            const showFemale = gender !== 'male'; // show female card for females or if gender unknown
+            return (
+              <div className="grid grid-cols-1 gap-6 pt-2">
+                {showMale && (
+                  <LeaderboardCard
+                    title="Top Sevaks"
+                    icon={<Trophy size={20} />}
+                    items={data.leaderboard?.male || []}
+                    colorClass="text-blue-600"
+                    bgClass="bg-blue-50"
+                    loading={isLoading}
+                    orgName={orgDetails?.name || ''}
+                  />
+                )}
+                {showFemale && (
+                  <LeaderboardCard
+                    title="Top Sevikas"
+                    icon={<Trophy size={20} />}
+                    items={data.leaderboard?.female || []}
+                    colorClass="text-pink-600"
+                    bgClass="bg-pink-50"
+                    loading={isLoading}
+                    orgName={orgDetails?.name || ''}
+                  />
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Right Col: Stat Card Preview */}
