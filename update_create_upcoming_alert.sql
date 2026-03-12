@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION create_upcoming_alert(
 DECLARE
   v_org_id UUID;
   v_user_id UUID;
-  v_new_vihar_id BIGINT;
+  v_new_vihar_id UUID;
   v_message TEXT;
   target_user RECORD;
 BEGIN
