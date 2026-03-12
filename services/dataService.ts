@@ -575,7 +575,7 @@ export const dataService = {
     return data as number;
   },
 
-  async getTopSevaks(orgId: string, limit: number = 10) {
+  async getTopSevaks(orgId: string, limit: number = 1000) {
     try {
       // Use RPC to bypass RLS and get all org stats
       const { data, error } = await supabase.rpc('get_top_sevaks_leaderboard', {

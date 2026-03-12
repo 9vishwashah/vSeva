@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, UserRole } from '../types';
 import { dataService } from '../services/dataService';
 import LeaderboardCard from './LeaderboardCard';
+import StatCard from './StatCard';
 import { Trophy } from 'lucide-react';
 
 interface ProfileSectionProps {
@@ -10,19 +11,53 @@ interface ProfileSectionProps {
 }
 
 const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [leaderboard, setLeaderboard] = useState<{ male: any[], female: any[], overall: any[] }>({ male: [], female: [], overall: [] });
+    const [stats, setStats] = useState<any>(null);
+    const [orgDetails, setOrgDetails] = useState<any>(null);
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                setIsLoading(true);
+                const [lb, org, allEntries] = await Promise.all([
+                    dataService.getTopSevaks(user.organization_id),
+                    dataService.getOrganization(user.organization_id),
+                    dataService.getEntries(user.organization_id),
+                ]);
+                setLeaderboard(lb);
+                setOrgDetails(org);
+
+                const myEntries = allEntries.filter(e => (e.sevaks || []).includes(user.username));
+                const s = dataService.calculateStats(myEntries, user.username);
+                const [rankRes, totalRes] = await Promise.all([
+                    dataService.getSevakRank(user.organization_id, user.username),
+                    dataService.getTotalOrgSevaks(user.organization_id),
+                ]);
+                s.vRank = rankRes;
+                s.totalOrgSevaks = totalRes ?? undefined;
+                setStats(s);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        load();
+    }, [user]);
 
     const getInitials = (name: string) => {
         if (!name) return 'VS';
         const parts = name.trim().split(/\s+/);
-        if (parts.length >= 2) {
-            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-        }
+        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
         return name.substring(0, 2).toUpperCase();
     };
 
+    const gender = (user.gender || '').toLowerCase();
+    const showMale = gender !== 'female';
+    const showFemale = gender !== 'male';
+
     return (
         <div className="space-y-6">
+            {/* Profile Card */}
             <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
                 <div className="flex items-center space-x-4 mb-6">
                     <div className="w-16 h-16 bg-saffron-100 rounded-full flex items-center justify-center text-2xl font-bold text-saffron-600">
@@ -54,9 +89,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                         </span>
                     </div>
                 </div>
+
                 <div className="mt-8 border-t border-gray-100 pt-6">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">App Settings</h3>
-
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                         <div>
                             <p className="font-medium text-gray-900">Push Notifications</p>
@@ -77,6 +112,47 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                         </button>
                     </div>
                 </div>
+            </div>
+
+            {/* Your Impact Card (Stat Card) */}
+            {stats && (
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 self-start">Your Impact Card</h3>
+                    <StatCard
+                        stats={stats}
+                        userName={user.full_name}
+                        orgName={orgDetails?.name || orgName || 'vSeva'}
+                        loading={isLoading}
+                        isAdmin={false}
+                        topSevak={null}
+                    />
+                </div>
+            )}
+
+            {/* Leaderboard - gender specific */}
+            <div className="grid grid-cols-1 gap-6">
+                {showMale && (
+                    <LeaderboardCard
+                        title="Top Sevaks"
+                        icon={<Trophy size={20} />}
+                        items={leaderboard.male}
+                        colorClass="text-blue-600"
+                        bgClass="bg-blue-50"
+                        loading={isLoading}
+                        orgName={orgDetails?.name || orgName}
+                    />
+                )}
+                {showFemale && (
+                    <LeaderboardCard
+                        title="Top Sevikas"
+                        icon={<Trophy size={20} />}
+                        items={leaderboard.female}
+                        colorClass="text-pink-600"
+                        bgClass="bg-pink-50"
+                        loading={isLoading}
+                        orgName={orgDetails?.name || orgName}
+                    />
+                )}
             </div>
         </div>
     );
