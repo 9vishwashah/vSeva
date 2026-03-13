@@ -15,6 +15,8 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import ProfileSection from './components/ProfileSection';
 import Contacts from './pages/Contacts';
 import AdminContacts from './pages/AdminContacts';
+import ViewReports from './pages/ViewReports';
+import SubmitReport from './pages/SubmitReport';
 
 
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
@@ -204,6 +206,14 @@ const App: React.FC = () => {
 
       {currentPage === 'contacts' && user.role === UserRole.SEVAK && (
         <Contacts currentUser={user} />
+      )}
+
+      {currentPage === 'reports' && user.role === UserRole.ORG_ADMIN && (
+        <ViewReports currentUser={user} />
+      )}
+
+      {currentPage === 'reports' && user.role === UserRole.SEVAK && (
+        <SubmitReport currentUser={user} />
       )}
     </Layout>
   );

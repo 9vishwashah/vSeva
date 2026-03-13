@@ -101,3 +101,20 @@ export interface ContactNumber {
   description?: string; // optional note / reason about the contact
   created_at?: string;
 }
+
+export interface IncidentReport {
+  id?: string;
+  organization_id: string;
+  created_by: string;
+  report_date: string; // YYYY-MM-DD
+  report_time: string; // HH:MM
+  vihar_from: string;
+  vihar_to: string;
+  sadhu_count: number;
+  sadhvi_count: number;
+  involved_sevaks: string[];
+  description: string;
+  proof_media_url?: string;
+  status: 'pending' | 'reviewed' | 'resolved';
+  created_at?: string;
+}
