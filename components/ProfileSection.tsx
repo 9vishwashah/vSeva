@@ -97,11 +97,19 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                         </div>
                         <button
                             onClick={() => {
-                                import('../services/notificationService').then(({ notificationService }) => {
-                                    notificationService.requestPermission().then(perm => {
-                                        if (perm === 'granted') alert("Notifications enabled!");
-                                        else alert("Notifications blocked. Please enable them in browser settings.");
-                                    });
+                                // @ts-ignore
+                                window.OneSignalDeferred = window.OneSignalDeferred || [];
+                                // @ts-ignore
+                                window.OneSignalDeferred.push(async function(OneSignal: any) {
+                                  try {
+                                    await OneSignal.Slidedown.prompt();
+                                  } catch (e) {
+                                    console.error("OneSignal prompt failed", e);
+                                    // Fallback to simple request
+                                    if (Notification.permission !== 'granted') {
+                                      Notification.requestPermission();
+                                    }
+                                  }
                                 });
                             }}
                             className="px-4 py-2 bg-white border border-gray-200 shadow-sm text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 active:scale-95 transition-transform"

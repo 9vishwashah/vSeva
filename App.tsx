@@ -17,6 +17,7 @@ import Contacts from './pages/Contacts';
 import AdminContacts from './pages/AdminContacts';
 import ViewReports from './pages/ViewReports';
 import SubmitReport from './pages/SubmitReport';
+import { initOneSignal, loginToOneSignal, logoutFromOneSignal } from './services/oneSignalService';
 
 
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
@@ -44,6 +45,10 @@ const App: React.FC = () => {
   // Show landing page only if NOT in standalone mode (PWA) and not on /login
   const isLoginRoute = window.location.pathname === '/login';
   const [showLanding, setShowLanding] = useState(!isStandalone && !isLoginRoute);
+
+  useEffect(() => {
+    initOneSignal();
+  }, []);
 
   const handleEditEntry = (entry: ViharEntry) => {
     setEditingEntry(entry);
@@ -73,6 +78,8 @@ const App: React.FC = () => {
             setUser(profile);
             const org = await dataService.getOrganization(profile.organization_id);
             if (org) setOrgName(org.name);
+            // Link to OneSignal
+            loginToOneSignal(profile.username);
             // Redirect based on role if at root
             setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
             // Track app open time (fire-and-forget)
@@ -97,6 +104,7 @@ const App: React.FC = () => {
   const handleLoginSuccess = async (profile: UserProfile) => {
     setUser(profile);
     setShowLanding(false);
+    loginToOneSignal(profile.username);
     setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
     // Also fetch org name so it appears correctly in profile page
     try {
@@ -109,6 +117,7 @@ const App: React.FC = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    logoutFromOneSignal();
     setUser(null);
     setOrgName('');
     if (!isStandalone) setShowLanding(true);
