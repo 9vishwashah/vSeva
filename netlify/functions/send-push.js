@@ -1,17 +1,4 @@
-import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
-
-// Setup Web Push
-const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
-
-if (vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(
-    'mailto:vishwa@example.com', // Best practice is to provide a contact email
-    vapidPublicKey,
-    vapidPrivateKey
-  );
-}
 
 // Setup Admin Supabase Client (Service Role Bypass RLS)
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -20,7 +7,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function handler(event, context) {
-const headers = {
+  const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
@@ -47,67 +34,65 @@ const headers = {
        return { statusCode: 400, body: 'Missing notification record' };
     }
 
-    // 2. Query push subscriptions for the user
-    console.log(`Fetching subscriptions for user: ${notification.user_id}`);
-    const { data: subscriptions, error } = await supabase
-      .from('push_subscriptions')
-      .select('*')
-      .eq('user_id', notification.user_id);
+    // 2. Resolve User ID to Username (OneSignal external_id)
+    console.log(`Resolving username for user: ${notification.user_id}`);
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', notification.user_id)
+      .single();
 
-    if (error) {
-      console.error('Database error fetching subscriptions:', error);
-      throw error;
+    if (profileError || !profile) {
+      console.error('Error resolving profile:', profileError);
+      return { statusCode: 404, body: 'User profile not found' };
     }
 
-    if (!subscriptions || subscriptions.length === 0) {
-      console.log(`No active push subscriptions found for user: ${notification.user_id}`);
-      return { statusCode: 200, body: JSON.stringify({ message: "No subscriptions found for user" }) };
-    }
+    const targetUsername = profile.username;
+    console.log(`Targeting OneSignal user: ${targetUsername}`);
 
-    console.log(`Found ${subscriptions.length} subscriptions for user ${notification.user_id}. Sending push...`);
-
-    // 3. Construct the Push Payload
-    const pushPayload = JSON.stringify({
-      title: notification.title,
-      body: notification.message,
-      data: {
-        url: '/', // or any specific path based on notification.type
-        type: notification.type,
-        payload: notification.payload
-      }
+    // 3. Send via OneSignal REST API
+    const oneSignalResponse = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        app_id: process.env.ONESIGNAL_APP_ID,
+        include_external_user_ids: [targetUsername],
+        headings: { en: notification.title },
+        contents: { en: notification.message },
+        data: {
+          url: '/', // or any specific path based on notification.type
+          type: notification.type,
+          payload: notification.payload
+        },
+        url: 'https://vseva.netlify.app' // Open app on click
+      })
     });
 
-    // 4. Send parallel push notifications to all user sub endpoints
-    const pushPromises = subscriptions.map(async (sub) => {
-      const pushSubscription = {
-        endpoint: sub.endpoint,
-        keys: {
-          p256dh: sub.p256dh,
-          auth: sub.auth
-        }
+    const result = await oneSignalResponse.json();
+    console.log('OneSignal API result:', result);
+
+    if (!oneSignalResponse.ok) {
+      console.error('OneSignal API error details:', result);
+      return { 
+        statusCode: oneSignalResponse.status, 
+        body: JSON.stringify({ error: "OneSignal API failure", details: result }) 
       };
-
-      try {
-        await webpush.sendNotification(pushSubscription, pushPayload);
-      } catch (err) {
-        if (err.statusCode === 404 || err.statusCode === 410) {
-          // Subscription has expired or is no longer valid
-          console.log('Subscription expired. Deleting...', sub.endpoint);
-          await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
-        } else {
-          console.error('Push error for one subscription:', err);
-        }
-      }
-    });
-
-    await Promise.all(pushPromises);
+    }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Push notifications dispatched successfully' })
+      headers,
+      body: JSON.stringify({ message: "Push notification sent via OneSignal", result })
     };
   } catch (error) {
-    console.error('Error sending push notification:', error);
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    console.error('Error in send-push handler:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: error.message || 'Internal Server Error' })
+    };
   }
 }
