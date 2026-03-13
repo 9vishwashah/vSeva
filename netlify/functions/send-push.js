@@ -36,27 +36,35 @@ const headers = {
 
   try {
     // 1. Parse the Webhook payload from Supabase
-    // Supabase webhook shape for INSERT looks like { type: 'INSERT', table: '...', record: { ... } }
     const payloadStr = event.body;
+    console.log('Incoming notification payload:', payloadStr);
+    
     const data = JSON.parse(payloadStr);
-
     const notification = data.record;
+
     if (!notification || !notification.user_id) {
+       console.error('Invalid notification record:', notification);
        return { statusCode: 400, body: 'Missing notification record' };
     }
 
     // 2. Query push subscriptions for the user
+    console.log(`Fetching subscriptions for user: ${notification.user_id}`);
     const { data: subscriptions, error } = await supabase
       .from('push_subscriptions')
       .select('*')
       .eq('user_id', notification.user_id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error fetching subscriptions:', error);
+      throw error;
+    }
 
     if (!subscriptions || subscriptions.length === 0) {
-      // User has no subscriptions, gracefully exit
+      console.log(`No active push subscriptions found for user: ${notification.user_id}`);
       return { statusCode: 200, body: JSON.stringify({ message: "No subscriptions found for user" }) };
     }
+
+    console.log(`Found ${subscriptions.length} subscriptions for user ${notification.user_id}. Sending push...`);
 
     // 3. Construct the Push Payload
     const pushPayload = JSON.stringify({

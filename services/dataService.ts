@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary, Organization, ContactNumber } from '../types';
+import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary, Organization, ContactNumber, IncidentReport } from '../types';
 
 
 export const dataService = {
@@ -642,6 +642,42 @@ export const dataService = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+  },
+
+  // --- Incident Reports ---
+
+  async createIncidentReport(report: IncidentReport) {
+    const { data, error } = await supabase
+      .from('incident_reports')
+      .insert(report)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as IncidentReport;
+  },
+
+  async getIncidentReports(orgId: string): Promise<IncidentReport[]> {
+    const { data, error } = await supabase
+      .from('incident_reports')
+      .select('*')
+      .eq('organization_id', orgId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data as IncidentReport[];
+  },
+
+  async updateIncidentReportStatus(reportId: string, status: IncidentReport['status']) {
+    const { data, error } = await supabase
+      .from('incident_reports')
+      .update({ status })
+      .eq('id', reportId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as IncidentReport;
   },
 
 };

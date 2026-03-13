@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall } from 'lucide-react';
+import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert } from 'lucide-react';
 
 
 import NotificationBell from './NotificationBell';
@@ -72,6 +72,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="new-entry" icon={FilePlus} label="New Entry" />
               <NavItem page="add-sevak" icon={UserPlus} label="Add Sevaks" />
               <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
+              <NavItem page="reports" icon={ShieldAlert} label="Reports" />
             </>
           )}
 
@@ -81,6 +82,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="analytics" icon={BarChart2} label="Analytics" />
               <NavItem page="my-vihars" icon={Footprints} label="My Vihars" />
               <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
+              <NavItem page="reports" icon={ShieldAlert} label="Reports" />
             </>
           )}
         </nav>
@@ -142,6 +144,15 @@ const Layout: React.FC<LayoutProps> = ({
                       <span>Contacts</span>
                     </button>
                   )}
+                  {role === UserRole.ORG_ADMIN && (
+                    <button
+                      onClick={() => { setCurrentPage('reports'); setIsProfileMenuOpen(false); }}
+                      className="w-full text-left px-4 py-3 hover:bg-saffron-50 text-saffron-600 flex items-center gap-2 text-sm font-medium transition-colors border-b border-gray-50"
+                    >
+                      <ShieldAlert size={16} />
+                      <span>Reports</span>
+                    </button>
+                  )}
                   <button
                     onClick={onLogout}
                     className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-500 flex items-center gap-2 text-sm font-medium transition-colors"
@@ -169,11 +180,11 @@ const Layout: React.FC<LayoutProps> = ({
 
         {/* Mobile Bottom Nav — true floating iOS pill */}
         <nav
-          className="md:hidden fixed bottom-0 left-0 right-0 z-30 px-4"
+          className="md:hidden fixed bottom-0 left-0 right-0 z-30 px-2 sm:px-4"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 10px)' }}
         >
           <div
-            className="bg-white/80 backdrop-blur-xl rounded-[28px] flex justify-around items-center px-2 shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] border border-white/60"
+            className="bg-white/95 backdrop-blur-2xl rounded-[28px] flex justify-between items-center px-1 shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] border border-white/60"
             style={{ minHeight: '64px' }}
           >
             {role === UserRole.ORG_ADMIN && (() => {
@@ -183,12 +194,13 @@ const Layout: React.FC<LayoutProps> = ({
                 { page: 'new-entry', icon: <FilePlus size={23} />, label: 'Add', isCta: true },
                 { page: 'manage-routes', icon: <Map size={21} />, label: 'Routes' },
                 { page: 'add-sevak', icon: <UserPlus size={21} />, label: 'Sevaks' },
+                { page: 'reports', icon: <ShieldAlert size={21} />, label: 'Reports' },
               ];
               return items.map(item => (
-                <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center py-2 px-1 min-w-[56px] active:scale-90 transition-transform duration-150">
-                  <div className={`px-3 py-2 rounded-2xl transition-all duration-200 flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-lg shadow-saffron-300/50 scale-105' : ''}`}>
+                <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex-1 flex flex-col items-center py-2 px-0.5 min-w-0 active:scale-95 transition-transform duration-150">
+                  <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-2xl transition-all duration-200 flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-lg shadow-saffron-300/50 scale-105' : 'hover:bg-gray-100/50'}`}>
                     <span className={`transition-colors ${currentPage === item.page ? 'text-white' : 'text-gray-800'}`}>{item.icon}</span>
-                    <span className={`text-[9px] font-bold leading-none tracking-wide ${currentPage === item.page ? 'text-white' : 'text-gray-800'}`}>{item.label}</span>
+                    <span className={`text-[8px] sm:text-[9px] font-bold leading-none tracking-wide ${currentPage === item.page ? 'text-white' : 'text-gray-800'}`}>{item.label}</span>
                   </div>
                 </button>
               ));
@@ -200,12 +212,13 @@ const Layout: React.FC<LayoutProps> = ({
                 { page: 'analytics', icon: <BarChart2 size={21} />, label: 'Stats' },
                 { page: 'my-vihars', icon: <Footprints size={21} />, label: 'My Vihars' },
                 { page: 'contacts', icon: <PhoneCall size={21} />, label: 'Contacts' },
+                { page: 'reports', icon: <ShieldAlert size={21} />, label: 'Reports' },
               ];
               return items.map(item => (
-                <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex flex-col items-center py-2 px-1 min-w-[64px] active:scale-90 transition-transform duration-150">
-                  <div className={`px-3 py-2 rounded-2xl transition-all duration-200 flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-lg shadow-saffron-300/50 scale-105' : ''}`}>
+                <button key={item.page} onClick={() => setCurrentPage(item.page)} className="flex-1 flex flex-col items-center py-2 px-0.5 min-w-0 active:scale-95 transition-transform duration-150">
+                  <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-2xl transition-all duration-200 flex flex-col items-center gap-0.5 ${currentPage === item.page ? 'bg-saffron-500 shadow-lg shadow-saffron-300/50 scale-105' : 'hover:bg-gray-100/50'}`}>
                     <span className={`transition-colors ${currentPage === item.page ? 'text-white' : 'text-gray-800'}`}>{item.icon}</span>
-                    <span className={`text-[9px] font-bold leading-none tracking-wide ${currentPage === item.page ? 'text-white' : 'text-gray-800'}`}>{item.label}</span>
+                    <span className={`text-[8px] sm:text-[9px] font-bold leading-none tracking-wide ${currentPage === item.page ? 'text-white' : 'text-gray-800'}`}>{item.label}</span>
                   </div>
                 </button>
               ));

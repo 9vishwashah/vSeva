@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '../types';
 import { dataService } from '../services/dataService';
-import LeaderboardCard from './LeaderboardCard';
-import StatCard from './StatCard';
 import { Trophy } from 'lucide-react';
 
 interface ProfileSectionProps {
@@ -112,47 +110,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                         </button>
                     </div>
                 </div>
-            </div>
-
-            {/* Your Impact Card (Stat Card) */}
-            {stats && (
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 self-start">Your Impact Card</h3>
-                    <StatCard
-                        stats={stats}
-                        userName={user.full_name}
-                        orgName={orgDetails?.name || orgName || 'vSeva'}
-                        loading={isLoading}
-                        isAdmin={false}
-                        topSevak={null}
-                    />
-                </div>
-            )}
-
-            {/* Leaderboard - gender specific */}
-            <div className="grid grid-cols-1 gap-6">
-                {showMale && (
-                    <LeaderboardCard
-                        title="Top Sevaks"
-                        icon={<Trophy size={20} />}
-                        items={leaderboard.male}
-                        colorClass="text-blue-600"
-                        bgClass="bg-blue-50"
-                        loading={isLoading}
-                        orgName={orgDetails?.name || orgName}
-                    />
-                )}
-                {showFemale && (
-                    <LeaderboardCard
-                        title="Top Sevikas"
-                        icon={<Trophy size={20} />}
-                        items={leaderboard.female}
-                        colorClass="text-pink-600"
-                        bgClass="bg-pink-50"
-                        loading={isLoading}
-                        orgName={orgDetails?.name || orgName}
-                    />
-                )}
             </div>
         </div>
     );
