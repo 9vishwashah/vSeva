@@ -103,6 +103,10 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                                 window.OneSignalDeferred.push(async function(OneSignal: any) {
                                   try {
                                     await OneSignal.Slidedown.prompt();
+                                    // Refresh login after prompt to ensure linking
+                                    if (user.username) {
+                                      await OneSignal.login(user.username);
+                                    }
                                   } catch (e) {
                                     console.error("OneSignal prompt failed", e);
                                     // Fallback to simple request
