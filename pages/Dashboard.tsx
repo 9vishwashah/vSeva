@@ -72,7 +72,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.rpc('create_upcoming_alert', {
+      console.log("Triggering create_upcoming_alert RPC with data:", alertData);
+      const { data: rpcData, error } = await supabase.rpc('create_upcoming_alert', {
         vihar_date_input: alertData.date,
         vihar_time_input: alertData.time,
         from_loc: alertData.from,
@@ -82,13 +83,20 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         sv_count: Number(alertData.sadhvi)
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("RPC Error:", error);
+        alert(`Failed to trigger alert! Error: ${JSON.stringify(error)}`);
+        throw error;
+      };
+      
+      console.log("RPC Success. Data:", rpcData);
       showToast(`Alert sent with Priority!`, 'success');
       setIsAlertOpen(false);
       // Reset form
       setAlertData({ date: new Date().toISOString().split('T')[0], time: '06:00', from: '', to: '', type: 'morning', sadhu: 0, sadhvi: 0 });
     } catch (err: any) {
-      console.error(err);
+      console.error("Catch Error:", err);
+      alert(`System Error: ${err.message || "Unknown error occurred"}`);
       showToast(err.message || "Failed to create alert", 'error');
     } finally {
       setIsLoading(false);
@@ -696,7 +704,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
           {currentUser.role === UserRole.ORG_ADMIN && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <LeaderboardCard
-                title="Top Sevaks"
+                title="Top Vihar Sevaks"
                 icon={<Trophy size={20} />}
                 items={data.leaderboard?.male || []}
                 colorClass="text-blue-600"
@@ -705,7 +713,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                 orgName={orgDetails?.name || ''}
               />
               <LeaderboardCard
-                title="All Sevikas"
+                title="Top Vihar Sevikas"
                 icon={<Trophy size={20} />}
                 items={data.leaderboard?.female || []}
                 colorClass="text-pink-600"
@@ -774,7 +782,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
               <div className="grid grid-cols-1 gap-6 pt-2">
                 {showMale && (
                   <LeaderboardCard
-                    title="Top Sevaks"
+                    title="Top Vihar Sevaks"
                     icon={<Trophy size={20} />}
                     items={data.leaderboard?.male || []}
                     colorClass="text-blue-600"
@@ -785,7 +793,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                 )}
                 {showFemale && (
                   <LeaderboardCard
-                    title="Top Sevikas"
+                    title="Top Vihar Sevikas"
                     icon={<Trophy size={20} />}
                     items={data.leaderboard?.female || []}
                     colorClass="text-pink-600"

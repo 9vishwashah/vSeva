@@ -3,23 +3,44 @@ export const initOneSignal = async () => {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   // @ts-ignore
   window.OneSignalDeferred.push(async function(OneSignal: any) {
+    console.log('Initializing OneSignal...');
     await OneSignal.init({
       appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
-      allowLocalhostAsSecureOrigin: true, // Useful for development
+      allowLocalhostAsSecureOrigin: true,
+      serviceWorkerPath: 'sw.js',
       notifyButton: {
-        enable: false, // We'll handle subscription via profile or automatic prompt
+        enable: false,
       },
     });
+    
+    // Listen for subscription changes to re-login and link the user
+    OneSignal.User.PushSubscription.addEventListener("change", (event: any) => {
+      console.log("OneSignal: Subscription changed", event.current.token);
+      if (event.current.token) {
+        // We have a token now, ensure we are logged in
+        OneSignal.getExternalUserId().then((id: string) => {
+          console.log("OneSignal: Current ID on subscribe:", id);
+        });
+      }
+    });
+
+    console.log('OneSignal Initialized');
   });
 };
 
 export const loginToOneSignal = (username: string) => {
+  if (!username) return;
   // @ts-ignore
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   // @ts-ignore
   window.OneSignalDeferred.push(async function(OneSignal: any) {
-    console.log(`Logging in to OneSignal as: ${username}`);
-    await OneSignal.login(username);
+    const externalId = await OneSignal.getExternalUserId();
+    if (externalId !== username) {
+      console.log(`OneSignal: Logging in as ${username}`);
+      await OneSignal.login(username);
+    } else {
+      console.log(`OneSignal: Already logged in as ${username}`);
+    }
   });
 };
 
@@ -28,7 +49,7 @@ export const logoutFromOneSignal = () => {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   // @ts-ignore
   window.OneSignalDeferred.push(async function(OneSignal: any) {
-    console.log('Logging out from OneSignal');
+    console.log('OneSignal: Logging out');
     await OneSignal.logout();
   });
 };
