@@ -18,9 +18,7 @@ export const initOneSignal = async () => {
       console.log("OneSignal: Subscription changed", event.current.token);
       if (event.current.token) {
         // We have a token now, ensure we are logged in
-        OneSignal.getExternalUserId().then((id: string) => {
-          console.log("OneSignal: Current ID on subscribe:", id);
-        });
+        console.log("OneSignal: Current ID on subscribe:", OneSignal.User.externalId);
       }
     });
 
@@ -34,7 +32,7 @@ export const loginToOneSignal = (username: string) => {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   // @ts-ignore
   window.OneSignalDeferred.push(async function(OneSignal: any) {
-    const externalId = await OneSignal.getExternalUserId();
+    const externalId = OneSignal.User.externalId;
     if (externalId !== username) {
       console.log(`OneSignal: Logging in as ${username}`);
       await OneSignal.login(username);
