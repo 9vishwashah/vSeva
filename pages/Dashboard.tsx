@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import jsPDF from 'jspdf';
 import vSevaLogo from '../assets/vseva-logo.png';
+import vsgLogo from '../assets/vsg.jpg';
 import { NotoSansDevanagariBase64 } from '../assets/NotoSansDevanagari-Regular';
 import { NotoSansGujaratiBase64 } from '../assets/NotoSansGujarati-Regular';
 import * as XLSX from 'xlsx';
@@ -513,11 +514,13 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
           {/* Left: greeting + org */}
-          <div>
-            <p className="text-white/95 text-xl font-bold tracking-wide mb-1 flex items-center gap-2 drop-shadow-sm">
-              <span className="text-2xl">🙏</span>
-              <span className="font-serif italic">Jai Jinendra,</span>
-            </p>
+          <div className="flex items-center gap-4">
+            <img src={vsgLogo} alt="VSG Logo" className="h-16 w-16 md:h-20 md:w-20 object-contain rounded-full border-2 border-white/30 shadow-md backdrop-blur-sm shadow-black/10" />
+            <div>
+              <p className="text-white/95 text-xl font-bold tracking-wide mb-1 flex items-center gap-2 drop-shadow-sm">
+                <span className="text-2xl">🙏</span>
+                <span className="font-serif italic text-sm">प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा</span>
+              </p>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight drop-shadow-md">
               {currentUser.full_name}
             </h1>
@@ -528,6 +531,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                 : currentUser.organization_id}
             </p>
           </div>
+        </div>
 
           {/* Right: action buttons (admin only) */}
           {currentUser.role === UserRole.ORG_ADMIN && (

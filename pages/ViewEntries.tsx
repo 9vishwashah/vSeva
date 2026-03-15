@@ -91,7 +91,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
   });
 
   const formatWhatsAppLink = (entry: ViharEntry) => {
-    const text = `*Vihar Update* 🚶‍♂️\n\n📅 Date: ${entry.vihar_date}\n📍 Route: ${entry.vihar_from} to ${entry.vihar_to}\n📏 Distance: ${entry.distance_km} km\n🙏 Sadhu: ${entry.no_sadhubhagwan || 0} | Sadhvi: ${entry.no_sadhvijibhagwan || 0}\n\nJai Jinendra!`;
+    const text = `*Vihar Update* 🚶‍♂️\n\n📅 Date: ${entry.vihar_date}\n📍 Route: ${entry.vihar_from} to ${entry.vihar_to}\n📏 Distance: ${entry.distance_km} km\n🙏 Sadhu: ${entry.no_sadhubhagwan || 0} | Sadhvi: ${entry.no_sadhvijibhagwan || 0}\n\nप्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा`;
     return `https://wa.me/?text=${encodeURIComponent(text)}`;
   };
 

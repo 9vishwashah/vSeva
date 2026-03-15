@@ -323,7 +323,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     </h2>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <a
-                            href="https://wa.me/919594503214?text=Jai%20Jinendra%20vSeva%20Team!%20%F0%9F%99%8F%0A%0AWe%20would%20like%20to%20register%20our%20Jain%20organization%20on%20the%20vSeva%20platform%20to%20start%20logging%20our%20daily%20Vihars.%0A%0AOrganization%20Name%3A%20%0AContact%20Person%3A%20%0ACity%3A%20%0A%0APlease%20guide%20us%20with%20the%20next%20steps.%0A%0AThank%20You."
+                            href={`https://wa.me/919594503214?text=${encodeURIComponent('प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा vSeva Team! 🙏\n\nWe would like to register our Jain organization on the vSeva platform to start logging our daily Vihars.\n\nOrganization Name: \nContact Person: \nCity: \n\nPlease guide us with the next steps.\n\nThank You.')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-8 py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-full font-bold text-lg shadow-xl shadow-green-200 transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-1"

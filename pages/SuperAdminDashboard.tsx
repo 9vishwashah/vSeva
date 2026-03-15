@@ -56,7 +56,7 @@ const SuperAdminDashboard = () => {
             showToast("Organization Approved & Created!", "success");
 
             // Prepare WhatsApp Message
-            const message = `Jai Jinendra ${req.full_name}!\n\nYour vSeva organization request for *${req.org_name}* has been approved.\n\nYou can now login with your email and password.\n\nWelcome to vSeva!`;
+            const message = `प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा ${req.full_name}!\n\nYour vSeva organization request for *${req.org_name}* has been approved.\n\nYou can now login with your email and password.\n\nWelcome to vSeva!`;
 
             const waLink = `https://wa.me/91${req.mobile}?text=${encodeURIComponent(message)}`;
 

@@ -57,7 +57,7 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
 
     if (isSuccess) {
         const uniqueId = `REQ-${Date.now().toString().slice(-4)}`;
-        const waMessage = `Jai Jinendra! I have submitted a vSeva organization request.\n\nOrg: ${formData.orgName}\nName: ${formData.fullName}\nCity: ${formData.city}\nMobile: ${formData.mobile}\n\nPlease review and approve.`;
+        const waMessage = `प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा! I have submitted a vSeva organization request.\n\nOrg: ${formData.orgName}\nName: ${formData.fullName}\nCity: ${formData.city}\nMobile: ${formData.mobile}\n\nPlease review and approve.`;
         const waLink = `https://wa.me/919594503214?text=${encodeURIComponent(waMessage)}`;
 
         return (
