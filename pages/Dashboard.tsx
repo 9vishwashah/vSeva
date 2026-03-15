@@ -517,13 +517,15 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
           <div className="flex items-center gap-4">
             <img src={vsgLogo} alt="VSG Logo" className="h-16 w-16 md:h-20 md:w-20 object-contain rounded-full border-2 border-white/30 shadow-md backdrop-blur-sm shadow-black/10" />
             <div>
-              <p className="text-white/95 text-xl font-bold tracking-wide mb-1 flex items-center gap-2 drop-shadow-sm">
-                <span className="text-2xl">🙏</span>
-                <span className="font-serif italic text-sm">प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा</span>
-              </p>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight drop-shadow-md">
-              {currentUser.full_name}
-            </h1>
+              <div className="flex flex-col">
+                <p className="text-white/95 font-bold tracking-wide mb-0.5 flex items-center gap-2 drop-shadow-sm whitespace-nowrap">
+                  <span className="text-xl md:text-2xl">🙏</span>
+                  <span className="font-serif italic text-base md:text-lg">प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा</span>
+                </p>
+                <h1 className="text-lg md:text-xl font-extrabold tracking-tight leading-tight drop-shadow-md text-white/90">
+                  {currentUser.full_name}
+                </h1>
+              </div>
             <p className="text-white/80 text-sm mt-2 flex items-center gap-1.5 font-medium">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/60" />
               {orgDetails
