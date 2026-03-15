@@ -4,6 +4,7 @@ import { StatSummary } from '../types';
 import { Share2, MapPin, Users, Handshake, Medal, Trophy, Sparkles, Instagram, Download, Footprints } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import vsgLogo from '../assets/vsg.jpg';
 
 interface StatCardProps {
   stats: StatSummary;
@@ -133,6 +134,11 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
               <img src={vSevaLogo} alt="vSeva Logo" className="h-28 w-28 object-contain drop-shadow-md" />
             </div>
 
+            {/* Top-Right Logo */}
+            <div className="absolute top-4 right-4 z-20">
+              <img src={vsgLogo} alt="VSG Logo" className="h-24 w-24 object-contain rounded-full border-2 border-white/50 shadow-md" />
+            </div>
+
             {/* 1. Header (Identity) */}
             <div className="flex flex-col items-center text-center mt-2 mb-4">
               <div className="relative mb-3">
@@ -149,6 +155,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
                   <h1 className="text-2xl font-serif font-bold text-gray-900 tracking-wide leading-tight drop-shadow-sm mb-1">
                     {orgName}
                   </h1>
+                  <p className="text-[10px] font-bold text-orange-700/80 mb-1">Vihar Seva Group, Vashi</p>
                   <p className="text-xs font-medium text-orange-700/70">by {userName}</p>
                 </>
               ) : (
