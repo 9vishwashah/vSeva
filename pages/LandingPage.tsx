@@ -5,6 +5,7 @@ import {
     Lock, Activity, FileText, Download, Menu, X, Smartphone, Instagram, LogIn
 } from 'lucide-react';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import vsgLogo from '../assets/vsg.jpg';
 import { InstallPWA } from '../components/InstallPWA';
 
 interface LandingPageProps {
@@ -104,15 +105,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     <div className="text-center max-w-4xl mx-auto">
                         {/* Logo */}
                         <div className="flex justify-center mb-8">
-                            <div className="bg-saffron-50 rounded-2xl shadow-sm border border-saffron-100 animate-fade-in-up overflow-hidden">
-                                <img src={vSevaLogo} alt="vSeva" className="h-28 w-28 object-cover" />
+                            <div className="flex items-center gap-4 animate-fade-in-up">
+                                <div className="bg-saffron-50 rounded-2xl shadow-sm border border-saffron-100 overflow-hidden">
+                                    <img src={vSevaLogo} alt="vSeva" className="h-24 w-24 md:h-28 md:w-28 object-cover" />
+                                </div>
+                                <div className="h-12 w-px bg-slate-200"></div>
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                                    <img src={vsgLogo} alt="VSG" className="h-24 w-24 md:h-28 md:w-28 object-cover" />
+                                </div>
                             </div>
                         </div>
 
                         <h1 className="text-6xl md:text-8xl font-serif font-bold text-saffron-600 mb-6 leading-tight">
                             vSeva
-                            <span className="block mt-2 text-3xl md:text-4xl font-light text-slate-600 italic">
-                                "Your Steps. Your Seva. Your Legacy."
+                            <span className="block mt-4 text-2xl md:text-3xl font-bold text-slate-800">
+                                ऑल इंडिया विहार सेवा ग्रुप
+                            </span>
+                            <span className="block mt-2 text-xl md:text-2xl font-medium text-saffron-600 font-sans italic italic">
+                                प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा
                             </span>
                         </h1>
 
@@ -359,13 +369,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         border: '1px solid rgba(234,88,12,0.12)',
                         padding: '40px 32px',
                     }}>
-                        <div className="flex justify-center mb-4">
-                            <span className="text-5xl">🙏</span>
+                        <div className="flex justify-center mb-6">
+                            <div className="w-20 h-20 rounded-2xl overflow-hidden border border-slate-100 shadow-md">
+                                <img src={vsgLogo} alt="VSG Logo" className="w-full h-full object-cover" />
+                            </div>
                         </div>
 
                         <p style={{ color: '#EA580C' }} className="text-xs font-bold uppercase tracking-widest mb-2">With Deepest Gratitude</p>
                         <h3 className="text-slate-900 text-2xl md:text-3xl font-serif font-bold mb-2 leading-snug">
-                            Shree Jain Shwetambar<br />Murtipujak Sangh, Vashi
+                            Navi Mumbai Vihar<br />Seva Group, Vashi
                         </h3>
                         <p className="text-slate-500 text-sm mb-8 max-w-sm mx-auto">
                             Thank you for trusting vSeva as your digital Vihar Seva partner — and for being our very first! 🧡
