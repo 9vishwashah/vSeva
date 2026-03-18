@@ -6,12 +6,12 @@ import { useToast } from '../context/ToastContext';
 
 interface EntryCardProps {
     entry: ViharEntry;
-    getSevakName: (username: string) => string;
+    getSevakInfo: (username: string) => { name: string; blood?: string };
     onDelete?: (id: number) => void;
     onEdit?: (entry: ViharEntry) => void;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName, onDelete, onEdit }) => {
+const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, onEdit }) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const [isSharing, setIsSharing] = useState(false);
     const { showToast } = useToast();
@@ -122,12 +122,19 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakName, onDelete, on
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                         {(entry.sevaks || []).map((u, i) => (
-                            <span
+                            <div
                                 key={i}
-                                className="shrink-0 text-[10px] px-2.5 py-1 bg-saffron-50 text-saffron-700 rounded-full border border-saffron-200 font-semibold whitespace-nowrap"
+                                className="shrink-0 flex flex-col items-center gap-0.5"
                             >
-                                {getSevakName(u)}
-                            </span>
+                                <span className="text-[10px] px-2.5 py-1 bg-saffron-50 text-saffron-700 rounded-full border border-saffron-200 font-semibold whitespace-nowrap">
+                                    {getSevakInfo(u).name}
+                                </span>
+                                {getSevakInfo(u).blood && (
+                                    <span className="text-[8px] px-1.5 py-0 bg-red-50 text-red-600 rounded border border-red-100 font-bold uppercase leading-tight">
+                                        {getSevakInfo(u).blood}
+                                    </span>
+                                )}
+                            </div>
                         ))}
                     </div>
                 </div>

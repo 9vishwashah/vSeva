@@ -20,6 +20,7 @@ export interface UserProfile {
   mobile: string;
   gender?: string;
   age?: number;
+  blood_group?: string;
   is_active: boolean;
   last_login_at?: string; // ISO timestamp, updated on each login
 }
@@ -65,6 +66,7 @@ export interface StatSummary {
   vSynergy?: string;
   vRank?: number | string;
   totalOrgSevaks?: number;
+  activeSevaks?: number;
 }
 
 export interface UserNotification {

@@ -10,12 +10,13 @@ interface StatCardProps {
   stats: StatSummary;
   userName: string;
   orgName: string;
+  orgCity?: string;
   loading?: boolean;
   isAdmin?: boolean;
   topSevak?: { name: string; km: number; count: number } | null;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading = false, isAdmin = false, topSevak = null }) => {
+const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, loading = false, isAdmin = false, topSevak = null }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -57,7 +58,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: 'My vSeva Impact',
+          title: isAdmin ? 'Your Vihar Group Summary' : 'My vSeva Impact',
           text: `Check out my Seva contribution on ${orgName}! #vSeva`
         });
       } else {
@@ -101,13 +102,13 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
       <div className="relative group perspective-1000">
         <div
           ref={cardRef}
-          className={`w-[360px] h-[640px] flex flex-col relative overflow-hidden shadow-2xl rounded-[28px] border ${isAdmin ? 'bg-gradient-to-br from-[#FFF3E0] via-[#FFE0B2] to-[#FFCC80] text-gray-800 border-orange-200' : 'bg-gradient-to-br from-[#FFF8E1] via-white to-orange-50 text-gray-800 border-orange-100'}`}
+          className={`w-[360px] h-[640px] flex flex-col relative overflow-hidden shadow-2xl rounded-[28px] border ${isAdmin ? 'bg-gradient-to-br from-[#FFF9F0] via-[#FFFAF5] to-[#FFE8D6] text-gray-800 border-orange-100' : 'bg-gradient-to-br from-[#FFF8E1] via-white to-orange-50 text-gray-800 border-orange-100'}`}
         >
           {/* Background Texture: Subtle Sacred Pattern */}
           <div className="absolute inset-0 opacity-10 pointer-events-none"
             style={{
               backgroundImage: isAdmin
-                ? 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)'
+                ? 'radial-gradient(circle at 1px 1px, rgba(234, 88, 12, 0.1) 1px, transparent 0)'
                 : 'radial-gradient(circle at 1px 1px, rgba(234, 88, 12, 0.2) 1px, transparent 0)',
               backgroundSize: '24px 24px'
             }}>
@@ -116,8 +117,8 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
           {/* Soft Glow Orbs */}
           {isAdmin ? (
             <>
-              <div className="absolute top-[-20%] left-[-20%] w-[300px] h-[300px] bg-indigo-500/20 rounded-full blur-[80px]"></div>
-              <div className="absolute bottom-[-10%] right-[-10%] w-[250px] h-[250px] bg-purple-500/20 rounded-full blur-[60px]"></div>
+              <div className="absolute top-[-20%] left-[-20%] w-[300px] h-[300px] bg-orange-200/20 rounded-full blur-[80px]"></div>
+              <div className="absolute bottom-[-10%] right-[-10%] w-[250px] h-[250px] bg-yellow-200/20 rounded-full blur-[60px]"></div>
             </>
           ) : (
             <>
@@ -129,33 +130,35 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
           {/* Content Container */}
           <div className="flex-1 flex flex-col p-6 z-10 relative h-full">
 
-            {/* Top-Left Logo */}
-            <div className="absolute top-4 left-4 z-20">
-              <img src={vSevaLogo} alt="vSeva Logo" className="h-28 w-28 object-contain drop-shadow-md" />
-            </div>
-
-            {/* Top-Right Logo */}
-            <div className="absolute top-4 right-4 z-20">
-              <img src={vsgLogo} alt="VSG Logo" className="h-24 w-24 object-contain rounded-full border-2 border-white/50 shadow-md" />
-            </div>
-
             {/* 1. Header (Identity) */}
-            <div className="flex flex-col items-center text-center mt-2 mb-4">
+            <div className="flex flex-col items-center text-center mt-2 mb-4 relative z-20">
+              
+              {/* Central Logo / Initials */}
               <div className="relative mb-3">
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center font-serif text-2xl font-bold shadow-lg border-2 ${isAdmin ? 'bg-white/60 text-saffron-700 border-orange-200' : 'bg-white text-saffron-600 border-saffron-100'}`}>
-                  {getInitials(isAdmin ? orgName : userName)}
-                </div>
+                {isAdmin ? (
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg border border-white bg-white p-0.5 overflow-hidden z-20 relative">
+                     <img src={vsgLogo} alt="VSG Logo" className="w-full h-full object-cover rounded-full" />
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center font-serif text-2xl font-bold shadow-lg border-2 bg-white text-saffron-600 border-saffron-100 relative z-20">
+                    {getInitials(userName)}
+                  </div>
+                )}
                 {/* Glowing Ring */}
-                <div className={`absolute inset-0 rounded-full border scale-125 animate-pulse-slow ${isAdmin ? 'border-orange-300' : 'border-saffron-200'}`}></div>
+                <div className={`absolute inset-0 rounded-full border scale-125 animate-pulse-slow ${isAdmin ? 'border-orange-200/50' : 'border-saffron-200'}`}></div>
               </div>
 
               {isAdmin ? (
                 <>
-                  <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-orange-700 mb-1">Overall Activity of</h2>
+                  <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-orange-700 mb-1">Overall Summary of</h2>
                   <h1 className="text-2xl font-serif font-bold text-gray-900 tracking-wide leading-tight drop-shadow-sm mb-1">
                     {orgName}
                   </h1>
-                  <p className="text-[10px] font-bold text-orange-700/80 mb-1">Vihar Seva Group, Vashi</p>
+                  {orgCity && (
+                     <div className="mt-1 mb-1.5 inline-flex items-center gap-1.5 px-3 py-1 bg-white/40 border border-orange-200 shadow-sm rounded-full">
+                       <span className="text-[10px] font-bold text-orange-800 tracking-wide">{orgCity}</span>
+                     </div>
+                  )}
                   <p className="text-xs font-medium text-orange-700/70">by {userName}</p>
                 </>
               ) : (
@@ -174,7 +177,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
               <div className={`rounded-2xl p-4 flex flex-col items-center justify-center border shadow-sm relative overflow-hidden group/tile ${isAdmin ? 'bg-white/50 border-orange-200' : 'bg-white border-orange-100'}`}>
                 <MapPin size={20} className={`mb-2 opacity-80 stroke-[2] ${isAdmin ? 'text-saffron-600' : 'text-saffron-500'}`} />
                 {loading ? <SkeletonValue width="w-12" /> : <span className="text-2xl font-bold font-sans text-gray-800">{stats.totalKm} <span className="text-sm font-medium text-gray-400">km</span></span>}
-                <span className="text-[9px] uppercase tracking-wider mt-1 text-gray-400">Total Distance</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider mt-1 text-gray-900">Total Distance</span>
               </div>
 
               {/* Stat Tile 2 */}
@@ -183,21 +186,21 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
                   <MapPin size={16} className="stroke-[2]" />
                 </div>
                 {loading ? <SkeletonValue width="w-8" /> : <span className="text-2xl font-bold font-sans text-gray-800">{stats.totalVihars}</span>}
-                <span className="text-[9px] uppercase tracking-wider mt-1 text-gray-400">Total Vihars</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider mt-1 text-gray-900">Total Vihars</span>
               </div>
 
               {/* Stat Tile 3 */}
               <div className={`rounded-2xl p-4 flex flex-col items-center justify-center border shadow-sm relative overflow-hidden group/tile ${isAdmin ? 'bg-white/50 border-orange-200' : 'bg-white border-orange-100'}`}>
                 <Users size={20} className="mb-2 opacity-80 stroke-[2] text-red-500" />
                 {loading ? <SkeletonValue width="w-8" /> : <span className="text-2xl font-bold font-sans text-gray-800">{stats.totalSadhu}</span>}
-                <span className="text-[9px] uppercase tracking-wider mt-1 text-gray-400">Sadhubhagwant</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider mt-1 text-gray-900">Sadhubhagwant</span>
               </div>
 
               {/* Stat Tile 4 */}
               <div className={`rounded-2xl p-4 flex flex-col items-center justify-center border shadow-sm relative overflow-hidden group/tile ${isAdmin ? 'bg-white/50 border-orange-200' : 'bg-white border-orange-100'}`}>
                 <Users size={20} className="mb-2 opacity-80 stroke-[2] text-pink-500" />
                 {loading ? <SkeletonValue width="w-8" /> : <span className="text-2xl font-bold font-sans text-gray-800">{stats.totalSadhvi}</span>}
-                <span className="text-[9px] uppercase tracking-wider mt-1 text-gray-400">Sadhvijibhagwant</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider mt-1 text-gray-900">Sadhvijibhagwant</span>
               </div>
             </div>
 
@@ -218,12 +221,12 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
                       <div className="flex items-center gap-3 text-right">
                         <div className="flex flex-col items-center">
                           <span className="text-sm font-bold text-gray-800">{topSevak.count}</span>
-                          <span className="text-[9px] text-gray-400 uppercase">Vihars</span>
+                          <span className="text-[9px] text-gray-500 uppercase font-bold">Vihars</span>
                         </div>
                         <div className="h-6 w-[1px] bg-orange-200"></div>
                         <div className="flex flex-col items-center">
                           <span className="text-sm font-bold text-gray-800">{topSevak.km}</span>
-                          <span className="text-[9px] text-gray-400 uppercase">km</span>
+                          <span className="text-[9px] text-gray-500 uppercase font-bold">km</span>
                         </div>
                       </div>
                     </div>
@@ -271,17 +274,23 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, loading =
               )}
             </div>
 
-            {/* 4. Inspirational Footer */}
+            {/* 4. Inspirational Footer & Bottom Logos */}
             <div className={`mt-4 text-center pb-2 ${isAdmin ? 'mt-auto' : ''} relative z-20`}>
               <div className={`w-8 h-[1px] mx-auto mb-3 ${isAdmin ? 'bg-white/20' : 'bg-gray-200'}`}></div>
 
-              <div className="flex flex-col items-center justify-center gap-1 mt-3 pb-2">
+              <div className="flex flex-col items-center justify-center gap-1 mt-3 pb-2 relative">
+                
+                {/* Bottom-Left vSeva Logo */}
+                <div className="absolute -bottom-2 -left-3 z-20 opacity-90">
+                  <img src={vSevaLogo} alt="vSeva Logo" className="h-[80px] w-[80px] object-contain drop-shadow-sm" />
+                </div>
+
                 <div className="flex items-center gap-2">
                   <Footprints size={14} className={isAdmin ? 'text-saffron-600' : 'text-saffron-500'} />
                   <span className="text-sm font-bold tracking-[0.15em] drop-shadow-sm text-gray-800">vSeva</span>
                   <Footprints size={14} className={isAdmin ? 'text-saffron-600' : 'text-saffron-500'} />
                 </div>
-                <p className="text-[10px] font-medium mt-1 text-gray-500">vSeva by Vishwa Alpesh Shah</p>
+                <p className="text-[10px] font-medium mt-1 text-gray-500 ml-6">by Vishwa Alpesh Shah</p>
               </div>
             </div>
           </div>

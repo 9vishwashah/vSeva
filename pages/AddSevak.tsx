@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, Organization, ContactNumber } from '../types';
 import { dataService } from '../services/dataService';
-import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Phone, PhoneCall, PlusCircle, Edit2, X, Download } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 
@@ -27,7 +27,7 @@ const formatLastLogin = (isoString?: string): { label: string; color: string } =
   else if (days < 30) label = `${Math.floor(days / 7)}w ago`;
   else label = new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
 
-  const color = days < 7 ? 'text-green-600' : days < 30 ? 'text-yellow-600' : 'text-gray-500';
+  const color = days < 3 ? 'text-green-500' : days < 14 ? 'text-amber-500' : days < 30 ? 'text-red-500' : 'text-gray-400';
   return { label, color };
 };
 
@@ -37,7 +37,8 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     fullName: '',
     mobile: '',
     gender: 'Male',
-    age: ''
+    age: '',
+    bloodGroup: 'O+'
   });
 
   const [loading, setLoading] = useState(false);
@@ -48,9 +49,6 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const [sevaks, setSevaks] = useState<UserProfile[]>([]);
   const [loadingSevaks, setLoadingSevaks] = useState(true);
 
-  // Org Details
-  const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
-
   // UI State
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -59,26 +57,18 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<{ id: string, name: string } | null>(null);
 
+  const [selectedSevak, setSelectedSevak] = useState<UserProfile | null>(null);
+  const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string }>({ mobile: '', age: '', bloodGroup: '' });
+
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Contacts State
-  const [contacts, setContacts] = useState<ContactNumber[]>([]);
-  const [contactForm, setContactForm] = useState({ label: '', phone: '', description: '' });
-  const [addingContact, setAddingContact] = useState(false);
-  const [deletingContactId, setDeletingContactId] = useState<number | null>(null);
 
   const fetchData = async () => {
     try {
       setLoadingSevaks(true);
-      const [sevaksData, orgData, contactsData] = await Promise.all([
-        dataService.getOrgSevaks(currentUser.organization_id),
-        dataService.getOrganization(currentUser.organization_id),
-        dataService.getContactNumbers(currentUser.organization_id),
-      ]);
+      const sevaksData = await dataService.getOrgSevaks(currentUser.organization_id);
       setSevaks(sevaksData);
-      setOrgDetails(orgData);
-      setContacts(contactsData);
     } catch (err) {
       console.error("Failed to load data", err);
       showToast("Could not load organization members", 'error');
@@ -103,12 +93,13 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         fullName: formData.fullName,
         mobile: formData.mobile,
         gender: formData.gender,
-        age: parseInt(formData.age)
+        age: parseInt(formData.age),
+        bloodGroup: formData.bloodGroup
       });
 
       setSuccess(creds);
       showToast(`Sevak ${formData.fullName} added successfully!`, 'success');
-      setFormData({ fullName: '', mobile: '', gender: 'Male', age: '' });
+      setFormData({ fullName: '', mobile: '', gender: 'Male', age: '', bloodGroup: 'O+' });
       // Refresh the list after successful addition
       fetchData();
     } catch (err: any) {
@@ -142,6 +133,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       await dataService.deleteSevak(userId);
       // Remove from local state immediately
       setSevaks(prev => prev.filter(s => s.id !== userId));
+      if (selectedSevak?.id === userId) setSelectedSevak(null);
       showToast(`${userName} has been removed.`, 'success');
     } catch (err: any) {
       showToast(`Failed to delete user: ${err.message}`, 'error');
@@ -151,26 +143,58 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     }
   };
 
-  const handleSaveMobile = async (userId: string, userName: string) => {
-    if (editMobile.length !== 10) {
+  const openModal = (sevak: UserProfile) => {
+    setSelectedSevak(sevak);
+    setEditingId(null);
+  };
+
+  const startEdit = (sevak: UserProfile) => {
+    setEditingId(sevak.id);
+    setEditForm({
+      mobile: sevak.mobile || '',
+      age: sevak.age?.toString() || '',
+      bloodGroup: sevak.blood_group || 'O+',
+    });
+  };
+
+  const handleSaveProfile = async () => {
+    if (!selectedSevak) return;
+    if (editForm.mobile.length !== 10) {
       showToast("Mobile number must be exactly 10 digits", "error");
       return;
     }
-    setSavingId(userId);
+    setSavingId(selectedSevak.id);
+    
+    const mobileChanged = editForm.mobile !== selectedSevak.mobile;
+    const newAge = editForm.age ? parseInt(editForm.age) : undefined;
+    
     try {
-      await dataService.updateSevakMobile(userId, editMobile);
-      setSevaks(prev => prev.map(s => s.id === userId ? { ...s, mobile: editMobile } : s));
-      showToast(`Phone number updated! User can now login with this number.`, 'success');
+      await dataService.updateSevakDetails(selectedSevak.id, {
+        mobile: mobileChanged ? editForm.mobile : undefined,
+        age: isNaN(newAge as number) ? undefined : newAge,
+        bloodGroup: editForm.bloodGroup,
+      });
+      // update local
+      const updated = { ...selectedSevak, mobile: editForm.mobile, age: newAge, blood_group: editForm.bloodGroup };
+      setSevaks(prev => prev.map(s => s.id === selectedSevak.id ? updated : s));
+      setSelectedSevak(updated);
+      showToast(`Profile updated successfully!`, 'success');
       setEditingId(null);
     } catch (err: any) {
-      showToast(err.message || 'Failed to update phone number', 'error');
+      showToast(err.message || 'Failed to update profile', 'error');
       console.error(err);
     } finally {
       setSavingId(null);
     }
   };
 
-  const filteredSevaks = sevaks.filter(sevak =>
+  const sortedSevaks = [...sevaks].sort((a, b) => {
+    const timeA = a.last_login_at ? new Date(a.last_login_at).getTime() : 0;
+    const timeB = b.last_login_at ? new Date(b.last_login_at).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  const filteredSevaks = sortedSevaks.filter(sevak =>
     sevak.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     sevak.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
     sevak.mobile.includes(searchQuery)
@@ -206,40 +230,6 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     document.body.removeChild(link);
   };
 
-  const handleAddContact = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!contactForm.label.trim() || !contactForm.phone.trim()) return;
-    setAddingContact(true);
-    try {
-      const newContact = await dataService.addContactNumber({
-        organization_id: currentUser.organization_id,
-        label: contactForm.label.trim(),
-        phone: contactForm.phone.trim(),
-        description: contactForm.description.trim() || undefined,
-      });
-      setContacts(prev => [...prev, newContact]);
-      setContactForm({ label: '', phone: '', description: '' });
-      showToast('Contact added successfully!', 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Failed to add contact', 'error');
-    } finally {
-      setAddingContact(false);
-    }
-  };
-
-  const handleDeleteContact = async (id: number) => {
-    if (!window.confirm('Remove this contact?')) return;
-    setDeletingContactId(id);
-    try {
-      await dataService.deleteContactNumber(id);
-      setContacts(prev => prev.filter(c => c.id !== id));
-      showToast('Contact removed.', 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Failed to remove contact', 'error');
-    } finally {
-      setDeletingContactId(null);
-    }
-  };
 
   const generateWhatsAppMessage = (sevak: UserProfile) => {
     const message = `Pranam ${sevak.full_name} 
@@ -340,15 +330,33 @@ Password: ${sevak.mobile}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-                <input
-                  type="number"
-                  required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none"
-                  value={formData.age}
-                  onChange={e => setFormData({ ...formData, age: e.target.value })}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Blood Group</label>
+                <select
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none bg-white font-semibold"
+                  value={formData.bloodGroup}
+                  onChange={e => setFormData({ ...formData, bloodGroup: e.target.value })}
+                >
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                </select>
               </div>
+            </div>
+
+            <div className="w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+              <input
+                type="number"
+                required
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none font-mono"
+                value={formData.age}
+                onChange={e => setFormData({ ...formData, age: e.target.value })}
+              />
             </div>
           </div>
 
@@ -371,9 +379,6 @@ Password: ${sevak.mobile}
               <Users size={24} className="text-saffron-600" />
               Organization Members
             </h2>
-            <p className="text-sm text-gray-500">
-              Currently active sevaks in <span className="font-semibold text-gray-700">{orgDetails ? `${orgDetails.name}, ${orgDetails.city || ''}` : currentUser.organization_id}</span>
-            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -408,266 +413,200 @@ Password: ${sevak.mobile}
           ) : sevaks.length === 0 ? (
             <div className="p-8 text-center text-gray-500">No members found. Add your first member above.</div>
           ) : (
-            <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-gray-50 text-gray-900 font-semibold border-b border-gray-100">
-                <tr>
-                  <th className="p-4 w-12">Sr.</th>
-                  <th className="p-4">Name</th>
-                  <th className="p-4">Username</th>
-                  <th className="p-4">Mobile</th>
-                  <th className="p-4">
-                    <div className="flex items-center gap-1">
-                      <Clock size={14} className="text-saffron-500" />
-                      Last Login
-                    </div>
-                  </th>
-                  <th className="p-4 text-center">WhatsApp</th>
-                  <th className="p-4 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredSevaks.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="p-8 text-center text-gray-500">
-                      No members found matching "{searchQuery}"
-                    </td>
-                  </tr>
-                ) : (
-                  filteredSevaks.map((sevak, index) => (
-                    <tr key={sevak.id} className="hover:bg-gray-50 transition-colors group">
-                      <td className="p-4 text-gray-500 font-mono text-xs">{index + 1}</td>
-                      <td className="p-4 font-medium">
-                        <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-lg ${
-                          sevak.gender?.toLowerCase() === 'male' 
-                            ? 'bg-blue-50 text-blue-700 border border-blue-100' 
-                            : sevak.gender?.toLowerCase() === 'female'
-                              ? 'bg-pink-50 text-pink-700 border border-pink-100'
-                              : 'bg-gray-50 text-gray-700 border border-gray-100'
-                        }`}>
-                          {sevak.full_name}
-                        </span>
-                      </td>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 bg-gray-50/50">
+              {filteredSevaks.length === 0 ? (
+                <div className="col-span-full p-12 text-center text-gray-400 font-medium">
+                  No members found matching "{searchQuery}"
+                </div>
+              ) : (
+                filteredSevaks.map((sevak, index) => {
+                  const { label, color } = formatLastLogin(sevak.last_login_at);
+                  const statusDotColor = color.replace('text-', 'bg-');
 
-                      {/* Stylized Username with Copy */}
-                      <td className="p-4">
-                        <div className="flex items-center space-x-2">
-                          <code className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-gray-700 border border-gray-200">
-                            {sevak.username}
-                          </code>
-                          <button
-                            onClick={() => handleCopy(sevak.username, sevak.id)}
-                            className="text-gray-400 hover:text-saffron-600 transition-colors p-1"
-                            title="Copy Username"
-                          >
-                            {copiedId === sevak.id ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
-                          </button>
+                  return (
+                    <div key={sevak.id} className="bg-white rounded-[20px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-gray-200 transition-all duration-300 flex flex-col group transform hover:-translate-y-1 overflow-hidden relative">
+                      
+                      {/* Top Line: Sr No + Name + Last Seen */}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 truncate">
+                          <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded tracking-widest uppercase border border-gray-100 whitespace-nowrap">
+                            #{index + 1}
+                          </span>
+                          <h3 className="text-base font-bold text-gray-900 tracking-tight truncate group-hover:text-saffron-600 transition-colors">
+                            {sevak.full_name}
+                          </h3>
                         </div>
-                      </td>
+                        <div className="flex items-center gap-1.5 whitespace-nowrap bg-gray-50 px-2 py-0.5 rounded border border-gray-100 flex-shrink-0">
+                           <div className={`w-1.5 h-1.5 rounded-full ${statusDotColor} shadow-sm`}></div>
+                           <span className={`text-[9px] font-bold ${color} uppercase tracking-wider`}>{label}</span>
+                        </div>
+                      </div>
 
-                      {/* Mobile Column with Edit Support */}
-                      <td className="p-4">
-                        {editingId === sevak.id ? (
-                          <input
-                            type="tel"
-                            maxLength={10}
-                            value={editMobile}
-                            onChange={(e) => setEditMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                            className="w-28 p-1.5 border border-saffron-300 rounded text-sm focus:ring-2 focus:ring-saffron-500 outline-none font-mono"
-                            autoFocus
-                            placeholder="10 digits"
-                          />
-                        ) : (
-                          sevak.mobile
-                        )}
-                      </td>
-
-                      {/* Last Login */}
-                      <td className="p-4">
-                        {(() => {
-                          const { label, color } = formatLastLogin(sevak.last_login_at);
-                          return (
-                            <span className={`text-xs font-medium ${color} flex items-center gap-1`}>
-                              <Clock size={11} />
-                              {label}
-                            </span>
-                          );
-                        })()}
-                      </td>
-
-
-                      <td className="p-4 text-center">
+                      {/* View More Button & WhatsApp */}
+                      <div className="mt-4 flex gap-2">
+                        <button 
+                          onClick={() => openModal(sevak)}
+                          className="flex-1 py-2.5 bg-saffron-100 hover:bg-saffron-200 text-saffron-700 rounded-[12px] font-extrabold text-[11px] tracking-wider uppercase transition-colors flex justify-center items-center gap-2 border border-saffron-200 hover:border-saffron-300 shadow-sm"
+                        >
+                          View More
+                        </button>
                         <a
                           href={`https://wa.me/${sevak.mobile}?text=${generateWhatsAppMessage(sevak)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center text-[#25D366] hover:text-white hover:bg-[#25D366] p-2 rounded-lg transition-colors"
-                          title="Send WhatsApp Message"
+                          className="w-11 flex-shrink-0 flex items-center justify-center bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-[12px] transition-colors border border-[#25D366]/20 focus:outline-none shadow-sm"
+                          title="Notify via WhatsApp"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <i className="fa-brands fa-whatsapp text-2xl" aria-hidden="true"></i>
+                          <i className="fa-brands fa-whatsapp text-lg" aria-hidden="true"></i>
                         </a>
-                      </td>
-
-                      <td className="p-4 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {editingId === sevak.id ? (
-                            <>
-                              <button
-                                onClick={() => handleSaveMobile(sevak.id, sevak.full_name)}
-                                disabled={savingId === sevak.id}
-                                className="text-green-600 hover:bg-green-50 p-1.5 rounded transition-colors disabled:opacity-50"
-                                title="Save changes"
-                              >
-                                {savingId === sevak.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingId(null);
-                                  setEditMobile('');
-                                }}
-                                disabled={savingId === sevak.id}
-                                className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors disabled:opacity-50"
-                                title="Cancel"
-                              >
-                                <X size={16} />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setEditingId(sevak.id);
-                                  setEditMobile(sevak.mobile);
-                                }}
-                                disabled={deletingId === sevak.id}
-                                className="text-gray-400 hover:text-saffron-600 hover:bg-saffron-50 p-2 rounded transition-colors disabled:opacity-50"
-                                title="Edit Mobile"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(sevak.id, sevak.full_name)}
-                                disabled={deletingId === sevak.id}
-                                className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded transition-colors disabled:opacity-50"
-                                title="Delete Member"
-                              >
-                                {deletingId === sevak.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           )}
         </div>
       </div>
 
-      {/* ── Important Contacts Section ── */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-saffron-50 to-orange-50">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <PhoneCall size={22} className="text-saffron-600" />
-            Important Contacts
-          </h2>
-          <p className="text-sm text-gray-500 mt-0.5">These contacts will appear on every Sevak's Contacts page.</p>
-        </div>
 
-        {/* Add Contact Form */}
-        <form onSubmit={handleAddContact} className="p-5 border-b border-gray-100 bg-gray-50/60">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Contact Name / Role</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Vijay Mehta"
-                value={contactForm.label}
-                onChange={e => setContactForm({ ...contactForm, label: e.target.value })}
-                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Mobile Number (10 digits)</label>
-              <input
-                type="tel"
-                required
-                maxLength={10}
-                placeholder="9876543210"
-                value={contactForm.phone}
-                onChange={e => setContactForm({ ...contactForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-saffron-500 outline-none font-mono"
-              />
-            </div>
-          </div>
-          {/* Description row */}
-          <div className="mt-3">
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Description / Note <span className="text-gray-400 font-normal">(optional)</span>
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. For route-related queries, vihar schedule changes..."
-              value={contactForm.description}
-              onChange={e => setContactForm({ ...contactForm, description: e.target.value })}
-              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
-            />
-          </div>
-          {/* Add button */}
-          <button
-            type="submit"
-            disabled={addingContact}
-            className="mt-3 w-full flex items-center justify-center gap-2 bg-saffron-600 hover:bg-saffron-700 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors text-sm shadow-sm"
+      {/* View More Details Modal */}
+      {selectedSevak && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-md bg-white/40 animate-fade-in"
+          onClick={() => { setSelectedSevak(null); setEditingId(null); }}
+        >
+          <div 
+            className="bg-white rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 w-full max-w-md overflow-hidden animate-slide-up flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
           >
-            {addingContact ? <Loader2 size={16} className="animate-spin" /> : <PlusCircle size={16} />}
-            Add Contact
-          </button>
-
-        </form>
-
-        {/* Contacts List */}
-        <div className="divide-y divide-gray-100">
-          {contacts.length === 0 ? (
-            <div className="p-8 text-center">
-              <Phone size={32} className="mx-auto text-gray-300 mb-2" />
-              <p className="text-sm text-gray-400">No contacts added yet. Add your first contact above.</p>
+            <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-white">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Users size={20} className="text-saffron-600" />
+                Sevak Details
+              </h3>
+              <button onClick={() => { setSelectedSevak(null); setEditingId(null); }} className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-200 transition-colors">
+                <X size={20} />
+              </button>
             </div>
-          ) : (
-            contacts.map((contact, index) => (
-              <div key={contact.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-saffron-400 to-orange-500 flex items-center justify-center shrink-0">
-                  <span className="text-white text-xs font-bold">
-                    {contact.label.substring(0, 2).toUpperCase()}
-                  </span>
+            
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-saffron-100 text-saffron-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold border border-saffron-200">
+                  {selectedSevak.full_name.charAt(0).toUpperCase()}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{contact.label}</p>
-                  <p className="text-xs text-gray-500 font-mono">+91 {contact.phone}</p>
-                  {contact.description && (
-                    <p className="text-xs text-gray-400 mt-0.5 italic truncate">{contact.description}</p>
+                <h4 className="text-xl font-bold text-gray-900">{selectedSevak.full_name}</h4>
+                <p className="text-sm text-gray-500">{selectedSevak.gender || 'Unknown Gender'}</p>
+              </div>
+
+              {/* Detail fields */}
+              <div className="space-y-4 bg-gray-50 p-5 rounded-xl border border-gray-100">
+                {/* Username */}
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Username</label>
+                  <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm">
+                    <code className="text-sm font-mono text-gray-700 truncate">{selectedSevak.username}</code>
+                    <button onClick={() => handleCopy(selectedSevak.username, selectedSevak.id)} className="text-gray-400 hover:text-saffron-600 p-1 flex-shrink-0">
+                      {copiedId === selectedSevak.id ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile */}
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Mobile Number</label>
+                  {editingId === selectedSevak.id ? (
+                    <input 
+                      type="tel" 
+                      maxLength={10} 
+                      value={editForm.mobile}
+                      onChange={e => setEditForm({...editForm, mobile: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                      className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none font-mono transition-shadow shadow-sm"
+                    />
+                  ) : (
+                    <div className="flex justify-between items-center text-sm font-medium bg-gray-50 p-2.5 rounded-lg border border-gray-100 shadow-inner">
+                      <span className="font-mono text-gray-800 font-semibold tracking-wide">{selectedSevak.mobile}</span>
+                    </div>
                   )}
                 </div>
-                <span className="text-xs text-gray-400 hidden sm:block">#{index + 1}</span>
-                <button
-                  onClick={() => handleDeleteContact(contact.id)}
-                  disabled={deletingContactId === contact.id}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                  title="Remove contact"
-                >
-                  {deletingContactId === contact.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-                </button>
+
+                {/* Age & Blood Group */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Age</label>
+                    {editingId === selectedSevak.id ? (
+                      <input 
+                        type="number" 
+                        value={editForm.age}
+                        onChange={e => setEditForm({...editForm, age: e.target.value})}
+                        className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm"
+                      />
+                    ) : (
+                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800">{selectedSevak.age || '-'}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Blood Group</label>
+                    {editingId === selectedSevak.id ? (
+                      <select 
+                        value={editForm.bloodGroup}
+                        onChange={e => setEditForm({...editForm, bloodGroup: e.target.value})}
+                        className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none bg-white font-semibold transition-shadow shadow-sm"
+                      >
+                         <option value="O+">O+</option>
+                         <option value="O-">O-</option>
+                         <option value="A+">A+</option>
+                         <option value="A-">A-</option>
+                         <option value="B+">B+</option>
+                         <option value="B-">B-</option>
+                         <option value="AB+">AB+</option>
+                         <option value="AB-">AB-</option>
+                      </select>
+                    ) : (
+                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800 font-semibold">{selectedSevak.blood_group || '-'}</div>
+                    )}
+                  </div>
+                </div>
               </div>
-            ))
-          )}
+            </div>
+            
+            {/* Modal Actions */}
+            <div className="p-4 border-t border-gray-200 bg-white flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+              {editingId === selectedSevak.id ? (
+                <>
+                  <button onClick={() => setEditingId(null)} className="px-4 py-2.5 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 transition-colors font-semibold text-sm flex-1">
+                    Cancel
+                  </button>
+                  <button onClick={handleSaveProfile} disabled={savingId === selectedSevak.id} className="px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-sm flex-1 flex justify-center items-center gap-2 shadow-sm shadow-green-200">
+                    {savingId === selectedSevak.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Save changes
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => handleDelete(selectedSevak.id, selectedSevak.full_name)} className="px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 flex-1">
+                    <Trash2 size={18} /> <span className="text-sm font-semibold pt-0.5">Delete</span>
+                  </button>
+                  <button onClick={() => startEdit(selectedSevak)} className="px-4 py-2.5 bg-saffron-600 hover:bg-saffron-700 text-white rounded-xl transition-all shadow-md shadow-saffron-200 hover:shadow-lg flex items-center justify-center gap-2 flex-1">
+                    <Edit2 size={18} /> <span className="text-sm font-semibold pt-0.5">Edit Profile</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slide-up">
+        <div 
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 backdrop-blur-md bg-white/40 animate-fade-in"
+          onClick={() => setShowDeleteModal(null)}
+        >
+          <div 
+            className="bg-white rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 w-full max-w-md overflow-hidden animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6 text-center">
               <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle size={32} />
