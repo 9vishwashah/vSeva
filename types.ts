@@ -21,6 +21,8 @@ export interface UserProfile {
   gender?: string;
   age?: number;
   blood_group?: string;
+  emergency_number?: string;
+  address?: string;
   is_active: boolean;
   last_login_at?: string; // ISO timestamp, updated on each login
 }
