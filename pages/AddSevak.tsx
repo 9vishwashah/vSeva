@@ -38,7 +38,9 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     mobile: '',
     gender: 'Male',
     age: '',
-    bloodGroup: 'O+'
+    bloodGroup: 'O+',
+    emergencyNumber: '',
+    address: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -58,7 +60,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const [showDeleteModal, setShowDeleteModal] = useState<{ id: string, name: string } | null>(null);
 
   const [selectedSevak, setSelectedSevak] = useState<UserProfile | null>(null);
-  const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string }>({ mobile: '', age: '', bloodGroup: '' });
+  const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string; emergencyNumber: string; address: string }>({ mobile: '', age: '', bloodGroup: '', emergencyNumber: '', address: '' });
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,12 +96,14 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         mobile: formData.mobile,
         gender: formData.gender,
         age: parseInt(formData.age),
-        bloodGroup: formData.bloodGroup
+        bloodGroup: formData.bloodGroup,
+        emergencyNumber: formData.emergencyNumber,
+        address: formData.address
       });
 
       setSuccess(creds);
       showToast(`Sevak ${formData.fullName} added successfully!`, 'success');
-      setFormData({ fullName: '', mobile: '', gender: 'Male', age: '', bloodGroup: 'O+' });
+      setFormData({ fullName: '', mobile: '', gender: 'Male', age: '', bloodGroup: 'O+', emergencyNumber: '', address: '' });
       // Refresh the list after successful addition
       fetchData();
     } catch (err: any) {
@@ -154,6 +158,8 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       mobile: sevak.mobile || '',
       age: sevak.age?.toString() || '',
       bloodGroup: sevak.blood_group || 'O+',
+      emergencyNumber: sevak.emergency_number || '',
+      address: sevak.address || ''
     });
   };
 
@@ -173,9 +179,11 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         mobile: mobileChanged ? editForm.mobile : undefined,
         age: isNaN(newAge as number) ? undefined : newAge,
         bloodGroup: editForm.bloodGroup,
+        emergencyNumber: editForm.emergencyNumber,
+        address: editForm.address
       });
       // update local
-      const updated = { ...selectedSevak, mobile: editForm.mobile, age: newAge, blood_group: editForm.bloodGroup };
+      const updated = { ...selectedSevak, mobile: editForm.mobile, age: newAge, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, address: editForm.address };
       setSevaks(prev => prev.map(s => s.id === selectedSevak.id ? updated : s));
       setSelectedSevak(updated);
       showToast(`Profile updated successfully!`, 'success');
@@ -348,14 +356,37 @@ Password: ${sevak.mobile}
               </div>
             </div>
 
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                <input
+                  type="number"
+                  required
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none font-mono"
+                  value={formData.age}
+                  onChange={e => setFormData({ ...formData, age: e.target.value })}
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1 truncate" title="Emergency Number">Emergency No.</label>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none font-mono"
+                  placeholder="family"
+                  value={formData.emergencyNumber}
+                  onChange={e => setFormData({ ...formData, emergencyNumber: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                />
+              </div>
+            </div>
+
             <div className="w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-              <input
-                type="number"
-                required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none font-mono"
-                value={formData.age}
-                onChange={e => setFormData({ ...formData, age: e.target.value })}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <textarea
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none resize-none h-24 text-sm"
+                placeholder="Full Address"
+                value={formData.address}
+                onChange={e => setFormData({ ...formData, address: e.target.value })}
               />
             </div>
           </div>
@@ -568,6 +599,38 @@ Password: ${sevak.mobile}
                     )}
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Emergency Number</label>
+                    {editingId === selectedSevak.id ? (
+                      <input 
+                        type="tel" 
+                        maxLength={10}
+                        value={editForm.emergencyNumber}
+                        onChange={e => setEditForm({...editForm, emergencyNumber: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                        placeholder="family"
+                        className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none font-mono transition-shadow shadow-sm"
+                      />
+                    ) : (
+                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800 font-mono">{selectedSevak.emergency_number || '-'}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Address</label>
+                    {editingId === selectedSevak.id ? (
+                      <textarea
+                        value={editForm.address}
+                        onChange={e => setEditForm({...editForm, address: e.target.value})}
+                        placeholder="Full Address"
+                        className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm resize-none h-20 text-gray-800"
+                      />
+                    ) : (
+                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{selectedSevak.address || '-'}</div>
+                    )}
+                  </div>
+                </div>
+
               </div>
             </div>
             

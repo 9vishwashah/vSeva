@@ -73,7 +73,7 @@ export const dataService = {
 
   async createSevak(
     adminOrgId: string,
-    sevakData: { fullName: string; mobile: string; gender: string; age: number; bloodGroup?: string }
+    sevakData: { fullName: string; mobile: string; gender: string; age: number; bloodGroup?: string; emergencyNumber?: string; address?: string }
   ) {
     // 1. Generate Username
     const cleanName = sevakData.fullName
@@ -158,6 +158,8 @@ export const dataService = {
         gender: sevakData.gender,
         age: sevakData.age,
         blood_group: sevakData.bloodGroup,
+        emergency_number: sevakData.emergencyNumber,
+        address: sevakData.address,
         is_active: true,
       });
 
@@ -208,7 +210,7 @@ export const dataService = {
     return true;
   },
 
-  async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string }) {
+  async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string; emergencyNumber?: string; address?: string }) {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
@@ -240,6 +242,8 @@ export const dataService = {
     if (updates.mobile) profileUpdates.mobile = updates.mobile;
     if (updates.age !== undefined) profileUpdates.age = updates.age;
     if (updates.bloodGroup) profileUpdates.blood_group = updates.bloodGroup;
+    if (updates.emergencyNumber !== undefined) profileUpdates.emergency_number = updates.emergencyNumber;
+    if (updates.address !== undefined) profileUpdates.address = updates.address;
 
     if (Object.keys(profileUpdates).length > 0) {
       const { error: profileError } = await supabase
