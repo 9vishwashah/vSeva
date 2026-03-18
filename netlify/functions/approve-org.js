@@ -19,10 +19,13 @@ export async function handler(event) {
         }
 
         // 1. Initialize Supabase with Service Role Key (Admin Access)
-        const supabaseAdmin = createClient(
-            process.env.SUPABASE_URL,
-            process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (!supabaseUrl) throw new Error("Missing SUPABASE_URL in environment variables.");
+        if (!serviceRoleKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY in environment variables. Admin operations require the service role key.");
+
+        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
         // 2. Create Organization
         const { data: org, error: orgError } = await supabaseAdmin
@@ -81,7 +84,9 @@ export async function handler(event) {
     } catch (err) {
         console.error("Approval Error:", err);
         return {
-            statusCode: 500,
+            // Vite proxy often swallows 500 errors and replaces them with empty/HTML body.
+            // Using 400 allows the actual error message to reach the React frontend for display.
+            statusCode: 400,
             body: JSON.stringify({ error: err.message || 'Internal Server Error' }),
         };
     }

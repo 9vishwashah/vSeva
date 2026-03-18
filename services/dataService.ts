@@ -61,9 +61,19 @@ export const dataService = {
     return data as UserProfile[];
   },
 
+  async getOrgActivityStats(): Promise<{ org_id: string; org_name: string; city: string; created_at: string; total_sevaks: number; total_entries: number; last_updated: string | null }[]> {
+    const { data, error } = await supabase.rpc('get_org_activity_stats');
+    
+    if (error) {
+      console.error("Error fetching org activity stats:", error);
+      return [];
+    }
+    return data;
+  },
+
   async createSevak(
     adminOrgId: string,
-    sevakData: { fullName: string; mobile: string; gender: string; age: number }
+    sevakData: { fullName: string; mobile: string; gender: string; age: number; bloodGroup?: string }
   ) {
     // 1. Generate Username
     const cleanName = sevakData.fullName
@@ -101,19 +111,32 @@ export const dataService = {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      console.error('Failed to create auth user via Netlify Function:', errorData);
+      let errorMessage = 'Could not create login credentials.';
+      const responseText = await response.text();
+      
+      if (!responseText) {
+        errorMessage = 'Backend server not responding. Ensure you are running "npx netlify dev" for local development.';
+      } else {
+        console.error('Raw error response from function:', responseText);
+        try {
+          const errorData = JSON.parse(responseText);
+          console.error('Parsed error data:', errorData);
+          
+          if (errorData.details) {
+            errorMessage = `${errorData.error}: ${errorData.details}`;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
 
-      if (
-        errorData.error &&
-        errorData.error.toLowerCase().includes('already')
-      ) {
-        throw new Error(
-          `Username ${username} already exists. Please modify the name slightly.`
-        );
+          if (errorMessage.toLowerCase().includes('already')) {
+            errorMessage = `Username ${username} already exists. Please modify the name slightly.`;
+          }
+        } catch (e) {
+          console.error('Failed to parse error response as JSON:', e);
+        }
       }
 
-      throw new Error(errorData.error || 'Could not create login credentials.');
+      throw new Error(errorMessage);
     }
 
     const { user_id: newUserId } = await response.json();
@@ -134,6 +157,7 @@ export const dataService = {
         mobile: sevakData.mobile,
         gender: sevakData.gender,
         age: sevakData.age,
+        blood_group: sevakData.bloodGroup,
         is_active: true,
       });
 
@@ -184,38 +208,47 @@ export const dataService = {
     return true;
   },
 
-  async updateSevakMobile(userId: string, newMobile: string) {
+  async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string }) {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
       throw new Error('Admin session not found. Please login again.');
     }
 
-    // 1. Call Netlify function to update Auth password
-    const response = await fetch('/.netlify/functions/update-user-phone', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        user_id: userId,
-        new_mobile: newMobile
-      }),
-    });
+    // 1. Call Netlify function to update Auth password if mobile changed
+    if (updates.mobile) {
+      const response = await fetch('/.netlify/functions/update-user-phone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          new_mobile: updates.mobile
+        }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || 'Could not update contact number in Auth.');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Could not update contact number in Auth.');
+      }
     }
 
     // 2. Update Profile table
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ mobile: newMobile })
-      .eq('id', userId);
+    const profileUpdates: any = {};
+    if (updates.mobile) profileUpdates.mobile = updates.mobile;
+    if (updates.age !== undefined) profileUpdates.age = updates.age;
+    if (updates.bloodGroup) profileUpdates.blood_group = updates.bloodGroup;
 
-    if (profileError) throw profileError;
+    if (Object.keys(profileUpdates).length > 0) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+    }
 
     return true;
   },

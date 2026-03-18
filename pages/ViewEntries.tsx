@@ -15,9 +15,6 @@ interface ViewEntriesProps {
 
 const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
   const { showToast } = useToast();
-  const [fromDate, setFromDate] = useState<string>('');
-  const [toDate, setToDate] = useState<string>('');
-  const [org, setOrg] = useState<Organization | null>(null);
 
   const [entries, setEntries] = useState<ViharEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,17 +23,13 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [data, organization] = await Promise.all([
-          dataService.getEntries(currentUser.organization_id),
-          dataService.getOrganization(currentUser.organization_id),
-        ]);
+        const data = await dataService.getEntries(currentUser.organization_id);
 
         let filteredData = data || [];
         if (currentUser.role === UserRole.SEVAK) {
           filteredData = filteredData.filter(e => (e.sevaks || []).includes(currentUser.username));
         }
         setEntries(filteredData);
-        setOrg(organization);
 
         // Collect all unique usernames across all entries, then do a single targeted query
         const allUsernames = Array.from(
@@ -46,15 +39,18 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
         if (allUsernames.length > 0) {
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('username, full_name')
+            .select('username, full_name, blood_group')
             .in('username', allUsernames);
 
-          const map: Record<string, string> = {};
-          (profiles || []).forEach((p: { username: string; full_name: string }) => {
-            map[p.username] = p.full_name;               // exact match
-            map[p.username.split('@')[0]] = p.full_name; // part before @
+          const map: Record<string, { name: string; blood?: string }> = {};
+          (profiles || []).forEach((p: any) => {
+            const info = { name: p.full_name, blood: p.blood_group };
+            map[p.username] = info;               // exact match
+            map[p.username.toLowerCase()] = info;
+            map[p.username.split('@')[0]] = info; // part before @
+            map[p.username.split('@')[0].toLowerCase()] = info;
           });
-          setSevakMap(map);
+          setSevakMap(map as any);
         }
 
       } catch (err) {
@@ -73,21 +69,10 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
       (e.vihar_from || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (e.vihar_to || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (e.sevaks || []).some(
-        (s) => sevakMap[s]?.toLowerCase().includes(searchTerm.toLowerCase())
+        (s) => sevakMap[s]?.name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-    // Date filter
-    const entryDate = new Date(e.vihar_date);
-
-    const fromMatch = fromDate
-      ? entryDate >= new Date(fromDate)
-      : true;
-
-    const toMatch = toDate
-      ? entryDate <= new Date(toDate)
-      : true;
-
-    return textMatch && fromMatch && toMatch;
+    return textMatch;
   });
 
   const formatWhatsAppLink = (entry: ViharEntry) => {
@@ -95,9 +80,10 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
     return `https://wa.me/?text=${encodeURIComponent(text)}`;
   };
 
-  const getSevakName = (username: string) => {
+  const getSevakInfo = (username: string) => {
     const plainUsername = username.split('@')[0];
-    return sevakMap[username] || sevakMap[username.toLowerCase()] || sevakMap[plainUsername] || sevakMap[plainUsername.toLowerCase()] || plainUsername;
+    const info = (sevakMap as any)[username] || (sevakMap as any)[username.toLowerCase()] || (sevakMap as any)[plainUsername] || (sevakMap as any)[plainUsername.toLowerCase()];
+    return info || { name: plainUsername };
   };
 
   const handleDelete = async (id: number) => {
@@ -131,12 +117,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
             <p className="text-white/80 text-sm mt-1 ml-1 mb-3 xl:mb-0">
               {currentUser.role === UserRole.SEVAK
                 ? 'Your personal Vihar journey log'
-                : <>Manage and view all recorded journeys for{' '}
-                  {org
-                    ? <span className="font-semibold text-white">{org.name}{org.city ? `, ${org.city}` : ''}</span>
-                    : <span className="inline-block h-4 w-32 rounded bg-white/30 animate-pulse align-middle" />
-                  }
-                </>
+                : 'Manage and view all recorded journeys'
               }
             </p>
             {!loading && (
@@ -147,39 +128,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
           </div>
           
           <div className="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full xl:w-auto mt-4 xl:mt-0">
-            {/* Date filters inside banner */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white/10 p-3 rounded-2xl backdrop-blur-md border border-white/20 shadow-sm w-full md:w-auto">
-              <div className="w-full sm:flex-1 md:w-36">
-                <label className="block text-[10px] font-bold text-white/90 uppercase mb-1.5 ml-1 tracking-wider">From</label>
-                <input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#fff8eb] text-gray-800 focus:ring-2 focus:ring-white border-none outline-none font-medium text-sm shadow-inner transition-shadow"
-                />
-              </div>
-              <div className="w-full sm:flex-1 md:w-36">
-                <label className="block text-[10px] font-bold text-white/90 uppercase mb-1.5 ml-1 tracking-wider">To</label>
-                <input
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#fff8eb] text-gray-800 focus:ring-2 focus:ring-white border-none outline-none font-medium text-sm shadow-inner transition-shadow"
-                />
-              </div>
-              {(fromDate || toDate) && (
-                <button
-                  onClick={() => {
-                    setFromDate('');
-                    setToDate('');
-                  }}
-                  className="text-white hover:text-red-200 p-1 sm:mb-1 self-end sm:self-end transition-colors mt-1 sm:mt-0"
-                  title="Clear Dates"
-                >
-                  <X size={20} />
-                </button>
-              )}
-            </div>
+
 
             {/* Search */}
             <div className="relative w-full md:w-56 shrink-0 h-full">
@@ -239,7 +188,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                         </div>
                         {/* Tooltip */}
                         <div className="absolute z-10 hidden group-hover:block bg-gray-800 text-white p-2 rounded text-xs -mt-8 left-6 w-48 whitespace-normal shadow-lg">
-                          {(entry.sevaks || []).map(u => getSevakName(u)).join(', ')}
+                          {(entry.sevaks || []).map(u => getSevakInfo(u).name).join(', ')}
                         </div>
                       </td>
                       <td className="p-4 text-center text-gray-400">
@@ -297,7 +246,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
               <EntryCard
                 key={entry.id}
                 entry={entry}
-                getSevakName={getSevakName}
+                getSevakInfo={getSevakInfo}
                 onDelete={currentUser.role === UserRole.ORG_ADMIN ? handleDelete : undefined}
                 onEdit={currentUser.role === UserRole.ORG_ADMIN && onEdit ? onEdit : undefined}
               />

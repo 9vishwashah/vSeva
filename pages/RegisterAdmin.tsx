@@ -11,11 +11,16 @@ interface RegisterAdminProps {
 
 const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
     const [formData, setFormData] = useState({
-        orgName: '',
-        city: '',
-        fullName: '',
+        captainName: '',
+        viceCaptainName: '',
+        mobile: '',
         email: '',
-        mobile: ''
+        address: '',
+        city: '',
+        pincode: '',
+        state: 'Maharashtra',
+        viharGroupName: 'Vihar Seva Group',
+        sanghName: ''
     });
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -29,16 +34,23 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
         e.preventDefault();
         setLoading(true);
 
+        const finalViharGroupName = formData.viharGroupName.trim() === '' ? 'Vihar Seva Group' : formData.viharGroupName.trim();
+
         try {
             // Updated Flow: Submit Request to 'registration_requests' table
             const { error } = await supabase
                 .from('registration_requests')
                 .insert({
-                    org_name: formData.orgName,
-                    city: formData.city,
-                    full_name: formData.fullName,
+                    captain_name: formData.captainName,
+                    vice_captain_name: formData.viceCaptainName,
                     mobile: formData.mobile,
                     email: formData.email,
+                    full_address: formData.address,
+                    city: formData.city,
+                    pin_code: formData.pincode,
+                    state: formData.state,
+                    vihar_group_name: finalViharGroupName,
+                    sangh_name: formData.sanghName,
                     password: formData.mobile // Setting Mobile Number as Password per requirement
                 });
 
@@ -57,7 +69,8 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
 
     if (isSuccess) {
         const uniqueId = `REQ-${Date.now().toString().slice(-4)}`;
-        const waMessage = `प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा! I have submitted a vSeva organization request.\n\nOrg: ${formData.orgName}\nName: ${formData.fullName}\nCity: ${formData.city}\nMobile: ${formData.mobile}\n\nPlease review and approve.`;
+        const finalViharGroupName = formData.viharGroupName.trim() === '' ? 'Vihar Seva Group' : formData.viharGroupName.trim();
+        const waMessage = `प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा! I have submitted a vSeva Captain account request.\n\nGroup: ${finalViharGroupName}\nSangh: ${formData.sanghName}\nCaptain: ${formData.captainName}\nCity: ${formData.city}\nMobile: ${formData.mobile}\n\nPlease review and approve.`;
         const waLink = `https://wa.me/919594503214?text=${encodeURIComponent(waMessage)}`;
 
         return (
@@ -71,7 +84,7 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                 <div className="space-y-4">
                     <h2 className="text-3xl font-serif font-bold text-gray-800">Request Submitted!</h2>
                     <p className="text-gray-600 max-w-sm mx-auto leading-relaxed">
-                        Thank you for registering <strong>{formData.orgName}</strong>. <br />
+                        Thank you for registering <strong>{finalViharGroupName}</strong>. <br />
                         We verify every organization manually to ensure authenticity.
                     </p>
                     <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 max-w-sm mx-auto">
@@ -110,20 +123,72 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                     <ArrowLeft size={20} />
                 </button>
                 <img src={vSevaLogo} alt="vSeva" className="h-8 w-8 object-contain" />
-                <h2 className="text-2xl font-serif font-bold text-gray-800">Create Admin Account</h2>
+                <h2 className="text-2xl font-serif font-bold text-gray-800">Create Captain Account</h2>
             </div>
 
             <form onSubmit={handleRegister} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Organization Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Captain Name</label>
                         <input
-                            name="orgName"
+                            name="captainName"
                             type="text"
                             required
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="e.g. Jain Sangh Vashi"
-                            value={formData.orgName}
+                            placeholder="Vijay Mehta"
+                            value={formData.captainName}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Vice Captain Name (Optional)</label>
+                        <input
+                            name="viceCaptainName"
+                            type="text"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+                            placeholder=""
+                            value={formData.viceCaptainName}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Captain Mobile Number</label>
+                        <input
+                            name="mobile"
+                            type="tel"
+                            required
+                            pattern="[0-9]{10}"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+                            placeholder="9594503214"
+                            value={formData.mobile}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Captain Email ID</label>
+                        <input
+                            name="email"
+                            type="email"
+                            required
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+                            placeholder="youremail@gmail.com"
+                            value={formData.email}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
+                        <input
+                            name="address"
+                            type="text"
+                            required
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+                            placeholder="Full Address"
+                            value={formData.address}
                             onChange={handleChange}
                         />
                     </div>
@@ -135,55 +200,66 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                             type="text"
                             required
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="e.g. Mumbai"
+                            placeholder="City"
                             value={formData.city}
                             onChange={handleChange}
                         />
                     </div>
 
                     <div className="col-span-2 sm:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Mobile</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Pin Code</label>
                         <input
-                            name="mobile"
-                            type="tel"
-                            required
-                            pattern="[0-9]{10}"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="9876543210"
-                            value={formData.mobile}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
-                        <input
-                            name="fullName"
+                            name="pincode"
                             type="text"
                             required
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="e.g. Rahul Shah"
-                            value={formData.fullName}
+                            placeholder="Pin Code"
+                            value={formData.pincode}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                        <input
+                            name="state"
+                            type="text"
+                            required
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+                            placeholder="Maharashtra"
+                            value={formData.state}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Sangh Name</label>
+                        <input
+                            name="sanghName"
+                            type="text"
+                            required
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+                            placeholder="Sangh Name"
+                            value={formData.sanghName}
                             onChange={handleChange}
                         />
                     </div>
 
                     <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Vihar Group Name <span className="text-gray-500 font-normal">(Optional, default: "Vihar Seva Group")</span>
+                        </label>
                         <input
-                            name="email"
-                            type="email"
-                            required
+                            name="viharGroupName"
+                            type="text"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="admin@sangh.com"
-                            value={formData.email}
+                            placeholder="Vihar Seva Group"
+                            value={formData.viharGroupName}
                             onChange={handleChange}
                         />
                     </div>
 
                 </div>
-
-
 
                 <button
                     type="submit"
