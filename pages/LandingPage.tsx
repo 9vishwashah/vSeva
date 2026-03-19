@@ -122,7 +122,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                                 ऑल इंडिया विहार सेवा ग्रुप
                             </span>
                             <span className="block mt-2 text-xl md:text-2xl font-medium text-saffron-600 font-sans italic italic">
-                                प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा
+                                प्रवचन शिखर पू. आचार्यदेव श्रीमद् विजय महाबोधि सूरि महाराज
                             </span>
                         </h1>
 

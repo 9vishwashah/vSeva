@@ -89,7 +89,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         alert(`Failed to trigger alert! Error: ${JSON.stringify(error)}`);
         throw error;
       };
-      
+
       console.log("RPC Success. Data:", rpcData);
       showToast(`Alert sent with Priority!`, 'success');
       setIsAlertOpen(false);
@@ -165,15 +165,15 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         // Calculate Active Sevaks (>= 3 vihars in last 30 days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
+
         const recentEntries = allOrgEntries.filter(e => new Date(e.vihar_date) >= thirtyDaysAgo);
         const sevakViharCounts: Record<string, number> = {};
         recentEntries.forEach(e => {
-            if (e.sevaks) {
-                e.sevaks.forEach(s => {
-                    sevakViharCounts[s] = (sevakViharCounts[s] || 0) + 1;
-                });
-            }
+          if (e.sevaks) {
+            e.sevaks.forEach(s => {
+              sevakViharCounts[s] = (sevakViharCounts[s] || 0) + 1;
+            });
+          }
         });
         const activeSevaksCount = Object.values(sevakViharCounts).filter(count => count >= 3).length;
         stats.activeSevaks = activeSevaksCount;
@@ -374,7 +374,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
           } else if (hasHindi) {
             hookData.cell.styles.font = 'NotoSansDevanagari';
           }
-          
+
           // Style for the Total row
           if (hookData.section === 'body' && hookData.row.index === bodyData.length - 1) {
             hookData.cell.styles.fillColor = [254, 235, 219]; // Light saffron/orange bg
@@ -382,7 +382,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
             hookData.cell.styles.fontStyle = 'bold';
             // Custom fonts might not have bold, fallback to normal for non-English if needed
             if (!hasHindi && !hasGujarati) {
-               hookData.cell.styles.font = 'helvetica';
+              hookData.cell.styles.font = 'helvetica';
             }
           }
         },
@@ -526,11 +526,11 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
           <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full border-[1.5rem] border-white/5 opacity-50" />
           <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full border-[1rem] border-white/5 opacity-50" />
         </div>
-        
+
         <div className="relative z-10 w-full flex items-center justify-start gap-3 sm:gap-6">
-          <img 
-            src={vsgLogo} 
-            alt="VSG Logo" 
+          <img
+            src={vsgLogo}
+            alt="VSG Logo"
             className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain shadow-lg rounded-full border border-white/80 shrink-0 bg-white/10"
           />
           <div className="flex flex-col items-start justify-center min-w-0">
@@ -538,7 +538,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
               ALL INDIA VIHAR SEVA GROUP (VSG)
             </h2>
             <h1 className="text-[11px] xs:text-xs sm:text-sm md:text-lg lg:text-xl font-serif font-medium text-white/90 drop-shadow-md leading-tight whitespace-nowrap">
-              प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा
+              પ્રવચન શિખર પૂ. આચાર્યદેવ શ્રીમદ્ વિજય મહાબોધિ સૂરિ મહારાજ
             </h1>
           </div>
         </div>
@@ -568,9 +568,9 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
               <div className="mt-1.5 sm:mt-2 inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full bg-white/20 border border-white/30 shadow-sm backdrop-blur-sm self-start max-w-full">
                 <span className="inline-block w-2 h-2 rounded-full bg-white shadow-sm shrink-0" />
                 <p className="text-white text-xs sm:text-sm font-semibold tracking-wide truncate">
-                {orgDetails
-                  ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}`
-                  : currentUser.organization_id}
+                  {orgDetails
+                    ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}`
+                    : currentUser.organization_id}
                 </p>
               </div>
             </div>
