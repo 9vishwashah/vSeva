@@ -23,7 +23,8 @@ export async function handler(event, context) {
 
     // 3. Supabase admin client
     // Use SUPABASE_URL if available, fallback to VITE_SUPABASE_URL if needed, but create-user uses SUPABASE_URL
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    let supabaseUrl = (process.env.SUPABASE_URL && process.env.SUPABASE_URL.includes('.supabase.co') ? process.env.SUPABASE_URL : process.env.VITE_SUPABASE_URL);
+        if (supabaseUrl && !supabaseUrl.includes('supabase.co')) { supabaseUrl = process.env.VITE_SUPABASE_URL; }
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {

@@ -19,7 +19,8 @@ export async function handler(event) {
         }
 
         // 1. Initialize Supabase with Service Role Key (Admin Access)
-        const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+        let supabaseUrl = (process.env.SUPABASE_URL && process.env.SUPABASE_URL.includes('.supabase.co') ? process.env.SUPABASE_URL : process.env.VITE_SUPABASE_URL);
+        if (supabaseUrl && !supabaseUrl.includes('supabase.co')) { supabaseUrl = process.env.VITE_SUPABASE_URL; }
         const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
         if (!supabaseUrl) throw new Error("Missing SUPABASE_URL in environment variables.");

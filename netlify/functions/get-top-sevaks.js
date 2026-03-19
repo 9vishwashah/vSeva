@@ -19,7 +19,7 @@ export async function handler(event) {
         }
 
         const supabaseAdmin = createClient(
-            process.env.SUPABASE_URL,
+            (process.env.SUPABASE_URL && process.env.SUPABASE_URL.includes('.supabase.co') ? process.env.SUPABASE_URL : process.env.VITE_SUPABASE_URL),
             process.env.SUPABASE_SERVICE_ROLE_KEY
         );
 
