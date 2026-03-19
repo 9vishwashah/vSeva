@@ -276,6 +276,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
       // Let's rely on doc.addImage(vSevaLogo, ...)
 
       doc.addImage(vSevaLogo, 'PNG', 14, 10, 15, 15);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.addImage(vsgLogo, 'JPEG', pageWidth - 14 - 15, 10, 15, 15);
 
       // Title & Credits
       doc.setFont('helvetica', 'normal');
