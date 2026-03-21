@@ -251,21 +251,22 @@ export const dataService = {
       }
     }
 
-    // 2. Update Profile table
-    const profileUpdates: any = {};
-    if (updates.mobile) profileUpdates.mobile = updates.mobile;
-    if (updates.age !== undefined) profileUpdates.age = updates.age;
-    if (updates.bloodGroup) profileUpdates.blood_group = updates.bloodGroup;
-    if (updates.emergencyNumber !== undefined) profileUpdates.emergency_number = updates.emergencyNumber;
-    if (updates.address !== undefined) profileUpdates.address = updates.address;
+    // 2. Update Profile table using secure RPC
+    const { error: rpcError } = await supabase.rpc('update_sevak_profile_by_admin', {
+      p_target_user_id: userId,
+      p_mobile: updates.mobile !== undefined ? updates.mobile : null,
+      p_age: updates.age !== undefined && updates.age !== null && !isNaN(updates.age as number) ? updates.age : null,
+      p_blood_group: updates.bloodGroup !== undefined ? updates.bloodGroup : null,
+      p_emergency_number: updates.emergencyNumber !== undefined ? updates.emergencyNumber : null,
+      p_address: updates.address !== undefined ? updates.address : null
+    });
 
-    if (Object.keys(profileUpdates).length > 0) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update(profileUpdates)
-        .eq('id', userId);
-
-      if (profileError) throw profileError;
+    if (rpcError) {
+      console.error("RPC Error:", rpcError);
+      if (rpcError.message.includes('function') && rpcError.message.includes('does not exist')) {
+        throw new Error("Database configuration required. Please ask your developer to run 'admin_update_profile_rpc.sql' in Supabase SQL Editor.");
+      }
+      throw rpcError;
     }
 
     return true;
