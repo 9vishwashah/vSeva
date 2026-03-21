@@ -21,6 +21,14 @@ export const dataService = {
   },
 
   async getPublicProfile(username: string): Promise<Partial<UserProfile> | null> {
+    // 1. Attempt RPC first (bypasses RLS for unauthenticated QR code scans)
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_public_sevak_profile', { p_username: username });
+    
+    if (!rpcError && rpcData && rpcData.length > 0) {
+       return rpcData[0];
+    }
+
+    // 2. Fallback if RPC isn't deployed yet (works if logged in, but fails for public scans due to RLS)
     const { data, error } = await supabase
       .from('profiles')
       .select('full_name, organization_id, is_active, blood_group, mobile, emergency_number, address, gender, role')
