@@ -266,7 +266,7 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                     disabled={loading}
                     className="w-full bg-saffron-600 hover:bg-saffron-700 text-white py-3 rounded-lg font-medium transition-colors flex justify-center items-center mt-4"
                 >
-                    {loading ? <Loader2 className="animate-spin" size={20} /> : "Create Organization"}
+                    {loading ? <Loader2 className="animate-spin" size={20} /> : "Create Captain Account"}
                 </button>
             </form >
         </div >

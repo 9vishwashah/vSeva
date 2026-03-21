@@ -8,6 +8,7 @@ import NewEntry from './pages/NewEntry';
 import AddSevak from './pages/AddSevak';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
+import PublicSevakProfile from './pages/PublicSevakProfile';
 import { Loader2 } from 'lucide-react';
 import ManageRoutes from './pages/ManageRoutes';
 import ViewEntries from './pages/ViewEntries';
@@ -65,6 +66,9 @@ const App: React.FC = () => {
 
   // Check for public routes
   const path = window.location.pathname;
+  if (path.startsWith('/verify/')) {
+    return <PublicSevakProfile />;
+  }
   const isSuperAdmin = path === '/super-admin';
 
   useEffect(() => {

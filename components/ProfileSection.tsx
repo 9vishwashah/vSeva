@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '../types';
 import { dataService } from '../services/dataService';
-import { Trophy } from 'lucide-react';
+import { Trophy, Printer, ArrowLeft } from 'lucide-react';
+import IDCardBadge from './IDCardBadge';
 
 interface ProfileSectionProps {
     user: UserProfile;
@@ -13,6 +14,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
     const [leaderboard, setLeaderboard] = useState<{ male: any[], female: any[], overall: any[] }>({ male: [], female: [], overall: [] });
     const [stats, setStats] = useState<any>(null);
     const [orgDetails, setOrgDetails] = useState<any>(null);
+    const [showIdCard, setShowIdCard] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -73,8 +75,38 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                         <p className="font-medium text-lg">{user.mobile}</p>
                     </div>
                     <div>
+                        <p className="text-gray-500 mb-1">Blood Group</p>
+                        {user.blood_group ? (
+                            <p className="font-medium text-lg text-red-600 font-bold">{user.blood_group}</p>
+                        ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100">
+                                Ask Captain to update
+                            </span>
+                        )}
+                    </div>
+                    <div>
                         <p className="text-gray-500 mb-1">Username</p>
                         <p className="font-medium text-lg">{user.username}</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-500 mb-1">Emergency Number</p>
+                        {user.emergency_number ? (
+                            <p className="font-medium text-lg">{user.emergency_number}</p>
+                        ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100">
+                                Ask Captain to update
+                            </span>
+                        )}
+                    </div>
+                    <div>
+                        <p className="text-gray-500 mb-1">Address</p>
+                        {user.address ? (
+                            <p className="font-medium text-lg">{user.address}</p>
+                        ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100">
+                                Ask Captain to update
+                            </span>
+                        )}
                     </div>
                     <div>
                         <p className="text-gray-500 mb-1">Organization</p>
@@ -122,7 +154,40 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                         </button>
                     </div>
                 </div>
+
+                <div className="mt-8 border-t border-gray-100 pt-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">ID Card</h3>
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <p className="font-medium text-gray-900">Your Volunteer ID</p>
+                            <p className="text-xs text-gray-500">View and print your ID card with QR code</p>
+                        </div>
+                        <button
+                            onClick={() => setShowIdCard(true)}
+                            className="px-4 py-2 bg-white border border-gray-200 shadow-sm text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 active:scale-95 transition-transform flex items-center gap-2"
+                        >
+                            <Printer size={16} /> View ID
+                        </button>
+                    </div>
+                </div>
             </div>
+
+            {/* ID Card Modal directly inside Profile Section */}
+            {showIdCard && (
+                <div className="fixed inset-0 z-[100] bg-white flex flex-col pt-16 items-center p-4 print:pt-0 pb-16 overflow-y-auto">
+                    <div className="w-full max-w-md print:hidden flex items-center justify-between mb-8 pr-4">
+                        <button onClick={() => setShowIdCard(false)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium">
+                            <ArrowLeft size={20} /> Back to Profile
+                        </button>
+                    </div>
+                    <div className="flex flex-col items-center justify-center min-h-[50vh]">
+                        <IDCardBadge user={user} orgName={orgName} />
+                        <p className="text-sm text-gray-500 mt-8 text-center max-w-sm print:hidden">
+                            Print this badge on an ID card printer or standard A4 paper and cut it out. Scanning the QR code will open your verified profile.
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

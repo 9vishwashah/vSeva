@@ -5,7 +5,6 @@ import { UserProfile } from '../types';
 import { LogIn, Loader2, Instagram, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
-import vsgLogo from '../assets/vsg.jpg';
 
 interface LoginProps {
   onLoginSuccess: (profile: UserProfile) => void;
@@ -108,28 +107,23 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6 z-10">
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <div className="flex items-center gap-4 animate-fade-in-up">
-              <div className="bg-saffron-50 rounded-2xl shadow-sm border border-saffron-100 overflow-hidden">
-                <img src={vSevaLogo} alt="vSeva" className="h-24 w-24 md:h-28 md:w-28 object-cover" />
-              </div>
-              <div className="h-12 w-px bg-slate-200"></div>
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <img src={vsgLogo} alt="VSG" className="h-24 w-24 md:h-28 md:w-28 object-cover" />
-              </div>
+            <div className="animate-fade-in-up bg-saffron-50 rounded-2xl shadow-sm border border-saffron-100 overflow-hidden">
+              <img src={vSevaLogo} alt="vSeva" className="h-24 w-24 md:h-28 md:w-28 object-cover" />
             </div>
           </div>
           <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent mb-2">vSeva</h1>
           <p className="text-gray-500">Sign in to your account</p>
+          <p className="text-sm text-saffron-600 mt-2 font-medium">Please enter the username and password given by your Captain.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email / Username</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
             <input
               type="text"
               required
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-              placeholder="admin@org.com or name@vsevak.in"
+              placeholder="name@vsevak.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -171,13 +165,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </form>
 
         <div className="border-t pt-4 text-center space-y-2">
-          <p className="text-sm text-gray-600">Want to create a new Organization?</p>
+          <p className="text-sm text-gray-600">Want to use for Vihar Seva Group?</p>
           <button
             type="button"
             onClick={() => setIsRegistering(true)}
             className="text-saffron-600 font-medium hover:underline text-sm"
           >
-            Create Admin Account
+            Create Captain Account
           </button>
         </div>
 

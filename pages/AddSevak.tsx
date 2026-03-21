@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, Organization, ContactNumber } from '../types';
 import { dataService } from '../services/dataService';
-import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft } from 'lucide-react';
+import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
 
 
@@ -61,6 +62,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
 
   const [selectedSevak, setSelectedSevak] = useState<UserProfile | null>(null);
   const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string; emergencyNumber: string; address: string }>({ mobile: '', age: '', bloodGroup: '', emergencyNumber: '', address: '' });
+  const [showIdCard, setShowIdCard] = useState(false);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -506,7 +508,7 @@ Password: ${sevak.mobile}
       {selectedSevak && (
         <div 
           className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-md bg-white/40 animate-fade-in"
-          onClick={() => { setSelectedSevak(null); setEditingId(null); }}
+          onClick={() => { setSelectedSevak(null); setEditingId(null); setShowIdCard(false); }}
         >
           <div 
             className="bg-white rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 w-full max-w-md overflow-hidden animate-slide-up flex flex-col max-h-[90vh]"
@@ -517,12 +519,21 @@ Password: ${sevak.mobile}
                 <Users size={20} className="text-saffron-600" />
                 Sevak Details
               </h3>
-              <button onClick={() => { setSelectedSevak(null); setEditingId(null); }} className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-200 transition-colors">
+              <button onClick={() => { setSelectedSevak(null); setEditingId(null); setShowIdCard(false); }} className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-200 transition-colors">
                 <X size={20} />
               </button>
             </div>
             
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {showIdCard ? (
+                 <div className="flex flex-col items-center justify-center py-4 min-h-[40vh]">
+                    <IDCardBadge user={selectedSevak} orgName={currentUser.organization_id} />
+                    <p className="text-xs text-gray-500 mt-6 text-center max-w-xs print:hidden">
+                        Print this badge. Scanning the QR code will verify the identity.
+                    </p>
+                 </div>
+              ) : (
+                <>
               <div className="text-center mb-6">
                 <div className="w-16 h-16 bg-saffron-100 text-saffron-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold border border-saffron-200">
                   {selectedSevak.full_name.charAt(0).toUpperCase()}
@@ -632,11 +643,17 @@ Password: ${sevak.mobile}
                 </div>
 
               </div>
+               </>
+              )}
             </div>
             
             {/* Modal Actions */}
             <div className="p-4 border-t border-gray-200 bg-white flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
-              {editingId === selectedSevak.id ? (
+              {showIdCard ? (
+                  <button onClick={() => setShowIdCard(false)} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-semibold transition-colors flex justify-center items-center gap-2">
+                    <ArrowLeft size={18} /> Back to Details
+                  </button>
+              ) : editingId === selectedSevak.id ? (
                 <>
                   <button onClick={() => setEditingId(null)} className="px-4 py-2.5 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 transition-colors font-semibold text-sm flex-1">
                     Cancel
@@ -649,6 +666,9 @@ Password: ${sevak.mobile}
                 <>
                   <button onClick={() => handleDelete(selectedSevak.id, selectedSevak.full_name)} className="px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 flex-1">
                     <Trash2 size={18} /> <span className="text-sm font-semibold pt-0.5">Delete</span>
+                  </button>
+                  <button onClick={() => setShowIdCard(true)} className="px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 flex-1">
+                    <Printer size={18} /> <span className="text-sm font-semibold pt-0.5">ID Card</span>
                   </button>
                   <button onClick={() => startEdit(selectedSevak)} className="px-4 py-2.5 bg-saffron-600 hover:bg-saffron-700 text-white rounded-xl transition-all shadow-md shadow-saffron-200 hover:shadow-lg flex items-center justify-center gap-2 flex-1">
                     <Edit2 size={18} /> <span className="text-sm font-semibold pt-0.5">Edit Profile</span>
