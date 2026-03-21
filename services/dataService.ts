@@ -20,6 +20,20 @@ export const dataService = {
     return data as UserProfile;
   },
 
+  async getPublicProfile(username: string): Promise<Partial<UserProfile> | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('full_name, organization_id, is_active, blood_group, mobile, emergency_number, address, gender, role')
+      .eq('username', username)
+      .single();
+
+    if (error) {
+      console.warn("Could not fetch public profile:", error.message);
+      return null;
+    }
+    return data;
+  },
+
   async getOrganization(orgId: string): Promise<Organization | null> {
     const { data, error } = await supabase
       .from('organizations')
