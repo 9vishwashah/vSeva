@@ -616,12 +616,12 @@ Password: ${sevak.mobile}
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Emergency Number</label>
                     {editingId === selectedSevak.id ? (
                       <input 
-                        type="tel" 
-                        maxLength={10}
+                        type="text" 
+                        maxLength={15}
                         value={editForm.emergencyNumber}
-                        onChange={e => setEditForm({...editForm, emergencyNumber: e.target.value.replace(/\D/g, '').slice(0, 10)})}
-                        placeholder="family"
-                        className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none font-mono transition-shadow shadow-sm"
+                        onChange={e => setEditForm({...editForm, emergencyNumber: e.target.value})}
+                        placeholder="Emergency Contact"
+                        className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm text-gray-800"
                       />
                     ) : (
                       <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800 font-mono">{selectedSevak.emergency_number || '-'}</div>
