@@ -192,7 +192,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({ title, icon, items, c
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 0', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
                         <img src={vSevaLogo} alt="vSeva" style={{ height: 18, width: 18, objectFit: 'contain', opacity: 0.65 }} />
                         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#4b5563', lineHeight: '1.5' }}>vSeva</span>
-                        <span style={{ fontSize: 11, color: '#9ca3af', lineHeight: '1.5' }}>· by Vishwa Alpesh Shah</span>
+                        <span style={{ fontSize: 11, color: '#9ca3af', lineHeight: '1.5' }}>· by VJAS</span>
                     </div>
                 </div>
             </div>

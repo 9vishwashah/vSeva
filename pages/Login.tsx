@@ -176,7 +176,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </div>
 
         <div className="text-center text-xs text-gray-400 mt-4">
-          <p>vSeva by Vishwa Alpesh Shah</p>
+          <p>vSeva by VJAS</p>
         </div>
       </div>
 

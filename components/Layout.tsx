@@ -58,7 +58,7 @@ const Layout: React.FC<LayoutProps> = ({
             <img src={vSevaLogo} alt="vSeva" className="h-16 w-16 md:h-20 md:w-20 object-contain drop-shadow-sm" />
             <div>
               <h1 className="text-2xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
-              <p className="text-[10px] text-gray-400 uppercase tracking-wide">by Vishwa Alpesh Shah</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">by VJAS</p>
             </div>
           </div>
         </div>
