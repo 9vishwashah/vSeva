@@ -290,7 +290,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
                   <span className="text-sm font-bold tracking-[0.15em] drop-shadow-sm text-gray-800">vSeva</span>
                   <Footprints size={14} className={isAdmin ? 'text-saffron-600' : 'text-saffron-500'} />
                 </div>
-                <p className="text-[10px] font-medium mt-1 text-gray-500 ml-6">by Vishwa Alpesh Shah</p>
+                <p className="text-[10px] font-medium mt-1 text-gray-500 ml-6">by VJAS</p>
               </div>
             </div>
           </div>

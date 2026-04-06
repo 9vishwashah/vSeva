@@ -4,6 +4,7 @@ import { dataService } from '../services/dataService';
 import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft } from 'lucide-react';
 import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
+import CircularProgressBar from '../components/CircularProgressBar';
 
 
 interface AddSevakProps {
@@ -36,12 +37,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
     fullName: '',
-    mobile: '',
-    gender: 'Male',
-    age: '',
-    bloodGroup: 'O+',
-    emergencyNumber: '',
-    address: ''
+    mobile: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -96,16 +92,16 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       const creds = await dataService.createSevak(currentUser.organization_id, {
         fullName: formData.fullName,
         mobile: formData.mobile,
-        gender: formData.gender,
-        age: parseInt(formData.age),
-        bloodGroup: formData.bloodGroup,
-        emergencyNumber: formData.emergencyNumber,
-        address: formData.address
+        gender: 'Male',
+        age: undefined,
+        bloodGroup: undefined,
+        emergencyNumber: '',
+        address: ''
       });
 
       setSuccess(creds);
       showToast(`Sevak ${formData.fullName} added successfully!`, 'success');
-      setFormData({ fullName: '', mobile: '', gender: 'Male', age: '', bloodGroup: 'O+', emergencyNumber: '', address: '' });
+      setFormData({ fullName: '', mobile: '' });
       // Refresh the list after successful addition
       fetchData();
     } catch (err: any) {
@@ -205,11 +201,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     return Math.round((filled / fields.length) * 100);
   };
 
-  const completionBadge = (pct: number) => {
-    if (pct === 100) return { label: '✓ Complete', cls: 'bg-green-50 text-green-700 border-green-200' };
-    if (pct >= 50)  return { label: `${pct}% Done`,  cls: 'bg-amber-50 text-amber-700 border-amber-200' };
-    return              { label: `${pct}% Done`,  cls: 'bg-red-50 text-red-600 border-red-200' };
-  };
+
 
   const sortedSevaks = [...sevaks].sort((a, b) => {
     const timeA = a.last_login_at ? new Date(a.last_login_at).getTime() : 0;
@@ -329,6 +321,7 @@ Password: ${sevak.mobile}
               <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
               <input
                 type="tel"
+                required
                 maxLength={10}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none"
                 placeholder="10 digit number (Used as Password)"
@@ -338,71 +331,7 @@ Password: ${sevak.mobile}
                   setFormData({ ...formData, mobile: val });
                 }}
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-                <select
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none bg-white"
-                  value={formData.gender}
-                  onChange={e => setFormData({ ...formData, gender: e.target.value })}
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Blood Group</label>
-                <select
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none bg-white font-semibold"
-                  value={formData.bloodGroup}
-                  onChange={e => setFormData({ ...formData, bloodGroup: e.target.value })}
-                >
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-                <input
-                  type="number"
-                  required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none font-mono"
-                  value={formData.age}
-                  onChange={e => setFormData({ ...formData, age: e.target.value })}
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1 truncate" title="Emergency Number">Emergency No.</label>
-                <input
-                  type="tel"
-                  maxLength={10}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none font-mono"
-                  placeholder="family"
-                  value={formData.emergencyNumber}
-                  onChange={e => setFormData({ ...formData, emergencyNumber: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                />
-              </div>
-            </div>
-
-            <div className="w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-              <textarea
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none resize-none h-24 text-sm"
-                placeholder="Full Address"
-                value={formData.address}
-                onChange={e => setFormData({ ...formData, address: e.target.value })}
-              />
+              <p className="text-xs text-gray-400 mt-1">Additional details (age, address, etc.) can be filled by the sevak on their profile.</p>
             </div>
           </div>
 
@@ -469,15 +398,14 @@ Password: ${sevak.mobile}
                   const { label, color } = formatLastLogin(sevak.last_login_at);
                   const statusDotColor = color.replace('text-', 'bg-');
                   const pct = getProfileCompletion(sevak);
-                  const { label: pctLabel, cls: pctCls } = completionBadge(pct);
 
                   return (
                     <div key={sevak.id} className="bg-white rounded-[20px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-gray-200 transition-all duration-300 flex flex-col group transform hover:-translate-y-1 overflow-hidden relative">
                       
-                      {/* Top Line: Sr No + Name + Last Seen */}
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2.5 truncate">
-                          <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded tracking-widest uppercase border border-gray-100 whitespace-nowrap">
+                      {/* Top Line: Sr No + Name + badges */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded tracking-widest uppercase border border-gray-100 whitespace-nowrap flex-shrink-0">
                             #{index + 1}
                           </span>
                           <h3 className="text-base font-bold text-gray-900 tracking-tight truncate group-hover:text-saffron-600 transition-colors">
@@ -485,12 +413,19 @@ Password: ${sevak.mobile}
                           </h3>
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
-                          {/* Profile Completion Badge */}
-                          <span className={`text-[9px] font-bold border px-2 py-0.5 rounded-full uppercase tracking-wider ${pctCls}`}>
-                            {pctLabel}
-                          </span>
+                          {/* Circular Progress Badge */}
+                          <div className="w-7 h-7 flex-shrink-0" title={`${pct}% profile complete`}>
+                            <CircularProgressBar 
+                              percent={pct} 
+                              number={""}
+                              animate={false}
+                              strokeWidth={12}
+                              barColor={pct === 100 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626'}
+                              trackColor="#e5e7eb"
+                            />
+                          </div>
                           {/* Last seen */}
-                          <div className="flex items-center gap-1.5 whitespace-nowrap bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                          <div className="flex items-center gap-1 whitespace-nowrap bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
                              <div className={`w-1.5 h-1.5 rounded-full ${statusDotColor} shadow-sm`}></div>
                              <span className={`text-[9px] font-bold ${color} uppercase tracking-wider`}>{label}</span>
                           </div>

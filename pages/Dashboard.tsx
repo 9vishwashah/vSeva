@@ -291,7 +291,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
       doc.setFontSize(10);
       doc.setTextColor(150); // grey
-      doc.text("vSeva by Vishwa Alpesh Shah", 35, 24);
+      doc.text("vSeva by VJAS", 35, 24);
 
       doc.setFontSize(9);
       doc.setTextColor(100);
