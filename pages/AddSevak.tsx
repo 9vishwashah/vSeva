@@ -198,6 +198,19 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     }
   };
 
+  // Profile completion: counts blood_group, emergency_number, address, age
+  const getProfileCompletion = (sevak: UserProfile): number => {
+    const fields = [sevak.blood_group, sevak.emergency_number, sevak.address, sevak.age];
+    const filled = fields.filter(f => f !== null && f !== undefined && String(f).trim() !== '').length;
+    return Math.round((filled / fields.length) * 100);
+  };
+
+  const completionBadge = (pct: number) => {
+    if (pct === 100) return { label: '✓ Complete', cls: 'bg-green-50 text-green-700 border-green-200' };
+    if (pct >= 50)  return { label: `${pct}% Done`,  cls: 'bg-amber-50 text-amber-700 border-amber-200' };
+    return              { label: `${pct}% Done`,  cls: 'bg-red-50 text-red-600 border-red-200' };
+  };
+
   const sortedSevaks = [...sevaks].sort((a, b) => {
     const timeA = a.last_login_at ? new Date(a.last_login_at).getTime() : 0;
     const timeB = b.last_login_at ? new Date(b.last_login_at).getTime() : 0;
@@ -455,6 +468,8 @@ Password: ${sevak.mobile}
                 filteredSevaks.map((sevak, index) => {
                   const { label, color } = formatLastLogin(sevak.last_login_at);
                   const statusDotColor = color.replace('text-', 'bg-');
+                  const pct = getProfileCompletion(sevak);
+                  const { label: pctLabel, cls: pctCls } = completionBadge(pct);
 
                   return (
                     <div key={sevak.id} className="bg-white rounded-[20px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-gray-200 transition-all duration-300 flex flex-col group transform hover:-translate-y-1 overflow-hidden relative">
@@ -469,9 +484,16 @@ Password: ${sevak.mobile}
                             {sevak.full_name}
                           </h3>
                         </div>
-                        <div className="flex items-center gap-1.5 whitespace-nowrap bg-gray-50 px-2 py-0.5 rounded border border-gray-100 flex-shrink-0">
-                           <div className={`w-1.5 h-1.5 rounded-full ${statusDotColor} shadow-sm`}></div>
-                           <span className={`text-[9px] font-bold ${color} uppercase tracking-wider`}>{label}</span>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {/* Profile Completion Badge */}
+                          <span className={`text-[9px] font-bold border px-2 py-0.5 rounded-full uppercase tracking-wider ${pctCls}`}>
+                            {pctLabel}
+                          </span>
+                          {/* Last seen */}
+                          <div className="flex items-center gap-1.5 whitespace-nowrap bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                             <div className={`w-1.5 h-1.5 rounded-full ${statusDotColor} shadow-sm`}></div>
+                             <span className={`text-[9px] font-bold ${color} uppercase tracking-wider`}>{label}</span>
+                          </div>
                         </div>
                       </div>
 

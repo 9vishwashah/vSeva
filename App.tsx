@@ -206,7 +206,18 @@ const App: React.FC = () => {
       )}
 
       {currentPage === 'profile' && (
-        <ProfileSection user={user} orgName={orgName} />
+        <ProfileSection
+          user={user}
+          orgName={orgName}
+          onProfileUpdated={async () => {
+            try {
+              const updated = await dataService.getProfile(user.id);
+              if (updated) setUser(updated);
+            } catch (e) {
+              console.warn('Could not refresh profile after update:', e);
+            }
+          }}
+        />
       )}
 
       {currentPage === 'my-vihars' && (

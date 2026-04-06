@@ -23,13 +23,20 @@ const PublicSevakProfile: React.FC = () => {
 
       try {
         const decoded = decodeURIComponent(username);
-        const data = await dataService.getPublicProfile(decoded);
+        const data = await dataService.getPublicProfile(decoded) as any;
         if (data) {
           setProfile(data);
-          const org = await dataService.getOrganization(data.organization_id);
-          if (org) {
-              setOrgName(org.name);
-              setOrgDetails(org);
+          
+          if (data.org_name && data.org_city) {
+              setOrgName(data.org_name);
+              setOrgDetails({ city: data.org_city });
+          } else {
+             // Fallback for logged-in preview if RPC isn't deployed
+             const org = await dataService.getOrganization(data.organization_id);
+             if (org) {
+                 setOrgName(org.name);
+                 setOrgDetails(org);
+             }
           }
         } else {
           setError('Sevak profile not found.');
