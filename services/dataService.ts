@@ -280,6 +280,19 @@ export const dataService = {
     return true;
   },
 
+  async updateOwnProfile(updates: { bloodGroup?: string; emergencyNumber?: string; address?: string }) {
+    const { error } = await supabase.rpc('update_own_profile', {
+      p_blood_group:      updates.bloodGroup      ?? '',
+      p_emergency_number: updates.emergencyNumber ?? '',
+      p_address:          updates.address         ?? '',
+    });
+    if (error) {
+      console.error('updateOwnProfile RPC error:', error);
+      throw error;
+    }
+    return true;
+  },
+
   async approveOrgAdmin(request: {
     id: string;
     org_name: string;

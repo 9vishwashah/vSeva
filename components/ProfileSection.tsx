@@ -1,20 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '../types';
 import { dataService } from '../services/dataService';
-import { Trophy, Printer, ArrowLeft } from 'lucide-react';
+import { Trophy, Printer, ArrowLeft, Edit2, X, Check, Loader2, Save } from 'lucide-react';
 import IDCardBadge from './IDCardBadge';
+import { useToast } from '../context/ToastContext';
 
 interface ProfileSectionProps {
     user: UserProfile;
     orgName: string;
+    onProfileUpdated?: () => Promise<void>;
 }
 
-const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
+const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+
+const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfileUpdated }) => {
+    const { showToast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [leaderboard, setLeaderboard] = useState<{ male: any[], female: any[], overall: any[] }>({ male: [], female: [], overall: [] });
     const [stats, setStats] = useState<any>(null);
     const [orgDetails, setOrgDetails] = useState<any>(null);
     const [showIdCard, setShowIdCard] = useState(false);
+
+    // Edit state (sevak self-edit)
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [editForm, setEditForm] = useState({
+        blood_group: user.blood_group || '',
+        emergency_number: user.emergency_number || '',
+        address: user.address || '',
+    });
+
+    // Reset form when user prop changes (after parent refreshes)
+    useEffect(() => {
+        setEditForm({
+            blood_group: user.blood_group || '',
+            emergency_number: user.emergency_number || '',
+            address: user.address || '',
+        });
+    }, [user]);
 
     useEffect(() => {
         const load = async () => {
@@ -51,67 +74,184 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
         return name.substring(0, 2).toUpperCase();
     };
 
-    const gender = (user.gender || '').toLowerCase();
-    const showMale = gender !== 'female';
-    const showFemale = gender !== 'male';
+    const handleSave = async () => {
+        if (editForm.emergency_number && editForm.emergency_number.replace(/\D/g, '').length !== 10) {
+            showToast('Emergency number must be 10 digits', 'error');
+            return;
+        }
+        setIsSaving(true);
+        try {
+            await dataService.updateOwnProfile({
+                bloodGroup: editForm.blood_group,
+                emergencyNumber: editForm.emergency_number,
+                address: editForm.address,
+            });
+            showToast('Profile updated successfully!', 'success');
+            setIsEditing(false);
+            if (onProfileUpdated) await onProfileUpdated();
+        } catch (err: any) {
+            showToast(err.message || 'Failed to update profile', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleCancel = () => {
+        setEditForm({
+            blood_group: user.blood_group || '',
+            emergency_number: user.emergency_number || '',
+            address: user.address || '',
+        });
+        setIsEditing(false);
+    };
+
+    const isSevak = user.role === UserRole.SEVAK;
+
+    const EmptyBadge = () => (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100">
+            Not filled
+        </span>
+    );
 
     return (
         <div className="space-y-6">
             {/* Profile Card */}
             <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                <div className="flex items-center space-x-4 mb-6">
-                    <div className="w-16 h-16 bg-saffron-100 rounded-full flex items-center justify-center text-2xl font-bold text-saffron-600">
-                        {getInitials(user.full_name)}
+                {/* Header row */}
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-4">
+                        <div className="w-16 h-16 bg-saffron-100 rounded-full flex items-center justify-center text-2xl font-bold text-saffron-600">
+                            {getInitials(user.full_name)}
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-800">{user.full_name}</h2>
+                            <p className="text-gray-500 uppercase text-xs tracking-wider">{user.role}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-800">{user.full_name}</h2>
-                        <p className="text-gray-500 uppercase text-xs tracking-wider">{user.role}</p>
-                    </div>
+
+                    {/* Edit / Save / Cancel buttons — sevak only */}
+                    {isSevak && (
+                        <div className="flex items-center gap-2">
+                            {isEditing ? (
+                                <>
+                                    <button
+                                        onClick={handleCancel}
+                                        disabled={isSaving}
+                                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                    >
+                                        <X size={15} /> Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSave}
+                                        disabled={isSaving}
+                                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-saffron-600 hover:bg-saffron-700 rounded-lg shadow-sm shadow-saffron-200 transition-all active:scale-95 disabled:opacity-60"
+                                    >
+                                        {isSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                                        {isSaving ? 'Saving…' : 'Save'}
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-saffron-700 bg-saffron-50 hover:bg-saffron-100 border border-saffron-200 rounded-lg transition-colors"
+                                >
+                                    <Edit2 size={15} /> Edit My Details
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
 
+                {/* Edit mode banner */}
+                {isEditing && (
+                    <div className="mb-4 px-4 py-2.5 bg-saffron-50 border border-saffron-200 rounded-lg flex items-center gap-2 text-sm text-saffron-700 font-medium">
+                        <Edit2 size={14} />
+                        You are editing your profile. Update Blood Group, Emergency Number, and Address below.
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm border-t border-gray-100 pt-6">
+                    {/* Mobile Number — read-only */}
                     <div>
                         <p className="text-gray-500 mb-1">Mobile Number</p>
                         <p className="font-medium text-lg">{user.mobile}</p>
                     </div>
+
+                    {/* Blood Group */}
                     <div>
                         <p className="text-gray-500 mb-1">Blood Group</p>
-                        {user.blood_group ? (
+                        {isEditing ? (
+                            <select
+                                value={editForm.blood_group}
+                                onChange={e => setEditForm({ ...editForm, blood_group: e.target.value })}
+                                className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none bg-white font-semibold transition-shadow"
+                            >
+                                <option value="">— Select —</option>
+                                {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                            </select>
+                        ) : user.blood_group ? (
                             <p className="font-medium text-lg text-red-600 font-bold">{user.blood_group}</p>
                         ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100">
-                                Ask Captain to update
-                            </span>
+                            isSevak
+                                ? <EmptyBadge />
+                                : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100">Ask Captain to update</span>
                         )}
                     </div>
+
+                    {/* Username — read-only */}
                     <div>
                         <p className="text-gray-500 mb-1">Username</p>
                         <p className="font-medium text-lg">{user.username}</p>
                     </div>
+
+                    {/* Emergency Number */}
                     <div>
                         <p className="text-gray-500 mb-1">Emergency Number</p>
-                        {user.emergency_number ? (
+                        {isEditing ? (
+                            <input
+                                type="tel"
+                                maxLength={10}
+                                value={editForm.emergency_number}
+                                onChange={e => setEditForm({ ...editForm, emergency_number: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                                placeholder="10-digit family number"
+                                className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none font-mono transition-shadow"
+                            />
+                        ) : user.emergency_number ? (
                             <p className="font-medium text-lg">{user.emergency_number}</p>
                         ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100">
-                                Ask Captain to update
-                            </span>
+                            isSevak
+                                ? <EmptyBadge />
+                                : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100">Ask Captain to update</span>
                         )}
                     </div>
+
+                    {/* Address */}
                     <div>
                         <p className="text-gray-500 mb-1">Address</p>
-                        {user.address ? (
+                        {isEditing ? (
+                            <textarea
+                                value={editForm.address}
+                                onChange={e => setEditForm({ ...editForm, address: e.target.value })}
+                                placeholder="Your full address"
+                                rows={3}
+                                className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none resize-none transition-shadow"
+                            />
+                        ) : user.address ? (
                             <p className="font-medium text-lg">{user.address}</p>
                         ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100">
-                                Ask Captain to update
-                            </span>
+                            isSevak
+                                ? <EmptyBadge />
+                                : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100">Ask Captain to update</span>
                         )}
                     </div>
+
+                    {/* Organization — read-only */}
                     <div>
                         <p className="text-gray-500 mb-1">Organization</p>
                         <p className="font-medium text-lg">{orgName || user.organization_id}</p>
                     </div>
+
+                    {/* Status — read-only */}
                     <div>
                         <p className="text-gray-500 mb-1">Status</p>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -120,6 +260,28 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                     </div>
                 </div>
 
+                {/* Bottom Save button for mobile convenience */}
+                {isEditing && (
+                    <div className="mt-6 flex gap-3">
+                        <button
+                            onClick={handleCancel}
+                            disabled={isSaving}
+                            className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="flex-1 py-3 bg-saffron-600 hover:bg-saffron-700 text-white font-bold rounded-xl shadow-lg shadow-saffron-200 transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+                        >
+                            {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+                            {isSaving ? 'Saving…' : 'Save Changes'}
+                        </button>
+                    </div>
+                )}
+
+                {/* App Settings */}
                 <div className="mt-8 border-t border-gray-100 pt-6">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">App Settings</h3>
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -135,13 +297,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                                 window.OneSignalDeferred.push(async function(OneSignal: any) {
                                   try {
                                     await OneSignal.Slidedown.prompt();
-                                    // Refresh login after prompt to ensure linking
                                     if (user.username) {
                                       await OneSignal.login(user.username);
                                     }
                                   } catch (e) {
                                     console.error("OneSignal prompt failed", e);
-                                    // Fallback to simple request
                                     if (Notification.permission !== 'granted') {
                                       Notification.requestPermission();
                                     }
@@ -155,6 +315,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                     </div>
                 </div>
 
+                {/* ID Card */}
                 <div className="mt-8 border-t border-gray-100 pt-6">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">ID Card</h3>
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -172,7 +333,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName }) => {
                 </div>
             </div>
 
-            {/* ID Card Modal directly inside Profile Section */}
+            {/* ID Card Modal */}
             {showIdCard && (
                 <div className="fixed inset-0 z-[100] bg-white flex flex-col pt-16 items-center p-4 print:pt-0 pb-16 overflow-y-auto">
                     <div className="w-full max-w-md print:hidden flex items-center justify-between mb-8 pr-4">
