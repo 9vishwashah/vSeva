@@ -232,7 +232,7 @@ export const dataService = {
     return true;
   },
 
-  async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string; emergencyNumber?: string; address?: string }) {
+  async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string; emergencyNumber?: string; address?: string; gender?: string }) {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
@@ -266,7 +266,8 @@ export const dataService = {
       p_age: updates.age !== undefined && updates.age !== null && !isNaN(updates.age as number) ? updates.age : null,
       p_blood_group: updates.bloodGroup !== undefined ? updates.bloodGroup : null,
       p_emergency_number: updates.emergencyNumber !== undefined ? updates.emergencyNumber : null,
-      p_address: updates.address !== undefined ? updates.address : null
+      p_address: updates.address !== undefined ? updates.address : null,
+      p_gender: updates.gender !== undefined ? updates.gender : null
     });
 
     if (rpcError) {

@@ -245,6 +245,14 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
                         <p className="font-medium text-lg">{user.username}</p>
                     </div>
 
+                    {/* Gender — read-only */}
+                    <div>
+                        <p className="text-gray-500 mb-1">Gender</p>
+                        <p className={`font-medium text-lg ${user.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>
+                            {user.gender || 'Not specified'}
+                        </p>
+                    </div>
+
                     {/* Emergency Number */}
                     <div>
                         <p className="text-gray-500 mb-1">Emergency Number</p>
