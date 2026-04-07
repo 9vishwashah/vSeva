@@ -3,7 +3,7 @@ import { UserProfile } from '../types';
 import { ContactNumber } from '../types';
 import { dataService } from '../services/dataService';
 import { Phone, MessageCircle, Loader2, Users2, AlertCircle } from 'lucide-react';
-
+import { EmergencyHelp } from '../components/EmergencyHelp';
 interface ContactsProps {
     currentUser: UserProfile;
 }
@@ -47,8 +47,7 @@ const Contacts: React.FC<ContactsProps> = ({ currentUser }) => {
     }, [currentUser.organization_id]);
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6 pb-8">
-            {/* Header */}
+        <div className="max-w-2xl mx-auto space-y-6 pb-8">            {/* Header */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
                 {/* Decorative circles */}
                 <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
@@ -68,6 +67,8 @@ const Contacts: React.FC<ContactsProps> = ({ currentUser }) => {
                     )}
                 </div>
             </div>
+
+            <EmergencyHelp />
 
             {/* Loading */}
             {loading && (
@@ -115,19 +116,24 @@ const Contacts: React.FC<ContactsProps> = ({ currentUser }) => {
                                 {/* Accent bar */}
                                 <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${gradient}`} />
 
-                                <div className="flex items-center gap-4 p-4 pl-6">
+                                <div className="flex items-center gap-3 p-3 pl-5">
                                     {/* Avatar */}
-                                    <div className={`shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md`}>
-                                        <span className="text-white font-bold text-lg tracking-wide">{initials}</span>
+                                    <div className={`shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm`}>
+                                        <span className="text-white font-bold text-sm tracking-wide">{initials}</span>
                                     </div>
 
                                     {/* Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-base font-bold text-gray-900 truncate">{contact.label}</p>
-                                        <p className="text-sm text-gray-500 font-mono mt-0.5">+91 {contact.phone}</p>
-                                        {contact.description && (
-                                            <p className="text-xs text-gray-400 mt-1 italic leading-snug">{contact.description}</p>
-                                        )}
+                                    <div className="flex-1 min-w-0 pr-2">
+                                        <p className="text-sm font-bold text-gray-900 truncate leading-tight">{contact.label}</p>
+                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                            <p className="text-xs text-gray-500 font-mono font-medium truncate">+91 {contact.phone}</p>
+                                            {contact.description && (
+                                                <>
+                                                    <span className="text-gray-300 text-[10px] hidden sm:inline">|</span>
+                                                    <p className="text-[11px] text-gray-400 truncate hidden sm:inline">{contact.description}</p>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Action Buttons */}
@@ -135,11 +141,10 @@ const Contacts: React.FC<ContactsProps> = ({ currentUser }) => {
                                         {/* Call */}
                                         <a
                                             href={phoneHref}
-                                            className="flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-green-50 hover:bg-green-500 text-green-600 hover:text-white transition-all duration-150 shadow-sm hover:shadow-md active:scale-95"
+                                            className="flex items-center justify-center w-9 h-9 rounded-xl bg-green-50 hover:bg-green-500 text-green-600 hover:text-white transition-all duration-150 shadow-sm hover:shadow-md active:scale-95"
                                             title={`Call ${contact.label}`}
                                         >
-                                            <Phone size={20} strokeWidth={2.2} />
-                                            <span className="text-[10px] font-semibold">Call</span>
+                                            <Phone size={16} strokeWidth={2.5} />
                                         </a>
 
                                         {/* WhatsApp */}
@@ -147,11 +152,10 @@ const Contacts: React.FC<ContactsProps> = ({ currentUser }) => {
                                             href={waHref}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-[#e8fdf0] hover:bg-[#25D366] text-[#25D366] hover:text-white transition-all duration-150 shadow-sm hover:shadow-md active:scale-95"
+                                            className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#e8fdf0] hover:bg-[#25D366] text-[#25D366] hover:text-white transition-all duration-150 shadow-sm hover:shadow-md active:scale-95"
                                             title={`WhatsApp ${contact.label}`}
                                         >
-                                            <i className="fa-brands fa-whatsapp text-xl leading-none" aria-hidden="true" />
-                                            <span className="text-[10px] font-semibold">WhatsApp</span>
+                                            <i className="fa-brands fa-whatsapp text-lg leading-none" aria-hidden="true" />
                                         </a>
                                     </div>
                                 </div>

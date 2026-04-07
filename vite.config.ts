@@ -32,6 +32,42 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 600,
     },
     plugins: [
+      {
+        name: 'local-api-mock',
+        configureServer(server) {
+          server.middlewares.use(async (req, res, next) => {
+            if (req.url && req.url.startsWith('/api/nearby')) {
+              try {
+                const { handler } = await import('./netlify/functions/nearby.js');
+                
+                // Parse URL to extract queryStringParameters
+                const url = new URL(req.url, `http://${req.headers.host}`);
+                const queryStringParameters = Object.fromEntries(url.searchParams.entries());
+                
+                // Inject process.env securely
+                process.env.GOOGLE_API_KEY = _env.VITE_GOOGLE_API_KEY || _env.GOOGLE_API_KEY || 'AIzaSyAjWFp52QbzZzi14yjB2vlU6mn1DnJ-jyU';
+
+                const event = {
+                  queryStringParameters,
+                  headers: req.headers,
+                };
+
+                const result = await handler(event, {});
+                
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error("Local mock error:", e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
+            }
+            next();
+          });
+        }
+      },
       react(),
       VitePWA({
         strategies: 'injectManifest',
