@@ -45,7 +45,7 @@ export default defineConfig(({ mode }) => {
                 const queryStringParameters = Object.fromEntries(url.searchParams.entries());
                 
                 // Inject process.env securely
-                process.env.GOOGLE_API_KEY = _env.VITE_GOOGLE_API_KEY || _env.GOOGLE_API_KEY || 'AIzaSyAjWFp52QbzZzi14yjB2vlU6mn1DnJ-jyU';
+                process.env.GOOGLE_API_KEY = _env.VITE_GOOGLE_API_KEY || _env.GOOGLE_API_KEY || '';
 
                 const event = {
                   queryStringParameters,
