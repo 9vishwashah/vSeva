@@ -19,6 +19,7 @@ import AdminContacts from './pages/AdminContacts';
 import ViewReports from './pages/ViewReports';
 import SubmitReport from './pages/SubmitReport';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal } from './services/oneSignalService';
+import UpdateAppBanner from './components/UpdateAppBanner';
 
 
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
@@ -124,6 +125,7 @@ const App: React.FC = () => {
     logoutFromOneSignal();
     setUser(null);
     setOrgName('');
+    sessionStorage.removeItem('hasSeenCompletenessPrompt');
     if (!isStandalone) setShowLanding(true);
   };
 
@@ -141,15 +143,15 @@ const App: React.FC = () => {
 
   // Route: Super Admin (Protected-ish)
   if (isSuperAdmin) {
-    if (!user && !loading) return <Login onLoginSuccess={handleLoginSuccess} />;
-    return <SuperAdminDashboard />;
+    if (!user && !loading) return <><Login onLoginSuccess={handleLoginSuccess} /><UpdateAppBanner /></>;
+    return <><SuperAdminDashboard /><UpdateAppBanner /></>;
   }
 
   if (!user) {
     if (showLanding) {
-      return <LandingPage onGetStarted={() => { window.location.href = '/login'; }} />;
+      return <><LandingPage onGetStarted={() => { window.location.href = '/login'; }} /><UpdateAppBanner /></>;
     }
-    return <Login onLoginSuccess={handleLoginSuccess} />;
+    return <><Login onLoginSuccess={handleLoginSuccess} /><UpdateAppBanner /></>;
   }
 
   const getInitials = (name: string) => {
@@ -162,6 +164,7 @@ const App: React.FC = () => {
   };
 
   return (
+    <>
     <Layout
       role={user.role}
       userInitials={getInitials(user.full_name)}
@@ -171,7 +174,7 @@ const App: React.FC = () => {
     >
       {/* Admin Routes */}
       {currentPage === 'dashboard' && user.role === UserRole.ORG_ADMIN && (
-        <Dashboard currentUser={user} />
+        <Dashboard currentUser={user} navigateToProfile={() => handleSetCurrentPage('profile')} />
       )}
 
       {currentPage === 'new-entry' && user.role === UserRole.ORG_ADMIN && (
@@ -199,7 +202,7 @@ const App: React.FC = () => {
 
       {/* Sevak Routes */}
       {currentPage === 'analytics' && (
-        <Dashboard currentUser={user} />
+        <Dashboard currentUser={user} navigateToProfile={() => handleSetCurrentPage('profile')} />
       )}
       {currentPage === 'view-entries' && user.role === UserRole.ORG_ADMIN && (
         <ViewEntries currentUser={user} onEdit={handleEditEntry} />
@@ -240,6 +243,8 @@ const App: React.FC = () => {
         <SubmitReport currentUser={user} />
       )}
     </Layout>
+    <UpdateAppBanner />
+    </>
   );
 };
 

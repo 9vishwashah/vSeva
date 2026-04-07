@@ -20,6 +20,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
     const [stats, setStats] = useState<any>(null);
     const [orgDetails, setOrgDetails] = useState<any>(null);
     const [showIdCard, setShowIdCard] = useState(false);
+    const [isActive, setIsActive] = useState(true);
 
     // Edit state (sevak self-edit)
     const [isEditing, setIsEditing] = useState(false);
@@ -60,6 +61,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
                 s.vRank = rankRes;
                 s.totalOrgSevaks = totalRes ?? undefined;
                 setStats(s);
+
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                const recentCount = myEntries.filter(e => new Date(e.vihar_date) >= thirtyDaysAgo).length;
+                setIsActive(recentCount >= 1);
             } finally {
                 setIsLoading(false);
             }
@@ -116,22 +122,27 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
     return (
         <div className="space-y-6">
             {/* Profile Card */}
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+            <div className="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-gray-200">
                 {/* Header row */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div className="flex items-center space-x-4">
-                        <div className="w-16 h-16 bg-saffron-100 rounded-full flex items-center justify-center text-2xl font-bold text-saffron-600">
+                        <div className="w-16 h-16 shrink-0 bg-saffron-100 rounded-full flex items-center justify-center text-2xl font-bold text-saffron-600">
                             {getInitials(user.full_name)}
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-800">{user.full_name}</h2>
-                            <p className="text-gray-500 uppercase text-xs tracking-wider">{user.role}</p>
+                            <h2 className="text-2xl font-bold text-gray-800 leading-tight mb-1">{user.full_name}</h2>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-gray-500 uppercase text-xs tracking-wider font-semibold">{user.role}</p>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
+                                    {isActive ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
                     {/* Edit / Save / Cancel buttons — sevak only */}
                     {isSevak && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             {isEditing ? (
                                 <>
                                     <button
@@ -164,13 +175,43 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
 
                 {/* Edit mode banner */}
                 {isEditing && (
-                    <div className="mb-4 px-4 py-2.5 bg-saffron-50 border border-saffron-200 rounded-lg flex items-center gap-2 text-sm text-saffron-700 font-medium">
-                        <Edit2 size={14} />
-                        You are editing your profile. Update Blood Group, Emergency Number, and Address below.
+                    <div className="mb-6 px-4 py-3 bg-saffron-50 border border-saffron-200 rounded-lg flex items-center gap-3 text-sm text-saffron-800 font-medium leading-snug">
+                        <Edit2 size={18} className="shrink-0 text-saffron-600" />
+                        <span>You are editing your profile. Update Blood Group, Emergency Number, and Address below.</span>
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm border-t border-gray-100 pt-6">
+                {/* Profile Incomplete Info Badge */}
+                {isSevak && (!user.blood_group || !user.emergency_number || !user.address) && !isEditing && (
+                    <div className="mb-6 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
+                        <div className="mt-0.5 text-blue-600 shrink-0">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-blue-900 mb-0.5">Please Complete Your Profile</p>
+                            <p className="text-xs text-blue-800 leading-relaxed">Updating your Blood Group, Emergency Number, and Address ensures we can assist you promptly during an incident. It is also required to generate your complete Vihar Sevak Card.</p>
+                        </div>
+                        <button onClick={() => setIsEditing(true)} className="ml-auto mt-0.5 text-xs font-bold text-blue-700 hover:text-blue-900 underline whitespace-nowrap shrink-0">
+                            Edit Now
+                        </button>
+                    </div>
+                )}
+
+                {/* ID Card Header Action */}
+                <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-lg gap-3">
+                    <div>
+                        <p className="font-bold text-gray-900 text-sm">Your Vihar Sevak Card</p>
+                        <p className="text-xs text-gray-500 mt-0.5">View and print your ID card with QR code</p>
+                    </div>
+                    <button
+                        onClick={() => setShowIdCard(true)}
+                        className="px-4 py-2 bg-white border border-gray-200 shadow-sm text-sm font-semibold text-gray-700 rounded-lg hover:bg-gray-50 active:scale-95 transition-transform flex items-center justify-center gap-2 shrink-0"
+                    >
+                        <Printer size={16} /> View Card
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 text-sm border-t border-gray-100 pt-6">
                     {/* Mobile Number — read-only */}
                     <div>
                         <p className="text-gray-500 mb-1">Mobile Number</p>
@@ -250,14 +291,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
                         <p className="text-gray-500 mb-1">Organization</p>
                         <p className="font-medium text-lg">{orgName || user.organization_id}</p>
                     </div>
-
-                    {/* Status — read-only */}
-                    <div>
-                        <p className="text-gray-500 mb-1">Status</p>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Active
-                        </span>
-                    </div>
                 </div>
 
                 {/* Bottom Save button for mobile convenience */}
@@ -284,10 +317,10 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
                 {/* App Settings */}
                 <div className="mt-8 border-t border-gray-100 pt-6">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">App Settings</h3>
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-lg gap-3">
                         <div>
-                            <p className="font-medium text-gray-900">Push Notifications</p>
-                            <p className="text-xs text-gray-500">Receive updates about new entries and approvals</p>
+                            <p className="font-medium text-gray-900 text-sm">Push Notifications</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Receive updates about new entries and approvals</p>
                         </div>
                         <button
                             onClick={() => {
@@ -308,26 +341,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
                                   }
                                 });
                             }}
-                            className="px-4 py-2 bg-white border border-gray-200 shadow-sm text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 active:scale-95 transition-transform"
+                            className="px-4 py-2 bg-white border border-gray-200 shadow-sm text-sm font-semibold text-gray-700 rounded-lg hover:bg-gray-50 active:scale-95 transition-transform shrink-0"
                         >
                             Enable
-                        </button>
-                    </div>
-                </div>
-
-                {/* ID Card */}
-                <div className="mt-8 border-t border-gray-100 pt-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">ID Card</h3>
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                            <p className="font-medium text-gray-900">Your Volunteer ID</p>
-                            <p className="text-xs text-gray-500">View and print your ID card with QR code</p>
-                        </div>
-                        <button
-                            onClick={() => setShowIdCard(true)}
-                            className="px-4 py-2 bg-white border border-gray-200 shadow-sm text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 active:scale-95 transition-transform flex items-center gap-2"
-                        >
-                            <Printer size={16} /> View ID
                         </button>
                     </div>
                 </div>
