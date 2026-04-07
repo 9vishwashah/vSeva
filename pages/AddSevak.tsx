@@ -37,7 +37,8 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
     fullName: '',
-    mobile: ''
+    mobile: '',
+    gender: 'Male'
   });
 
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const [showDeleteModal, setShowDeleteModal] = useState<{ id: string, name: string } | null>(null);
 
   const [selectedSevak, setSelectedSevak] = useState<UserProfile | null>(null);
-  const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string; emergencyNumber: string; address: string }>({ mobile: '', age: '', bloodGroup: '', emergencyNumber: '', address: '' });
+  const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string; emergencyNumber: string; address: string; gender: string }>({ mobile: '', age: '', bloodGroup: '', emergencyNumber: '', address: '', gender: 'Male' });
   const [showIdCard, setShowIdCard] = useState(false);
 
   // Search State
@@ -92,7 +93,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       const creds = await dataService.createSevak(currentUser.organization_id, {
         fullName: formData.fullName,
         mobile: formData.mobile,
-        gender: 'Male',
+        gender: formData.gender,
         age: undefined,
         bloodGroup: undefined,
         emergencyNumber: '',
@@ -101,7 +102,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
 
       setSuccess(creds);
       showToast(`Sevak ${formData.fullName} added successfully!`, 'success');
-      setFormData({ fullName: '', mobile: '' });
+      setFormData({ fullName: '', mobile: '', gender: 'Male' });
       // Refresh the list after successful addition
       fetchData();
     } catch (err: any) {
@@ -157,7 +158,8 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       age: sevak.age?.toString() || '',
       bloodGroup: sevak.blood_group || 'O+',
       emergencyNumber: sevak.emergency_number || '',
-      address: sevak.address || ''
+      address: sevak.address || '',
+      gender: sevak.gender || 'Male'
     });
   };
 
@@ -178,10 +180,11 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         age: isNaN(newAge as number) ? undefined : newAge,
         bloodGroup: editForm.bloodGroup,
         emergencyNumber: editForm.emergencyNumber,
-        address: editForm.address
+        address: editForm.address,
+        gender: editForm.gender
       });
       // update local
-      const updated = { ...selectedSevak, mobile: editForm.mobile, age: newAge, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, address: editForm.address };
+      const updated = { ...selectedSevak, mobile: editForm.mobile, age: newAge, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, address: editForm.address, gender: editForm.gender };
       setSevaks(prev => prev.map(s => s.id === selectedSevak.id ? updated : s));
       setSelectedSevak(updated);
       showToast(`Profile updated successfully!`, 'success');
@@ -333,6 +336,34 @@ Password: ${sevak.mobile}
               />
               <p className="text-xs text-gray-400 mt-1">Additional details (age, address, etc.) can be filled by the sevak on their profile.</p>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, gender: 'Male' })}
+                  className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${
+                    formData.gender === 'Male'
+                      ? 'bg-saffron-600 text-white shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Male
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, gender: 'Female' })}
+                  className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${
+                    formData.gender === 'Female'
+                      ? 'bg-saffron-600 text-white shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Female
+                </button>
+              </div>
+            </div>
           </div>
 
           <button
@@ -411,6 +442,15 @@ Password: ${sevak.mobile}
                           <h3 className="text-base font-bold text-gray-900 tracking-tight truncate group-hover:text-saffron-600 transition-colors">
                             {sevak.full_name}
                           </h3>
+                          {sevak.gender && (
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                              sevak.gender === 'Female' 
+                                ? 'bg-pink-50 text-pink-600 border-pink-100' 
+                                : 'bg-blue-50 text-blue-600 border-blue-100'
+                            }`}>
+                              {sevak.gender}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           {/* Circular Progress Badge */}
@@ -496,7 +536,36 @@ Password: ${sevak.mobile}
                   {selectedSevak.full_name.charAt(0).toUpperCase()}
                 </div>
                 <h4 className="text-xl font-bold text-gray-900">{selectedSevak.full_name}</h4>
-                <p className="text-sm text-gray-500">{selectedSevak.gender || 'Unknown Gender'}</p>
+                {editingId === selectedSevak.id ? (
+                  <div className="flex bg-gray-100 p-1 rounded-lg w-fit mx-auto mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditForm({ ...editForm, gender: 'Male' })}
+                      className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                        editForm.gender === 'Male'
+                          ? 'bg-saffron-600 text-white shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Male
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditForm({ ...editForm, gender: 'Female' })}
+                      className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                        editForm.gender === 'Female'
+                          ? 'bg-saffron-600 text-white shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Female
+                    </button>
+                  </div>
+                ) : (
+                  <p className={`text-sm font-bold mt-1 ${selectedSevak.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>
+                    {selectedSevak.gender || 'Unknown Gender'}
+                  </p>
+                )}
               </div>
 
               {/* Detail fields */}

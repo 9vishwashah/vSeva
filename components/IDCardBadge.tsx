@@ -71,7 +71,14 @@ const IDCardBadge: React.FC<IDCardBadgeProps> = ({ user, orgName }) => {
         
         <div className="mt-12 flex flex-col items-center w-full px-5 text-center shrink-0">
             <h2 className="text-2xl font-black text-gray-900 leading-tight tracking-tight">{user.full_name}</h2>
-            <p className="text-[12px] font-black tracking-widest text-saffron-600 uppercase mt-2 bg-saffron-50 px-3 py-0.5 rounded-full border border-black shadow-sm">{user.role}</p>
+            <div className="flex gap-2 items-center mt-2">
+              <p className="text-[12px] font-black tracking-widest text-saffron-600 uppercase bg-saffron-50 px-3 py-0.5 rounded-full border border-black shadow-sm">{user.role}</p>
+              {user.gender && (
+                <p className={`text-[12px] font-black tracking-widest uppercase px-3 py-0.5 rounded-full border border-black shadow-sm ${user.gender === 'Female' ? 'text-pink-600 bg-pink-50' : 'text-blue-600 bg-blue-50'}`}>
+                  {user.gender}
+                </p>
+              )}
+            </div>
             <p className="text-sm text-gray-700 font-bold leading-snug mt-3 flex-wrap break-words w-full">{orgName}</p>
         </div>
 

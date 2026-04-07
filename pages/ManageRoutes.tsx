@@ -25,8 +25,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     // Add State
-    const [rowCount, setRowCount] = useState<number>(3);
-    const [tempRoutes, setTempRoutes] = useState<TempRoute[]>([]);
+    const [tempRoutes, setTempRoutes] = useState<TempRoute[]>([{ id: Date.now(), from_name: '', to_name: '', distance_km: '' }]);
     const [knownAreas, setKnownAreas] = useState<string[]>([]);
 
     // Edit State
@@ -59,29 +58,8 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
     // Initial Rows
     useEffect(() => {
-        generateRows(rowCount);
+        setTempRoutes([{ id: Date.now(), from_name: '', to_name: '', distance_km: '' }]);
     }, []);
-
-    const generateRows = (count: number) => {
-        const newRows: TempRoute[] = [];
-        for (let i = 0; i < count; i++) {
-            newRows.push({
-                id: Date.now() + i,
-                from_name: '',
-                to_name: '',
-                distance_km: ''
-            });
-        }
-        setTempRoutes(newRows);
-    };
-
-    const handleSetRows = () => {
-        if (rowCount > 0 && rowCount <= 20) {
-            generateRows(rowCount);
-        } else {
-            showToast("Please enter a number between 1 and 20", "warning");
-        }
-    };
 
     const updateRow = (id: number, field: keyof TempRoute, value: string) => {
         setTempRoutes(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
@@ -105,23 +83,40 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
         try {
             for (const r of validRoutes) {
+                const fromUpper = r.from_name.trim().toUpperCase();
+                const toUpper = r.to_name.trim().toUpperCase();
+                
                 await dataService.addRoute({
                     organization_id: currentUser.organization_id,
-                    from_name: r.from_name.trim(),
-                    to_name: r.to_name.trim(),
+                    from_name: fromUpper,
+                    to_name: toUpper,
                     distance_km: parseFloat(r.distance_km),
                     note: ''
                 });
                 successCount++;
+                
+                if (fromUpper !== toUpper) {
+                    try {
+                        await dataService.addRoute({
+                            organization_id: currentUser.organization_id,
+                            from_name: toUpper,
+                            to_name: fromUpper,
+                            distance_km: parseFloat(r.distance_km),
+                            note: ''
+                        });
+                        successCount++;
+                    } catch (reverseErr: any) {
+                        console.log("Reverse route may already exist", reverseErr);
+                    }
+                }
             }
-            showToast(`Successfully added ${successCount} routes!`, "success");
-            setTempRoutes([]); // Clear
-            generateRows(3); // Reset
+            showToast(`Successfully added ${successCount} routes (including reverse)!`, "success");
+            setTempRoutes([{ id: Date.now(), from_name: '', to_name: '', distance_km: '' }]); // Reset
             loadRoutes(); // Refresh list
             setActiveTab('list'); // Switch to list view
         } catch (err: any) {
             const msg = err.message || "Unknown error";
-            if (msg.includes("unique constrain")) {
+            if (msg.includes("unique constrain") || msg.toLowerCase().includes("already")) {
                 showToast(`Some routes already exist! Added ${successCount}.`, "warning");
             } else {
                 showToast("Failed to save some routes", "error");
@@ -230,25 +225,6 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
             {activeTab === 'add' && (
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                    <div className="bg-saffron-50/50 p-6 border-b border-gray-100">
-                        <label className="text-sm font-bold text-gray-700 mb-2 block">How many routes do you want to add?</label>
-                        <div className="flex gap-3 max-w-sm">
-                            <input
-                                type="number"
-                                min="1"
-                                max="20"
-                                className="flex-1 p-2 border border-gray-300 rounded-lg"
-                                value={rowCount}
-                                onChange={e => setRowCount(parseInt(e.target.value) || 0)}
-                            />
-                            <button
-                                onClick={handleSetRows}
-                                className="bg-saffron-600 hover:bg-saffron-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                            >
-                                Generate Fields
-                            </button>
-                        </div>
-                    </div>
 
                     <div className="p-6">
                         <div className="space-y-4">
@@ -277,9 +253,9 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                                 type="text"
                                                 placeholder="Start Location"
                                                 list="area-suggestions"
-                                                className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
+                                                className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none uppercase"
                                                 value={route.from_name}
-                                                onChange={e => updateRow(route.id, 'from_name', e.target.value)}
+                                                onChange={e => updateRow(route.id, 'from_name', e.target.value.toUpperCase())}
                                             />
                                         </div>
                                     </div>
@@ -298,9 +274,9 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                                 type="text"
                                                 placeholder="End Location"
                                                 list="area-suggestions"
-                                                className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
+                                                className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none uppercase"
                                                 value={route.to_name}
-                                                onChange={e => updateRow(route.id, 'to_name', e.target.value)}
+                                                onChange={e => updateRow(route.id, 'to_name', e.target.value.toUpperCase())}
                                             />
                                         </div>
                                     </div>
@@ -331,6 +307,16 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="mt-4 flex justify-start">
+                            <button
+                                onClick={() => setTempRoutes(prev => [...prev, { id: Date.now(), from_name: '', to_name: '', distance_km: '' }])}
+                                className="flex items-center space-x-2 text-gray-500 hover:text-saffron-600 font-bold px-4 py-2 mt-2 rounded-lg hover:bg-saffron-50 transition-colors border border-transparent hover:border-saffron-100"
+                            >
+                                <Plus size={18} />
+                                <span>Add Another Route</span>
+                            </button>
                         </div>
 
                         <div className="mt-8 flex justify-end">
