@@ -42,7 +42,14 @@ export const UpdateAppBanner: React.FC = () => {
       </div>
       
       <button 
-        onClick={() => updateServiceWorker(true)}
+        onClick={() => {
+          setNeedRefresh(false);
+          updateServiceWorker(true);
+          // Fallback reload if SW update doesn't trigger it automatically
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        }}
         className="w-full mt-2 py-2.5 bg-gradient-to-r from-orange-600 to-saffron-600 hover:from-orange-700 hover:to-saffron-700 text-white text-sm font-bold rounded-xl shadow-md transition-all active:scale-95"
       >
         Update App Now

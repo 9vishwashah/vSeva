@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
         name: 'local-api-mock',
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
-            if (req.url && req.url.startsWith('/api/nearby')) {
+            if (req.url && req.url.startsWith('/.netlify/functions/nearby')) {
               try {
                 const { handler } = await import('./netlify/functions/nearby.js');
                 
