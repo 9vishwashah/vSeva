@@ -3,7 +3,7 @@ import { UserProfile, ViharEntry, UserRole, Organization, AreaRoute } from '../t
 import { dataService } from '../services/dataService';
 import StatCard from '../components/StatCard';
 import LeaderboardCard from '../components/LeaderboardCard';
-import { Trophy, Users, MapPin, Footprints, Download, FileText, Table, Medal, Handshake, Activity } from 'lucide-react';
+import { Trophy, Users, MapPin, Footprints, Download, FileText, Table, Medal, Handshake, Activity, AlertCircle, X } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
@@ -20,9 +20,10 @@ import { supabase } from '../services/supabase';
 
 interface DashboardProps {
   currentUser: UserProfile;
+  navigateToProfile?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
+const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile }) => {
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [sevakMap, setSevakMap] = useState<Record<string, string>>({}); // Add this state
@@ -44,6 +45,22 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const downloadMenuRef = useRef<HTMLDivElement>(null);
+
+  // Profile completion modal state
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  useEffect(() => {
+    if (currentUser.role === UserRole.SEVAK) {
+      const isProfileIncomplete = !currentUser.blood_group?.trim() || !currentUser.emergency_number?.trim() || !currentUser.address?.trim();
+      if (isProfileIncomplete) {
+        const hasSeen = sessionStorage.getItem('hasSeenCompletenessPrompt');
+        if (!hasSeen) {
+          setShowProfileModal(true);
+          sessionStorage.setItem('hasSeenCompletenessPrompt', 'true');
+        }
+      }
+    }
+  }, [currentUser]);
 
   // Close download menu when clicking outside
   useEffect(() => {
@@ -175,7 +192,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
             });
           }
         });
-        const activeSevaksCount = Object.values(sevakViharCounts).filter(count => count >= 3).length;
+        const activeSevaksCount = Object.values(sevakViharCounts).filter(count => count >= 1).length;
         stats.activeSevaks = activeSevaksCount;
 
         // Fetch Leaderboard for Everyone
@@ -435,6 +452,50 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
 
   return (
     <div className="space-y-8 animate-fade-in relative">
+      {/* Profile Completion Modal (Stats Page) */}
+      {showProfileModal && (
+        <div 
+          className="fixed inset-0 z-[110] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setShowProfileModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 p-6 relative border-t-4 border-orange-500"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setShowProfileModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="flex justify-center mb-4 text-orange-500">
+               <AlertCircle size={48} className="drop-shadow-sm" />
+            </div>
+            <h3 className="text-xl font-bold text-center text-gray-900 mb-2">Kindly Complete Your Profile</h3>
+            <p className="text-sm text-center text-gray-600 mb-6 leading-relaxed">
+              Updating your Blood Group, Emergency Number, and Address ensures we can assist you promptly during an incident. It is also required to generate your complete Vihar Sevak Card.
+            </p>
+            <div className="flex gap-3">
+                <button 
+                    onClick={() => setShowProfileModal(false)} 
+                    className="flex-1 py-2.5 text-orange-700 font-semibold bg-orange-50 hover:bg-orange-100 rounded-xl transition-colors border border-orange-100"
+                >
+                    Later
+                </button>
+                <button 
+                    onClick={() => {
+                        setShowProfileModal(false);
+                        if (navigateToProfile) navigateToProfile();
+                    }} 
+                    className="flex-1 py-2.5 bg-gradient-to-r from-orange-600 to-saffron-600 hover:from-orange-700 hover:to-saffron-700 text-white font-bold rounded-xl shadow-lg shadow-orange-200 transition-all active:scale-95"
+                >
+                    Complete Now
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Alert Modal */}
       {isAlertOpen && (
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
@@ -709,9 +770,6 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-extrabold text-gray-900 tracking-tight">#{data.stats.vRank}</span>
-                      {data.stats.totalOrgSevaks && (
-                        <span className="text-sm text-gray-400 font-semibold">/ {data.stats.totalOrgSevaks}</span>
-                      )}
                       <span className="text-xs text-amber-400 font-bold ml-1 bg-amber-50 px-1.5 py-0.5 rounded-full">Org</span>
                     </div>
                   )}
@@ -731,7 +789,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                     <div className="p-2 bg-gradient-to-br from-orange-50 to-saffron-100 rounded-xl border border-saffron-100 shadow-sm">
                       <Handshake size={15} className="text-saffron-600 shrink-0" />
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Synergy</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Co-Sevak</span>
                   </div>
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex flex-wrap gap-1">
@@ -776,7 +834,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                   <div className="p-2 bg-gradient-to-br from-violet-50 to-purple-100 rounded-xl border border-violet-100 shadow-sm">
                     <Activity size={15} className="text-violet-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400" title=">= 3 Vihars in last 30 days">Active Sevaks</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400" title=">= 1 Vihar in last 30 days">Active Sevaks</span>
                 </div>
                 {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.activeSevaks}</p>}
               </div>
