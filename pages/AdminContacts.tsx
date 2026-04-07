@@ -3,6 +3,7 @@ import { UserProfile, ContactNumber } from '../types';
 import { dataService } from '../services/dataService';
 import { PhoneCall, PlusCircle, Trash2, Loader2, Phone } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { EmergencyHelp } from '../components/EmergencyHelp';
 
 interface AdminContactsProps {
     currentUser: UserProfile;
@@ -88,6 +89,8 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                     )}
                 </div>
             </div>
+
+            <EmergencyHelp />
 
             {/* Add Contact Form */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
