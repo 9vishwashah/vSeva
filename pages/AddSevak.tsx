@@ -63,6 +63,9 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Organization State
+  const [orgDetails, setOrgDetails] = useState<any>(null);
 
 
   const fetchData = async () => {
@@ -70,6 +73,9 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       setLoadingSevaks(true);
       const sevaksData = await dataService.getOrgSevaks(currentUser.organization_id);
       setSevaks(sevaksData);
+      
+      const org = await dataService.getOrganization(currentUser.organization_id);
+      if (org) setOrgDetails(org);
     } catch (err) {
       console.error("Failed to load data", err);
       showToast("Could not load organization members", 'error');
@@ -250,18 +256,34 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
 
 
   const generateWhatsAppMessage = (sevak: UserProfile) => {
-    const message = `Pranam ${sevak.full_name} 
+    const orgName = orgDetails?.name || 'our organization';
+    const orgCity = orgDetails?.city || 'our city';
+    const message = `Pranam ${sevak.full_name}
 
-A gentle *Reminder to Login* 
+You have been successfully added to vSeva under the organization
+${orgName}, ${orgCity}
 
-Click Here to Login
-https://vseva.netlify.app
+You can now view your Vihar summary and share your contribution.
 
-*Login Details:*
+Login Details:
 Username: ${sevak.username}
 Password: ${sevak.mobile}
 
-*If you face any difficulty, please feel free to contact us.*`;
+All Vihar entries are managed by ${currentUser.full_name}.
+
+
+Login to vSeva:
+https://vseva.vjas.in
+
+Install vSeva App.
+
+Follow vSeva for updates:
+https://instagram.com/the.vseva
+
+"Every Step Counts"
+
+vSeva
+by VJAS`;
 
     return encodeURIComponent(message);
   };

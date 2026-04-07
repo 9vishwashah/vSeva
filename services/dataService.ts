@@ -101,7 +101,7 @@ export const dataService = {
     const cleanName = sevakData.fullName
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '');
-    const username = `${cleanName}@vsevak.in`;
+    const username = `${cleanName}@vjas.in`;
     const password = sevakData.mobile;
 
     // 2. Get Admin Session (REQUIRED)
