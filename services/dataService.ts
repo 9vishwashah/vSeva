@@ -90,7 +90,34 @@ export const dataService = {
       console.error("Error fetching org activity stats:", error);
       return [];
     }
-    return data;
+  },
+
+  async getDashboardStats(orgId: string) {
+    const response = await fetch('/.netlify/functions/get-dashboard-stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orgId })
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch dashboard stats");
+    }
+    return response.json();
+  },
+
+  async getSevakNameMap(orgId: string): Promise<Record<string, string>> {
+    try {
+      const response = await fetch('/.netlify/functions/get-sevak-names', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.warn("Failed to fetch secure sevak name config via serverless");
+    }
+    return {};
   },
 
   async createSevak(
@@ -101,7 +128,7 @@ export const dataService = {
     const cleanName = sevakData.fullName
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '');
-    const username = `${cleanName}@vjas.in`;
+    const username = `${cleanName}@vsevak`;
     const password = sevakData.mobile;
 
     // 2. Get Admin Session (REQUIRED)

@@ -69,6 +69,10 @@ export interface StatSummary {
   vRank?: number | string;
   totalOrgSevaks?: number;
   activeSevaks?: number;
+  totalMale?: number;
+  totalFemale?: number;
+  activeMale?: number;
+  activeFemale?: number;
 }
 
 export interface UserNotification {

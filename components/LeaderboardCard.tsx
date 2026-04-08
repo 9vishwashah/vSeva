@@ -27,34 +27,43 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({ title, icon, items, c
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handleDownload = async () => {
-        if (!printRef.current || !wrapperRef.current || isDownloading) return;
+        if (!wrapperRef.current || isDownloading) return;
         setIsDownloading(true);
 
-        // Briefly show the print element in-flow so html2canvas renders it accurately
         const wrapper = wrapperRef.current;
         wrapper.style.height = 'auto';
         wrapper.style.overflow = 'visible';
         wrapper.style.position = 'static';
         wrapper.style.visibility = 'visible';
 
-        try {
-            await new Promise(r => setTimeout(r, 120));
-            const canvas = await html2canvas(printRef.current, {
-                scale: 3,
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                logging: false,
-            });
+        const chunks = [];
+        for (let i = 0; i < items.length; i += 10) {
+            chunks.push(items.slice(i, i + 10));
+        }
 
-            const dataUrl = canvas.toDataURL('image/png', 1.0);
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = `${title.replace(/\s+/g, '_')}.png`;
-            link.click();
+        try {
+            await new Promise(r => setTimeout(r, 120)); // wait for DOM updates and images
+            for (let i = 0; i < chunks.length; i++) {
+                const printElement = document.getElementById(`print-chunk-${i}`);
+                if (!printElement) continue;
+
+                const canvas = await html2canvas(printElement, {
+                    scale: 3,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                });
+
+                const dataUrl = canvas.toDataURL('image/png', 1.0);
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                const partString = chunks.length > 1 ? `_Part_${i + 1}_of_${chunks.length}` : '';
+                link.download = `${title.replace(/\s+/g, '_')}${partString}.png`;
+                link.click();
+            }
         } catch (err) {
             console.error('Download failed', err);
         } finally {
-            // Hide again
             wrapper.style.height = '0';
             wrapper.style.overflow = 'hidden';
             wrapper.style.position = 'absolute';
@@ -139,62 +148,82 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({ title, icon, items, c
                     zIndex: -1,
                 }}
             >
-                <div
-                    ref={printRef}
-                    style={{
-                        width: 380,
-                        background: '#ffffff',
-                        fontFamily: '"Inter", "Segoe UI", system-ui, sans-serif',
-                    }}
-                >
-                    {/* Header */}
-                    <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 8, background: headerBg, borderBottom: '1px solid #f3f4f6' }}>
-                        <span style={{ color: accentColor, display: 'inline-flex', alignItems: 'center' }}>
-                            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg>
-                        </span>
-                        <span style={{ fontWeight: 700, fontSize: 15, color: '#1f2937', lineHeight: '1.4', flex: 1 }}>{title}</span>
-                        <img src={vSevaLogo} alt="vSeva" style={{ height: 32, width: 32, objectFit: 'contain' }} />
-                    </div>
-
-                    {/* Rows */}
-                    <div>
-                        {items.map((item, i) => (
-                            <div key={i} style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '13px 16px',
-                                borderBottom: '1px solid #f9fafb',
+                {/* Render one container per 10 items */}
+                {Array.from({ length: Math.ceil(items.length / 10) }).map((_, chunkIndex) => {
+                    const chunkItems = items.slice(chunkIndex * 10, chunkIndex * 10 + 10);
+                    return (
+                        <div
+                            key={chunkIndex}
+                            id={`print-chunk-${chunkIndex}`}
+                            style={{
+                                width: 380,
                                 background: '#ffffff',
+                                fontFamily: '"Inter", "Segoe UI", system-ui, sans-serif',
+                                marginBottom: 20, // isolate chunks
+                                position: 'relative'
+                            }}
+                        >
+                            {/* Watermark overlay */}
+                            <div style={{
+                                position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0, opacity: 0.03, display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>
-                                <div style={{
-                                    flexShrink: 0, width: 32, textAlign: 'center', fontWeight: 700,
-                                    fontSize: item.rank <= 3 ? 16 : 12,
-                                    color: item.rank === 1 ? '#eab308' : item.rank === 2 ? '#9ca3af' : item.rank === 3 ? '#f97316' : '#9ca3af',
-                                    lineHeight: '1.5',
-                                }}>
-                                    {item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : `#${item.rank}`}
+                                <span style={{ fontSize: 120, fontWeight: 900, transform: 'rotate(-45deg)', userSelect: 'none' }}>vSeva</span>
+                            </div>
+
+                            <div style={{ position: 'relative', zIndex: 1 }}>
+                                {/* Header */}
+                                <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 8, background: headerBg, borderBottom: '1px solid #f3f4f6' }}>
+                                    <span style={{ color: accentColor, display: 'inline-flex', alignItems: 'center' }}>
+                                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg>
+                                    </span>
+                                    <span style={{ fontWeight: 700, fontSize: 15, color: '#1f2937', lineHeight: '1.4', flex: 1 }}>
+                                        {title} {Math.ceil(items.length / 10) > 1 && `(Part ${chunkIndex + 1})`}
+                                    </span>
+                                    <img src={vSevaLogo} alt="vSeva" style={{ height: 32, width: 32, objectFit: 'contain' }} />
                                 </div>
-                                <div style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: '1.6', paddingBottom: 1 }}>
-                                        {item.name}
-                                    </div>
-                                    <div style={{ fontSize: 11, color: '#6b7280', lineHeight: '1.6' }}>{item.km} km</div>
+
+                                {/* Rows */}
+                                <div>
+                                    {chunkItems.map((item, i) => (
+                                        <div key={i} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '13px 16px',
+                                            borderBottom: '1px solid #f9fafb',
+                                            background: '#ffffff',
+                                        }}>
+                                            <div style={{
+                                                flexShrink: 0, width: 32, textAlign: 'center', fontWeight: 700,
+                                                fontSize: item.rank <= 3 ? 16 : 12,
+                                                color: item.rank === 1 ? '#eab308' : item.rank === 2 ? '#9ca3af' : item.rank === 3 ? '#f97316' : '#9ca3af',
+                                                lineHeight: '1.5',
+                                            }}>
+                                                {item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : `#${item.rank}`}
+                                            </div>
+                                            <div style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
+                                                <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: '1.6', paddingBottom: 1 }}>
+                                                    {item.name}
+                                                </div>
+                                                <div style={{ fontSize: 11, color: '#6b7280', lineHeight: '1.6' }}>{item.km} km</div>
+                                            </div>
+                                            <div style={{ textAlign: 'right', paddingRight: 4 }}>
+                                                <div style={{ fontSize: 18, fontWeight: 700, color: '#1f2937', lineHeight: '1.4' }}>{item.count}</div>
+                                                <div style={{ fontSize: 9, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: '1.6' }}>Vihars</div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div style={{ textAlign: 'right', paddingRight: 4 }}>
-                                    <div style={{ fontSize: 18, fontWeight: 700, color: '#1f2937', lineHeight: '1.4' }}>{item.count}</div>
-                                    <div style={{ fontSize: 9, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: '1.6' }}>Vihars</div>
+
+                                {/* Credits footer */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 0', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
+                                    <img src={vSevaLogo} alt="vSeva" style={{ height: 18, width: 18, objectFit: 'contain', opacity: 0.65 }} />
+                                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#4b5563', lineHeight: '1.5' }}>vSeva</span>
+                                    <span style={{ fontSize: 11, color: '#9ca3af', lineHeight: '1.5' }}>· by VJAS</span>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-
-                    {/* Credits footer */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 0', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
-                        <img src={vSevaLogo} alt="vSeva" style={{ height: 18, width: 18, objectFit: 'contain', opacity: 0.65 }} />
-                        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#4b5563', lineHeight: '1.5' }}>vSeva</span>
-                        <span style={{ fontSize: 11, color: '#9ca3af', lineHeight: '1.5' }}>· by VJAS</span>
-                    </div>
-                </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

@@ -143,6 +143,11 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
 
         // Create username -> fullname map for Synergy display
         const nameMap: Record<string, string> = {};
+        
+        // Load map securely via proxy if possible
+        const secureMap = await dataService.getSevakNameMap(currentUser.organization_id);
+        Object.assign(nameMap, secureMap);
+
         orgSevaks.forEach(s => {
           nameMap[s.username] = s.full_name;
           nameMap[s.username.split('@')[0]] = s.full_name;
@@ -175,25 +180,30 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
 
         const stats = dataService.calculateStats(myEntries, currentUser.username, nameMap);
         stats.vRank = rank;
-        if (totalCount !== null) {
-          stats.totalOrgSevaks = totalCount;
+
+        try {
+          const detailedStats = await dataService.getDashboardStats(currentUser.organization_id);
+          stats.totalOrgSevaks = detailedStats.totalMale + detailedStats.totalFemale;
+          stats.activeSevaks = detailedStats.activeMale + detailedStats.activeFemale;
+          stats.totalMale = detailedStats.totalMale;
+          stats.totalFemale = detailedStats.totalFemale;
+          stats.activeMale = detailedStats.activeMale;
+          stats.activeFemale = detailedStats.activeFemale;
+        } catch (e) {
+          console.error("Failed to load accurate dashboard stats", e);
+          if (totalCount !== null) {
+              stats.totalOrgSevaks = totalCount;
+          } else {
+              stats.totalOrgSevaks = 0;
+          }
+          stats.activeSevaks = 0;
+          stats.totalMale = 0;
+          stats.totalFemale = 0;
+          stats.activeMale = 0;
+          stats.activeFemale = 0;
         }
 
-        // Calculate Active Sevaks (>= 3 vihars in last 30 days)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        const recentEntries = allOrgEntries.filter(e => new Date(e.vihar_date) >= thirtyDaysAgo);
-        const sevakViharCounts: Record<string, number> = {};
-        recentEntries.forEach(e => {
-          if (e.sevaks) {
-            e.sevaks.forEach(s => {
-              sevakViharCounts[s] = (sevakViharCounts[s] || 0) + 1;
-            });
-          }
-        });
-        const activeSevaksCount = Object.values(sevakViharCounts).filter(count => count >= 1).length;
-        stats.activeSevaks = activeSevaksCount;
+        // (Active sevaks count is now fetched directly via dataService.getDashboardStats)
 
         // Fetch Leaderboard for Everyone
         let leaderboard = await dataService.getTopSevaks(currentUser.organization_id);
@@ -582,30 +592,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
         </div>
       )}
 
-      {/* Top Blue Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 p-4 sm:p-5 text-white shadow-xl overflow-hidden mb-2">
-        {/* Decorative elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full border-[1.5rem] border-white/5 opacity-50" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full border-[1rem] border-white/5 opacity-50" />
-        </div>
 
-        <div className="relative z-10 w-full flex items-center justify-start gap-3 sm:gap-6">
-          <img
-            src={vsgLogo}
-            alt="VSG Logo"
-            className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain shadow-lg rounded-full border border-white/80 shrink-0 bg-white/10"
-          />
-          <div className="flex flex-col items-start justify-center min-w-0">
-            <h2 className="text-[11px] xs:text-xs sm:text-base md:text-lg font-black text-blue-100 tracking-wider mb-0.5 drop-shadow-sm leading-tight truncate w-full">
-              ALL INDIA VIHAR SEVA GROUP (VSG)
-            </h2>
-            <h1 className="text-[11px] xs:text-xs sm:text-sm md:text-lg lg:text-xl font-serif font-medium text-white/90 drop-shadow-md leading-tight whitespace-nowrap">
-              પ્રવચન શિખર પૂ. આચાર્યદેવ શ્રીમદ્ વિજય મહાબોધિ સૂરિ મહારાજ
-            </h1>
-          </div>
-        </div>
-      </div>
 
       {/* Header - Orange Gradient Banner */}
       <div className="relative rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-5 sm:p-6 text-white shadow-lg">
@@ -819,7 +806,20 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Sevaks</span>
                 </div>
-                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalOrgSevaks}</p>}
+                {isLoading ? <SkeletonLoader /> : (
+                  <div>
+                    <p className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">{data.stats.totalOrgSevaks}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center text-[10px] font-bold text-blue-600 border border-blue-100 shadow-sm">
+                        {data.stats.totalMale || 0}
+                      </span>
+                      <div className="h-3 w-[1px] bg-gray-200" />
+                      <span className="w-5 h-5 rounded-full bg-pink-50 flex items-center justify-center text-[10px] font-bold text-pink-600 border border-pink-100 shadow-sm">
+                        {data.stats.totalFemale || 0}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -836,7 +836,20 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400" title=">= 1 Vihar in last 30 days">Active Sevaks</span>
                 </div>
-                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.activeSevaks}</p>}
+                {isLoading ? <SkeletonLoader /> : (
+                  <div>
+                    <p className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">{data.stats.activeSevaks}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center text-[10px] font-bold text-blue-600 border border-blue-100 shadow-sm">
+                        {data.stats.activeMale || 0}
+                      </span>
+                      <div className="h-3 w-[1px] bg-gray-200" />
+                      <span className="w-5 h-5 rounded-full bg-pink-50 flex items-center justify-center text-[10px] font-bold text-pink-600 border border-pink-100 shadow-sm">
+                        {data.stats.activeFemale || 0}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -959,7 +972,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
               orgCity={orgDetails?.city || ''}
               loading={isLoading}
               isAdmin={currentUser.role === UserRole.ORG_ADMIN}
-              topSevak={(data.leaderboard as any)?.overall?.[0] || null}
+              topSevak={(data.leaderboard as any)?.male?.[0] || null}
+              topSevika={(data.leaderboard as any)?.female?.[0] || null}
             />
           </div>
 

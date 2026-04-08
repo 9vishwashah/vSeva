@@ -20,7 +20,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
         setSuccessMessage(null);
 
         try {
-            if (emailOrUsername.endsWith('@vsevak.in') || emailOrUsername.endsWith('@vjas.in')) {
+            if (emailOrUsername.endsWith('@vsevak') || emailOrUsername.endsWith('@vsevak.in') || emailOrUsername.endsWith('@vjas.in')) {
                 // Sevak Flow: Request via RPC
                 const { data, error } = await supabase.rpc('request_sevak_reset', {
                     username_input: emailOrUsername
@@ -105,7 +105,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
                         type="text"
                         required
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                        placeholder="name@vjas.in or admin@example.com"
+                        placeholder="name@vsevak or admin@example.com"
                         value={emailOrUsername}
                         onChange={(e) => setEmailOrUsername(e.target.value)}
                     />
