@@ -14,9 +14,10 @@ interface StatCardProps {
   loading?: boolean;
   isAdmin?: boolean;
   topSevak?: { name: string; km: number; count: number } | null;
+  topSevika?: { name: string; km: number; count: number } | null;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, loading = false, isAdmin = false, topSevak = null }) => {
+const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, loading = false, isAdmin = false, topSevak = null, topSevika = null }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -209,30 +210,61 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
               <div className={`absolute top-0 left-0 w-1 h-full rounded-l-2xl ${isAdmin ? 'bg-yellow-400' : 'bg-saffron-400'}`}></div>
 
               {isAdmin ? (
-                /* Admin: Show top hero sevak instead of vSynergy */
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Trophy size={14} className="text-yellow-600" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-700">Top Sevak</span>
-                  </div>
-                  {loading ? <SkeletonValue width="w-32" /> : topSevak ? (
-                    <div className="flex items-center justify-between">
-                      <span className="text-base font-bold text-gray-900 leading-tight">{topSevak.name.split(' ')[0]}</span>
-                      <div className="flex items-center gap-3 text-right">
-                        <div className="flex flex-col items-center">
-                          <span className="text-sm font-bold text-gray-800">{topSevak.count}</span>
-                          <span className="text-[9px] text-gray-500 uppercase font-bold">Vihars</span>
-                        </div>
-                        <div className="h-6 w-[1px] bg-orange-200"></div>
-                        <div className="flex flex-col items-center">
-                          <span className="text-sm font-bold text-gray-800">{topSevak.km}</span>
-                          <span className="text-[9px] text-gray-500 uppercase font-bold">km</span>
+                /* Admin: Show top hero sevak and sevika instead of vSynergy */
+                <div className="flex flex-col gap-3">
+                  {/* Top Sevak */}
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Trophy size={14} className="text-yellow-600" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-700">Top Sevak</span>
+                    </div>
+                    {loading ? <SkeletonValue width="w-32" /> : topSevak ? (
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-gray-900 leading-tight">{topSevak.name}</span>
+                        <div className="flex items-center gap-3 text-right">
+                          <div className="flex flex-col items-center">
+                            <span className="text-sm font-bold text-gray-800">{topSevak.count}</span>
+                            <span className="text-[9px] text-gray-500 uppercase font-bold">Vihars</span>
+                          </div>
+                          <div className="h-6 w-[1px] bg-orange-200"></div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-sm font-bold text-gray-800">{topSevak.km}</span>
+                            <span className="text-[9px] text-gray-500 uppercase font-bold">km</span>
+                          </div>
                         </div>
                       </div>
+                    ) : (
+                      <span className="text-sm text-gray-400 italic">No male sevak data yet</span>
+                    )}
+                  </div>
+
+                  <div className="h-[1px] w-full bg-orange-100"></div>
+
+                  {/* Top Sevika */}
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Trophy size={14} className="text-pink-600" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-pink-700">Top Sevika</span>
                     </div>
-                  ) : (
-                    <span className="text-sm text-gray-400 italic">No data yet</span>
-                  )}
+                    {loading ? <SkeletonValue width="w-32" /> : topSevika ? (
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-gray-900 leading-tight">{topSevika.name}</span>
+                        <div className="flex items-center gap-3 text-right">
+                          <div className="flex flex-col items-center">
+                            <span className="text-sm font-bold text-gray-800">{topSevika.count}</span>
+                            <span className="text-[9px] text-gray-500 uppercase font-bold">Vihars</span>
+                          </div>
+                          <div className="h-6 w-[1px] bg-orange-200"></div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-sm font-bold text-gray-800">{topSevika.km}</span>
+                            <span className="text-[9px] text-gray-500 uppercase font-bold">km</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400 italic">No female sevak data yet</span>
+                    )}
+                  </div>
                 </div>
               ) : (
                 /* Sevak: Show vSynergy + vRank */

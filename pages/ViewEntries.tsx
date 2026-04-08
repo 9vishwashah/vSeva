@@ -37,19 +37,28 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
         );
 
         if (allUsernames.length > 0) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('username, full_name, blood_group')
-            .in('username', allUsernames);
+          // Attempt direct pull for admin or self, fallback to secure endpoint
+          let orgMap: Record<string, string> = {};
+          if (currentUser.role === UserRole.ORG_ADMIN) {
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('username, full_name')
+              .in('username', allUsernames);
+            (profiles || []).forEach((p: any) => orgMap[p.username] = p.full_name);
+          } else {
+             orgMap = await dataService.getSevakNameMap(currentUser.organization_id);
+          }
 
           const map: Record<string, { name: string; blood?: string }> = {};
-          (profiles || []).forEach((p: any) => {
-            const info = { name: p.full_name, blood: p.blood_group };
-            map[p.username] = info;               // exact match
-            map[p.username.toLowerCase()] = info;
-            map[p.username.split('@')[0]] = info; // part before @
-            map[p.username.split('@')[0].toLowerCase()] = info;
+          allUsernames.forEach(username => {
+            const fullName = orgMap[username] || username.split('@')[0];
+            const info = { name: fullName };
+            map[username] = info;               // exact match
+            map[username.toLowerCase()] = info;
+            map[username.split('@')[0]] = info; // part before @
+            map[username.split('@')[0].toLowerCase()] = info;
           });
+          
           setSevakMap(map as any);
         }
 

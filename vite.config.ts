@@ -63,6 +63,62 @@ export default defineConfig(({ mode }) => {
                 res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
               }
               return;
+            } else if (req.url && req.url.startsWith('/.netlify/functions/get-sevak-names')) {
+              try {
+                const { handler } = await import('./netlify/functions/get-sevak-names.js');
+                
+                let body = '';
+                req.on('data', chunk => { body += chunk.toString(); });
+                await new Promise(resolve => req.on('end', resolve));
+
+                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
+                process.env.SUPABASE_SERVICE_ROLE_KEY = _env.SUPABASE_SERVICE_ROLE_KEY || _env.VITE_SUPABASE_ANON_KEY || '';
+
+                const event = {
+                  httpMethod: req.method,
+                  body,
+                  headers: req.headers,
+                };
+
+                const result = await handler(event, {});
+                
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error("Local mock error names:", e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
+            } else if (req.url && req.url.startsWith('/.netlify/functions/get-dashboard-stats')) {
+              try {
+                const { handler } = await import('./netlify/functions/get-dashboard-stats.js');
+                
+                let body = '';
+                req.on('data', chunk => { body += chunk.toString(); });
+                await new Promise(resolve => req.on('end', resolve));
+
+                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
+                process.env.SUPABASE_SERVICE_ROLE_KEY = _env.SUPABASE_SERVICE_ROLE_KEY || _env.VITE_SUPABASE_ANON_KEY || '';
+
+                const event = {
+                  httpMethod: req.method,
+                  body,
+                  headers: req.headers,
+                };
+
+                const result = await handler(event, {});
+                
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error("Local mock error stats:", e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
             }
             next();
           });
@@ -81,7 +137,7 @@ export default defineConfig(({ mode }) => {
           enabled: false,
           type: 'module',
         },
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+        includeAssets: ['vseva-logo.png', 'pwa-192x192.png', 'apple-touch-icon.png', 'mask-icon.svg'],
         manifest: {
           name: 'vSeva - Vihar Tracking SaaS',
           short_name: 'vSeva',

@@ -123,7 +123,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               type="text"
               required
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-              placeholder="name@vjas.in"
+              placeholder="name@vsevak"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
