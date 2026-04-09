@@ -308,7 +308,22 @@ export const dataService = {
     return true;
   },
 
-  async updateOwnProfile(updates: { bloodGroup?: string; emergencyNumber?: string; address?: string }) {
+  async updateOwnProfile(updates: { age?: number; bloodGroup?: string; emergencyNumber?: string; address?: string }) {
+    // Update age directly (not covered by the existing RPC)
+    if (updates.age !== undefined) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        const { error: ageError } = await supabase
+          .from('profiles')
+          .update({ age: updates.age })
+          .eq('id', session.user.id);
+        if (ageError) {
+          console.error('updateOwnProfile age error:', ageError);
+          throw ageError;
+        }
+      }
+    }
+
     const { error } = await supabase.rpc('update_own_profile', {
       p_blood_group:      updates.bloodGroup      ?? '',
       p_emergency_number: updates.emergencyNumber ?? '',
