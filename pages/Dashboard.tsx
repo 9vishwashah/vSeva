@@ -3,6 +3,7 @@ import { UserProfile, ViharEntry, UserRole, Organization, AreaRoute } from '../t
 import { dataService } from '../services/dataService';
 import StatCard from '../components/StatCard';
 import LeaderboardCard from '../components/LeaderboardCard';
+import { JainTempleFinder } from '../components/JainTempleFinder';
 import { Trophy, Users, MapPin, Footprints, Download, FileText, Table, Medal, Handshake, Activity, AlertCircle, X } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
@@ -661,6 +662,11 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
             </div>
           )}
         </div>
+      </div>
+
+      {/* Jain Temple Finder - Location Based */}
+      <div className="max-w-2xl mx-auto w-full">
+        <JainTempleFinder />
       </div>
 
       {/* Main Grid */}
