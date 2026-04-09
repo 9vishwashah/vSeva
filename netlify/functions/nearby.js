@@ -9,7 +9,7 @@ export const handler = async (event, context) => {
             };
         }
 
-        const allowedTypes = ['hospital', 'police'];
+        const allowedTypes = ['hospital', 'police', 'jain_temple'];
         if (!allowedTypes.includes(type)) {
             return {
                 statusCode: 400,
@@ -28,28 +28,49 @@ export const handler = async (event, context) => {
         // Gather headers to spoof referer if needed
         const referer = event.headers.referer || event.headers.origin || 'http://localhost:3000/';
 
-        // Call Google Places API (New)
-        const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Goog-Api-Key': apiKey,
-                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.internationalPhoneNumber',
-                'Referer': referer, // Essential for API keys with HTTP Referer restrictions
+        let apiUrl = 'https://places.googleapis.com/v1/places:searchNearby';
+        let body = {
+            includedTypes: [type],
+            maxResultCount: 8,
+            locationRestriction: {
+                circle: {
+                    center: {
+                        latitude: parseFloat(lat),
+                        longitude: parseFloat(lng),
+                    },
+                    radius: 5000.0, // 5km radius
+                },
             },
-            body: JSON.stringify({
-                includedTypes: [type],
-                maxResultCount: 5,
-                locationRestriction: {
+        };
+
+        // If Jain Temple, use Text Search to be more specific
+        if (type === 'jain_temple') {
+            apiUrl = 'https://places.googleapis.com/v1/places:searchText';
+            body = {
+                textQuery: 'Jain Temple Derasar',
+                locationBias: {
                     circle: {
                         center: {
                             latitude: parseFloat(lat),
                             longitude: parseFloat(lng),
                         },
-                        radius: 5000.0, // 5km radius
+                        radius: 10000.0, // 10km radius for temples
                     },
                 },
-            }),
+                maxResultCount: 10,
+            };
+        }
+
+        // Call Google Places API (New)
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': apiKey,
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.internationalPhoneNumber,places.photos,places.iconMaskBaseUri',
+                'Referer': referer,
+            },
+            body: JSON.stringify(body),
         });
 
         if (!response.ok) {
@@ -64,13 +85,23 @@ export const handler = async (event, context) => {
         const data = await response.json();
 
         // Extract and clean the relevant data
-        const places = (data.places || []).map((place) => ({
-            name: place.displayName?.text || 'Unknown',
-            address: place.formattedAddress || 'No address provided',
-            lat: place.location?.latitude,
-            lng: place.location?.longitude,
-            phone: place.nationalPhoneNumber || place.internationalPhoneNumber || null,
-        }));
+        const places = (data.places || []).map((place) => {
+            // Construct photo URL if available
+            let photoUrl = null;
+            if (place.photos && place.photos.length > 0) {
+                photoUrl = `https://places.googleapis.com/v1/${place.photos[0].name}/media?maxHeightPx=400&maxWidthPx=400&key=${apiKey}`;
+            }
+
+            return {
+                name: place.displayName?.text || 'Unknown',
+                address: place.formattedAddress || 'No address provided',
+                lat: place.location?.latitude,
+                lng: place.location?.longitude,
+                phone: place.nationalPhoneNumber || place.internationalPhoneNumber || null,
+                photo: photoUrl,
+                icon: place.iconMaskBaseUri
+            };
+        });
 
         return {
             statusCode: 200,

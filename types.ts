@@ -51,6 +51,9 @@ export interface ViharEntry {
   sevaks: string[]; // text[] of usernames
   notes?: string;
   wheelchair: boolean;
+  wheelchair_sevaks?: string[];
+  car_seva?: boolean;
+  car_seva_sevaks?: string[];
   samuday?: string;
   distance_km?: number;
   haversine_km?: number;
