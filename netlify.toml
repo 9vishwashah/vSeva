@@ -24,3 +24,20 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Ensure the HTML entry point and service worker files are never cached
+# so mobile PWA users always get notified about new deploys.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/registerSW.js"
+  [headers.values]
+    Cache-Control = "no-cache"

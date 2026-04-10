@@ -19,7 +19,6 @@ import AdminContacts from './pages/AdminContacts';
 import ViewReports from './pages/ViewReports';
 import SubmitReport from './pages/SubmitReport';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal } from './services/oneSignalService';
-import UpdateAppBanner from './components/UpdateAppBanner';
 
 
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
@@ -143,15 +142,15 @@ const App: React.FC = () => {
 
   // Route: Super Admin (Protected-ish)
   if (isSuperAdmin) {
-    if (!user && !loading) return <><Login onLoginSuccess={handleLoginSuccess} /><UpdateAppBanner /></>;
-    return <><SuperAdminDashboard /><UpdateAppBanner /></>;
+    if (!user && !loading) return <Login onLoginSuccess={handleLoginSuccess} />;
+    return <SuperAdminDashboard />;
   }
 
   if (!user) {
     if (showLanding) {
-      return <><LandingPage onGetStarted={() => { window.location.href = '/login'; }} /><UpdateAppBanner /></>;
+      return <LandingPage onGetStarted={() => { window.location.href = '/login'; }} />;
     }
-    return <><Login onLoginSuccess={handleLoginSuccess} /><UpdateAppBanner /></>;
+    return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
   const getInitials = (name: string) => {
@@ -243,7 +242,6 @@ const App: React.FC = () => {
         <SubmitReport currentUser={user} />
       )}
     </Layout>
-    <UpdateAppBanner />
     </>
   );
 };
