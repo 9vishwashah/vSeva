@@ -31,18 +31,52 @@ const NearbyDerasar: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [radius, setRadius] = useState<number>(100000); // Default to Upto 100 KMs
 
   // Set page title & meta for SEO
   useEffect(() => {
-    document.title = 'Nearby Jain Derasar — Find Jain Temples Near You | vSeva';
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) {
-      metaDesc.setAttribute('content', 'Find Jain Derasars (temples) near your current location instantly. Powered by vSeva — the Jain Vihar Seva platform.');
+    document.title = 'Nearby Jain Derasar / Tirths | Find Temples Near You – vSeva';
+    
+    const setMeta = (name: string, content: string, isProperty = false) => {
+      let meta = document.querySelector(`meta[${isProperty ? 'property' : 'name'}="${name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute(isProperty ? 'property' : 'name', name);
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', content);
+    };
+
+    setMeta('description', 'Find Jain Derasar near your current location instantly. Discover nearby temples, get directions, and plan your visit easily with vSeva.');
+    setMeta('og:title', 'Find Nearby Jain Derasar Instantly 🙏', true);
+    setMeta('og:description', 'Discover Jain temples near your location with live directions. Simple, fast, and useful for every Jain.', true);
+    setMeta('og:image', 'https://vseva.vjas.in/derasar-preview.png', true);
+    setMeta('og:url', 'https://vseva.vjas.in/nearby-derasar', true);
+    setMeta('og:type', 'website', true);
+
+    let script = document.querySelector('script[type="application/ld+json"]#derasar-jsonld');
+    if (!script) {
+      script = document.createElement('script');
+      script.setAttribute('type', 'application/ld+json');
+      script.id = 'derasar-jsonld';
+      document.head.appendChild(script);
     }
+    script.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Nearby Jain Derasar Finder",
+      "url": "https://vseva.vjas.in/nearby-derasar",
+      "applicationCategory": "TravelApplication",
+      "description": "Find Jain Derasar near your current location with directions and details.",
+      "creator": {
+        "@type": "Organization",
+        "name": "vSeva"
+      }
+    });
   }, []);
 
   const fetchTemples = async (lat: number, lng: number) => {
-    const response = await fetch(`/.netlify/functions/nearby?lat=${lat}&lng=${lng}&type=jain_temple`);
+    const response = await fetch(`/.netlify/functions/nearby?lat=${lat}&lng=${lng}&type=jain_temple&radius=${radius}`);
     if (!response.ok) throw new Error('Failed to fetch nearby temples');
     const data = await response.json();
     return data.places || [];
@@ -91,6 +125,12 @@ const NearbyDerasar: React.FC = () => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
   };
 
+  const shareWhatsApp = (temple: Place) => {
+    const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${temple.lat},${temple.lng}`;
+    const message = `🙏 Jai Jinendra\n\nHere are nearby Derasar locations:\n📍 ${temple.name} - ${mapsLink}\n\nFind yours here:\nhttps://vseva.vjas.in/nearby-derasar`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -110,13 +150,15 @@ const NearbyDerasar: React.FC = () => {
             vSeva
           </span>
         </a>
-        <a
-          href="/"
-          className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-full shadow-md transition-all hover:scale-105 active:scale-95"
-          style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)' }}
-        >
-          About vSeva <ArrowRight size={14} />
-        </a>
+        <div className="flex items-center gap-3">
+          <a
+            href="/"
+            className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-full shadow-md transition-all hover:scale-105 active:scale-95"
+            style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)' }}
+          >
+            About vSeva <ArrowRight size={14} />
+          </a>
+        </div>
       </header>
 
       {/* ── Hero ── */}
@@ -125,50 +167,58 @@ const NearbyDerasar: React.FC = () => {
         <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle,#fb923c,transparent)' }} />
         <div className="absolute -bottom-10 -right-10 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: 'radial-gradient(circle,#fdba74,transparent)' }} />
 
-        <div className="relative max-w-xl mx-auto">
+        <div className="relative max-w-3xl mx-auto px-2">
           <div
             className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-5 border"
             style={{ color: '#ea580c', borderColor: '#fed7aa', background: '#fff7ed' }}
           >
-            <MapPin size={13} /> Free · No Login Required
+            <MapPin size={13} /> Initiative by vSeva
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight mb-3">
-            Find a{' '}
-            <span style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Jain Derasar
-            </span>
-            <br />Near You
+          <h1 className="text-[22px] sm:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-3">
+            <span className="inline-block whitespace-nowrap">
+              Find{' '}
+              <span style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Jain Derasar / Tirths
+              </span>
+            </span>{' '}
+            <span className="inline-block whitespace-nowrap">Near You</span>
           </h1>
-          <p className="text-gray-500 text-base sm:text-lg max-w-sm mx-auto leading-relaxed">
-            Locate the nearest Jain temples in seconds — with directions and contact info, right from your phone.
+          <p className="text-gray-500 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            Locate the nearest Jain temples in seconds with directions and contact info, up to <span className="font-extrabold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md shadow-sm">100 KM</span>.
           </p>
 
-          {/* ── CTA Button ── */}
-          <button
-            onClick={handleSearch}
-            disabled={loading}
-            className="mt-8 relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-white font-bold text-lg shadow-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto"
-            style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)', boxShadow: '0 8px 30px rgba(234,88,12,0.35)' }}
-          >
-            {loading ? (
-              <>
-                <Loader2 size={22} className="animate-spin" />
-                Locating...
-              </>
-            ) : (
-              <>
-                <MapPin size={22} />
-                {searched && temples.length === 0 && !error ? 'Search Again' : 'Find Nearby Derasar'}
-              </>
-            )}
-          </button>
+          {/* ── CTA Button & Instagram ── */}
+          <div className="mt-8 flex items-stretch justify-center gap-3 max-w-[340px] sm:max-w-none mx-auto w-full">
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              className="flex-1 sm:flex-none relative inline-flex items-center justify-center gap-2 px-4 sm:px-8 py-4 rounded-2xl text-white font-bold text-base sm:text-lg shadow-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+              style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)', boxShadow: '0 8px 30px rgba(234,88,12,0.35)' }}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={22} className="animate-spin shrink-0" />
+                  Locating...
+                </>
+              ) : (
+                <>
+                  <MapPin size={22} className="shrink-0" />
+                  <span className="whitespace-nowrap">{searched && temples.length === 0 && !error ? 'Search Again' : 'Find Derasar'}</span>
+                </>
+              )}
+            </button>
 
-          {/* Caution note */}
-          <p className="mt-3 text-xs text-gray-400 flex items-center justify-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-green-400"></span>
-            Your location is used only to find nearby temples and is never stored.
-          </p>
+            <a
+              href="https://www.instagram.com/the.vseva/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-14 h-auto rounded-2xl bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 text-white shadow-xl transition-all hover:scale-105 active:scale-95 shrink-0"
+              aria-label="Follow us on Instagram"
+            >
+              <i className="fa-brands fa-instagram text-2xl"></i>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -188,7 +238,7 @@ const NearbyDerasar: React.FC = () => {
             </div>
             <div className="text-center">
               <p className="font-bold text-gray-700 text-lg">Searching Derasars...</p>
-              <p className="text-xs text-gray-400 mt-1">Finding sacred places within 10 km of your location</p>
+              <p className="text-xs text-gray-400 mt-1">Finding sacred places within {radius / 1000} km of your location</p>
             </div>
           </div>
         )}
@@ -218,25 +268,60 @@ const NearbyDerasar: React.FC = () => {
 
         {/* Results list */}
         {!loading && temples.length > 0 && (
-          <div className="mt-4 space-y-1">
-            <div className="flex items-center justify-between mb-4">
+          <div className="mt-8">
+            <div className="mb-6 text-center">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Filter by Range</p>
+              <div className="flex flex-nowrap overflow-x-auto justify-start sm:justify-center gap-2 pb-2 px-1 max-w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                {[
+                  { label: '1 KM', val: 1000 },
+                  { label: '5 KM', val: 5000 },
+                  { label: '10 KM', val: 10000 },
+                  { label: 'Upto 100 KMs', val: 100000 }
+                ].map((opt) => (
+                  <button
+                    key={opt.val}
+                    onClick={() => setRadius(opt.val)}
+                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all border ${
+                      radius === opt.val
+                        ? 'bg-orange-100 text-orange-700 border-orange-300 shadow-sm'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mb-4 px-1">
               <p className="text-sm font-bold text-gray-700">
-                {temples.length} Derasar{temples.length !== 1 ? 's' : ''} Found
+                {temples.filter(t => (t.distance || 0) <= radius / 1000).length} Derasar Found
               </p>
               <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">Sorted by distance</span>
             </div>
 
-            {temples.map((temple, index) => (
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto px-1 pb-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+              {temples.filter(t => (t.distance || 0) <= radius / 1000).map((temple, index) => {
+                const parts = temple.address ? temple.address.split(',').map(p => p.trim()) : [];
+                const cityBadge = parts.length >= 4 ? parts[parts.length - 4] : (parts.length === 3 ? parts[parts.length - 3] : (parts.length === 2 ? parts[0] : null));
+
+                return (
               <div
                 key={index}
-                className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all mb-3 overflow-hidden"
+                className="relative bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all mb-3 overflow-hidden"
               >
-                <div className="p-4 pb-3">
+                <div 
+                  className="absolute top-0 left-0 text-[9px] font-extrabold px-2 py-0.5 rounded-br-lg z-10 shadow-sm"
+                  style={{ background: '#fff7ed', color: '#ea580c', borderRight: '1px solid #fed7aa', borderBottom: '1px solid #fed7aa' }}
+                >
+                  #{index + 1}
+                </div>
+                <div className="p-4 pt-5 pb-3">
                   <div className="flex gap-3">
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className="font-bold text-gray-800 text-sm leading-tight">{temple.name}</h3>
+                        <h3 className="font-bold text-gray-800 text-sm leading-tight flex-1">{temple.name}</h3>
                         {temple.distance !== undefined && (
                           <span
                             className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
@@ -252,30 +337,37 @@ const NearbyDerasar: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Thumbnail */}
-                    {temple.photo ? (
-                      <div className="shrink-0 w-14 h-14 rounded-xl overflow-hidden border border-gray-100 shadow-inner bg-gray-50">
-                        <img
-                          src={temple.photo}
-                          alt={temple.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).parentElement?.classList.add('hidden'); }}
-                        />
-                      </div>
-                    ) : temple.icon && (
-                      <div className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-orange-50 p-1 border border-orange-100">
-                        <img src={temple.icon} alt="Icon" className="w-full h-full object-contain opacity-50 grayscale" />
-                      </div>
-                    )}
+                    {/* Thumbnail & Badge */}
+                    <div className="shrink-0 flex flex-col items-center gap-1.5">
+                      {temple.photo ? (
+                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 shadow-inner bg-gray-50 shrink-0">
+                          <img
+                            src={temple.photo}
+                            alt={temple.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).parentElement?.classList.add('hidden'); }}
+                          />
+                        </div>
+                      ) : temple.icon && (
+                        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-orange-50 p-1 border border-orange-100 shrink-0">
+                          <img src={temple.icon} alt="Icon" className="w-full h-full object-contain opacity-50 grayscale" />
+                        </div>
+                      )}
+                      
+                      {cityBadge && (
+                        <span className="text-[8px] font-bold px-1.5 py-[2px] rounded whitespace-nowrap bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-widest text-center shadow-sm max-w-[56px] truncate">
+                          {cityBadge}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex items-center gap-2 px-4 pb-4">
+                <div className="flex flex-wrap items-center gap-2 px-4 pb-4">
                   {temple.phone && (
                     <a
                       href={`tel:${temple.phone.replace(/\D/g, '')}`}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 border"
+                      className="flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 border"
                       style={{ background: '#f0fdf4', color: '#16a34a', borderColor: '#bbf7d0' }}
                     >
                       <Phone size={13} /> Call
@@ -283,15 +375,24 @@ const NearbyDerasar: React.FC = () => {
                   )}
                   <button
                     onClick={() => openDirections(temple.lat, temple.lng)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 border"
+                    className="flex-1 min-w-[100px] flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 border"
                     style={{ background: '#fff7ed', color: '#ea580c', borderColor: '#fed7aa' }}
                   >
                     <img src="/google-maps.svg" alt="Maps" className="w-3.5 h-3.5" />
                     Directions
                   </button>
+                  <button
+                    onClick={() => shareWhatsApp(temple)}
+                    className="flex-1 min-w-[90px] flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 border"
+                    style={{ background: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' }}
+                  >
+                    <i className="fa-brands fa-whatsapp text-sm"></i>
+                    Share
+                  </button>
                 </div>
               </div>
-            ))}
+              )})}
+            </div>
 
             <p className="text-[10px] text-gray-400 text-center pt-2 italic">
               * Location data provided by Google Places API
@@ -305,7 +406,7 @@ const NearbyDerasar: React.FC = () => {
             {[
               { icon: <MapPin size={20} />, title: 'GPS Powered', desc: 'Uses your live location to find the closest temples instantly.' },
               { icon: <Navigation size={20} />, title: 'One-Tap Directions', desc: 'Get Google Maps directions to any Derasar with one tap.' },
-              { icon: <Footprints size={20} />, title: 'Part of vSeva', desc: 'Powered by vSeva — the Jain Vihar Seva tracking platform.' },
+              { icon: <Footprints size={20} />, title: 'Initiative by Vseva', desc: 'Powered by vSeva — the Jain Vihar Seva tracking platform.' },
             ].map((card, i) => (
               <div
                 key={i}
@@ -325,31 +426,73 @@ const NearbyDerasar: React.FC = () => {
         )}
       </section>
 
-      {/* ── Promo Banner ── */}
       <section
-        className="mx-4 sm:mx-6 mb-8 rounded-2xl p-6 text-white text-center shadow-xl"
-        style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)' }}
+        className="mx-4 sm:mx-6 mb-8 rounded-3xl p-8 sm:p-10 text-white relative overflow-hidden shadow-2xl"
+        style={{ background: 'linear-gradient(135deg, #c2410c, #ea580c, #f97316)' }}
       >
-        <Footprints className="mx-auto mb-3 opacity-80" size={28} />
-        <h2 className="text-lg font-bold mb-1">Doing Vihar Seva?</h2>
-        <p className="text-sm text-white/80 mb-4 max-w-xs mx-auto">
-          vSeva helps you digitally track every Vihar — distances, sevaks, reports and more.
-        </p>
-        <a
-          href="/login"
-          className="inline-flex items-center gap-2 bg-white font-bold text-sm px-6 py-2.5 rounded-xl shadow transition-all hover:scale-105 active:scale-95"
-          style={{ color: '#ea580c' }}
-        >
-          Explore vSeva <ArrowRight size={15} />
-        </a>
+        {/* Background Decorative Rings */}
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-orange-900 opacity-20 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
+          <div className="flex flex-col items-center md:items-start flex-1">
+             <div className="flex items-center gap-3 mb-4">
+                <div className="bg-white p-2 rounded-xl shadow-md">
+                   <img src={vSevaLogo} alt="vSeva Logo" className="w-7 h-7 object-contain" />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Planning Vihar?</h2>
+             </div>
+             
+             <p className="text-sm sm:text-base text-orange-100 mb-5 max-w-md font-medium leading-relaxed">
+               vSeva is the ultimate platform for tracking, organizing, and coordinating Jain Vihar Seva efficiently.
+             </p>
+             
+             <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-2">
+               <span className="flex items-center gap-1.5 text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                 <Footprints size={12} /> Live Tracking
+               </span>
+               <span className="flex items-center gap-1.5 text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                 <Star size={12} /> Volunteer Coordination
+               </span>
+               <span className="flex items-center gap-1.5 text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                 <Map size={12} /> Route Management
+               </span>
+             </div>
+          </div>
+
+          <div className="shrink-0 flex flex-col items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+            <a
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 bg-white font-black text-sm px-8 py-4 rounded-2xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.3)] transition-all hover:scale-105 active:scale-95 w-full sm:w-auto"
+              style={{ color: '#ea580c' }}
+            >
+              Start Your Seva Journey <ArrowRight size={16} className="text-orange-500" />
+            </a>
+            <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest">Join the Community</p>
+          </div>
+        </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-gray-100 py-6 px-4 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <img src={vSevaLogo} alt="vSeva" className="h-6 w-6 object-contain" />
-          <span className="font-bold text-gray-700">vSeva</span>
+      <footer className="border-t border-gray-100 py-8 px-4 text-center mt-auto bg-white/50">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-5">
+          <div className="flex items-center gap-2">
+            <img src={vSevaLogo} alt="vSeva" className="h-6 w-6 object-contain grayscale opacity-60" />
+            <span className="font-bold text-gray-400">vSeva</span>
+          </div>
+          
+          <div className="hidden sm:block w-px h-8 bg-gray-200"></div>
+
+          <a
+            href="https://wa.me/919594503214?text=Jai%20Jinendra!%20I%20have%20an%20inquiry%20regarding%20vSeva."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2 bg-green-50 text-green-700 rounded-full text-xs font-bold transition-all hover:bg-green-100 hover:scale-105 border border-green-200 shadow-sm"
+          >
+            <i className="fa-brands fa-whatsapp text-base"></i> Contact Us on WhatsApp
+          </a>
         </div>
+        
         <p className="text-xs text-gray-400">
           Designed by <span className="font-semibold text-gray-500">Vishwa Alpesh Shah</span> (VJAS)
         </p>
