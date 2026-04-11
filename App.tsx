@@ -19,6 +19,7 @@ import AdminContacts from './pages/AdminContacts';
 import ViewReports from './pages/ViewReports';
 import SubmitReport from './pages/SubmitReport';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal } from './services/oneSignalService';
+import NearbyDerasar from './pages/NearbyDerasar';
 
 
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
@@ -68,6 +69,9 @@ const App: React.FC = () => {
   const path = window.location.pathname;
   if (path.startsWith('/verify/')) {
     return <PublicSevakProfile />;
+  }
+  if (path === '/nearby-derasar') {
+    return <NearbyDerasar />;
   }
   const isSuperAdmin = path === '/super-admin';
 

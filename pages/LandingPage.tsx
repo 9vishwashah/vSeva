@@ -61,6 +61,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                             <NavLink to="about" label="About" />
                             <NavLink to="features" label="Features" />
                             <NavLink to="how-it-works" label="How it Works" />
+                            <a href="/nearby-derasar" className="text-slate-600 hover:text-saffron-600 font-medium transition-colors">Nearby Derasar</a>
                             <button
                                 onClick={onGetStarted}
                                 className="px-6 py-2 bg-saffron-600 hover:bg-saffron-700 text-white rounded-full font-bold shadow-md transition-all hover:-translate-y-0.5"
@@ -85,6 +86,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         <NavLink to="about" label="About" />
                         <NavLink to="features" label="Features" />
                         <NavLink to="how-it-works" label="How it Works" />
+                        <a href="/nearby-derasar" className="text-slate-600 font-medium py-1">Nearby Derasar</a>
                         <button
                             onClick={onGetStarted}
                             className="w-full py-3 bg-saffron-600 text-white rounded-lg font-bold"

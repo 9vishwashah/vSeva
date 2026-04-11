@@ -107,6 +107,12 @@ const Layout: React.FC<LayoutProps> = ({
             <LogOut size={18} />
             <span className="text-sm">Sign Out</span>
           </button>
+          {/* Creator Credit - Desktop */}
+          <p className="text-center text-[9px] text-gray-300 mt-3 leading-tight select-none">
+            Designed by{' '}
+            <span className="font-semibold text-gray-400">Vishwa Alpesh Shah</span>
+            {' '}(VJAS)
+          </p>
         </div>
       </aside>
 
@@ -177,6 +183,13 @@ const Layout: React.FC<LayoutProps> = ({
             {children}
           </div>
         </main>
+
+        {/* Creator Credit - Mobile (above nav pill) */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 flex justify-center" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 83px)' }}>
+          <p className="text-[8px] text-gray-400/60 select-none tracking-wide">
+            Designed by <span className="font-medium">Vishwa Alpesh Shah</span> (VJAS)
+          </p>
+        </div>
 
         {/* Mobile Bottom Nav — true floating iOS pill */}
         <nav
