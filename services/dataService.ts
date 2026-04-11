@@ -480,9 +480,11 @@ export const dataService = {
   // --- Vihar Entries ---
 
   async createViharEntry(entry: ViharEntry) {
+    // Strip fields that don't yet exist in the DB schema
+    const { car_seva, car_seva_sevaks, wheelchair_sevaks, ...safeEntry } = entry as any;
     const { data, error } = await supabase
       .from('vihar_entries')
-      .insert(entry)
+      .insert(safeEntry)
       .select()
       .single();
 
@@ -524,9 +526,11 @@ export const dataService = {
   },
 
   async updateViharEntry(entryId: number, updates: Partial<ViharEntry>) {
+    // Strip fields that don't yet exist in the DB schema
+    const { car_seva, car_seva_sevaks, wheelchair_sevaks, ...safeUpdates } = updates as any;
     const { data, error } = await supabase
       .from('vihar_entries')
-      .update(updates)
+      .update(safeUpdates)
       .eq('id', entryId)
       .select()
       .single();
