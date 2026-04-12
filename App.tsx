@@ -144,9 +144,15 @@ const App: React.FC = () => {
     );
   }
 
-  // Route: Super Admin (Protected-ish)
+  // Route: Super Admin (Protected)
   if (isSuperAdmin) {
     if (!user && !loading) return <Login onLoginSuccess={handleLoginSuccess} />;
+    if (user && user.role !== UserRole.ORG_ADMIN) {
+      // Not an admin? Send them to their default dashboard
+      setCurrentPage(user.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
+      window.location.href = '/'; 
+      return null;
+    }
     return <SuperAdminDashboard />;
   }
 

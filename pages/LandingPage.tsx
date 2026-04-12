@@ -116,12 +116,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
                         <h1 className="text-6xl md:text-8xl font-serif font-bold text-saffron-600 mb-6 leading-tight">
                             vSeva
-                            <span className="block mt-4 text-2xl md:text-3xl font-bold text-slate-800">
-                                ऑल इंडिया विहार सेवा ग्रुप
-                            </span>
-                            <span className="block mt-2 text-xl md:text-2xl font-medium text-saffron-600 font-sans italic italic">
-                                प्रवचन शिखर पू. आचार्यदेव श्रीमद् विजय महाबोधि सूरि महाराज
-                            </span>
                         </h1>
 
                         <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto font-light leading-relaxed">

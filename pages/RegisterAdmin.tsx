@@ -17,17 +17,48 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
         email: '',
         address: '',
         city: '',
+        town: '',
         pincode: '',
         state: 'Maharashtra',
         viharGroupName: 'Vihar Seva Group',
         sanghName: ''
     });
+    const [pinLoading, setPinLoading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const { showToast } = useToast();
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+
+        // Handle Pincode Auto-fill
+        if (name === 'pincode' && value.length === 6) {
+            handlePinLookup(value);
+        }
+    };
+
+    const handlePinLookup = async (pin: string) => {
+        setPinLoading(true);
+        try {
+            const response = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+            const data = await response.json();
+
+            if (data[0].Status === 'Success') {
+                const details = data[0].PostOffice[0];
+                setFormData(prev => ({
+                    ...prev,
+                    city: details.District,
+                    town: details.Name,
+                    state: details.State
+                }));
+                showToast(`Location Loaded: ${details.Name}`, 'info');
+            }
+        } catch (err) {
+            console.warn("PIN lookup failed:", err);
+        } finally {
+            setPinLoading(false);
+        }
     };
 
     const handleRegister = async (e: React.FormEvent) => {
@@ -47,6 +78,7 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                     email: formData.email,
                     full_address: formData.address,
                     city: formData.city,
+                    town: formData.town,
                     pin_code: formData.pincode,
                     state: formData.state,
                     vihar_group_name: finalViharGroupName,
@@ -199,7 +231,7 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                             name="city"
                             type="text"
                             required
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none bg-gray-50"
                             placeholder="City"
                             value={formData.city}
                             onChange={handleChange}
@@ -207,13 +239,30 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                     </div>
 
                     <div className="col-span-2 sm:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Pin Code</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Town / Area</label>
+                        <input
+                            name="town"
+                            type="text"
+                            required
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+                            placeholder="Town/Area Name"
+                            value={formData.town}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center justify-between">
+                            Pin Code
+                            {pinLoading && <Loader2 size={12} className="animate-spin text-saffron-600" />}
+                        </label>
                         <input
                             name="pincode"
                             type="text"
                             required
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="Pin Code"
+                            maxLength={6}
+                            className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none ${pinLoading ? 'animate-pulse' : ''}`}
+                            placeholder="6 Digit PIN"
                             value={formData.pincode}
                             onChange={handleChange}
                         />

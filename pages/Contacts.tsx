@@ -4,6 +4,7 @@ import { ContactNumber } from '../types';
 import { dataService } from '../services/dataService';
 import { Phone, MessageCircle, Loader2, Users2, AlertCircle } from 'lucide-react';
 import { EmergencyHelp } from '../components/EmergencyHelp';
+import { JainTempleFinder } from '../components/JainTempleFinder';
 interface ContactsProps {
     currentUser: UserProfile;
 }
@@ -69,6 +70,11 @@ const Contacts: React.FC<ContactsProps> = ({ currentUser }) => {
             </div>
 
             <EmergencyHelp />
+
+            {/* Jain Temple Finder - Location Based */}
+            <div className="w-full">
+                <JainTempleFinder />
+            </div>
 
             {/* Loading */}
             {loading && (

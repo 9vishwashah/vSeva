@@ -90,6 +90,35 @@ export const dataService = {
       console.error("Error fetching org activity stats:", error);
       return [];
     }
+    return data || [];
+  },
+
+  async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string }>> {
+    const map: Record<string, { full_name: string; mobile: string; town: string }> = {};
+    if (!orgIds || orgIds.length === 0) return map;
+
+    try {
+      const response = await fetch('/.netlify/functions/get-org-admins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgIds })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        (data || []).forEach((p: any) => {
+          map[p.organization_id] = {
+            full_name: p.full_name,
+            mobile: p.mobile,
+            town: p.town || ''
+          };
+        });
+      } else {
+        console.warn("Failed to fetch org admins:", response.statusText);
+      }
+    } catch (e) {
+      console.error("Error fetching org admins:", e);
+    }
+    return map;
   },
 
   async getDashboardStats(orgId: string) {
@@ -343,6 +372,7 @@ export const dataService = {
     full_name: string;
     email: string;
     mobile: string;
+    town?: string;
     password?: string;
   }) {
     const { data: { session } } = await supabase.auth.getSession();
@@ -364,6 +394,7 @@ export const dataService = {
         fullName: request.full_name,
         email: request.email,
         mobile: request.mobile,
+        town: request.town,
         password: passwordToUse
       }),
     });
