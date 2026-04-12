@@ -9,7 +9,7 @@ export async function handler(event) {
             };
         }
 
-        const { requestId, orgName, city, fullName, email, mobile, password } = JSON.parse(event.body);
+        const { requestId, orgName, city, town, fullName, email, mobile, password } = JSON.parse(event.body);
 
         if (!requestId || !orgName || !email || !password) {
             return {
@@ -33,7 +33,8 @@ export async function handler(event) {
             .from('organizations')
             .insert({
                 name: orgName,
-                city: city
+                city: city,
+                town: town
             })
             .select()
             .single();
@@ -64,6 +65,7 @@ export async function handler(event) {
                 full_name: fullName,
                 username: email, // treating email as username for admin
                 mobile: mobile,
+                town: town,
                 is_active: true
             });
 

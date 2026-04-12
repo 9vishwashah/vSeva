@@ -138,7 +138,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
               <div className="relative mb-3">
                 {isAdmin ? (
                   <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg border border-white bg-white p-0.5 overflow-hidden z-20 relative">
-                     <img src={vsgLogo} alt="VSG Logo" className="w-full h-full object-cover rounded-full" />
+                     <img src={vSevaLogo} alt="vSeva Logo" className="w-full h-full object-cover rounded-full" />
                   </div>
                 ) : (
                   <div className="w-20 h-20 rounded-full flex items-center justify-center font-serif text-2xl font-bold shadow-lg border-2 bg-white text-saffron-600 border-saffron-100 relative z-20">
