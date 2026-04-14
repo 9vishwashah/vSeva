@@ -219,18 +219,12 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
                       <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-700">Top Sevak</span>
                     </div>
                     {loading ? <SkeletonValue width="w-32" /> : topSevak ? (
-                      <div className="flex items-center justify-between">
-                        <span className="text-base font-bold text-gray-900 leading-tight">{topSevak.name}</span>
-                        <div className="flex items-center gap-3 text-right">
-                          <div className="flex flex-col items-center">
-                            <span className="text-sm font-bold text-gray-800">{topSevak.count}</span>
-                            <span className="text-[9px] text-gray-500 uppercase font-bold">Vihars</span>
-                          </div>
-                          <div className="h-6 w-[1px] bg-orange-200"></div>
-                          <div className="flex flex-col items-center">
-                            <span className="text-sm font-bold text-gray-800">{topSevak.km}</span>
-                            <span className="text-[9px] text-gray-500 uppercase font-bold">km</span>
-                          </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-bold text-gray-900 leading-tight break-words">{topSevak.name}</span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs font-bold text-gray-600">{topSevak.count} <span className="text-[9px] text-gray-400 uppercase font-bold">Vihars</span></span>
+                          <div className="h-3 w-[1px] bg-orange-200"></div>
+                          <span className="text-xs font-bold text-gray-600">{topSevak.km} <span className="text-[9px] text-gray-400 uppercase font-bold">km</span></span>
                         </div>
                       </div>
                     ) : (
@@ -247,18 +241,12 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
                       <span className="text-[10px] font-bold uppercase tracking-widest text-pink-700">Top Sevika</span>
                     </div>
                     {loading ? <SkeletonValue width="w-32" /> : topSevika ? (
-                      <div className="flex items-center justify-between">
-                        <span className="text-base font-bold text-gray-900 leading-tight">{topSevika.name}</span>
-                        <div className="flex items-center gap-3 text-right">
-                          <div className="flex flex-col items-center">
-                            <span className="text-sm font-bold text-gray-800">{topSevika.count}</span>
-                            <span className="text-[9px] text-gray-500 uppercase font-bold">Vihars</span>
-                          </div>
-                          <div className="h-6 w-[1px] bg-orange-200"></div>
-                          <div className="flex flex-col items-center">
-                            <span className="text-sm font-bold text-gray-800">{topSevika.km}</span>
-                            <span className="text-[9px] text-gray-500 uppercase font-bold">km</span>
-                          </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-bold text-gray-900 leading-tight break-words">{topSevika.name}</span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs font-bold text-gray-600">{topSevika.count} <span className="text-[9px] text-gray-400 uppercase font-bold">Vihars</span></span>
+                          <div className="h-3 w-[1px] bg-orange-200"></div>
+                          <span className="text-xs font-bold text-gray-600">{topSevika.km} <span className="text-[9px] text-gray-400 uppercase font-bold">km</span></span>
                         </div>
                       </div>
                     ) : (

@@ -29,6 +29,8 @@ export const EmergencyHelp: React.FC = () => {
     const [police, setPolice] = useState<Place[]>([]);
     const [error, setError] = useState<string | null>(null);
 
+    const [activeTab, setActiveTab] = useState<'hospital' | 'police'>('hospital');
+
     const fetchPlaces = async (lat: number, lng: number, type: 'hospital' | 'police') => {
         try {
             // Mapping directly to .netlify/functions/nearby bypasses potential re-write failures
@@ -96,11 +98,7 @@ export const EmergencyHelp: React.FC = () => {
 
     const renderPlaces = (title: string, icon: React.ReactNode, places: Place[], colorClass: string) => {
         return (
-            <div className="mb-6">
-                <div className={`flex items-center gap-2 mb-3 text-lg font-bold ${colorClass}`}>
-                    {icon}
-                    <span>{title}</span>
-                </div>
+            <div className="mb-2">
                 {places.length === 0 ? (
                     <p className="text-gray-500 text-sm py-2 px-1">No results found nearby.</p>
                 ) : (
@@ -108,7 +106,10 @@ export const EmergencyHelp: React.FC = () => {
                         {places.map((place, index) => (
                             <div key={index} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex items-start justify-between gap-2">
-                                    <h4 className="font-bold text-gray-800 line-clamp-1">{place.name}</h4>
+                                    <h4 className="font-bold text-gray-800 line-clamp-1">
+                                        <span className="text-gray-400 font-medium mr-2 max-w-[20px] inline-block">{index + 1}.</span>
+                                        {place.name}
+                                    </h4>
                                     {place.distance !== undefined && (
                                         <span className="shrink-0 bg-gray-100 text-gray-600 text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full font-bold">
                                             {place.distance.toFixed(1)} km
@@ -196,10 +197,27 @@ export const EmergencyHelp: React.FC = () => {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="space-y-2">
-                                    {renderPlaces('Hospitals Nearby', <PlusSquare size={20} />, hospitals, 'text-red-500')}
-                                    <div className="h-px bg-gray-200 w-full mx-auto my-6" />
-                                    {renderPlaces('Police Nearby', <Shield size={20} />, police, 'text-blue-500')}
+                                <div className="space-y-4">
+                                    <div className="flex bg-gray-200/60 p-1.5 rounded-xl">
+                                        <button
+                                            onClick={() => setActiveTab('hospital')}
+                                            className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'hospital' ? 'bg-white text-red-500 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                        >
+                                            <PlusSquare size={18} /> Hospitals
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('police')}
+                                            className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'police' ? 'bg-white text-blue-500 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                        >
+                                            <Shield size={18} /> Police
+                                        </button>
+                                    </div>
+                                    <div className="pt-2">
+                                        {activeTab === 'hospital' 
+                                            ? renderPlaces('Hospitals Nearby', <PlusSquare size={20} />, hospitals, 'text-red-500')
+                                            : renderPlaces('Police Nearby', <Shield size={20} />, police, 'text-blue-500')
+                                        }
+                                    </div>
                                 </div>
                             )}
                         </div>

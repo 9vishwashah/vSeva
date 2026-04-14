@@ -153,11 +153,14 @@ export const dataService = {
     adminOrgId: string,
     sevakData: { fullName: string; mobile: string; gender: string; age: number; bloodGroup?: string; emergencyNumber?: string; address?: string }
   ) {
-    // 1. Generate Username
+    // 1. Generate Username & Auth Email
     const cleanName = sevakData.fullName
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '');
-    const username = `${cleanName}@vsevak`;
+    // username stored in profiles (display username, no domain suffix)
+    const username = cleanName;
+    // email used internally for Supabase auth only
+    const authEmail = `${cleanName}@vsevak.in`;
     const password = sevakData.mobile;
 
     // 2. Get Admin Session (REQUIRED)
@@ -178,7 +181,7 @@ export const dataService = {
         Authorization: `Bearer ${session.access_token}`, // ✅ REQUIRED
       },
       body: JSON.stringify({
-        email: username,
+        email: authEmail,
         password: password,
         user_metadata: { // Added this back to ensure metadata is passed as per previous logic for profile creation consistency if needed by function, though function handles creation.
           full_name: sevakData.fullName,

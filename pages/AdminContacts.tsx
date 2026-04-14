@@ -4,6 +4,7 @@ import { dataService } from '../services/dataService';
 import { PhoneCall, PlusCircle, Trash2, Loader2, Phone } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { EmergencyHelp } from '../components/EmergencyHelp';
+import { JainTempleFinder } from '../components/JainTempleFinder';
 
 interface AdminContactsProps {
     currentUser: UserProfile;
@@ -91,6 +92,11 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
             </div>
 
             <EmergencyHelp />
+
+            {/* Jain Temple Finder - Location Based */}
+            <div className="w-full">
+                <JainTempleFinder />
+            </div>
 
             {/* Add Contact Form */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">

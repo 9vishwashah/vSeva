@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Loader2, MapPin, X, Navigation, Phone, Search, Map, Star, ArrowRight, Footprints } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Loader2, MapPin, X, Navigation, Phone, Search, Map, Star, ArrowRight, Footprints, Download, Share2, Plus } from 'lucide-react';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
 
 interface Place {
   name: string;
@@ -32,6 +37,56 @@ const NearbyDerasar: React.FC = () => {
   const [searched, setSearched] = useState(false);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState<number>(100000); // Default to Upto 100 KMs
+
+  // PWA Install state
+  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
+  const [isAndroidInstallable, setIsAndroidInstallable] = useState(false);
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [showDesktopTip, setShowDesktopTip] = useState(false);
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+
+  // ── Swap manifest to manifest-finder.json so PWA install from this page
+  //    creates "vSeva Finder" app opening at /nearby-derasar ──
+  useEffect(() => {
+    const existingLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+    const originalHref = existingLink?.getAttribute('href') || '';
+
+    if (existingLink) {
+      existingLink.setAttribute('href', '/manifest-finder.json');
+    } else {
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = '/manifest-finder.json';
+      document.head.appendChild(link);
+    }
+
+    // Capture beforeinstallprompt for Android
+    const handler = (e: Event) => {
+      e.preventDefault();
+      deferredPromptRef.current = e as BeforeInstallPromptEvent;
+      setIsAndroidInstallable(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      // Restore original manifest when leaving the page
+      if (existingLink && originalHref) existingLink.setAttribute('href', originalHref);
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (isAndroidInstallable && deferredPromptRef.current) {
+      deferredPromptRef.current.prompt();
+      await deferredPromptRef.current.userChoice;
+    } else if (isIOS) {
+      setShowIOSGuide(true);
+    } else {
+      setShowDesktopTip(true);
+      setTimeout(() => setShowDesktopTip(false), 4000);
+    }
+  };
 
   // Set page title & meta for SEO
   useEffect(() => {
@@ -161,6 +216,61 @@ const NearbyDerasar: React.FC = () => {
         </div>
       </header>
 
+      {/* ── Desktop Install Tip ── */}
+      {showDesktopTip && (
+        <div
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 px-5 py-3 rounded-2xl text-white text-sm font-medium shadow-2xl"
+          style={{ background: '#1e293b', border: '1px solid #EA580C', whiteSpace: 'nowrap' }}
+        >
+          <span>💡</span> Look for the <strong style={{ color: '#F97316', margin: '0 4px' }}>⊕ install icon</strong> in your browser's address bar
+        </div>
+      )}
+
+      {/* ── iOS Install Guide Modal ── */}
+      {showIOSGuide && (
+        <div
+          className="fixed inset-0 z-[300] flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          onClick={() => setShowIOSGuide(false)}
+        >
+          <div
+            className="w-full max-w-lg bg-white rounded-t-3xl p-7"
+            style={{ paddingBottom: 'max(28px, calc(env(safe-area-inset-bottom) + 16px))' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+            <div className="flex items-center gap-3 mb-5">
+              <img src={vSevaLogo} alt="vSeva Finder" className="h-11 w-11 rounded-xl object-contain" />
+              <div>
+                <h3 className="font-bold text-gray-900 text-base">Install vSeva Finder on iPhone</h3>
+                <p className="text-xs text-gray-500">3 quick steps to add to Home Screen</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {[
+                { step: 1, title: 'Open in Safari', desc: 'Make sure you\'re using Safari — PWA install only works in Safari on iPhone.' },
+                { step: 2, title: 'Tap the Share button', desc: 'At the bottom of Safari, tap the Share (□↑) icon.' },
+                { step: 3, title: 'Tap "Add to Home Screen"', desc: 'Scroll in the share sheet, tap Add to Home Screen, then tap Add. Done! 🎉' },
+              ].map(({ step, title, desc }) => (
+                <div key={step} className="flex items-start gap-3 bg-slate-50 rounded-2xl p-4">
+                  <div className="w-7 h-7 rounded-full text-white text-sm font-bold flex items-center justify-center flex-shrink-0" style={{ background: '#EA580C' }}>{step}</div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowIOSGuide(false)}
+              className="mt-5 w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold text-sm text-slate-700 transition-colors"
+            >
+              Got it, thanks!
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Hero ── */}
       <section className="relative overflow-hidden px-4 sm:px-6 pt-10 pb-8 text-center">
         {/* bg blobs */}
@@ -219,6 +329,23 @@ const NearbyDerasar: React.FC = () => {
               <i className="fa-brands fa-instagram text-2xl"></i>
             </a>
           </div>
+
+          {/* Install App — secondary CTA, hidden when already running as PWA */}
+          {!isStandalone && (
+            <button
+              onClick={handleInstall}
+              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all hover:scale-105 active:scale-95 shadow-sm"
+              style={{
+                background: '#fff',
+                border: '1.5px solid #fed7aa',
+                color: '#ea580c',
+                boxShadow: '0 2px 12px rgba(234,88,12,0.10)',
+              }}
+            >
+              <Download size={15} />
+              Install vSeva Finder App
+            </button>
+          )}
         </div>
       </section>
 

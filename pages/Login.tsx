@@ -24,17 +24,30 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setLoading(true);
     setErrorMsg(null);
 
-    const safeEmail = email.trim().toLowerCase();
+    const safeInput = email.trim().toLowerCase();
 
     try {
-      // 1. Auth with Supabase
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: safeEmail,
-        password,
-      });
+      // Build a list of email formats to try (new format first, then legacy)
+      const emailCandidates = safeInput.includes('@')
+        ? [safeInput] // admin/captain accounts or old-format users who typed full address
+        : [
+            `${safeInput}@vsevak.in`, // new sevak format
+            `${safeInput}@vsevak`,    // legacy format (old sevaks)
+            safeInput,                // raw fallback (e.g. admin entering their email)
+          ];
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("No user found");
+      let authData: any = null;
+      let authError: any = null;
+      for (const candidate of emailCandidates) {
+        const result = await supabase.auth.signInWithPassword({ email: candidate, password });
+        if (!result.error && result.data.user) {
+          authData = result.data;
+          break;
+        }
+        authError = result.error;
+      }
+
+      if (!authData?.user) throw authError ?? new Error('Invalid credentials.');
 
       // 2. Fetch Profile to get Role
       const profile = await dataService.getProfile(authData.user.id);
@@ -123,7 +136,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               type="text"
               required
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-              placeholder="name@vsevak"
+              placeholder="e.g. vishwashah"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
