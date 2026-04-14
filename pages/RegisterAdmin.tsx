@@ -102,7 +102,16 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
     if (isSuccess) {
         const uniqueId = `REQ-${Date.now().toString().slice(-4)}`;
         const finalViharGroupName = formData.viharGroupName.trim() === '' ? 'Vihar Seva Group' : formData.viharGroupName.trim();
-        const waMessage = `प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा! I have submitted a vSeva Captain account request.\n\nGroup: ${finalViharGroupName}\nSangh: ${formData.sanghName}\nCaptain: ${formData.captainName}\nCity: ${formData.city}\nMobile: ${formData.mobile}\n\nPlease review and approve.`;
+        const waMessage =
+`I have submitted a vSeva Captain account request.
+
+Captain: ${formData.captainName}
+Mobile: ${formData.mobile}
+Group: ${finalViharGroupName}
+City: ${formData.city}
+State: ${formData.state}
+
+Kindly review and Approve.`;
         const waLink = `https://wa.me/919594503214?text=${encodeURIComponent(waMessage)}`;
 
         return (

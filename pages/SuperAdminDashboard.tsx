@@ -245,9 +245,21 @@ const SuperAdminDashboard = () => {
 
             showToast("Organization Approved & Created!", "success");
 
-            const message = `प्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा ${req.captain_name}!\n\nYour vSeva Captain account request for *${req.vihar_group_name}* has been approved.\n\nYou can now login with your email and password.\n\nWelcome to vSeva!`;
+            const message =
+`Pranam ${req.captain_name} 🙏
+Your vSeva Captain account has been approved ✅
+
+Install App ~ https://vseva.vjas.in/
+
+Username: ${req.email}
+Password: ${req.mobile}
+
+For Demo & Guide : Alpesh Shah (9324503214)
+
+Connect on Instagram https://www.instagram.com/the.vseva/`;
             const waLink = `https://wa.me/91${req.mobile}?text=${encodeURIComponent(message)}`;
             window.open(waLink, '_blank');
+
 
             setRequests(prev => prev.filter(r => r.id !== req.id));
             fetchStats();
@@ -554,6 +566,7 @@ const SuperAdminDashboard = () => {
                             <table className="w-full text-left">
                                 <thead className="bg-gray-50 text-gray-500 text-[10px] uppercase font-bold tracking-wider">
                                     <tr>
+                                        <th className="p-5 w-16">Org ID</th>
                                         <th className="p-5">Joined</th>
                                         <th className="p-5">Group Name</th>
                                         <th className="p-5">Captain</th>
@@ -565,10 +578,17 @@ const SuperAdminDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {orgStats.length > 0 ? orgStats.map(stat => {
+                                    {orgStats.length > 0 ? [...orgStats]
+                                        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                                        .map((stat, index) => {
                                         const admin = orgAdmins[stat.org_id];
                                         return (
                                             <tr key={stat.org_id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="p-5">
+                                                    <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-black tracking-wide bg-saffron-600 text-white shadow-sm shadow-saffron-200 select-all">
+                                                        VS{index + 1}
+                                                    </span>
+                                                </td>
                                                 <td className="p-5 text-sm text-gray-500 font-medium">
                                                     {new Date(stat.created_at).toLocaleDateString()}
                                                 </td>
@@ -603,7 +623,7 @@ const SuperAdminDashboard = () => {
                                         );
                                     }) : (
                                         <tr>
-                                            <td colSpan={8} className="p-20 text-center">
+                                            <td colSpan={9} className="p-20 text-center">
                                                 {statsLoading ? (
                                                     <div className="flex flex-col items-center gap-3">
                                                         <Loader2 className="animate-spin text-blue-600" size={32} />

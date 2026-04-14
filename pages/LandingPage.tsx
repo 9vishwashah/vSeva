@@ -61,7 +61,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                             <NavLink to="about" label="About" />
                             <NavLink to="features" label="Features" />
                             <NavLink to="how-it-works" label="How it Works" />
-                            <a href="/nearby-derasar" className="text-slate-600 hover:text-saffron-600 font-medium transition-colors">Nearby Derasar</a>
+                            <NavLink to="nearby-derasar" label="Nearby Derasar" />
                             <button
                                 onClick={onGetStarted}
                                 className="px-6 py-2 bg-saffron-600 hover:bg-saffron-700 text-white rounded-full font-bold shadow-md transition-all hover:-translate-y-0.5"
@@ -86,7 +86,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         <NavLink to="about" label="About" />
                         <NavLink to="features" label="Features" />
                         <NavLink to="how-it-works" label="How it Works" />
-                        <a href="/nearby-derasar" className="text-slate-600 font-medium py-1">Nearby Derasar</a>
+                        <NavLink to="nearby-derasar" label="Nearby Derasar" />
                         <button
                             onClick={onGetStarted}
                             className="w-full py-3 bg-saffron-600 text-white rounded-lg font-bold"
@@ -317,7 +317,86 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </div>
             </div>
 
-            {/* 7️⃣ FINAL CTA */}
+            {/* 7️⃣ NEARBY DERASAR SECTION */}
+            <div id="nearby-derasar" className="py-24 bg-white scroll-mt-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+
+                        {/* Left: Info */}
+                        <div className="space-y-6">
+                            <div className="inline-flex items-center gap-2 text-saffron-700 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full bg-orange-50 border border-orange-200">
+                                <MapPin size={14} />
+                                Free for Everyone · No Login Needed
+                            </div>
+                            <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 leading-tight">
+                                Find Nearby<br />Jain Derasar
+                            </h2>
+                            <p className="text-slate-600 text-lg leading-relaxed">
+                                Instantly discover Jain temples and Tirths near your location — with GPS-powered directions, contact info, and a search range up to 100 KM.
+                            </p>
+                            <ul className="space-y-3">
+                                {[
+                                    'GPS-powered live location detection',
+                                    'One-tap Google Maps directions',
+                                    'Phone numbers where available',
+                                    'Share temple info via WhatsApp',
+                                ].map((item) => (
+                                    <li key={item} className="flex items-center gap-3 text-slate-600">
+                                        <CheckCircle2 size={18} className="text-saffron-500 flex-shrink-0" />
+                                        <span>{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <a
+                                href="/nearby-derasar"
+                                className="inline-flex items-center gap-2 px-8 py-4 bg-saffron-600 hover:bg-saffron-700 text-white rounded-full font-bold text-lg shadow-lg shadow-saffron-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                            >
+                                <MapPin size={20} />
+                                Find Derasar Near Me
+                            </a>
+                        </div>
+
+                        {/* Right: Visual Card */}
+                        <div className="relative flex justify-center">
+                            <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-orange-100 overflow-hidden">
+                                {/* Card header */}
+                                <div className="bg-gradient-to-br from-orange-500 to-amber-400 p-6 text-white relative overflow-hidden">
+                                    <div className="absolute -top-6 -right-6 w-28 h-28 bg-white/10 rounded-full" />
+                                    <div className="relative">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <MapPin size={20} className="text-white" />
+                                            <span className="text-xs font-bold uppercase tracking-widest opacity-80">Nearby Derasar</span>
+                                        </div>
+                                        <p className="text-white/80 text-sm">Your location detected · 3 Derasars Found</p>
+                                    </div>
+                                </div>
+                                {/* Mock results */}
+                                <div className="p-4 space-y-3">
+                                    {[
+                                        { name: 'Shri Mahavir Swami Derasar', dist: '0.8 km', area: 'Nearby' },
+                                        { name: 'Jain Mandir, Sector 17', dist: '2.3 km', area: '2 km' },
+                                        { name: 'Shantinath Derasar', dist: '4.7 km', area: '5 km' },
+                                    ].map((t, i) => (
+                                        <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                            <div className="flex-1 min-w-0 mr-2">
+                                                <p className="text-sm font-bold text-slate-800 truncate">{t.name}</p>
+                                                <p className="text-xs text-slate-400">{t.area}</p>
+                                            </div>
+                                            <span className="text-xs font-bold px-2 py-1 bg-orange-50 text-orange-600 border border-orange-200 rounded-full whitespace-nowrap flex-shrink-0">{t.dist}</span>
+                                        </div>
+                                    ))}
+                                    <a href="/nearby-derasar" className="block w-full text-center py-3 bg-saffron-600 text-white rounded-xl font-bold text-sm hover:bg-saffron-700 transition-colors mt-2">
+                                        Open Full Finder →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            {/* 8️⃣ FINAL CTA */}
             <div className="py-24 bg-gradient-to-br from-saffron-50 to-orange-50">
                 <div className="max-w-4xl mx-auto px-4 text-center">
                     <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 mb-8">
@@ -424,7 +503,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
 
 
-            {/* 8️⃣ SOCIAL FOLLOW */}
+            {/* 9️⃣ SOCIAL FOLLOW */}
             <div className="py-12 bg-white text-center border-t border-slate-100">
                 <p className="text-gray-400 mb-4">Join our community for user guides and updates</p>
                 <a

@@ -96,6 +96,36 @@ export const handler = async (event, context) => {
                     return data;
                 }));
             });
+        } else {
+            // Geographic search for hospital or police
+            const nearbyBody = {
+                includedTypes: [type],
+                maxResultCount: 20,
+                locationRestriction: {
+                    circle: {
+                        center: {
+                            latitude: parseFloat(lat),
+                            longitude: parseFloat(lng),
+                        },
+                        radius: 5000.0, // Limit radius for hospitals/police to 5km
+                    },
+                },
+            };
+
+            fetchPromises.push(fetch('https://places.googleapis.com/v1/places:searchNearby', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey,
+                    'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.internationalPhoneNumber,places.photos,places.iconMaskBaseUri',
+                    'Referer': referer,
+                },
+                body: JSON.stringify(nearbyBody),
+            }).then(async r => {
+                const data = await r.json();
+                if (!r.ok) console.error(`API Error for searchNearby (${type})`, data);
+                return data;
+            }));
         }
 
         const results = await Promise.all(fetchPromises);
