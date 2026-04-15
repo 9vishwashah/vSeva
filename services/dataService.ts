@@ -331,9 +331,32 @@ export const dataService = {
 
     if (rpcError) {
       console.error("RPC Error:", rpcError);
-      if (rpcError.message.includes('function') && rpcError.message.includes('does not exist')) {
-        throw new Error("Database configuration required. Please ask your developer to run 'admin_update_profile_rpc.sql' in Supabase SQL Editor.");
+
+      // Fallback: direct table update when RPC signature mismatch (PGRST202) or missing
+      if (rpcError.code === 'PGRST202' || (rpcError.message && rpcError.message.includes('Could not find the function'))) {
+        console.warn("RPC signature mismatch — falling back to direct profile update. Run scripts/fix_update_sevak_rpc.sql in Supabase SQL Editor to fix permanently.");
+
+        const directUpdates: Record<string, any> = {};
+        if (updates.mobile !== undefined)          directUpdates.mobile           = updates.mobile;
+        if (updates.age !== undefined)             directUpdates.age              = updates.age;
+        if (updates.bloodGroup !== undefined)      directUpdates.blood_group      = updates.bloodGroup;
+        if (updates.emergencyNumber !== undefined) directUpdates.emergency_number = updates.emergencyNumber;
+        if (updates.address !== undefined)         directUpdates.address          = updates.address;
+        if (updates.gender !== undefined)          directUpdates.gender           = updates.gender;
+
+        const { error: directError } = await supabase
+          .from('profiles')
+          .update(directUpdates)
+          .eq('id', userId);
+
+        if (directError) {
+          console.error("Direct update also failed:", directError);
+          throw new Error("Could not update profile. Please contact your administrator.");
+        }
+
+        return true;
       }
+
       throw rpcError;
     }
 

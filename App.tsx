@@ -9,7 +9,7 @@ import AddSevak from './pages/AddSevak';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
 import PublicSevakProfile from './pages/PublicSevakProfile';
-import { Loader2 } from 'lucide-react';
+
 import ManageRoutes from './pages/ManageRoutes';
 import ViewEntries from './pages/ViewEntries';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
@@ -20,9 +20,6 @@ import ViewReports from './pages/ViewReports';
 import SubmitReport from './pages/SubmitReport';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal } from './services/oneSignalService';
 import NearbyDerasar from './pages/NearbyDerasar';
-
-
-import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
 
 
 // Suppress XAxis/YAxis defaultProps warning from Recharts in React 18+
@@ -105,6 +102,10 @@ const App: React.FC = () => {
         }
       }
       setLoading(false);
+      // Dismiss the HTML splash screen with animation
+      if (typeof (window as any).hideSplash === 'function') {
+        (window as any).hideSplash();
+      }
     };
     checkSession();
   }, []);
@@ -132,17 +133,8 @@ const App: React.FC = () => {
     if (!isStandalone) setShowLanding(true);
   };
 
-  if (loading) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-br from-saffron-50 to-orange-50">
-        <div className="mb-6">
-          <img src={vSevaLogo} alt="vSeva" className="h-24 w-24 md:h-32 md:w-32 object-contain animate-pulse drop-shadow-lg" />
-        </div>
-        <Loader2 className="animate-spin text-saffron-600" size={48} />
-        <p className="mt-4 text-gray-600 font-medium">Loading vSeva...</p>
-      </div>
-    );
-  }
+  // While loading, let the HTML splash screen show — return null to avoid flicker
+  if (loading) return null;
 
   // Route: Super Admin (Protected)
   if (isSuperAdmin) {
