@@ -132,14 +132,34 @@ export const handler = async (event, context) => {
         let allPlaces = [];
         const seen = new Set();
 
+        const calculateDistance = (lat1, lon1, lat2, lon2) => {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        };
+
         for (const data of results) {
             if (data && data.places) {
                 for (const place of data.places) {
-                    // Unique duplication check based on exact coordinates or exact address
                     const id = `${place.location?.latitude || place.displayName?.text}_${place.location?.longitude || place.formattedAddress}`;
                     if (!seen.has(id)) {
                         seen.add(id);
-                        allPlaces.push(place);
+                        
+                        // Strict 100km distance check
+                        if (place.location?.latitude && place.location?.longitude) {
+                            const distance = calculateDistance(parseFloat(lat), parseFloat(lng), place.location.latitude, place.location.longitude);
+                            if (distance <= 100.0) {
+                                allPlaces.push(place);
+                            }
+                        } else {
+                            allPlaces.push(place);
+                        }
                     }
                 }
             }

@@ -16,6 +16,13 @@ export async function handler(event, context) {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: 'OK' };
   }
+  if (event.httpMethod === 'GET') {
+    return { 
+        statusCode: 200, 
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: "active", message: "vSeva Push Notification Webhook Service is running successfully. This endpoint accepts POST requests from Supabase." })
+    };
+  }
 
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers, body: 'Method Not Allowed' };
