@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download, X, Share, Plus } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
-import vSevaLogo from '../assets/vseva-logo.png';
+import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 
 export const InstallPWA: React.FC = () => {
     const { install, isAndroidInstallable, isIOS } = usePWAInstall();
@@ -78,7 +78,7 @@ export const InstallPWA: React.FC = () => {
                     <img
                         src={vSevaLogo}
                         alt="vSeva"
-                        style={{ height: '34px', width: '34px', objectFit: 'contain', flexShrink: 0, borderRadius: '8px' }}
+                        style={{ height: '34px', width: '34px', objectFit: 'contain', flexShrink: 0, borderRadius: '8px', transform: 'scale(1.5)' }}
                     />
                     <div style={{ minWidth: 0 }}>
                         <p style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: 0, lineHeight: 1.2 }}>
@@ -171,7 +171,7 @@ export const InstallPWA: React.FC = () => {
                         <div style={{ width: '40px', height: '4px', background: '#e2e8f0', borderRadius: '2px', margin: '0 auto 20px' }} />
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                            <img src={vSevaLogo} alt="vSeva" style={{ height: '44px', width: '44px', objectFit: 'contain', borderRadius: '10px' }} />
+                            <img src={vSevaLogo} alt="vSeva" style={{ height: '44px', width: '44px', objectFit: 'contain', borderRadius: '10px', transform: 'scale(1.4)' }} />
                             <div>
                                 <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#1e293b' }}>Install vSeva on iPhone</h3>
                                 <p style={{ margin: 0, fontSize: '13px', color: '#64748b', marginTop: '2px' }}>3 quick steps to add to Home Screen</p>

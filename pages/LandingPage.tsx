@@ -5,7 +5,7 @@ import {
     Lock, Activity, FileText, Download, Menu, X, Instagram, LogIn
 } from 'lucide-react';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
-import vashiImg from '../assets/vashi.png';
+import vSevaLogoFull from '../assets/vseva-logo.png';
 import { InstallPWA } from '../components/InstallPWA';
 
 interface LandingPageProps {
@@ -51,9 +51,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
-                            <img src={vSevaLogo} alt="vSeva" className="h-10 w-10 object-contain" />
-                            <span className="font-serif font-bold text-xl text-slate-800">vSeva</span>
+                        <div className="flex items-center cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
+                            <img src={vSevaLogo} alt="vSeva" className="h-10 w-10 object-contain scale-[1.7] origin-left" />
+                            <span className="font-serif font-bold text-2xl text-slate-800 ml-4">vSeva</span>
                         </div>
 
                         {/* Desktop Nav */}
@@ -108,8 +108,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         {/* Logo: only vSeva */}
                         <div className="flex justify-center mb-8">
                             <div className="flex items-center gap-4 animate-fade-in-up">
-                                <div className="bg-saffron-50 rounded-2xl shadow-sm border border-saffron-100 overflow-hidden">
-                                    <img src={vSevaLogo} alt="vSeva" className="h-24 w-24 md:h-28 md:w-28 object-cover" />
+                                <div className="rounded-3xl shadow-lg border border-saffron-100 overflow-hidden flex items-center justify-center p-0 bg-white">
+                                    <img src={vSevaLogoFull} alt="vSeva" className="h-40 w-40 md:h-56 md:w-56 object-cover" />
                                 </div>
                             </div>
                         </div>
@@ -418,73 +418,58 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </div>
             </div>
 
-            {/* 🌟 FIRST CLIENT — SLIDING CARDS SECTION */}
+            {/* 🌟 ORGANIZATIONS SECTION */}
             <div className="py-20 relative overflow-hidden" style={{ background: '#fdf4e7' }}>
                 {/* Subtle blobs */}
                 <div className="absolute top-0 right-0 w-72 h-72 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(251,191,36,0.15)' }} />
                 <div className="absolute bottom-0 left-0 w-56 h-56 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(234,88,12,0.08)' }} />
 
                 <div className="max-w-7xl mx-auto px-4 relative z-10 flex flex-col items-center">
-                    {/* Label pill */}
-                    <div className="text-center mb-10">
-                        <div className="inline-flex items-center gap-2 text-saffron-700 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-2"
+                    {/* Header */}
+                    <div className="text-center mb-12">
+                        <div className="inline-flex items-center gap-2 text-saffron-700 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-4"
                             style={{ background: 'rgba(234,88,12,0.1)', border: '1px solid rgba(234,88,12,0.2)' }}>
                             <Sparkles size={13} />
-                            Our First Vihar Organization
+                            18+ Active Orgs
                         </div>
-                        <p className="text-slate-500 text-sm mt-2">Proudly serving and growing together</p>
+                        <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-4">Our Vihar Sevak Organizations</h2>
+                        <p className="text-slate-500 text-sm md:text-base">Proudly serving and growing together across India</p>
                     </div>
 
-                    {/* Sliding card track - changed to a single centered vertical card layout */}
-                    <div className="w-full max-w-md pb-4 pt-2">
-                        <div className="w-full flex-shrink-0 transition-transform hover:-translate-y-2 duration-500" style={{
-                            background: '#ffffff',
-                            borderRadius: '28px',
-                            boxShadow: '0 20px 60px rgba(0,0,0,0.08)',
-                            border: '1px solid rgba(234,88,12,0.12)',
-                        }}>
-                            <div className="flex flex-col gap-0 overflow-hidden rounded-[28px]">
-                                
-                                {/* TOP: Navi Mumbai Map Image */}
-                                <div className="w-full h-[280px] flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 p-6 relative overflow-hidden">
-                                    {/* Map decorative grid */}
-                                    <div className="absolute inset-0 opacity-[0.07]" style={{
-                                        backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)',
-                                        backgroundSize: '20px 20px'
-                                    }} />
-                                    <div className="relative z-10 w-full h-full flex flex-col justify-center items-center">
-                                        <p className="text-center text-[10px] text-white/50 uppercase tracking-widest mb-5 font-bold">Navi Mumbai</p>
-                                        <div className="flex-1 w-full flex items-center justify-center h-full">
-                                            <img src={vashiImg} alt="Vashi Map" className="w-full h-full max-h-[160px] max-w-[200px] object-contain drop-shadow-2xl" />
-                                        </div>
-                                        <div className="mt-4 flex items-center justify-center gap-2">
-                                            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: '#ea580c' }}></div>
-                                            <span className="text-[10px] text-white/70 font-medium">Vashi, Navi Mumbai</span>
-                                        </div>
+                    {/* Scalable Grid for Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
+                        {[
+                            {
+                                city: "Navi Mumbai",
+                                title: "Navi Mumbai Vihar Seva Group, Vashi",
+                                desc: "Thank you for trusting vSeva as your digital Vihar Seva partner — and for being our very first! 🧡",
+                                tag: "Our First Organization",
+                                managers: ['Vijay Mehta', 'Rakhi Jain', 'Namya Mehta']
+                            }
+                            // Add more organization objects here...
+                        ].map((org, index) => (
+                            <div key={index} className="flex flex-col bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 overflow-hidden transform hover:-translate-y-1">
+                                <div className="bg-gradient-to-br from-slate-800 to-slate-900 px-6 py-4 border-b border-slate-700">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-saffron-500"></div>
+                                        <span className="text-xs text-white/80 uppercase tracking-widest font-bold">{org.city}</span>
                                     </div>
                                 </div>
-
-                                {/* BOTTOM: Info */}
-                                <div className="p-8 flex flex-col bg-white">
-                                    <div>
-                                        <p style={{ color: '#EA580C' }} className="text-xs font-bold uppercase tracking-widest mb-3">With Deepest Gratitude</p>
+                                <div className="p-8 flex-1 flex flex-col">
+                                    <div className="flex-1">
+                                        <p className="text-saffron-600 text-xs font-bold uppercase tracking-widest mb-3">{org.tag}</p>
                                         <h3 className="text-slate-900 text-2xl font-serif font-bold mb-3 leading-snug">
-                                            Navi Mumbai Vihar<br />Seva Group, Vashi
+                                            {org.title}
                                         </h3>
                                         <p className="text-slate-500 text-sm leading-relaxed">
-                                            Thank you for trusting vSeva as your digital Vihar Seva partner — and for being our very first! 🧡
+                                            {org.desc}
                                         </p>
                                     </div>
-
-                                    {/* Managed by */}
-                                    <div className="mt-8" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}>
+                                    <div className="mt-8 pt-5 border-t border-slate-100">
                                         <p className="text-slate-400 text-xs uppercase tracking-widest mb-3">Managed by</p>
                                         <div className="flex flex-wrap gap-2">
-                                            {['Vijay Mehta', 'Rakhi Jain', 'Namya Mehta'].map((name) => (
-                                                <span key={name} style={{
-                                                    background: '#f8fafc',
-                                                    border: '1px solid #e2e8f0',
-                                                }} className="px-4 py-1.5 text-slate-700 text-sm font-medium rounded-full">
+                                            {org.managers.map((name) => (
+                                                <span key={name} className="px-3 py-1 bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium rounded-full">
                                                     {name}
                                                 </span>
                                             ))}
@@ -492,10 +477,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        ))}
                     </div>
 
-                    <p className="mt-8 text-sm italic text-center w-full" style={{ color: 'rgba(120,80,20,0.6)' }}>
+                    <p className="mt-12 text-sm italic text-center w-full" style={{ color: 'rgba(120,80,20,0.6)' }}>
                         "Every great journey begins with one step — and one organization."
                     </p>
                 </div>
@@ -521,7 +506,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <footer className="bg-white py-8 border-t border-slate-100">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-2 opacity-80">
-                        <img src={vSevaLogo} alt="vSeva" className="h-6 w-6 object-contain grayscale" />
+                        <img src={vSevaLogo} alt="vSeva" className="h-6 w-6 object-contain grayscale scale-[1.3]" />
                         <span className="font-serif font-bold text-slate-700">vSeva</span>
                     </div>
                     <p className="text-slate-400 text-sm">Built with devotion & technology</p>

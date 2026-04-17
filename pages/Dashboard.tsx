@@ -8,7 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import jsPDF from 'jspdf';
-import vSevaLogo from '../assets/vseva-logo.png';
+import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import vsgLogo from '../assets/vsg.jpg';
 import { NotoSansDevanagariBase64 } from '../assets/NotoSansDevanagari-Regular';
 import { NotoSansGujaratiBase64 } from '../assets/NotoSansGujarati-Regular';
