@@ -55,7 +55,7 @@ const Layout: React.FC<LayoutProps> = ({
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full flex-shrink-0">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <img src={vSevaLogo} alt="vSeva" className="h-16 w-16 md:h-20 md:w-20 object-contain drop-shadow-sm" />
+            <img src={vSevaLogo} alt="vSeva" className="h-16 w-16 md:h-24 md:w-24 object-contain drop-shadow-sm scale-[1.4] origin-left" />
             <div>
               <h1 className="text-2xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">by VJAS</p>
@@ -122,7 +122,7 @@ const Layout: React.FC<LayoutProps> = ({
         {/* Mobile Top Header — fixed within the flex column */}
         <header className="md:hidden flex-shrink-0 bg-white border-b border-gray-200 px-4 flex justify-between items-center z-20" style={{ height: '56px' }}>
           <div className="flex items-center gap-2">
-            <img src={vSevaLogo} alt="vSeva" className="h-10 w-10 object-contain drop-shadow-sm scale-150 origin-left ml-2" />
+            <img src={vSevaLogo} alt="vSeva" className="h-10 w-10 object-contain drop-shadow-sm scale-[1.7] origin-left ml-2" />
             <h1 className="text-xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
           </div>
           <div className="flex items-center gap-3 relative">

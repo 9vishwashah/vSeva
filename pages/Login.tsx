@@ -120,8 +120,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6 z-10">
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <div className="animate-fade-in-up bg-saffron-50 rounded-2xl shadow-sm border border-saffron-100 overflow-hidden">
-              <img src={vSevaLogo} alt="vSeva" className="h-24 w-24 md:h-28 md:w-28 object-cover" />
+            <div className="animate-fade-in-up bg-saffron-50 rounded-2xl shadow-sm border border-saffron-100 overflow-hidden flex items-center justify-center p-0">
+              <img src={vSevaLogo} alt="vSeva" className="h-28 w-28 md:h-36 md:w-36 object-contain scale-[1.5]" />
             </div>
           </div>
           <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent mb-2">vSeva</h1>

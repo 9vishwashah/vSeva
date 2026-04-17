@@ -197,7 +197,7 @@ const NearbyDerasar: React.FC = () => {
         style={{ background: 'rgba(253,251,247,0.95)', backdropFilter: 'blur(12px)' }}
       >
         <a href="/" className="flex items-center gap-2 group">
-          <img src={vSevaLogo} alt="vSeva" className="h-9 w-9 object-contain drop-shadow-sm" />
+          <img src={vSevaLogo} alt="vSeva" className="h-9 w-9 object-contain drop-shadow-sm scale-[1.6] origin-left ml-2" />
           <span
             className="text-xl font-bold"
             style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
@@ -240,7 +240,7 @@ const NearbyDerasar: React.FC = () => {
           >
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
             <div className="flex items-center gap-3 mb-5">
-              <img src={vSevaLogo} alt="vSeva Finder" className="h-11 w-11 rounded-xl object-contain" />
+              <img src={vSevaLogo} alt="vSeva Finder" className="h-11 w-11 rounded-xl object-contain scale-[1.3]" />
               <div>
                 <h3 className="font-bold text-gray-900 text-base">Install vSeva Finder on iPhone</h3>
                 <p className="text-xs text-gray-500">3 quick steps to add to Home Screen</p>
@@ -565,7 +565,7 @@ const NearbyDerasar: React.FC = () => {
           <div className="flex flex-col items-center md:items-start flex-1">
              <div className="flex items-center gap-3 mb-4">
                 <div className="bg-white p-2 rounded-xl shadow-md">
-                   <img src={vSevaLogo} alt="vSeva Logo" className="w-7 h-7 object-contain" />
+                   <img src={vSevaLogo} alt="vSeva Logo" className="w-7 h-7 object-contain scale-[1.4]" />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Planning Vihar?</h2>
              </div>
@@ -604,7 +604,7 @@ const NearbyDerasar: React.FC = () => {
       <footer className="border-t border-gray-100 py-8 px-4 text-center mt-auto bg-white/50">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-5">
           <div className="flex items-center gap-2">
-            <img src={vSevaLogo} alt="vSeva" className="h-6 w-6 object-contain grayscale opacity-60" />
+            <img src={vSevaLogo} alt="vSeva" className="h-6 w-6 object-contain grayscale opacity-60 scale-[1.3]" />
             <span className="font-bold text-gray-400">vSeva</span>
           </div>
           
