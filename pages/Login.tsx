@@ -109,13 +109,28 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center px-4 pt-24 pb-24 relative">
-      <button
-        onClick={() => window.location.href = '/'}
-        className="absolute top-6 left-4 md:left-8 flex items-center gap-2 text-saffron-600 hover:text-white hover:bg-saffron-600 font-bold transition-all bg-white/100 backdrop-blur-sm px-5 py-2.5 rounded-full shadow-md border border-saffron-200 hover:-translate-y-0.5 z-50 group text-sm"
-      >
-        <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
-        <span>View More</span>
-      </button>
+      <div className="absolute top-6 left-4 md:left-8 flex gap-3 z-50">
+        <button
+          onClick={() => {
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+              window.open(window.location.origin, '_blank');
+            } else {
+              window.location.href = '/';
+            }
+          }}
+          className="flex items-center gap-2 text-saffron-600 hover:text-white hover:bg-saffron-600 font-bold transition-all bg-white/100 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-saffron-200 hover:-translate-y-0.5 group text-sm"
+        >
+          <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
+          <span>View More</span>
+        </button>
+        <button
+          onClick={() => window.location.href = '/nearby-derasar'}
+          className="flex items-center gap-2 text-saffron-600 hover:text-white hover:bg-saffron-600 font-bold transition-all bg-white/100 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-saffron-200 hover:-translate-y-0.5 group text-sm"
+        >
+          <i className="fas fa-map-marker-alt"></i>
+          <span>Find Derasar</span>
+        </button>
+      </div>
 
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6 z-10">
         <div className="text-center">

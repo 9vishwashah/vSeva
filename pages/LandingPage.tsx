@@ -52,7 +52,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
-                            <img src={vSevaLogo} alt="vSeva" className="h-10 w-10 object-contain scale-[1.7] origin-left" />
+                            <img src={vSevaLogo} alt="vSeva" className="h-10 w-10 object-contain scale-[1.7] origin-left" loading="lazy" decoding="async" />
                             <span className="font-serif font-bold text-2xl text-slate-800 ml-4">vSeva</span>
                         </div>
 
@@ -109,7 +109,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         <div className="flex justify-center mb-8">
                             <div className="flex items-center gap-4 animate-fade-in-up">
                                 <div className="rounded-3xl shadow-lg border border-saffron-100 overflow-hidden flex items-center justify-center p-0 bg-white">
-                                    <img src={vSevaLogoFull} alt="vSeva" className="h-40 w-40 md:h-56 md:w-56 object-cover" />
+                                    <img src={vSevaLogoFull} alt="vSeva" className="h-40 w-40 md:h-56 md:w-56 object-cover" fetchpriority="high" decoding="async" />
                                 </div>
                             </div>
                         </div>
@@ -506,7 +506,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <footer className="bg-white py-8 border-t border-slate-100">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-2 opacity-80">
-                        <img src={vSevaLogo} alt="vSeva" className="h-6 w-6 object-contain grayscale scale-[1.3]" />
+                        <img src={vSevaLogo} alt="vSeva" className="h-6 w-6 object-contain grayscale scale-[1.3]" loading="lazy" decoding="async" />
                         <span className="font-serif font-bold text-slate-700">vSeva</span>
                     </div>
                     <p className="text-slate-400 text-sm">Built with devotion & technology</p>

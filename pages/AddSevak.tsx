@@ -503,7 +503,7 @@ by VJAS`;
                           View More
                         </button>
                         <a
-                          href={`https://wa.me/${sevak.mobile}?text=${generateWhatsAppMessage(sevak)}`}
+                          href={`https://wa.me/91${sevak.mobile}?text=${generateWhatsAppMessage(sevak)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-11 flex-shrink-0 flex items-center justify-center bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-[12px] transition-colors border border-[#25D366]/20 focus:outline-none shadow-sm"

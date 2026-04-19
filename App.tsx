@@ -3,23 +3,24 @@ import { supabase } from './services/supabase';
 import { UserRole, UserProfile, ViharEntry } from './types';
 import { dataService } from './services/dataService';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import NewEntry from './pages/NewEntry';
-import AddSevak from './pages/AddSevak';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
-import PublicSevakProfile from './pages/PublicSevakProfile';
-
-import ManageRoutes from './pages/ManageRoutes';
-import ViewEntries from './pages/ViewEntries';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import ProfileSection from './components/ProfileSection';
-import Contacts from './pages/Contacts';
-import AdminContacts from './pages/AdminContacts';
-import ViewReports from './pages/ViewReports';
-import SubmitReport from './pages/SubmitReport';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal } from './services/oneSignalService';
-import NearbyDerasar from './pages/NearbyDerasar';
+
+// Lazy load the inner components to reduce initial JS bundle size
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const NewEntry = React.lazy(() => import('./pages/NewEntry'));
+const AddSevak = React.lazy(() => import('./pages/AddSevak'));
+const PublicSevakProfile = React.lazy(() => import('./pages/PublicSevakProfile'));
+const ManageRoutes = React.lazy(() => import('./pages/ManageRoutes'));
+const ViewEntries = React.lazy(() => import('./pages/ViewEntries'));
+const SuperAdminDashboard = React.lazy(() => import('./pages/SuperAdminDashboard'));
+const ProfileSection = React.lazy(() => import('./components/ProfileSection'));
+const Contacts = React.lazy(() => import('./pages/Contacts'));
+const AdminContacts = React.lazy(() => import('./pages/AdminContacts'));
+const ViewReports = React.lazy(() => import('./pages/ViewReports'));
+const SubmitReport = React.lazy(() => import('./pages/SubmitReport'));
+const NearbyDerasar = React.lazy(() => import('./pages/NearbyDerasar'));
 
 
 // Suppress XAxis/YAxis defaultProps warning from Recharts in React 18+
@@ -64,11 +65,32 @@ const App: React.FC = () => {
 
   // Check for public routes
   const path = window.location.pathname;
+  
   if (path.startsWith('/verify/')) {
-    return <PublicSevakProfile />;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-pulse font-bold text-saffron-600">Loading Profile...</div></div>}>
+        <PublicSevakProfile />
+      </React.Suspense>
+    );
   }
-  if (path === '/nearby-derasar') {
-    return <NearbyDerasar />;
+  
+  const seoDerasarRoutes = [
+    '/nearby-derasar',
+    '/jain-temple-navi-mumbai',
+    '/jain-temple-mumbai',
+    '/jain-temple-gujarat',
+    '/derasar-near-me',
+    '/jain-temple-india'
+  ];
+  
+  const normalizedPath = (path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path).toLowerCase();
+  
+  if (seoDerasarRoutes.includes(normalizedPath)) {
+    return (
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]"><div className="animate-pulse text-saffron-600 font-bold">Loading Finder...</div></div>}>
+        <NearbyDerasar />
+      </React.Suspense>
+    );
   }
   const isSuperAdmin = path === '/super-admin';
 
@@ -102,10 +124,6 @@ const App: React.FC = () => {
         }
       }
       setLoading(false);
-      // Dismiss the HTML splash screen with animation
-      if (typeof (window as any).hideSplash === 'function') {
-        (window as any).hideSplash();
-      }
     };
     checkSession();
   }, []);
@@ -145,7 +163,11 @@ const App: React.FC = () => {
       window.location.href = '/'; 
       return null;
     }
-    return <SuperAdminDashboard />;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-saffron-600"></div></div>}>
+        <SuperAdminDashboard />
+      </React.Suspense>
+    );
   }
 
   if (!user) {
@@ -165,86 +187,86 @@ const App: React.FC = () => {
   };
 
   return (
-    <>
-    <Layout
-      role={user.role}
-      userInitials={getInitials(user.full_name)}
-      onLogout={handleLogout}
-      currentPage={currentPage}
-      setCurrentPage={handleSetCurrentPage}
-    >
-      {/* Admin Routes */}
-      {currentPage === 'dashboard' && user.role === UserRole.ORG_ADMIN && (
-        <Dashboard currentUser={user} navigateToProfile={() => handleSetCurrentPage('profile')} />
-      )}
+    <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-saffron-600"></div></div>}>
+      <Layout
+        role={user.role}
+        userInitials={getInitials(user.full_name)}
+        onLogout={handleLogout}
+        currentPage={currentPage}
+        setCurrentPage={handleSetCurrentPage}
+      >
+        {/* Admin Routes */}
+        {currentPage === 'dashboard' && user.role === UserRole.ORG_ADMIN && (
+          <Dashboard currentUser={user} navigateToProfile={() => handleSetCurrentPage('profile')} />
+        )}
 
-      {currentPage === 'new-entry' && user.role === UserRole.ORG_ADMIN && (
-        <NewEntry
-          currentUser={user}
-          entry={editingEntry || undefined}
-          onCancel={() => {
-            setEditingEntry(null);
-            setCurrentPage(editingEntry ? 'view-entries' : 'dashboard');
-          }}
-          onSubmit={() => {
-            setEditingEntry(null);
-            setCurrentPage('dashboard');
-          }}
-        />
-      )}
+        {currentPage === 'new-entry' && user.role === UserRole.ORG_ADMIN && (
+          <NewEntry
+            currentUser={user}
+            entry={editingEntry || undefined}
+            onCancel={() => {
+              setEditingEntry(null);
+              setCurrentPage(editingEntry ? 'view-entries' : 'dashboard');
+            }}
+            onSubmit={() => {
+              setEditingEntry(null);
+              setCurrentPage('dashboard');
+            }}
+          />
+        )}
 
-      {currentPage === 'manage-routes' && user.role === UserRole.ORG_ADMIN && (
-        <ManageRoutes currentUser={user} />
-      )}
+        {currentPage === 'manage-routes' && user.role === UserRole.ORG_ADMIN && (
+          <ManageRoutes currentUser={user} />
+        )}
 
-      {currentPage === 'add-sevak' && user.role === UserRole.ORG_ADMIN && (
-        <AddSevak currentUser={user} />
-      )}
+        {currentPage === 'add-sevak' && user.role === UserRole.ORG_ADMIN && (
+          <AddSevak currentUser={user} />
+        )}
 
-      {/* Sevak Routes */}
-      {currentPage === 'analytics' && (
-        <Dashboard currentUser={user} navigateToProfile={() => handleSetCurrentPage('profile')} />
-      )}
-      {currentPage === 'view-entries' && user.role === UserRole.ORG_ADMIN && (
-        <ViewEntries currentUser={user} onEdit={handleEditEntry} />
-      )}
+        {/* Sevak Routes */}
+        {currentPage === 'analytics' && (
+          <Dashboard currentUser={user} navigateToProfile={() => handleSetCurrentPage('profile')} />
+        )}
+        {currentPage === 'view-entries' && user.role === UserRole.ORG_ADMIN && (
+          <ViewEntries currentUser={user} onEdit={handleEditEntry} />
+        )}
 
-      {currentPage === 'profile' && (
-        <ProfileSection
-          user={user}
-          orgName={orgName}
-          onProfileUpdated={async () => {
-            try {
-              const updated = await dataService.getProfile(user.id);
-              if (updated) setUser(updated);
-            } catch (e) {
-              console.warn('Could not refresh profile after update:', e);
-            }
-          }}
-        />
-      )}
+        {currentPage === 'profile' && (
+          <ProfileSection
+            user={user}
+            orgName={orgName}
+            onProfileUpdated={async () => {
+              try {
+                const updated = await dataService.getProfile(user.id);
+                if (updated) setUser(updated);
+              } catch (e) {
+                console.warn('Could not refresh profile after update:', e);
+              }
+            }}
+          />
+        )}
 
-      {currentPage === 'my-vihars' && (
-        <ViewEntries currentUser={user} onEdit={user.role === UserRole.ORG_ADMIN ? handleEditEntry : undefined} />
-      )}
+        {currentPage === 'my-vihars' && (
+          <ViewEntries currentUser={user} onEdit={user.role === UserRole.ORG_ADMIN ? handleEditEntry : undefined} />
+        )}
 
-      {currentPage === 'contacts' && user.role === UserRole.ORG_ADMIN && (
-        <AdminContacts currentUser={user} />
-      )}
+        {currentPage === 'contacts' && user.role === UserRole.ORG_ADMIN && (
+          <AdminContacts currentUser={user} />
+        )}
 
-      {currentPage === 'contacts' && user.role === UserRole.SEVAK && (
-        <Contacts currentUser={user} />
-      )}
+        {currentPage === 'contacts' && user.role === UserRole.SEVAK && (
+          <Contacts currentUser={user} />
+        )}
 
-      {currentPage === 'reports' && user.role === UserRole.ORG_ADMIN && (
-        <ViewReports currentUser={user} />
-      )}
+        {currentPage === 'reports' && user.role === UserRole.ORG_ADMIN && (
+          <ViewReports currentUser={user} />
+        )}
 
-      {currentPage === 'reports' && user.role === UserRole.SEVAK && (
-        <SubmitReport currentUser={user} />
-      )}
-    </Layout>
-    </>
+        {currentPage === 'reports' && user.role === UserRole.SEVAK && (
+          <SubmitReport currentUser={user} />
+        )}
+      </Layout>
+    </React.Suspense>
   );
 };
 

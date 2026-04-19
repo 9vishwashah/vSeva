@@ -93,8 +93,8 @@ export const dataService = {
     return data || [];
   },
 
-  async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string }>> {
-    const map: Record<string, { full_name: string; mobile: string; town: string }> = {};
+  async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string; state: string }>> {
+    const map: Record<string, { full_name: string; mobile: string; town: string; state: string }> = {};
     if (!orgIds || orgIds.length === 0) return map;
 
     try {
@@ -109,7 +109,8 @@ export const dataService = {
           map[p.organization_id] = {
             full_name: p.full_name,
             mobile: p.mobile,
-            town: p.town || ''
+            town: p.town || '',
+            state: p.state || ''
           };
         });
       } else {
