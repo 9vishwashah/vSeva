@@ -567,11 +567,12 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                                 <thead className="bg-gray-50 text-gray-500 text-[10px] uppercase font-bold tracking-wider">
                                     <tr>
                                         <th className="p-5 w-16">Org ID</th>
-                                        <th className="p-5">Joined</th>
                                         <th className="p-5">Group Name</th>
                                         <th className="p-5">Captain</th>
                                         <th className="p-5">Mobile</th>
-                                        <th className="p-5">City/Town</th>
+                                        <th className="p-5">Town</th>
+                                        <th className="p-5">City</th>
+                                        <th className="p-5">State</th>
                                         <th className="p-5 text-center">Sevaks</th>
                                         <th className="p-5 text-center">Vihars</th>
                                         <th className="p-5 text-right">Last Activity</th>
@@ -589,9 +590,6 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                                                         VS{index + 1}
                                                     </span>
                                                 </td>
-                                                <td className="p-5 text-sm text-gray-500 font-medium">
-                                                    {new Date(stat.created_at).toLocaleDateString()}
-                                                </td>
                                                 <td className="p-5 font-bold text-gray-900">
                                                     {stat.org_name}
                                                 </td>
@@ -602,7 +600,13 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                                                     {admin?.mobile || '-'}
                                                 </td>
                                                 <td className="p-5 text-sm text-gray-600">
-                                                    {stat.city}{admin?.town ? `, ${admin.town}` : ''}
+                                                    {admin?.town || '-'}
+                                                </td>
+                                                <td className="p-5 text-sm text-gray-600">
+                                                    {stat.city || '-'}
+                                                </td>
+                                                <td className="p-5 text-sm text-gray-600">
+                                                    {admin?.state || '-'}
                                                 </td>
                                                 <td className="p-5 text-center">
                                                     <span className="inline-block px-3 py-1 bg-saffron-50 text-saffron-700 text-xs font-bold rounded-lg border border-saffron-100">

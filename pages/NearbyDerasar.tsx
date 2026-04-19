@@ -2,10 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, MapPin, X, Navigation, Phone, Search, Map, Star, ArrowRight, Footprints, Download, Share2, Plus } from 'lucide-react';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
-}
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface Place {
   name: string;
@@ -38,13 +35,10 @@ const NearbyDerasar: React.FC = () => {
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState<number>(100000); // Default to Upto 100 KMs
 
-  // PWA Install state
-  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
-  const [isAndroidInstallable, setIsAndroidInstallable] = useState(false);
+  // PWA Install state from central hook
+  const { install, isAndroidInstallable, isIOS, isStandalone } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
   const [showDesktopTip, setShowDesktopTip] = useState(false);
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
 
   // ── Swap manifest to manifest-finder.json so PWA install from this page
   //    creates "vSeva Finder" app opening at /nearby-derasar ──
@@ -61,25 +55,15 @@ const NearbyDerasar: React.FC = () => {
       document.head.appendChild(link);
     }
 
-    // Capture beforeinstallprompt for Android
-    const handler = (e: Event) => {
-      e.preventDefault();
-      deferredPromptRef.current = e as BeforeInstallPromptEvent;
-      setIsAndroidInstallable(true);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-
     return () => {
       // Restore original manifest when leaving the page
       if (existingLink && originalHref) existingLink.setAttribute('href', originalHref);
-      window.removeEventListener('beforeinstallprompt', handler);
     };
   }, []);
 
   const handleInstall = async () => {
-    if (isAndroidInstallable && deferredPromptRef.current) {
-      deferredPromptRef.current.prompt();
-      await deferredPromptRef.current.userChoice;
+    if (isAndroidInstallable) {
+      await install();
     } else if (isIOS) {
       setShowIOSGuide(true);
     } else {
@@ -90,7 +74,55 @@ const NearbyDerasar: React.FC = () => {
 
   // Set page title & meta for SEO
   useEffect(() => {
-    document.title = 'Nearby Jain Derasar / Tirths | Find Temples Near You – vSeva';
+    const rawPath = window.location.pathname;
+    const path = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
+
+    let title = 'Nearby Jain Derasar / Tirths | Find Temples Near You – vSeva';
+    let description = 'Find Jain Derasar near your current location instantly. Discover nearby temples, get directions, and plan your visit easily with vSeva.';
+    let keywords = 'Jain Derasar near me, Jain Temple near me, Jain Tirth finder';
+    let h1Prefix = 'Find';
+    let h1Highlight = 'Jain Derasar / Tirths';
+    let h1Suffix = 'Near You';
+    
+    // Simple dynamic routing logic for SEO pages
+    if (path === '/jain-temple-navi-mumbai') {
+      title = 'Jain Temples in Navi Mumbai | Find Derasar Near You - vSeva';
+      description = 'Easily locate Jain Temples and Derasars across Navi Mumbai with live GPS tracking and directions.';
+      keywords = 'Jain Temple Navi Mumbai, Derasar in Navi Mumbai, Jain Tirth Navi Mumbai';
+      h1Prefix = 'Find';
+      h1Highlight = 'Jain Temples';
+      h1Suffix = 'in Navi Mumbai';
+    } else if (path === '/jain-temple-mumbai') {
+      title = 'Jain Temples in Mumbai | GPS Derasar Locator - vSeva';
+      description = 'Find Jain Derasars in Mumbai. Get exact directions, contact details, and distance for all Jain Temples across Mumbai.';
+      keywords = 'Jain Temple Mumbai, Derasar Mumbai, Jain Mandir in Mumbai';
+      h1Prefix = 'Discover';
+      h1Highlight = 'Jain Temples';
+      h1Suffix = 'in Mumbai';
+    } else if (path === '/jain-temple-gujarat') {
+      title = 'Jain Temples in Gujarat | Find Tirths & Derasars - vSeva';
+      description = 'Planning a Tirth Yatra? Find Jain Temples across Gujarat easily with vSeva GPS Derasar Locator.';
+      keywords = 'Jain Temple Gujarat, Derasar in Gujarat, Gujarat Jain Tirth';
+      h1Prefix = 'Locate';
+      h1Highlight = 'Jain Temples';
+      h1Suffix = 'in Gujarat';
+    } else if (path === '/derasar-near-me') {
+      title = 'Jain Derasar Near Me | GPS Temple Locator - vSeva';
+      description = 'Instantly find the closest Jain Derasar near your current location. Get live GPS directions and distance instantly.';
+      keywords = 'Derasar near me, Jain Mandir near me, Jain Temple near me';
+      h1Prefix = 'Closest';
+      h1Highlight = 'Jain Derasar';
+      h1Suffix = 'Near Me';
+    } else if (path === '/jain-temple-india') {
+      title = 'Jain Temples in India | vSeva Derasar Locator';
+      description = 'Locate thousands of Jain Temples and Tirths across India. Navigate easily with vSeva GPS locator.';
+      keywords = 'Jain Temples India, Jain Tirth in India, India Jain Mandir';
+      h1Prefix = 'Explore';
+      h1Highlight = 'Jain Temples';
+      h1Suffix = 'in India';
+    }
+
+    document.title = title;
     
     const setMeta = (name: string, content: string, isProperty = false) => {
       let meta = document.querySelector(`meta[${isProperty ? 'property' : 'name'}="${name}"]`);
@@ -102,12 +134,46 @@ const NearbyDerasar: React.FC = () => {
       meta.setAttribute('content', content);
     };
 
-    setMeta('description', 'Find Jain Derasar near your current location instantly. Discover nearby temples, get directions, and plan your visit easily with vSeva.');
-    setMeta('og:title', 'Find Nearby Jain Derasar Instantly 🙏', true);
-    setMeta('og:description', 'Discover Jain temples near your location with live directions. Simple, fast, and useful for every Jain.', true);
+    setMeta('description', description);
+    setMeta('keywords', keywords);
+    setMeta('og:title', title, true);
+    setMeta('og:description', description, true);
     setMeta('og:image', 'https://vseva.vjas.in/derasar-preview.png', true);
-    setMeta('og:url', 'https://vseva.vjas.in/nearby-derasar', true);
+    setMeta('og:url', `https://vseva.vjas.in${path}`, true);
     setMeta('og:type', 'website', true);
+
+    // Dynamic FAQ Data
+    const faqData = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": `How to find a ${h1Highlight.toLowerCase()} near me?`,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": `You can use the vSeva GPS locator to instantly find ${h1Highlight.toLowerCase()} near your current location with one-tap directions.`
+          }
+        },
+        {
+          "@type": "Question",
+          "name": `Can I get directions to ${h1Highlight.toLowerCase()}?`,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": `Yes, vSeva integrates with Google Maps to provide accurate, live directions to any nearby Jain Derasar.`
+          }
+        }
+      ]
+    };
+
+    let faqScript = document.querySelector('script[type="application/ld+json"]#faq-jsonld');
+    if (!faqScript) {
+      faqScript = document.createElement('script');
+      faqScript.setAttribute('type', 'application/ld+json');
+      faqScript.id = 'faq-jsonld';
+      document.head.appendChild(faqScript);
+    }
+    faqScript.textContent = JSON.stringify(faqData);
 
     let script = document.querySelector('script[type="application/ld+json"]#derasar-jsonld');
     if (!script) {
@@ -119,10 +185,10 @@ const NearbyDerasar: React.FC = () => {
     script.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "Nearby Jain Derasar Finder",
-      "url": "https://vseva.vjas.in/nearby-derasar",
+      "name": title,
+      "url": `https://vseva.vjas.in${path}`,
       "applicationCategory": "TravelApplication",
-      "description": "Find Jain Derasar near your current location with directions and details.",
+      "description": description,
       "creator": {
         "@type": "Organization",
         "name": "vSeva"
@@ -287,12 +353,38 @@ const NearbyDerasar: React.FC = () => {
 
           <h1 className="text-[22px] sm:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-3">
             <span className="inline-block whitespace-nowrap">
-              Find{' '}
+              {(() => {
+                const rawPath = window.location.pathname;
+                const path = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
+                if (path === '/jain-temple-navi-mumbai') return 'Find ';
+                if (path === '/jain-temple-mumbai') return 'Discover ';
+                if (path === '/jain-temple-gujarat') return 'Locate ';
+                if (path === '/derasar-near-me') return 'Closest ';
+                if (path === '/jain-temple-india') return 'Explore ';
+                return 'Find ';
+              })()}
               <span style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Jain Derasar / Tirths
+                {(() => {
+                  const rawPath = window.location.pathname;
+                  const path = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
+                  if (path === '/derasar-near-me') return 'Jain Derasar';
+                  if (path.includes('jain-temple')) return 'Jain Temples';
+                  return 'Jain Derasar / Tirths';
+                })()}
               </span>
             </span>{' '}
-            <span className="inline-block whitespace-nowrap">Near You</span>
+            <span className="inline-block whitespace-nowrap">
+              {(() => {
+                const rawPath = window.location.pathname;
+                const path = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
+                if (path === '/jain-temple-navi-mumbai') return 'in Navi Mumbai';
+                if (path === '/jain-temple-mumbai') return 'in Mumbai';
+                if (path === '/jain-temple-gujarat') return 'in Gujarat';
+                if (path === '/derasar-near-me') return 'Near Me';
+                if (path === '/jain-temple-india') return 'in India';
+                return 'Near You';
+              })()}
+            </span>
           </h1>
           <p className="text-gray-500 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Locate the nearest Jain temples in seconds with directions and contact info, up to <span className="font-extrabold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md shadow-sm">100 KM</span>.
@@ -596,6 +688,41 @@ const NearbyDerasar: React.FC = () => {
               Start Your Seva Journey <ArrowRight size={16} className="text-orange-500" />
             </a>
             <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest">Join the Community</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ Section (SEO) ── */}
+      <section className="px-4 sm:px-6 py-12 max-w-3xl mx-auto w-full">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Frequently Asked Questions</h2>
+        <div className="space-y-4">
+          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+            <h3 className="font-bold text-gray-800 mb-2">How to find a Jain temple near me?</h3>
+            <p className="text-gray-600 text-sm">Use vSeva's Derasar Locator to instantly locate nearby Jain Derasars and Tirths using your device's GPS. Simply tap 'Find Derasar' to see a list of temples sorted by distance.</p>
+          </div>
+          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+            <h3 className="font-bold text-gray-800 mb-2">
+              {(() => {
+                const rawPath = window.location.pathname;
+                const path = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
+                if (path === '/jain-temple-navi-mumbai') return 'Can I find Jain temples in Navi Mumbai?';
+                if (path === '/jain-temple-mumbai') return 'Can I find Jain temples in Mumbai?';
+                if (path === '/jain-temple-gujarat') return 'Can I find Jain temples in Gujarat?';
+                if (path === '/jain-temple-india') return 'Can I find Jain temples in India?';
+                return 'Can I get directions to nearby Jain temples?';
+              })()}
+            </h3>
+            <p className="text-gray-600 text-sm">
+              {(() => {
+                const rawPath = window.location.pathname;
+                const path = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
+                if (path === '/jain-temple-navi-mumbai') return 'Yes, vSeva helps you find Jain Mandir in Navi Mumbai and nearby areas up to a 100km radius.';
+                if (path === '/jain-temple-mumbai') return 'Yes, vSeva helps you find Jain Mandir in Mumbai and nearby areas up to a 100km radius.';
+                if (path === '/jain-temple-gujarat') return 'Yes, vSeva helps you find Jain Mandir across Gujarat and nearby areas up to a 100km radius.';
+                if (path === '/jain-temple-india') return 'Yes, vSeva helps you find Jain Mandir across India up to a 100km radius from your location.';
+                return 'Yes, simply click the Directions button to open Google Maps for accurate live navigation to the Derasar.';
+              })()}
+            </p>
           </div>
         </div>
       </section>

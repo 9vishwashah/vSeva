@@ -24,23 +24,41 @@ export const usePWAInstall = () => {
             return;
         }
 
+        // Check if event already fired and was captured globally
+        const globalPrompt = (window as any).deferredPWAPrompt;
+        if (globalPrompt) {
+            setDeferredPrompt(globalPrompt);
+            setIsAndroidInstallable(true);
+        }
+
         const handler = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e as BeforeInstallPromptEvent);
             setIsAndroidInstallable(true);
         };
 
+        const globalReadyHandler = () => {
+            const prompt = (window as any).deferredPWAPrompt;
+            if (prompt) {
+                setDeferredPrompt(prompt);
+                setIsAndroidInstallable(true);
+            }
+        };
+
         window.addEventListener('beforeinstallprompt', handler);
+        window.addEventListener('pwa-prompt-ready', globalReadyHandler);
 
         // Fires when installed via the prompt
         window.addEventListener('appinstalled', () => {
             setIsAppInstalled(true);
             setIsAndroidInstallable(false);
             setDeferredPrompt(null);
+            (window as any).deferredPWAPrompt = null;
         });
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handler);
+            window.removeEventListener('pwa-prompt-ready', globalReadyHandler);
         };
     }, []);
 
