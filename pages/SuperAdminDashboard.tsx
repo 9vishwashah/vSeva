@@ -576,6 +576,7 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                                         <th className="p-5 text-center">Sevaks</th>
                                         <th className="p-5 text-center">Vihars</th>
                                         <th className="p-5 text-right">Last Activity</th>
+                                        <th className="p-5 text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -623,11 +624,28 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                                                         <span className="text-gray-300 italic">No activity</span>
                                                     )}
                                                 </td>
+                                                <td className="p-5 text-center">
+                                                    {admin?.mobile && (
+                                                        <button
+                                                            onClick={() => {
+                                                                const captainName = admin.full_name || 'Captain';
+                                                                const lastActivityDate = stat.last_updated ? new Date(stat.last_updated).toLocaleDateString() : 'None';
+                                                                const message = `Pranam ${captainName} 🙏\n\nApka Last Captain Profile Activity ${lastActivityDate} hai \n\nKindly Add Vihar Entries or Add Sevaks\nIf any issue kindly contact`;
+                                                                const waLink = `https://wa.me/91${admin.mobile}?text=${encodeURIComponent(message)}`;
+                                                                window.open(waLink, '_blank');
+                                                            }}
+                                                            className="inline-flex items-center justify-center p-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl shadow-sm transition-all active:scale-95"
+                                                            title="Send WhatsApp Reminder"
+                                                        >
+                                                            <MessageCircle size={16} />
+                                                        </button>
+                                                    )}
+                                                </td>
                                             </tr>
                                         );
                                     }) : (
                                         <tr>
-                                            <td colSpan={9} className="p-20 text-center">
+                                            <td colSpan={10} className="p-20 text-center">
                                                 {statsLoading ? (
                                                     <div className="flex flex-col items-center gap-3">
                                                         <Loader2 className="animate-spin text-blue-600" size={32} />
