@@ -129,10 +129,10 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
           )}
 
           {/* Content Container */}
-          <div className="flex-1 flex flex-col p-6 z-10 relative h-full">
+          <div className="flex-1 flex flex-col p-5 z-10 relative h-full">
 
             {/* 1. Header (Identity) */}
-            <div className="flex flex-col items-center text-center mt-2 mb-4 relative z-20">
+            <div className="flex flex-col items-center text-center mt-1 mb-3 relative z-20">
               
               {/* Central Logo / Initials */}
               <div className="relative mb-3">
@@ -156,11 +156,11 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
                     {orgName}
                   </h1>
                   {orgCity && (
-                     <div className="mt-1 mb-1.5 inline-flex items-center gap-1.5 px-3 py-1 bg-white/40 border border-orange-200 shadow-sm rounded-full">
-                       <span className="text-[10px] font-bold text-orange-800 tracking-wide">{orgCity}</span>
+                     <div className="mt-1 mb-1.5 inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-saffron-500 to-orange-500 shadow-md rounded-full border border-orange-400">
+                       <span className="text-[11px] font-bold text-white tracking-wider uppercase drop-shadow-sm">{orgCity}</span>
                      </div>
                   )}
-                  <p className="text-xs font-medium text-orange-700/70">by {userName}</p>
+                  <p className="text-[11px] font-bold text-orange-800/90 tracking-widest uppercase mt-0.5">Captain {userName}</p>
                 </>
               ) : (
                 <>
@@ -173,84 +173,108 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
             </div>
 
             {/* 2. Achievement Highlights (Hero Section) */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-2 mb-3">
               {/* Stat Tile 1 */}
-              <div className={`rounded-2xl p-4 flex flex-col items-center justify-center border shadow-sm relative overflow-hidden group/tile ${isAdmin ? 'bg-white/50 border-orange-200' : 'bg-white border-orange-100'}`}>
-                <MapPin size={20} className={`mb-2 opacity-80 stroke-[2] ${isAdmin ? 'text-saffron-600' : 'text-saffron-500'}`} />
-                {loading ? <SkeletonValue width="w-12" /> : <span className="text-2xl font-bold font-sans text-gray-800">{stats.totalKm} <span className="text-sm font-medium text-gray-400">km</span></span>}
-                <span className="text-[9px] font-bold uppercase tracking-wider mt-1 text-gray-900">Total Distance</span>
+              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white/80 backdrop-blur-md border border-orange-200 shadow-[0_4px_12px_-2px_rgba(234,88,12,0.15)]">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center mb-1.5 shadow-inner border border-orange-200/50">
+                  <MapPin size={16} className="stroke-[2.5] text-orange-500 drop-shadow-sm" />
+                </div>
+                {loading ? <SkeletonValue width="w-12" /> : <span className="text-xl font-black font-sans text-gray-800 tracking-tight leading-none">{stats.totalKm} <span className="text-[10px] font-bold text-gray-500 uppercase">km</span></span>}
+                <span className="text-[8px] font-bold uppercase tracking-widest mt-1 text-gray-800">Total Distance</span>
               </div>
 
               {/* Stat Tile 2 */}
-              <div className={`rounded-2xl p-4 flex flex-col items-center justify-center border shadow-sm relative overflow-hidden group/tile ${isAdmin ? 'bg-white/50 border-orange-200' : 'bg-white border-orange-100'}`}>
-                <div className="flex space-x-0.5 mb-2 opacity-80 text-blue-500">
-                  <MapPin size={16} className="stroke-[2]" />
+              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white/80 backdrop-blur-md border border-blue-200 shadow-[0_4px_12px_-2px_rgba(59,130,246,0.15)]">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center mb-1.5 shadow-inner border border-blue-200/50">
+                  <Footprints size={16} className="stroke-[2.5] text-blue-500 drop-shadow-sm" />
                 </div>
-                {loading ? <SkeletonValue width="w-8" /> : <span className="text-2xl font-bold font-sans text-gray-800">{stats.totalVihars}</span>}
-                <span className="text-[9px] font-bold uppercase tracking-wider mt-1 text-gray-900">Total Vihars</span>
+                {loading ? <SkeletonValue width="w-8" /> : <span className="text-xl font-black font-sans text-gray-800 tracking-tight leading-none">{stats.totalVihars}</span>}
+                <span className="text-[8px] font-bold uppercase tracking-widest mt-1 text-gray-800">Total Vihars</span>
               </div>
 
               {/* Stat Tile 3 */}
-              <div className={`rounded-2xl p-4 flex flex-col items-center justify-center border shadow-sm relative overflow-hidden group/tile ${isAdmin ? 'bg-white/50 border-orange-200' : 'bg-white border-orange-100'}`}>
-                <Users size={20} className="mb-2 opacity-80 stroke-[2] text-red-500" />
-                {loading ? <SkeletonValue width="w-8" /> : <span className="text-2xl font-bold font-sans text-gray-800">{stats.totalSadhu}</span>}
-                <span className="text-[9px] font-bold uppercase tracking-wider mt-1 text-gray-900">Sadhubhagwant</span>
+              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white/80 backdrop-blur-md border border-red-200 shadow-[0_4px_12px_-2px_rgba(239,68,68,0.15)]">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-100 to-red-50 flex items-center justify-center mb-1.5 shadow-inner border border-red-200/50">
+                  <Users size={16} className="stroke-[2.5] text-red-500 drop-shadow-sm" />
+                </div>
+                {loading ? <SkeletonValue width="w-8" /> : <span className="text-xl font-black font-sans text-gray-800 tracking-tight leading-none">{stats.totalSadhu}</span>}
+                <span className="text-[8px] font-bold uppercase tracking-widest mt-1 text-gray-800">Sadhubhagwant</span>
               </div>
 
               {/* Stat Tile 4 */}
-              <div className={`rounded-2xl p-4 flex flex-col items-center justify-center border shadow-sm relative overflow-hidden group/tile ${isAdmin ? 'bg-white/50 border-orange-200' : 'bg-white border-orange-100'}`}>
-                <Users size={20} className="mb-2 opacity-80 stroke-[2] text-pink-500" />
-                {loading ? <SkeletonValue width="w-8" /> : <span className="text-2xl font-bold font-sans text-gray-800">{stats.totalSadhvi}</span>}
-                <span className="text-[9px] font-bold uppercase tracking-wider mt-1 text-gray-900">Sadhvijibhagwant</span>
+              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white/80 backdrop-blur-md border border-pink-200 shadow-[0_4px_12px_-2px_rgba(236,72,153,0.15)]">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-100 to-pink-50 flex items-center justify-center mb-1.5 shadow-inner border border-pink-200/50">
+                  <Users size={16} className="stroke-[2.5] text-pink-500 drop-shadow-sm" />
+                </div>
+                {loading ? <SkeletonValue width="w-8" /> : <span className="text-xl font-black font-sans text-gray-800 tracking-tight leading-none">{stats.totalSadhvi}</span>}
+                <span className="text-[8px] font-bold uppercase tracking-widest mt-1 text-gray-800">Sadhvijibhagwant</span>
               </div>
             </div>
 
             {/* 3. Recognition Section */}
-            <div className={`backdrop-blur-sm rounded-2xl p-4 mb-auto border relative shadow-sm ${isAdmin ? 'bg-white/50 border-orange-200' : 'bg-white/60 border-orange-100'}`}>
-              <div className={`absolute top-0 left-0 w-1 h-full rounded-l-2xl ${isAdmin ? 'bg-yellow-400' : 'bg-saffron-400'}`}></div>
-
+            <div className={`backdrop-blur-md rounded-2xl p-3 mb-auto border shadow-sm ${isAdmin ? 'bg-white/80 border-gray-100' : 'bg-white/80 border-gray-100'}`}>
               {isAdmin ? (
-                /* Admin: Show top hero sevak and sevika instead of vSynergy */
+                /* Admin: Show top hero sevak and sevika */
                 <div className="flex flex-col gap-3">
                   {/* Top Sevak */}
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Trophy size={14} className="text-yellow-600" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-700">Top Sevak</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                        <Trophy size={16} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Top Sevak</span>
+                        {loading ? <SkeletonValue width="w-24" /> : topSevak ? (
+                          <span className="text-sm font-bold text-gray-800 leading-tight truncate max-w-[110px]">{topSevak.name}</span>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">N/A</span>
+                        )}
+                      </div>
                     </div>
-                    {loading ? <SkeletonValue width="w-32" /> : topSevak ? (
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-bold text-gray-900 leading-tight break-words">{topSevak.name}</span>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs font-bold text-gray-600">{topSevak.count} <span className="text-[9px] text-gray-400 uppercase font-bold">Vihars</span></span>
-                          <div className="h-3 w-[1px] bg-orange-200"></div>
-                          <span className="text-xs font-bold text-gray-600">{topSevak.km} <span className="text-[9px] text-gray-400 uppercase font-bold">km</span></span>
+                    {topSevak && (
+                      <div className="flex items-center gap-2 bg-gray-50 px-2 py-1.5 rounded-lg border border-gray-100">
+                        <div className="flex flex-col items-center">
+                           <span className="text-xs font-bold text-gray-800 leading-none">{topSevak.count}</span>
+                           <span className="text-[7px] text-gray-400 uppercase font-bold mt-0.5">Vihars</span>
+                        </div>
+                        <div className="h-5 w-[1px] bg-gray-200"></div>
+                        <div className="flex flex-col items-center min-w-[32px]">
+                           <span className="text-xs font-bold text-gray-800 leading-none">{topSevak.km}</span>
+                           <span className="text-[7px] text-gray-400 uppercase font-bold mt-0.5">Km</span>
                         </div>
                       </div>
-                    ) : (
-                      <span className="text-sm text-gray-400 italic">No male sevak data yet</span>
                     )}
                   </div>
 
-                  <div className="h-[1px] w-full bg-orange-100"></div>
+                  <div className="h-[1px] w-full bg-gray-100"></div>
 
                   {/* Top Sevika */}
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Trophy size={14} className="text-pink-600" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-pink-700">Top Sevika</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-pink-50 text-pink-500 flex items-center justify-center shrink-0">
+                        <Trophy size={16} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Top Sevika</span>
+                        {loading ? <SkeletonValue width="w-24" /> : topSevika ? (
+                          <span className="text-sm font-bold text-gray-800 leading-tight truncate max-w-[110px]">{topSevika.name}</span>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">N/A</span>
+                        )}
+                      </div>
                     </div>
-                    {loading ? <SkeletonValue width="w-32" /> : topSevika ? (
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-bold text-gray-900 leading-tight break-words">{topSevika.name}</span>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs font-bold text-gray-600">{topSevika.count} <span className="text-[9px] text-gray-400 uppercase font-bold">Vihars</span></span>
-                          <div className="h-3 w-[1px] bg-orange-200"></div>
-                          <span className="text-xs font-bold text-gray-600">{topSevika.km} <span className="text-[9px] text-gray-400 uppercase font-bold">km</span></span>
+                    {topSevika && (
+                      <div className="flex items-center gap-2 bg-gray-50 px-2 py-1.5 rounded-lg border border-gray-100">
+                        <div className="flex flex-col items-center">
+                           <span className="text-xs font-bold text-gray-800 leading-none">{topSevika.count}</span>
+                           <span className="text-[7px] text-gray-400 uppercase font-bold mt-0.5">Vihars</span>
+                        </div>
+                        <div className="h-5 w-[1px] bg-gray-200"></div>
+                        <div className="flex flex-col items-center min-w-[32px]">
+                           <span className="text-xs font-bold text-gray-800 leading-none">{topSevika.km}</span>
+                           <span className="text-[7px] text-gray-400 uppercase font-bold mt-0.5">Km</span>
                         </div>
                       </div>
-                    ) : (
-                      <span className="text-sm text-gray-400 italic">No female sevak data yet</span>
                     )}
                   </div>
                 </div>
@@ -295,14 +319,14 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
             </div>
 
             {/* 4. Inspirational Footer & Bottom Logos */}
-            <div className={`mt-4 text-center pb-2 ${isAdmin ? 'mt-auto' : ''} relative z-20`}>
-              <div className={`w-8 h-[1px] mx-auto mb-3 ${isAdmin ? 'bg-white/20' : 'bg-gray-200'}`}></div>
+            <div className={`mt-auto text-center pb-1 relative z-20`}>
+              <div className={`w-8 h-[1px] mx-auto mb-2 ${isAdmin ? 'bg-white/20' : 'bg-gray-200'}`}></div>
 
-              <div className="flex flex-col items-center justify-center gap-1 mt-3 pb-2 relative">
+              <div className="flex flex-col items-center justify-center gap-1 mt-2 pb-1 relative">
                 
                 {/* Bottom-Left vSeva Logo */}
                 <div className="absolute -bottom-2 -left-3 z-20 opacity-90">
-                  <img src={vSevaLogo} alt="vSeva Logo" className="h-[80px] w-[80px] object-contain drop-shadow-sm" />
+                  <img src={vSevaLogo} alt="vSeva Logo" className="h-[70px] w-[70px] object-contain drop-shadow-sm" />
                 </div>
 
                 <div className="flex items-center gap-2">
