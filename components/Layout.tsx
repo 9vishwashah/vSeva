@@ -2,31 +2,23 @@ import React from 'react';
 import { UserRole } from '../types';
 import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert } from 'lucide-react';
 
-
 import NotificationBell from './NotificationBell';
-import { supabase } from '../services/supabase';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 
 interface LayoutProps {
   children: React.ReactNode;
   role: UserRole;
   userInitials: string;
+  userId?: string;
   onLogout: () => void;
   currentPage: string;
   setCurrentPage: (page: string) => void;
 }
 
 const Layout: React.FC<LayoutProps> = ({
-  children, role, userInitials, onLogout, currentPage, setCurrentPage
+  children, role, userInitials, userId, onLogout, currentPage, setCurrentPage
 }) => {
-  const [currentUserId, setCurrentUserId] = React.useState<string | undefined>(undefined);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setCurrentUserId(data.user?.id);
-    });
-  }, []);
 
   const NavItem = ({ page, icon: Icon, label }: { page: string, icon: any, label: string }) => (
     <button
@@ -98,7 +90,7 @@ const Layout: React.FC<LayoutProps> = ({
                 <p className="text-xs text-gray-400 capitalize">{role.replace('_', ' ').toLowerCase()}</p>
               </div>
             </div>
-            <NotificationBell userId={currentUserId} />
+            <NotificationBell userId={userId} />
           </div>
           <button
             onClick={onLogout}
@@ -126,7 +118,7 @@ const Layout: React.FC<LayoutProps> = ({
             <h1 className="text-xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
           </div>
           <div className="flex items-center gap-3 relative">
-            <NotificationBell userId={currentUserId} />
+            <NotificationBell userId={userId} />
             <button
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               className="w-8 h-8 rounded-full bg-saffron-100 text-saffron-600 flex items-center justify-center font-bold text-sm border border-saffron-200"
@@ -150,15 +142,7 @@ const Layout: React.FC<LayoutProps> = ({
                       <span>Contacts</span>
                     </button>
                   )}
-                  {role === UserRole.ORG_ADMIN && (
-                    <button
-                      onClick={() => { setCurrentPage('reports'); setIsProfileMenuOpen(false); }}
-                      className="w-full text-left px-4 py-3 hover:bg-saffron-50 text-saffron-600 flex items-center gap-2 text-sm font-medium transition-colors border-b border-gray-50"
-                    >
-                      <ShieldAlert size={16} />
-                      <span>Reports</span>
-                    </button>
-                  )}
+
                   <button
                     onClick={onLogout}
                     className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-500 flex items-center gap-2 text-sm font-medium transition-colors"

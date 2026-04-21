@@ -5,7 +5,9 @@ import { dataService } from './services/dataService';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
+import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal } from './services/oneSignalService';
+import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
 
 // Lazy load the inner components to reduce initial JS bundle size
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -42,9 +44,21 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
   const [editingEntry, setEditingEntry] = useState<ViharEntry | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   // Show landing page only if NOT in standalone mode (PWA) and not on /login
   const isLoginRoute = window.location.pathname === '/login';
   const [showLanding, setShowLanding] = useState(!isStandalone && !isLoginRoute);
+
+  // Check if onboarding should be shown for a given role
+  const shouldShowOnboarding = (role: UserRole): boolean => {
+    const key = `vseva_onboarding_done_${role}`;
+    return !localStorage.getItem(key);
+  };
+
+  const markOnboardingDone = (role: UserRole) => {
+    localStorage.setItem(`vseva_onboarding_done_${role}`, '1');
+    setShowOnboarding(false);
+  };
 
   useEffect(() => {
     initOneSignal();
@@ -109,6 +123,8 @@ const App: React.FC = () => {
             loginToOneSignal(profile.username);
             // Redirect based on role if at root
             setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
+            // Show onboarding walkthrough on first-ever session resume too
+            if (shouldShowOnboarding(profile.role)) setShowOnboarding(true);
             // Track app open time (fire-and-forget)
             supabase
               .from('profiles')
@@ -133,6 +149,8 @@ const App: React.FC = () => {
     setShowLanding(false);
     loginToOneSignal(profile.username);
     setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
+    // Show onboarding walkthrough on first login
+    if (shouldShowOnboarding(profile.role)) setShowOnboarding(true);
     // Also fetch org name so it appears correctly in profile page
     try {
       const org = await dataService.getOrganization(profile.organization_id);
@@ -151,8 +169,14 @@ const App: React.FC = () => {
     if (!isStandalone) setShowLanding(true);
   };
 
-  // While loading, let the HTML splash screen show — return null to avoid flicker
-  if (loading) return null;
+  // While loading, show a white splash screen with the logo
+  if (loading) return (
+    <div style={{ position: 'fixed', inset: 0, background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+      <img src={vSevaLogo} alt="vSeva" style={{ width: 96, height: 96, objectFit: 'contain' }} />
+      <div style={{ marginTop: 20, width: 36, height: 36, borderRadius: '50%', border: '3px solid #f97316', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   // Route: Super Admin (Protected)
   if (isSuperAdmin) {
@@ -187,10 +211,17 @@ const App: React.FC = () => {
   };
 
   return (
-    <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-saffron-600"></div></div>}>
+    <React.Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #f97316', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} /></div>}>
+      {showOnboarding && user && (
+        <OnboardingWalkthrough
+          role={user.role}
+          onDone={() => markOnboardingDone(user.role)}
+        />
+      )}
       <Layout
         role={user.role}
         userInitials={getInitials(user.full_name)}
+        userId={user.id}
         onLogout={handleLogout}
         currentPage={currentPage}
         setCurrentPage={handleSetCurrentPage}
