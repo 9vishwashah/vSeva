@@ -9,7 +9,7 @@ export const dataService = {
   async getProfile(userId: string): Promise<UserProfile | null> {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at')
       .eq('id', userId)
       .single();
 
@@ -45,7 +45,7 @@ export const dataService = {
   async getOrganization(orgId: string): Promise<Organization | null> {
     const { data, error } = await supabase
       .from('organizations')
-      .select('*')
+      .select('id, name, city, created_by')
       .eq('id', orgId)
       .single();
 
@@ -59,7 +59,7 @@ export const dataService = {
   async getOrgSevaks(orgId: string): Promise<UserProfile[]> {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at')
       .eq('organization_id', orgId)
       .eq('role', 'sevak')
       .eq('is_active', true);
@@ -553,7 +553,7 @@ export const dataService = {
   async getEntries(orgId: string): Promise<ViharEntry[]> {
     const { data, error } = await supabase
       .from('vihar_entries')
-      .select('*')
+      .select('id, organization_id, created_by, vihar_date, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, vihar_from, vihar_to, sevaks, notes, wheelchair, distance_km, haversine_km, vihar_type, samuday, created_at')
       .eq('organization_id', orgId)
       .order('vihar_date', { ascending: false });
 

@@ -26,16 +26,54 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
     if (!cardRef.current || loading || isGenerating) return;
     setIsGenerating(platform);
 
+    // Keep reference outside try so catch can clean up
+    let offscreen: HTMLDivElement | null = null;
+
     try {
-      // Small delay to ensure styles render and fonts load
+      // Wait for fonts and images to fully load
+      await new Promise(r => setTimeout(r, 300));
+
+      // Clone the card into an off-screen container so scroll position
+      // and viewport clipping don't affect the captured output
+      const original = cardRef.current;
+      const clone = original.cloneNode(true) as HTMLElement;
+
+      offscreen = document.createElement('div');
+      offscreen.setAttribute('data-capture-offscreen', 'true');
+      offscreen.style.position = 'fixed';
+      offscreen.style.top = '0';
+      offscreen.style.left = '-9999px';
+      offscreen.style.width = '360px';
+      offscreen.style.height = 'auto';
+      offscreen.style.minHeight = '700px';
+      offscreen.style.zIndex = '-1';
+      offscreen.style.overflow = 'visible';
+      offscreen.style.pointerEvents = 'none';
+      offscreen.appendChild(clone);
+      document.body.appendChild(offscreen);
+
+      // Let the clone paint
       await new Promise(r => setTimeout(r, 100));
 
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 3, // High resolution for clear text
+      // Measure the actual rendered height of the card clone
+      const cardHeight = clone.scrollHeight || clone.offsetHeight || 700;
+
+      const canvas = await html2canvas(clone, {
+        scale: 3,
         useCORS: true,
-        backgroundColor: null, // Transparent to capture rounded corners if needed, though card has its own bg
-        logging: false
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+        width: 360,
+        height: cardHeight,
+        windowWidth: 360,
+        windowHeight: cardHeight,
+        scrollX: 0,
+        scrollY: 0,
       });
+
+      document.body.removeChild(offscreen);
+      offscreen = null;
 
       const dataUrl = canvas.toDataURL("image/png", 1.0);
       const fileName = `vSeva_Card_${userName.replace(/\s+/g, '_')}.png`;
@@ -76,6 +114,10 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
       }
 
     } catch (err) {
+      // Clean up the off-screen element if it wasn't already removed
+      if (offscreen && document.body.contains(offscreen)) {
+        document.body.removeChild(offscreen);
+      }
       console.error("Share failed", err);
       showToast("Sharing failed. Try downloading instead.", "error");
     } finally {
@@ -103,7 +145,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
       <div className="relative group perspective-1000">
         <div
           ref={cardRef}
-          className={`w-[360px] h-[640px] flex flex-col relative overflow-hidden shadow-2xl rounded-[28px] border ${isAdmin ? 'bg-gradient-to-br from-[#FFF9F0] via-[#FFFAF5] to-[#FFE8D6] text-gray-800 border-orange-100' : 'bg-gradient-to-br from-[#FFF8E1] via-white to-orange-50 text-gray-800 border-orange-100'}`}
+          className={`w-[360px] min-h-[700px] flex flex-col relative shadow-2xl rounded-[28px] border ${isAdmin ? 'bg-gradient-to-br from-[#FFF9F0] via-[#FFFAF5] to-[#FFE8D6] text-gray-800 border-orange-100' : 'bg-gradient-to-br from-[#FFF8E1] via-white to-orange-50 text-gray-800 border-orange-100'}`}
         >
           {/* Background Texture: Subtle Sacred Pattern */}
           <div className="absolute inset-0 opacity-10 pointer-events-none"
@@ -129,7 +171,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
           )}
 
           {/* Content Container */}
-          <div className="flex-1 flex flex-col p-5 z-10 relative h-full">
+          <div className="flex flex-col p-5 z-10 relative pb-4">
 
             {/* 1. Header (Identity) */}
             <div className="flex flex-col items-center text-center mt-1 mb-3 relative z-20">
@@ -137,8 +179,8 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
               {/* Central Logo / Initials */}
               <div className="relative mb-3">
                 {isAdmin ? (
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg border border-white bg-white p-0.5 overflow-hidden z-20 relative">
-                     <img src={vSevaLogo} alt="vSeva Logo" className="w-full h-full object-cover rounded-full" />
+                  <div className="w-[88px] h-[88px] rounded-full flex items-center justify-center shadow-lg border-2 border-white bg-white z-20 relative" style={{padding: '6px'}}>
+                     <img src={vSevaLogo} alt="vSeva Logo" className="w-full h-full object-contain" />
                   </div>
                 ) : (
                   <div className="w-20 h-20 rounded-full flex items-center justify-center font-serif text-2xl font-bold shadow-lg border-2 bg-white text-saffron-600 border-saffron-100 relative z-20">
@@ -150,18 +192,21 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
               </div>
 
               {isAdmin ? (
-                <>
-                  <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-orange-700 mb-1">Overall Summary of</h2>
-                  <h1 className="text-2xl font-serif font-bold text-gray-900 tracking-wide leading-tight drop-shadow-sm mb-1">
+                <div className="flex flex-col items-center w-full">
+                  <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-orange-700 mb-1 text-center">Overall Summary of</h2>
+                  <h1 className="text-2xl font-serif font-bold text-gray-900 tracking-wide leading-tight drop-shadow-sm mb-2 text-center">
                     {orgName}
                   </h1>
                   {orgCity && (
-                     <div className="mt-1 mb-1.5 inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-saffron-500 to-orange-500 shadow-md rounded-full border border-orange-400">
-                       <span className="text-[11px] font-bold text-white tracking-wider uppercase drop-shadow-sm">{orgCity}</span>
-                     </div>
+                    <div
+                      className="px-5 py-1.5 bg-gradient-to-r from-saffron-500 to-orange-500 shadow-md rounded-full border border-orange-400 mb-2"
+                      style={{ display: 'table', margin: '0 auto' }}
+                    >
+                      <span className="text-[11px] font-bold text-white tracking-wider uppercase drop-shadow-sm">{orgCity}</span>
+                    </div>
                   )}
-                  <p className="text-[11px] font-bold text-orange-800/90 tracking-widest uppercase mt-0.5">Captain {userName}</p>
-                </>
+                  <p className="text-[11px] font-bold text-orange-800/90 tracking-widest uppercase text-center">Captain {userName}</p>
+                </div>
               ) : (
                 <>
                   <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">{orgName}</h2>
@@ -175,7 +220,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
             {/* 2. Achievement Highlights (Hero Section) */}
             <div className="grid grid-cols-2 gap-2 mb-3">
               {/* Stat Tile 1 */}
-              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white/80 backdrop-blur-md border border-orange-200 shadow-[0_4px_12px_-2px_rgba(234,88,12,0.15)]">
+              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white border border-orange-200 shadow-[0_4px_12px_-2px_rgba(234,88,12,0.15)]">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center mb-1.5 shadow-inner border border-orange-200/50">
                   <MapPin size={16} className="stroke-[2.5] text-orange-500 drop-shadow-sm" />
                 </div>
@@ -184,7 +229,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
               </div>
 
               {/* Stat Tile 2 */}
-              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white/80 backdrop-blur-md border border-blue-200 shadow-[0_4px_12px_-2px_rgba(59,130,246,0.15)]">
+              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white border border-blue-200 shadow-[0_4px_12px_-2px_rgba(59,130,246,0.15)]">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center mb-1.5 shadow-inner border border-blue-200/50">
                   <Footprints size={16} className="stroke-[2.5] text-blue-500 drop-shadow-sm" />
                 </div>
@@ -193,7 +238,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
               </div>
 
               {/* Stat Tile 3 */}
-              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white/80 backdrop-blur-md border border-red-200 shadow-[0_4px_12px_-2px_rgba(239,68,68,0.15)]">
+              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white border border-red-200 shadow-[0_4px_12px_-2px_rgba(239,68,68,0.15)]">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-100 to-red-50 flex items-center justify-center mb-1.5 shadow-inner border border-red-200/50">
                   <Users size={16} className="stroke-[2.5] text-red-500 drop-shadow-sm" />
                 </div>
@@ -202,7 +247,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
               </div>
 
               {/* Stat Tile 4 */}
-              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white/80 backdrop-blur-md border border-pink-200 shadow-[0_4px_12px_-2px_rgba(236,72,153,0.15)]">
+              <div className="rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden bg-white border border-pink-200 shadow-[0_4px_12px_-2px_rgba(236,72,153,0.15)]">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-100 to-pink-50 flex items-center justify-center mb-1.5 shadow-inner border border-pink-200/50">
                   <Users size={16} className="stroke-[2.5] text-pink-500 drop-shadow-sm" />
                 </div>
@@ -212,7 +257,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
             </div>
 
             {/* 3. Recognition Section */}
-            <div className={`backdrop-blur-md rounded-2xl p-3 mb-auto border shadow-sm ${isAdmin ? 'bg-white/80 border-gray-100' : 'bg-white/80 border-gray-100'}`}>
+            <div className={`rounded-2xl p-3 border shadow-sm ${isAdmin ? 'bg-white border-gray-100' : 'bg-white border-gray-100'}`}>
               {isAdmin ? (
                 /* Admin: Show top hero sevak and sevika */
                 <div className="flex flex-col gap-3">
@@ -225,7 +270,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
                       <div className="flex flex-col">
                         <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Top Sevak</span>
                         {loading ? <SkeletonValue width="w-24" /> : topSevak ? (
-                          <span className="text-sm font-bold text-gray-800 leading-tight truncate max-w-[110px]">{topSevak.name}</span>
+                          <span className="text-sm font-bold text-gray-800 leading-snug break-words">{topSevak.name}</span>
                         ) : (
                           <span className="text-xs text-gray-400 italic">N/A</span>
                         )}
@@ -257,7 +302,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
                       <div className="flex flex-col">
                         <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Top Sevika</span>
                         {loading ? <SkeletonValue width="w-24" /> : topSevika ? (
-                          <span className="text-sm font-bold text-gray-800 leading-tight truncate max-w-[110px]">{topSevika.name}</span>
+                          <span className="text-sm font-bold text-gray-800 leading-snug break-words">{topSevika.name}</span>
                         ) : (
                           <span className="text-xs text-gray-400 italic">N/A</span>
                         )}
@@ -319,22 +364,25 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
             </div>
 
             {/* 4. Inspirational Footer & Bottom Logos */}
-            <div className={`mt-auto text-center pb-1 relative z-20`}>
-              <div className={`w-8 h-[1px] mx-auto mb-2 ${isAdmin ? 'bg-white/20' : 'bg-gray-200'}`}></div>
+            <div className="mt-auto z-20 relative">
+              <div className={`w-8 h-[1px] mx-auto mb-2 ${isAdmin ? 'bg-gray-200' : 'bg-gray-200'}`}></div>
 
-              <div className="flex flex-col items-center justify-center gap-1 mt-2 pb-1 relative">
-                
-                {/* Bottom-Left vSeva Logo */}
-                <div className="absolute -bottom-2 -left-3 z-20 opacity-90">
-                  <img src={vSevaLogo} alt="vSeva Logo" className="h-[70px] w-[70px] object-contain drop-shadow-sm" />
+              {/* Footer row: logo left, text center */}
+              <div className="flex items-center justify-between px-1 pb-1">
+                {/* Bottom-Left vSeva Logo - inside card bounds */}
+                <img src={vSevaLogo} alt="vSeva Logo" className="h-[60px] w-[60px] object-contain drop-shadow-sm opacity-90 flex-shrink-0" />
+
+                <div className="flex flex-col items-center flex-1">
+                  <div className="flex items-center gap-2">
+                    <Footprints size={14} className={isAdmin ? 'text-saffron-600' : 'text-saffron-500'} />
+                    <span className="text-sm font-bold tracking-[0.15em] text-gray-800">vSeva</span>
+                    <Footprints size={14} className={isAdmin ? 'text-saffron-600' : 'text-saffron-500'} />
+                  </div>
+                  <p className="text-[10px] font-medium mt-0.5 text-gray-500">by VJAS</p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Footprints size={14} className={isAdmin ? 'text-saffron-600' : 'text-saffron-500'} />
-                  <span className="text-sm font-bold tracking-[0.15em] drop-shadow-sm text-gray-800">vSeva</span>
-                  <Footprints size={14} className={isAdmin ? 'text-saffron-600' : 'text-saffron-500'} />
-                </div>
-                <p className="text-[10px] font-medium mt-1 text-gray-500 ml-6">by VJAS</p>
+                {/* Spacer to balance logo on left */}
+                <div className="w-[60px] flex-shrink-0" />
               </div>
             </div>
           </div>

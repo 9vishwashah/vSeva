@@ -630,8 +630,27 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                                                             onClick={() => {
                                                                 const captainName = admin.full_name || 'Captain';
                                                                 const lastActivityDate = stat.last_updated ? new Date(stat.last_updated).toLocaleDateString() : 'None';
-                                                                const message = `Pranam ${captainName} 🙏\n\nApka Last Captain Profile Activity ${lastActivityDate} hai \n\nKindly Add Vihar Entries or Add Sevaks\nIf any issue kindly contact`;
-                                                                const waLink = `https://wa.me/91${admin.mobile}?text=${encodeURIComponent(message)}`;
+                                                                const message = [
+                                                                    '\uD83D\uDE4F Jai Jinendra \uD83D\uDE4F',
+                                                                    '',
+                                                                    `Pranam ${captainName},`,
+                                                                    '',
+                                                                    `A gentle reminder that your Captain Profile Activity is currently showing as ${lastActivityDate}.`,
+                                                                    '',
+                                                                    'Kindly request you to please update your profile by adding Vihar entries or adding Sevaks at your convenience.',
+                                                                    '',
+                                                                    'In case of any difficulty, please feel free to get in touch or use the link below for assistance:',
+                                                                    '',
+                                                                    '\uD83D\uDD17 https://vseva.vjas.in',
+                                                                ].join('\n');
+                                                                const encodedMsg = encodeURIComponent(message);
+                                                                const phone = `91${admin.mobile}`;
+                                                                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                                                                // Mobile: wa.me deep link → mobile app
+                                                                // Desktop: whatsapp:// protocol → opens native WhatsApp desktop app
+                                                                const waLink = isMobile
+                                                                    ? `https://wa.me/${phone}?text=${encodedMsg}`
+                                                                    : `whatsapp://send?phone=${phone}&text=${encodedMsg}`;
                                                                 window.open(waLink, '_blank');
                                                             }}
                                                             className="inline-flex items-center justify-center p-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl shadow-sm transition-all active:scale-95"
