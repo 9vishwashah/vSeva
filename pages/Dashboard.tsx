@@ -37,7 +37,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
       longestVihar: 0,
       streak: 0,
       vSynergy: "N/A",
-      vRank: "N/A"
+      vRank: "N/A",
+      activeUsernames: []
     },
     leaderboard: { male: [], female: [] }
   });
@@ -48,6 +49,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
 
   // Profile completion modal state
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showActiveSevaksModal, setShowActiveSevaksModal] = useState(false);
 
   useEffect(() => {
     if (currentUser.role === UserRole.SEVAK) {
@@ -189,6 +191,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
           stats.totalFemale = detailedStats.totalFemale;
           stats.activeMale = detailedStats.activeMale;
           stats.activeFemale = detailedStats.activeFemale;
+          stats.activeUsernames = detailedStats.activeUsernames || [];
         } catch (e) {
           console.error("Failed to load accurate dashboard stats", e);
           if (totalCount !== null) {
@@ -201,6 +204,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
           stats.totalFemale = 0;
           stats.activeMale = 0;
           stats.activeFemale = 0;
+          stats.activeUsernames = [];
         }
 
         // (Active sevaks count is now fetched directly via dataService.getDashboardStats)
@@ -592,6 +596,40 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
         </div>
       )}
 
+      {/* Active Sevaks Modal */}
+      {showActiveSevaksModal && (
+        <div className="fixed inset-0 z-[120] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowActiveSevaksModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 relative border-t-4 border-orange-500 flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Activity size={20} className="text-orange-500" /> Active Sevaks</h3>
+              <button onClick={() => setShowActiveSevaksModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto custom-scrollbar">
+              {data.stats.activeUsernames && data.stats.activeUsernames.length > 0 ? (
+                <ul className="space-y-2">
+                  {data.stats.activeUsernames.map((u: string) => {
+                    const plainUsername = u.split('@')[0];
+                    const fullName = sevakMap[u] || sevakMap[plainUsername] || plainUsername;
+                    return (
+                      <li key={u} className="flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 text-orange-900 font-medium shadow-sm">
+                        <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-800 font-bold text-xs shrink-0 border border-orange-300">
+                          {fullName.substring(0, 2).toUpperCase()}
+                        </div>
+                        <span className="truncate">{fullName}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="text-center text-gray-500 py-8">No active sevaks found.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
 
 
       {/* Header - Orange Gradient Banner */}
@@ -628,22 +666,22 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
 
           {/* Right: action buttons (admin only) */}
           {currentUser.role === UserRole.ORG_ADMIN && (
-            <div className="flex flex-row gap-2.5 shrink-0">
+            <div className="flex flex-row gap-2 w-full md:w-auto shrink-0 mt-2 md:mt-0">
               <button
                 onClick={() => setIsAlertOpen(true)}
-                className="flex items-center justify-center gap-2 bg-white text-saffron-600 hover:bg-saffron-50 font-bold px-4 py-2.5 rounded-xl shadow-lg transition-all active:scale-95"
+                className="flex-1 md:flex-none flex items-center justify-center gap-1.5 sm:gap-2 bg-white text-saffron-600 hover:bg-saffron-50 font-bold px-3 sm:px-4 py-2.5 rounded-xl shadow-lg transition-all active:scale-95 text-sm sm:text-base"
               >
                 <MapPin size={18} />
-                <span>Alert Vihar</span>
+                <span className="truncate">Alert Vihar</span>
               </button>
 
-              <div ref={downloadMenuRef} className="relative">
+              <div ref={downloadMenuRef} className="relative flex-1 md:flex-none">
                 <button
                   onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-                  className="flex items-center justify-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-white font-semibold px-4 py-2.5 rounded-xl transition-all w-full active:scale-95"
+                  className="w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-white font-semibold px-3 sm:px-4 py-2.5 rounded-xl transition-all active:scale-95 text-sm sm:text-base"
                 >
                   <Download size={18} />
-                  <span>Export</span>
+                  <span className="truncate">Export</span>
                 </button>
                 {showDownloadMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
@@ -679,12 +717,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
               <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
                 <Footprints size={56} className="text-saffron-600" />
               </div>
-              <div className="p-5 pt-6 relative z-10">
+              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-2 bg-gradient-to-br from-orange-50 to-saffron-100 rounded-xl border border-saffron-100 shadow-sm">
                     <Footprints size={15} className="text-saffron-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Km</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Total Km</span>
                 </div>
                 {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalKm}<span className="text-sm font-semibold text-saffron-400 ml-1">km</span></p>}
               </div>
@@ -696,12 +734,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
               <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
                 <MapPin size={56} className="text-blue-600" />
               </div>
-              <div className="p-5 pt-6 relative z-10">
+              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-2 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl border border-blue-100 shadow-sm">
                     <MapPin size={15} className="text-blue-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Vihars</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Vihars</span>
                 </div>
                 {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalVihars}</p>}
               </div>
@@ -713,12 +751,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
               <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
                 <Users size={56} className="text-red-600" />
               </div>
-              <div className="p-5 pt-6 relative z-10">
+              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-2 bg-gradient-to-br from-red-50 to-rose-100 rounded-xl border border-red-100 shadow-sm">
                     <Users size={15} className="text-red-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400" title="SADHUBHAGWANT">Sadhu</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700" title="SADHUBHAGWANT">Sadhu</span>
                 </div>
                 {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalSadhu}</p>}
               </div>
@@ -730,12 +768,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
               <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
                 <Users size={56} className="text-pink-600" />
               </div>
-              <div className="p-5 pt-6 relative z-10">
+              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-2 bg-gradient-to-br from-pink-50 to-fuchsia-100 rounded-xl border border-pink-100 shadow-sm">
                     <Users size={15} className="text-pink-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400" title="SADHVIJIBHAGWANT">Sadhvi</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700" title="SADHVIJIBHAGWANT">Sadhvi</span>
                 </div>
                 {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalSadhvi}</p>}
               </div>
@@ -748,12 +786,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
                 <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
                   <Medal size={56} className="text-yellow-600" />
                 </div>
-                <div className="p-5 pt-6 relative z-10">
+                <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="p-2 bg-gradient-to-br from-yellow-50 to-amber-100 rounded-xl border border-yellow-100 shadow-sm">
                       <Medal size={15} className="text-yellow-600 shrink-0" />
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Rank</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Rank</span>
                   </div>
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex items-baseline gap-1">
@@ -772,12 +810,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
                 <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
                   <Handshake size={56} className="text-saffron-600" />
                 </div>
-                <div className="p-5 pt-6 relative z-10">
+                <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="p-2 bg-gradient-to-br from-orange-50 to-saffron-100 rounded-xl border border-saffron-100 shadow-sm">
                       <Handshake size={15} className="text-saffron-600 shrink-0" />
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Co-Sevak</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Co-Sevak</span>
                   </div>
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex flex-wrap gap-1">
@@ -800,12 +838,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
               <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
                 <Users size={56} className="text-emerald-600" />
               </div>
-              <div className="p-5 pt-6 relative z-10">
+              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-2 bg-gradient-to-br from-emerald-50 to-teal-100 rounded-xl border border-emerald-100 shadow-sm">
                     <Users size={15} className="text-emerald-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Sevaks</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Total Sevaks</span>
                 </div>
                 {isLoading ? <SkeletonLoader /> : (
                   <div>
@@ -830,16 +868,19 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
               <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
                 <Activity size={56} className="text-violet-600" />
               </div>
-              <div className="p-5 pt-6 relative z-10">
+              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-violet-50 to-purple-100 rounded-xl border border-violet-100 shadow-sm">
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-violet-50 to-purple-100 rounded-xl border border-violet-100 shadow-sm">
                     <Activity size={15} className="text-violet-600 shrink-0" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400" title=">= 1 Vihar in last 30 days">Active Sevaks</span>
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider sm:tracking-widest text-orange-700" title=">= 1 Vihar in last 30 days">Active Sevaks</span>
                 </div>
                 {isLoading ? <SkeletonLoader /> : (
                   <div>
-                    <p className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">{data.stats.activeSevaks}</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.activeSevaks}</p>
+                      <button onClick={() => setShowActiveSevaksModal(true)} className="text-[9px] font-bold px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg hover:bg-violet-100 transition-colors shadow-[0_2px_4px_rgba(139,92,246,0.15)] active:scale-95 tracking-wider border border-violet-100">VIEW</button>
+                    </div>
                     <div className="flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center text-[10px] font-bold text-blue-600 border border-blue-100 shadow-sm">
                         {data.stats.activeMale || 0}

@@ -51,7 +51,8 @@ export async function handler(event) {
             totalMale: 0,
             totalFemale: 0,
             activeMale: 0,
-            activeFemale: 0
+            activeFemale: 0,
+            activeUsernames: []
         };
 
         const activeUsernames = new Set();
@@ -71,6 +72,8 @@ export async function handler(event) {
                 if (activeUsernames.has(s.username)) stats.activeMale += 1;
             }
         });
+        
+        stats.activeUsernames = Array.from(activeUsernames);
 
         return {
             statusCode: 200,
