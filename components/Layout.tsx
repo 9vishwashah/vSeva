@@ -160,7 +160,7 @@ const Layout: React.FC<LayoutProps> = ({
         {/* Main Content — fills remaining height, scrolls independently */}
         <main
           ref={mainRef}
-          className="flex-1 overflow-y-auto min-h-0"
+          className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 w-full"
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           <div className="max-w-7xl mx-auto p-4 md:p-8 pb-28 md:pb-8">
