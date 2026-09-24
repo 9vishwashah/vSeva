@@ -364,7 +364,20 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        onKeyDown={e => {
+          // Browsers implicitly submit a form on Enter when it has only one
+          // text input — true at step 3 whenever Wheelchair/Car Seva are both
+          // off, since "Assign Sevaks" is then the only text field. That was
+          // silently jumping straight to submission instead of just filtering
+          // the sevak search. Enter should never submit before the final step.
+          if (e.key === 'Enter' && step < TOTAL_STEPS) {
+            e.preventDefault();
+          }
+        }}
+        className="space-y-5"
+      >
 
         {step === 1 && (
           <StepCard n={1} title="Date & Type">
