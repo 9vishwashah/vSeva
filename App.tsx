@@ -25,6 +25,7 @@ const SubmitReport = React.lazy(() => import('./pages/SubmitReport'));
 const NearbyDerasar = React.lazy(() => import('./pages/NearbyDerasar'));
 const Notifications = React.lazy(() => import('./pages/Notifications'));
 const Statistics = React.lazy(() => import('./pages/Statistics'));
+const PendingApprovals = React.lazy(() => import('./pages/PendingApprovals'));
 
 
 // Suppress XAxis/YAxis defaultProps warning from Recharts in React 18+
@@ -234,22 +235,39 @@ const App: React.FC = () => {
             currentUser={user}
             navigateToProfile={() => handleSetCurrentPage('profile')}
             navigateToNotifications={() => handleSetCurrentPage('notifications')}
+            onAddVihar={() => handleSetCurrentPage('new-entry')}
           />
         )}
 
-        {currentPage === 'new-entry' && user.role === UserRole.ORG_ADMIN && (
+        {currentPage === 'new-entry' && (
           <NewEntry
             currentUser={user}
             entry={editingEntry || undefined}
             onCancel={() => {
+              // A Captain correcting a pending/rejected submission returns to the
+              // review queue; every other case returns where it did before.
+              const isReviewingPending = !!editingEntry && editingEntry.status && editingEntry.status !== 'approved';
+              const backTo = isReviewingPending
+                ? 'pending-approvals'
+                : editingEntry
+                  ? 'view-entries'
+                  : (user.role === UserRole.SEVAK ? 'my-vihars' : 'dashboard');
               setEditingEntry(null);
-              setCurrentPage(editingEntry ? 'view-entries' : 'dashboard');
+              setCurrentPage(backTo);
             }}
             onSubmit={() => {
+              const isReviewingPending = !!editingEntry && editingEntry.status && editingEntry.status !== 'approved';
+              const backTo = isReviewingPending
+                ? 'pending-approvals'
+                : (user.role === UserRole.SEVAK ? 'my-vihars' : 'dashboard');
               setEditingEntry(null);
-              setCurrentPage('dashboard');
+              setCurrentPage(backTo);
             }}
           />
+        )}
+
+        {currentPage === 'pending-approvals' && user.role === UserRole.ORG_ADMIN && (
+          <PendingApprovals currentUser={user} onEdit={handleEditEntry} />
         )}
 
         {currentPage === 'manage-routes' && user.role === UserRole.ORG_ADMIN && (
@@ -266,6 +284,7 @@ const App: React.FC = () => {
             currentUser={user}
             navigateToProfile={() => handleSetCurrentPage('profile')}
             navigateToNotifications={() => handleSetCurrentPage('notifications')}
+            onAddVihar={() => handleSetCurrentPage('new-entry')}
           />
         )}
 

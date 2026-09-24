@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck } from 'lucide-react';
 
 import NotificationBell from './NotificationBell';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
@@ -57,12 +57,14 @@ const Layout: React.FC<LayoutProps> = ({
   const moreItems = role === UserRole.ORG_ADMIN
     ? [
       { page: 'statistics', icon: <BarChart2 size={18} />, label: 'Statistics' },
+      { page: 'pending-approvals', icon: <ClipboardCheck size={18} />, label: 'Pending Approvals' },
       { page: 'manage-routes', icon: <Map size={18} />, label: 'Manage Routes' },
       { page: 'add-sevak', icon: <UserPlus size={18} />, label: 'Add Sevaks' },
       { page: 'contacts', icon: <PhoneCall size={18} />, label: 'Contacts' },
       { page: 'reports', icon: <ShieldAlert size={18} />, label: 'Reports' },
     ]
     : [
+      { page: 'new-entry', icon: <FilePlus size={18} />, label: 'Add Vihar' },
       { page: 'statistics', icon: <BarChart2 size={18} />, label: 'Statistics' },
       { page: 'contacts', icon: <PhoneCall size={18} />, label: 'Contacts' },
       { page: 'notifications', icon: <Bell size={18} />, label: 'Notifications' },
@@ -138,6 +140,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="dashboard" icon={BarChart2} label="Dashboard" />
               <NavItem page="statistics" icon={BarChart2} label="Statistics" />
               <NavItem page="view-entries" icon={Table2} label="View Entries" />
+              <NavItem page="pending-approvals" icon={ClipboardCheck} label="Pending Approvals" />
               <NavItem page="manage-routes" icon={Map} label="Manage Routes" />
               <NavItem page="new-entry" icon={FilePlus} label="New Entry" />
               <NavItem page="add-sevak" icon={UserPlus} label="Add Sevaks" />
@@ -153,6 +156,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="analytics" icon={BarChart2} label="Analytics" />
               <NavItem page="statistics" icon={BarChart2} label="Statistics" />
               <NavItem page="my-vihars" icon={Footprints} label="My Vihars" />
+              <NavItem page="new-entry" icon={FilePlus} label="Add Vihar" />
               <NavItem page="notifications" icon={Bell} label="Notifications" />
               <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
               <NavItem page="reports" icon={ShieldAlert} label="Reports" />

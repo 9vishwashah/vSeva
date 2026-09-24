@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
-import { UserProfile, ViharEntry, AreaRoute } from '../types';
-import { Save, Loader2, MapPin, Search, X, Users, ChevronDown, Map, ChevronLeft } from 'lucide-react';
+import { UserProfile, UserRole, ViharEntry, AreaRoute } from '../types';
+import { Save, Loader2, MapPin, Search, X, Users, ChevronDown, Map, ChevronLeft, Clock } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { Organization } from '../types';
 
@@ -31,6 +31,11 @@ const StepCard: React.FC<{ n: number; title: string; children: React.ReactNode }
 const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, entry: editEntry }) => {
 
   const isEditing = !!editEntry;
+  // A Captain reviewing/correcting a Sevak's pending submission — editing here must
+  // NOT flip the approval status; Approve/Reject stays a separate explicit action.
+  const isReviewingPending = isEditing && editEntry?.status && editEntry.status !== 'approved';
+  // A Sevak creating a brand-new entry always lands as a submission awaiting approval.
+  const isSevakSubmission = currentUser.role === UserRole.SEVAK && !isEditing;
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
   const [step, setStep] = useState(1);
 
@@ -45,7 +50,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
     car_seva: false,
     car_seva_sevaks: [],
     notes: '',
-    sevaks: [],
+    sevaks: currentUser.role === UserRole.SEVAK ? [currentUser.username] : [],
   });
 
   const [loading, setLoading] = useState(false);
@@ -204,14 +209,19 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
       const entryPayload: ViharEntry = {
         ...formData as ViharEntry,
         organization_id: currentUser.organization_id,
-        created_by: currentUser.id,
+        created_by: isEditing ? editEntry!.created_by : currentUser.id,
         no_sadhubhagwan: formData.group_sadhu && formData.no_sadhubhagwan ? Number(formData.no_sadhubhagwan) : 0,
         no_sadhvijibhagwan: formData.group_sadhvi && formData.no_sadhvijibhagwan ? Number(formData.no_sadhvijibhagwan) : 0,
       };
 
       if (isEditing && editEntry?.id) {
+        // Correcting details only — never touches status. Approve/Reject on the
+        // review screen is the only way a pending entry changes state.
         await dataService.updateViharEntry(editEntry.id, entryPayload);
-        showToast("Vihar Entry Updated Successfully!", 'success');
+        showToast(isReviewingPending ? "Correction saved. Continue your review below." : "Vihar Entry Updated Successfully!", 'success');
+      } else if (isSevakSubmission) {
+        await dataService.submitViharEntry(entryPayload);
+        showToast("Vihar submitted. Waiting for Captain approval.", 'success');
       } else {
         await dataService.createViharEntry(entryPayload);
         showToast("Vihar Entry Saved Successfully!", 'success');
@@ -327,10 +337,19 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
     <div className="max-w-xl mx-auto space-y-5 pb-24">
       {/* Header */}
       <div className="px-1">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-[#241C17]">{isEditing ? 'Edit Vihar Entry' : 'New Vihar Entry'}</h2>
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[#241C17]">
+          {isReviewingPending ? 'Review & Correct Submission' : isEditing ? 'Edit Vihar Entry' : isSevakSubmission ? 'Submit Vihar for Approval' : 'New Vihar Entry'}
+        </h2>
         <p className="text-sm text-[#8A6A57] mt-1">
-          {orgDetails ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}` : 'Loading organization…'}
+          {isSevakSubmission
+            ? 'This will be sent to your Captain for approval before it counts as an official Vihar.'
+            : (orgDetails ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}` : 'Loading organization…')}
         </p>
+        {isReviewingPending && (
+          <span className="mt-2 inline-flex items-center gap-1.5 bg-saffron-100 text-saffron-700 text-xs font-bold px-3 py-1 rounded-full">
+            <Clock size={12} /> Pending Captain Approval
+          </span>
+        )}
       </div>
 
       {/* Step progress */}
@@ -542,7 +561,9 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
               className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-saffron-600 hover:bg-saffron-700 text-white font-extrabold text-sm shadow-lg active:scale-[0.98] transition-all disabled:opacity-70"
             >
               {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-              {loading ? (isEditing ? 'Updating…' : 'Saving…') : (isEditing ? 'Update Entry' : 'Submit Entry')}
+              {loading
+                ? (isReviewingPending ? 'Saving Correction…' : isEditing ? 'Updating…' : isSevakSubmission ? 'Submitting…' : 'Saving…')
+                : (isReviewingPending ? 'Save Correction' : isEditing ? 'Update Entry' : isSevakSubmission ? 'Submit for Approval' : 'Submit Entry')}
             </button>
           )}
         </div>

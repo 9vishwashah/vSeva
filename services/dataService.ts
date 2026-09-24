@@ -590,6 +590,8 @@ export const dataService = {
   async createViharEntry(entry: ViharEntry) {
     // Strip fields that don't yet exist in the DB schema
     const { car_seva, car_seva_sevaks, wheelchair_sevaks, ...safeEntry } = entry as any;
+    // No status set here — the DB column defaults to 'approved', so a Captain's
+    // direct entry becomes official immediately, exactly as it did before this feature.
     const { data, error } = await supabase
       .from('vihar_entries')
       .insert(safeEntry)
@@ -597,14 +599,44 @@ export const dataService = {
       .single();
 
     if (error) throw error;
+
+    // Best-effort: notify the selected Vihar Sevaks that their Vihar was recorded.
+    // Fire-and-forget so a notification hiccup never blocks the Captain's save.
+    supabase.rpc('notify_vihar_participants', { p_entry_id: data.id }).then(({ error: notifyErr }) => {
+      if (notifyErr) console.warn('Failed to notify Vihar participants:', notifyErr.message);
+    });
+
+    return data;
+  },
+
+  // Sevak-submitted Vihar entry. Always lands as 'pending' — only a Captain's
+  // approve_vihar_entry RPC can turn it into an official record.
+  async submitViharEntry(entry: ViharEntry) {
+    const { car_seva, car_seva_sevaks, wheelchair_sevaks, ...safeEntry } = entry as any;
+    const payload = { ...safeEntry, status: 'pending' };
+    const { data, error } = await supabase
+      .from('vihar_entries')
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Best-effort: let the org's Captains know a submission is awaiting review.
+    supabase.rpc('notify_captains_new_vihar_submission', { p_entry_id: data.id }).then(({ error: notifyErr }) => {
+      if (notifyErr) console.warn('Failed to notify Captains of new submission:', notifyErr.message);
+    });
+
     return data;
   },
 
   async getEntries(orgId: string): Promise<ViharEntry[]> {
+    // Only official (approved) Vihars feed stats, KPIs, leaderboard and exports.
     const { data, error } = await supabase
       .from('vihar_entries')
-      .select('id, organization_id, created_by, vihar_date, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, vihar_from, vihar_to, sevaks, notes, wheelchair, distance_km, haversine_km, vihar_type, samuday, created_at')
+      .select('id, organization_id, created_by, vihar_date, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, vihar_from, vihar_to, sevaks, notes, wheelchair, distance_km, haversine_km, vihar_type, samuday, created_at, status, reviewed_by, reviewed_at')
       .eq('organization_id', orgId)
+      .eq('status', 'approved')
       .order('vihar_date', { ascending: false });
 
     if (error) throw error;
@@ -616,11 +648,57 @@ export const dataService = {
     const { data, error } = await supabase
       .from('vihar_entries')
       .select('*')
+      .eq('status', 'approved')
       .contains('sevaks', [username])
       .order('vihar_date', { ascending: false });
 
     if (error) throw error;
     return data as ViharEntry[];
+  },
+
+  // A Sevak's own Vihar history: their own submissions (any status — pending/approved/
+  // rejected) plus any already-approved entry a Captain added them to. Used by the
+  // Sevak-facing "My Vihars" screen so a pending submission is still visible to its
+  // submitter even though getEntries() above excludes it from official stats.
+  async getMyViharEntries(orgId: string, userId: string, username: string): Promise<ViharEntry[]> {
+    const [ownSubmissions, participantEntries] = await Promise.all([
+      supabase.from('vihar_entries').select('*').eq('organization_id', orgId).eq('created_by', userId),
+      supabase.from('vihar_entries').select('*').eq('organization_id', orgId).eq('status', 'approved').contains('sevaks', [username]),
+    ]);
+
+    if (ownSubmissions.error) throw ownSubmissions.error;
+    if (participantEntries.error) throw participantEntries.error;
+
+    const byId = new Map<number, ViharEntry>();
+    [...(ownSubmissions.data || []), ...(participantEntries.data || [])].forEach((e: any) => byId.set(e.id, e));
+
+    return Array.from(byId.values()).sort((a, b) => (a.vihar_date < b.vihar_date ? 1 : -1));
+  },
+
+  // --- Vihar Approval Workflow (Captain review) ---
+
+  async getPendingViharEntries(orgId: string): Promise<ViharEntry[]> {
+    const { data, error } = await supabase
+      .from('vihar_entries')
+      .select('*')
+      .eq('organization_id', orgId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data as ViharEntry[];
+  },
+
+  async approveViharEntry(entryId: number): Promise<ViharEntry> {
+    const { data, error } = await supabase.rpc('approve_vihar_entry', { p_entry_id: entryId });
+    if (error) throw error;
+    return data as ViharEntry;
+  },
+
+  async rejectViharEntry(entryId: number, reason?: string): Promise<ViharEntry> {
+    const { data, error } = await supabase.rpc('reject_vihar_entry', { p_entry_id: entryId, p_reason: reason || null });
+    if (error) throw error;
+    return data as ViharEntry;
   },
 
   async deleteViharEntry(entryId: number) {

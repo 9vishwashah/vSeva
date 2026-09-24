@@ -42,6 +42,7 @@ export async function handler(event) {
             .from('vihar_entries')
             .select('sevaks')
             .eq('organization_id', orgId)
+            .eq('status', 'approved')
             .gte('vihar_date', isoDate);
 
         if (entriesError) throw entriesError;

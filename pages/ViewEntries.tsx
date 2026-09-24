@@ -23,12 +23,14 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await dataService.getEntries(currentUser.organization_id);
+        // Admin's "View Entries" is the official ledger (approved only). A Sevak's
+        // "My Vihars" also needs to show their own pending/rejected submissions,
+        // so it uses a dedicated query rather than the approved-only getEntries().
+        const data = currentUser.role === UserRole.SEVAK
+          ? await dataService.getMyViharEntries(currentUser.organization_id, currentUser.id, currentUser.username)
+          : await dataService.getEntries(currentUser.organization_id);
 
         let filteredData = data || [];
-        if (currentUser.role === UserRole.SEVAK) {
-          filteredData = filteredData.filter(e => (e.sevaks || []).includes(currentUser.username));
-        }
         setEntries(filteredData);
 
         // Collect all unique usernames across all entries, then do a single targeted query
@@ -179,7 +181,15 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                   {filteredEntries.map(entry => (
                     <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
                       <td className="p-4 font-medium whitespace-nowrap">
-                        {entry.vihar_date ? entry.vihar_date.split('-').reverse().join('-') : '-'}
+                        <div className="flex items-center gap-2">
+                          <span>{entry.vihar_date ? entry.vihar_date.split('-').reverse().join('-') : '-'}</span>
+                          {entry.status === 'pending' && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-orange-100 text-orange-700">Pending</span>
+                          )}
+                          {entry.status === 'rejected' && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-red-100 text-red-700">Rejected</span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4">{entry.vihar_from}</td>
                       <td className="p-4">{entry.vihar_to}</td>
@@ -208,15 +218,17 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                         {entry.distance_km}
                       </td>
                       <td className="p-4 text-center">
-                        <a
-                          href={formatWhatsAppLink(entry)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-green-500 hover:text-green-600 p-2 hover:bg-green-50 rounded-full inline-block transition-colors"
-                          title="Share on WhatsApp"
-                        >
-                          <MessageCircle size={18} />
-                        </a>
+                        {entry.status !== 'pending' && entry.status !== 'rejected' && (
+                          <a
+                            href={formatWhatsAppLink(entry)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-500 hover:text-green-600 p-2 hover:bg-green-50 rounded-full inline-block transition-colors"
+                            title="Share on WhatsApp"
+                          >
+                            <MessageCircle size={18} />
+                          </a>
+                        )}
                         {currentUser.role === UserRole.ORG_ADMIN && onEdit && (
                           <button
                             onClick={() => onEdit(entry)}
