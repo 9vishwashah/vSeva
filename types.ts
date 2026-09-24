@@ -60,6 +60,11 @@ export interface ViharEntry {
   haversine_km?: number;
   vihar_type: 'morning' | 'evening';
   created_at?: string;
+  // Sevak-submitted approval workflow. Defaults to 'approved' at the DB level so
+  // existing rows and Captain-created entries remain official with no code change.
+  status?: 'pending' | 'approved' | 'rejected';
+  reviewed_by?: string; // uuid of the Captain/admin who approved or rejected
+  reviewed_at?: string; // ISO timestamp
 }
 
 export interface StatSummary {

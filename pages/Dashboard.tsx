@@ -3,7 +3,7 @@ import { UserProfile, ViharEntry, UserRole, Organization, AreaRoute } from '../t
 import { dataService } from '../services/dataService';
 import UpcomingViharCard from '../components/UpcomingViharCard';
 import SankalpRing from '../components/SankalpRing';
-import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X } from 'lucide-react';
+import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X, Plus } from 'lucide-react';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import vsgLogo from '../assets/vsg.jpg';
 import { useToast } from '../context/ToastContext';
@@ -13,9 +13,10 @@ interface DashboardProps {
   currentUser: UserProfile;
   navigateToProfile?: () => void;
   navigateToNotifications?: () => void;
+  onAddVihar?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, navigateToNotifications }) => {
+const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, navigateToNotifications, onAddVihar }) => {
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [sevakMap, setSevakMap] = useState<Record<string, string>>({}); // Add this state
@@ -701,6 +702,18 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               )}
             </div>
           </div>
+        )}
+
+        {/* Add Vihar (Sevak only) — a Sevak has no direct-log flow, so their entry
+            is always a submission awaiting Captain approval. */}
+        {currentUser.role === UserRole.SEVAK && onAddVihar && (
+          <button
+            onClick={onAddVihar}
+            className="flex items-center justify-center gap-1.5 bg-saffron-600 hover:bg-saffron-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 text-sm w-full md:w-auto shrink-0"
+          >
+            <Plus size={18} />
+            <span>Add Vihar</span>
+          </button>
         )}
       </div>
 

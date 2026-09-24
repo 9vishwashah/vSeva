@@ -37,7 +37,8 @@ export async function handler(event) {
         const { data: entries, error: entriesError } = await supabaseAdmin
             .from('vihar_entries')
             .select('sevaks, distance_km')
-            .eq('organization_id', orgId);
+            .eq('organization_id', orgId)
+            .eq('status', 'approved');
 
         if (entriesError) throw entriesError;
 
