@@ -47,6 +47,7 @@ jdk-link/
 
 # Netlify
 .netlify/
+deno.lock
 
 # OS
 .DS_Store
