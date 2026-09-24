@@ -66,13 +66,18 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // A Sevak's session can't read other profiles via RLS (by design — keeps
+        // mobile/blood group/etc private), so the picker uses the narrow roster
+        // endpoint for Sevaks and the full profile list (already permitted) for Admins.
         const [sevaks, routes, org] = await Promise.all([
-          dataService.getAllOrgUsers(currentUser.organization_id),
+          currentUser.role === UserRole.SEVAK
+            ? dataService.getOrgRoster(currentUser.organization_id)
+            : dataService.getAllOrgUsers(currentUser.organization_id),
           dataService.getRoutes(currentUser.organization_id),
           dataService.getOrganization(currentUser.organization_id),
         ]);
 
-        setOrgSevaks(sevaks);
+        setOrgSevaks(sevaks as UserProfile[]);
         setAvailableRoutes(routes);
         setOrgDetails(org);
 
