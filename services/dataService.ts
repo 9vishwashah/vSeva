@@ -185,6 +185,26 @@ export const dataService = {
     return {};
   },
 
+  // profiles has no "same org" SELECT policy — a Sevak's session can only read
+  // their own row. Used by the Vihar Sevak picker so a Sevak submitting an entry
+  // can still search/select org-mates by name; returns only username/full_name/
+  // gender (never mobile/blood group/emergency contact/address).
+  async getOrgRoster(orgId: string, includeInactive: boolean = false): Promise<Pick<UserProfile, 'username' | 'full_name' | 'gender'>[]> {
+    try {
+      const response = await fetch('/.netlify/functions/get-org-roster', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId, includeInactive })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.warn("Failed to fetch org roster via serverless");
+    }
+    return [];
+  },
+
   async createSevak(
     adminOrgId: string,
     sevakData: { fullName: string; mobile: string; gender: string; age: number; bloodGroup?: string; emergencyNumber?: string; address?: string }
