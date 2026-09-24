@@ -3,7 +3,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import { UserProfile } from '../types';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import vsgLogo from '../assets/vsg.jpg';
-import html2canvas from 'html2canvas';
 import { Download, Printer } from 'lucide-react';
 
 interface IDCardBadgeProps {
@@ -27,8 +26,11 @@ const IDCardBadge: React.FC<IDCardBadgeProps> = ({ user, orgName }) => {
     if (!cardRef.current) return;
     try {
       setDownloading(true);
-      await new Promise(r => setTimeout(r, 100)); 
-      
+      // html2canvas (~200KB) is only needed for this on-demand download — load
+      // it when actually used instead of bundling it with every profile visit.
+      const { default: html2canvas } = await import('html2canvas');
+      await new Promise(r => setTimeout(r, 100));
+
       const canvas = await html2canvas(cardRef.current, {
         scale: 3,
         useCORS: true,
@@ -58,7 +60,7 @@ const IDCardBadge: React.FC<IDCardBadgeProps> = ({ user, orgName }) => {
         style={{ width: '280px', height: '460px' }}
       >
         {/* Banner with VSG Logo top left */}
-        <div className="w-full bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-500 h-28 flex flex-col justify-start items-start relative shrink-0 p-4 shadow-inner border-b-2 border-black">
+        <div className="w-full bg-gradient-to-br from-saffron-400 to-saffron-600 h-28 flex flex-col justify-start items-start relative shrink-0 p-4 shadow-inner border-b-2 border-black">
             <div className="w-14 h-14 bg-white rounded-lg p-1 shadow-sm border border-gray-100 flex items-center justify-center">
                 <img src={vsgLogo} alt="VSG" className="w-full h-full object-contain rounded" />
             </div>

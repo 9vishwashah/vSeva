@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import { UserProfile, ViharEntry, AreaRoute } from '../types';
-import { Save, Loader2, MapPin, Search, X, User, Users, FilePlus, ChevronDown, Map, Check } from 'lucide-react';
+import { Save, Loader2, MapPin, Search, X, Users, ChevronDown, Map, ChevronLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { Organization } from '../types';
 
@@ -13,11 +13,26 @@ interface NewEntryProps {
   entry?: ViharEntry; // If provided, edit mode
 }
 
+const TOTAL_STEPS = 4;
+
+// Defined at module scope (not inside NewEntry) so it's a stable component
+// reference across renders — nesting it inside NewEntry caused React to
+// remount this whole subtree, including every input, on each keystroke.
+const StepCard: React.FC<{ n: number; title: string; children: React.ReactNode }> = ({ n, title, children }) => (
+  <div className="bg-white rounded-[22px] p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05)] space-y-5">
+    <div className="flex items-center gap-2.5">
+      <div className="w-6 h-6 rounded-full bg-saffron-600 text-white text-xs font-extrabold flex items-center justify-center shrink-0">{n}</div>
+      <p className="text-sm font-bold text-[#241C17]">{title}</p>
+    </div>
+    {children}
+  </div>
+);
 
 const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, entry: editEntry }) => {
 
   const isEditing = !!editEntry;
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
+  const [step, setStep] = useState(1);
 
   const { showToast } = useToast();
   const [formData, setFormData] = useState<Partial<ViharEntry>>({
@@ -136,6 +151,42 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
     return orgSevaks.find(s => s.username === username);
   };
 
+  // Per-step validation — gates the "Next" button. handleSubmit keeps its own
+  // checks too, as a final safety net regardless of how a step was reached.
+  const stepError = (s: number): string | null => {
+    if (s === 1) {
+      if (!formData.vihar_date) return 'Please pick a date';
+      return null;
+    }
+    if (s === 2) {
+      if (!formData.group_sadhu && !formData.group_sadhvi) return 'Select Sadhubhagwan or Sadhvijibhagwan';
+      if (!formData.vihar_from || !formData.vihar_to) return 'Select both From and To locations';
+      return null;
+    }
+    if (s === 3) {
+      if (!formData.sevaks?.length) return 'Assign at least one Sevak';
+      return null;
+    }
+    return null;
+  };
+
+  const goNext = () => {
+    const err = stepError(step);
+    if (err) {
+      showToast(err, 'warning');
+      return;
+    }
+    setStep(s => Math.min(TOTAL_STEPS, s + 1));
+  };
+
+  const goBack = () => {
+    if (step === 1) {
+      if (onCancel) onCancel();
+      return;
+    }
+    setStep(s => Math.max(1, s - 1));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.sevaks?.length) {
@@ -175,9 +226,9 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
   };
 
   const renderSevakSelector = (
-    title: string, 
-    listType: 'sevaks' | 'wheelchair_sevaks' | 'car_seva_sevaks', 
-    searchValue: string, 
+    title: string,
+    listType: 'sevaks' | 'wheelchair_sevaks' | 'car_seva_sevaks',
+    searchValue: string,
     setSearchValue: (val: string) => void,
     isRequired: boolean = false
   ) => {
@@ -191,12 +242,12 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
 
     return (
       <div className="space-y-3 relative z-20">
-        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center justify-between">
+        <label className="text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider flex items-center justify-between">
           <span>{title} {isRequired && <span className="text-red-500">*</span>}</span>
-          <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full">{assignedSevaks.length} selected</span>
+          <span className="text-[10px] font-bold text-saffron-700 bg-saffron-100 px-2 py-0.5 rounded-full">{assignedSevaks.length} selected</span>
         </label>
 
-        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
+        <div className="space-y-3">
           {/* Selected Badges */}
           <div className="flex flex-wrap gap-2">
             {assignedSevaks.map(username => {
@@ -207,7 +258,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                 : 'bg-blue-50 text-blue-700 border-blue-200';
 
               return (
-                <div key={username} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${badgeStyle} animate-fade-in`}>
+                <div key={username} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${badgeStyle}`}>
                   <span>{s?.full_name}</span>
                   <button
                     type="button"
@@ -220,17 +271,17 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
               );
             })}
             {assignedSevaks.length === 0 && (
-              <p className="text-xs text-gray-400 italic py-1">No sevaks assigned yet.</p>
+              <p className="text-xs text-[#8A6A57]/70 italic py-1">No sevaks assigned yet.</p>
             )}
           </div>
 
           {/* Search Input */}
           <div className="relative">
-            <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B7B7AF]" size={16} />
             <input
               type="text"
               placeholder="Search & add sevaks..."
-              className="w-full p-2.5 pl-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none text-sm bg-white"
+              className="w-full py-2.5 pl-9 pr-3 rounded-xl focus:ring-2 focus:ring-saffron-300 outline-none text-sm bg-[#F7F4F0] border-none"
               value={searchValue}
               onChange={e => setSearchValue(e.target.value)}
             />
@@ -267,290 +318,235 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
     );
   };
 
+  const inputClass = "w-full py-3 px-3.5 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm";
+  const labelClass = "text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider block mb-2";
+  const pillWrapClass = "flex bg-[#F7F4F0] p-1 rounded-xl";
+  const pillClass = (active: boolean) => `flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${active ? 'bg-white text-saffron-700 shadow-sm' : 'text-[#8A6A57]'}`;
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in-up">
+    <div className="max-w-xl mx-auto space-y-5 pb-24">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
-        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
-        <div className="relative flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-white shadow-sm transform -rotate-3 shrink-0">
-            <FilePlus size={24} strokeWidth={2.5} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold tracking-tight text-white">{isEditing ? 'Edit Vihar Entry' : 'New Vihar Entry'}</h2>
-            <p className="text-sm text-white/80 mt-1">
-              Log a Vihar for{' '}
-              <span className="font-semibold text-white">
-                {orgDetails ? (
-                  <>
-                    {orgDetails.name}
-                    {orgDetails.city && `, ${orgDetails.city}`}
-                  </>
-                ) : (
-                  <span className="inline-block h-4 w-40 bg-white/20 rounded animate-pulse align-middle"></span>
+      <div className="px-1">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[#241C17]">{isEditing ? 'Edit Vihar Entry' : 'New Vihar Entry'}</h2>
+        <p className="text-sm text-[#8A6A57] mt-1">
+          {orgDetails ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}` : 'Loading organization…'}
+        </p>
+      </div>
+
+      {/* Step progress */}
+      <div className="flex items-center gap-1.5 px-1">
+        {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+          <div key={i} className={`flex-1 h-1.5 rounded-full ${i < step ? 'bg-saffron-600' : 'bg-saffron-100'}`} />
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+
+        {step === 1 && (
+          <StepCard n={1} title="Date & Type">
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className={labelClass}>Date</label>
+                <input
+                  type="date"
+                  required
+                  className={inputClass}
+                  value={formData.vihar_date}
+                  onChange={e => setFormData({ ...formData, vihar_date: e.target.value })}
+                />
+              </div>
+              <div className="flex-1">
+                <label className={labelClass}>Vihar Type</label>
+                <div className={pillWrapClass}>
+                  {['morning', 'evening'].map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, vihar_type: type as any })}
+                      className={pillClass(formData.vihar_type === type) + ' capitalize'}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </StepCard>
+        )}
+
+        {step === 2 && (
+          <StepCard n={2} title="Vihar Of & Route">
+            <div>
+              <label className={labelClass}>Vihar Of</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div
+                  onClick={() => setFormData(prev => ({ ...prev, group_sadhu: !prev.group_sadhu }))}
+                  className={`cursor-pointer border-2 rounded-xl p-3.5 transition-all relative ${formData.group_sadhu ? 'border-saffron-500 bg-saffron-50/60' : 'border-transparent bg-[#F7F4F0]'}`}
+                >
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Users size={22} className={formData.group_sadhu ? 'text-saffron-600' : 'text-[#B7B7AF]'} />
+                    <span className={`text-sm font-bold ${formData.group_sadhu ? 'text-[#241C17]' : 'text-[#8A6A57]'}`}>Sadhubhagwan</span>
+                  </div>
+                  {formData.group_sadhu && (
+                    <div className="mt-2.5" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Count"
+                        autoFocus
+                        className="w-full text-center py-1.5 rounded-lg outline-none text-base font-extrabold text-[#241C17] bg-white"
+                        value={formData.no_sadhubhagwan || ''}
+                        onChange={e => setFormData({ ...formData, no_sadhubhagwan: parseInt(e.target.value) })}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  onClick={() => setFormData(prev => ({ ...prev, group_sadhvi: !prev.group_sadhvi }))}
+                  className={`cursor-pointer border-2 rounded-xl p-3.5 transition-all relative ${formData.group_sadhvi ? 'border-pink-400 bg-pink-50/60' : 'border-transparent bg-[#F7F4F0]'}`}
+                >
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Users size={22} className={formData.group_sadhvi ? 'text-pink-600' : 'text-[#B7B7AF]'} />
+                    <span className={`text-sm font-bold ${formData.group_sadhvi ? 'text-[#241C17]' : 'text-[#8A6A57]'}`}>Sadhvijibhagwan</span>
+                  </div>
+                  {formData.group_sadhvi && (
+                    <div className="mt-2.5" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Count"
+                        autoFocus
+                        className="w-full text-center py-1.5 rounded-lg outline-none text-base font-extrabold text-[#241C17] bg-white"
+                        value={formData.no_sadhvijibhagwan || ''}
+                        onChange={e => setFormData({ ...formData, no_sadhvijibhagwan: parseInt(e.target.value) })}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <label className={labelClass + ' mb-0'}>Route Details</label>
+                {distanceInfo && (
+                  <span className="text-xs font-bold text-saffron-700 bg-saffron-100 px-2 py-1 rounded-full">{distanceInfo}</span>
                 )}
-              </span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-        <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8">
-
-        {/* Date & Type Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Date</label>
-            <input
-              type="date"
-              required
-              className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 focus:bg-white transition-all outline-none font-medium text-gray-700"
-              value={formData.vihar_date}
-              onChange={e => setFormData({ ...formData, vihar_date: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Vihar Type</label>
-            <div className="flex bg-gray-100 p-1 rounded-xl">
-              {['morning', 'evening'].map(type => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, vihar_type: type as any })}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold capitalize transition-all ${formData.vihar_type === type
-                    ? 'bg-white text-saffron-600 shadow-sm scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Vihar Of Selection */}
-        <div className="space-y-3">
-          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Vihar Of</label>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Sadhu Button */}
-            <div
-              onClick={() => setFormData(prev => ({ ...prev, group_sadhu: !prev.group_sadhu }))}
-              className={`cursor-pointer border-2 rounded-xl p-4 transition-all relative ${formData.group_sadhu
-                ? 'border-saffron-500 bg-saffron-50/50'
-                : 'border-gray-100 hover:border-saffron-200 bg-white'
-                }`}
-            >
-              <div className="flex flex-col items-center gap-2">
-                <Users size={28} className={formData.group_sadhu ? 'text-saffron-600' : 'text-gray-300'} />
-                <span className={`font-bold ${formData.group_sadhu ? 'text-gray-800' : 'text-gray-400'}`}>Sadhubhagwan</span>
               </div>
-              {formData.group_sadhu && (
-                <div className="mt-3 animate-fade-in" onClick={e => e.stopPropagation()}>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Count"
-                    autoFocus
-                    className="w-full text-center p-2 border border-saffron-200 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none text-lg font-bold text-gray-800 bg-white"
-                    value={formData.no_sadhubhagwan || ''}
-                    onChange={e => setFormData({ ...formData, no_sadhubhagwan: parseInt(e.target.value) })}
-                  />
+              <div className="flex items-center gap-2 bg-[#F7F4F0] rounded-xl p-1.5">
+                <div className="relative flex-1">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B7B7AF] pointer-events-none" size={15} />
+                  <select
+                    required
+                    className="w-full py-2 pl-8 pr-6 bg-transparent appearance-none font-semibold text-sm text-[#241C17] outline-none"
+                    value={formData.vihar_from}
+                    onChange={e => setFormData({ ...formData, vihar_from: e.target.value, vihar_to: '' })}
+                  >
+                    <option value="">From</option>
+                    {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
                 </div>
-              )}
-              {formData.group_sadhu && <div className="absolute top-2 right-2 w-3 h-3 bg-saffron-500 rounded-full"></div>}
-            </div>
-
-            {/* Sadhvi Button */}
-            <div
-              onClick={() => setFormData(prev => ({ ...prev, group_sadhvi: !prev.group_sadhvi }))}
-              className={`cursor-pointer border-2 rounded-xl p-4 transition-all relative ${formData.group_sadhvi
-                ? 'border-pink-500 bg-pink-50/50'
-                : 'border-gray-100 hover:border-pink-200 bg-white'
-                }`}
-            >
-              <div className="flex flex-col items-center gap-2">
-                <Users size={28} className={formData.group_sadhvi ? 'text-pink-600' : 'text-gray-300'} />
-                <span className={`font-bold ${formData.group_sadhvi ? 'text-gray-800' : 'text-gray-400'}`}>Sadhvijibhagwan</span>
-              </div>
-              {formData.group_sadhvi && (
-                <div className="mt-3 animate-fade-in" onClick={e => e.stopPropagation()}>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Count"
-                    autoFocus
-                    className="w-full text-center p-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none text-lg font-bold text-gray-800 bg-white"
-                    value={formData.no_sadhvijibhagwan || ''}
-                    onChange={e => setFormData({ ...formData, no_sadhvijibhagwan: parseInt(e.target.value) })}
-                  />
+                <ChevronDown className="rotate-[-90deg] text-[#B7B7AF] shrink-0" size={14} />
+                <div className="relative flex-1">
+                  <Map className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B7B7AF] pointer-events-none" size={15} />
+                  <select
+                    required
+                    disabled={!formData.vihar_from}
+                    className="w-full py-2 pl-8 pr-6 bg-transparent appearance-none font-semibold text-sm text-[#241C17] outline-none disabled:text-gray-400"
+                    value={formData.vihar_to}
+                    onChange={e => setFormData({ ...formData, vihar_to: e.target.value })}
+                  >
+                    <option value="">To</option>
+                    {uniqueAreas.filter(a => a !== formData.vihar_from).map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
                 </div>
-              )}
-              {formData.group_sadhvi && <div className="absolute top-2 right-2 w-3 h-3 bg-pink-500 rounded-full"></div>}
-            </div>
-          </div>
-        </div>
-
-        {/* Route */}
-        <div className="space-y-3">
-          <div className="flex justify-between items-end">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Route Details</label>
-            {distanceInfo && (
-              <span className="text-xs font-bold text-saffron-600 bg-saffron-100 px-2 py-1 rounded-full">
-                {distanceInfo}
-              </span>
-            )}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative group">
-              <MapPin className="absolute left-3 top-3.5 text-gray-400 group-hover:text-saffron-500 transition-colors" size={18} />
-              <select
-                required
-                className="w-full p-3 pl-10 pr-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 appearance-none bg-white font-medium text-gray-700 outline-none"
-                value={formData.vihar_from}
-                onChange={e => setFormData({ ...formData, vihar_from: e.target.value, vihar_to: '' })} // Reset To when From changes
-              >
-                <option value="">Start Location (From)</option>
-                {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-              <ChevronDown className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={16} />
-            </div>
-
-            <div className="relative group">
-              <Map className="absolute left-3 top-3.5 text-gray-400 group-hover:text-saffron-500 transition-colors" size={18} />
-              <select
-                required
-                disabled={!formData.vihar_from}
-                className="w-full p-3 pl-10 pr-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 appearance-none bg-white font-medium text-gray-700 outline-none disabled:bg-gray-50 disabled:text-gray-400"
-                value={formData.vihar_to}
-                onChange={e => setFormData({ ...formData, vihar_to: e.target.value })}
-              >
-                <option value="">End Location (To)</option>
-                {uniqueAreas
-                  .filter(a => a !== formData.vihar_from) // Area cannot be same as From
-                  .map(a => <option key={a} value={a}>{a}</option>)
-                }
-              </select>
-              <ChevronDown className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={16} />
-            </div>
-          </div>
-        </div>
-
-        {/* Main Sevak Selection */}
-        {renderSevakSelector('Assign Sevaks', 'sevaks', sevakSearch, setSevakSearch, true)}
-
-        {/* Samuday */}
-        <div className="pt-2">
-          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Samuday</label>
-          <input
-            type="text"
-            className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 outline-none text-sm"
-            placeholder="e.g. Labdhi Vikram"
-            value={formData.samuday || ''}
-            onChange={e => setFormData({ ...formData, samuday: e.target.value })}
-          />
-        </div>
-
-        {/* Additional Toggles Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
-          
-          {/* Wheelchair Toggle */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Wheelchair Provided?</label>
-              <div className="flex bg-gray-100 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, wheelchair: true })}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${formData.wheelchair === true
-                    ? 'bg-white text-saffron-600 shadow-sm scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, wheelchair: false, wheelchair_sevaks: [] })}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${formData.wheelchair === false
-                    ? 'bg-white text-saffron-600 shadow-sm scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                >
-                  No
-                </button>
               </div>
             </div>
-            
-            {/* Wheelchair Sevaks */}
-            {formData.wheelchair && (
-              <div className="animate-fade-in-up">
-                {renderSevakSelector('Assign Wheelchair Sevaks', 'wheelchair_sevaks', wheelchairSearch, setWheelchairSearch, false)}
-              </div>
-            )}
-          </div>
+          </StepCard>
+        )}
 
-          {/* Car Seva Toggle */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Car Seva (Updhi)</label>
-              <div className="flex bg-gray-100 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, car_seva: true })}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${formData.car_seva === true
-                    ? 'bg-white text-saffron-600 shadow-sm scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, car_seva: false, car_seva_sevaks: [] })}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${formData.car_seva === false
-                    ? 'bg-white text-saffron-600 shadow-sm scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                >
-                  No
-                </button>
+        {step === 3 && (
+          <StepCard n={3} title="Seva Requirements">
+            {renderSevakSelector('Assign Sevaks', 'sevaks', sevakSearch, setSevakSearch, true)}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-gray-100">
+              <div className="space-y-3">
+                <label className={labelClass}>Wheelchair Provided?</label>
+                <div className={pillWrapClass}>
+                  <button type="button" onClick={() => setFormData({ ...formData, wheelchair: true })} className={pillClass(formData.wheelchair === true)}>Yes</button>
+                  <button type="button" onClick={() => setFormData({ ...formData, wheelchair: false, wheelchair_sevaks: [] })} className={pillClass(formData.wheelchair === false)}>No</button>
+                </div>
+                {formData.wheelchair && renderSevakSelector('Assign Wheelchair Sevaks', 'wheelchair_sevaks', wheelchairSearch, setWheelchairSearch, false)}
+              </div>
+
+              <div className="space-y-3">
+                <label className={labelClass}>Car Seva (Updhi)</label>
+                <div className={pillWrapClass}>
+                  <button type="button" onClick={() => setFormData({ ...formData, car_seva: true })} className={pillClass(formData.car_seva === true)}>Yes</button>
+                  <button type="button" onClick={() => setFormData({ ...formData, car_seva: false, car_seva_sevaks: [] })} className={pillClass(formData.car_seva === false)}>No</button>
+                </div>
+                {formData.car_seva && renderSevakSelector('Assign Car Sevaks', 'car_seva_sevaks', carSearch, setCarSearch, false)}
               </div>
             </div>
+          </StepCard>
+        )}
 
-            {/* Car Seva Sevaks */}
-            {formData.car_seva && (
-              <div className="animate-fade-in-up">
-                {renderSevakSelector('Assign Car Sevaks', 'car_seva_sevaks', carSearch, setCarSearch, false)}
-              </div>
-            )}
-          </div>
+        {step === 4 && (
+          <StepCard n={4} title="Instructions & Review">
+            <div>
+              <label className={labelClass}>Samuday</label>
+              <input
+                type="text"
+                className={inputClass}
+                placeholder="e.g. Labdhi Vikram"
+                value={formData.samuday || ''}
+                onChange={e => setFormData({ ...formData, samuday: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Notes / Remark (Optional)</label>
+              <textarea
+                className={inputClass + ' min-h-[80px] resize-none'}
+                placeholder="Add any specific instructions or observations…"
+                value={formData.notes || ''}
+                onChange={e => setFormData({ ...formData, notes: e.target.value })}
+              />
+            </div>
+          </StepCard>
+        )}
+
+        {/* Bottom nav */}
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            type="button"
+            onClick={goBack}
+            className="flex items-center justify-center gap-1.5 px-5 py-3.5 rounded-xl bg-white border border-gray-200 text-[#241C17] font-bold text-sm active:scale-95 transition-all"
+          >
+            <ChevronLeft size={16} />
+            {step === 1 ? 'Cancel' : 'Back'}
+          </button>
+
+          {step < TOTAL_STEPS ? (
+            <button
+              type="button"
+              onClick={goNext}
+              className="flex-1 py-3.5 rounded-xl bg-saffron-600 hover:bg-saffron-700 text-white font-extrabold text-sm shadow-lg active:scale-[0.98] transition-all"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-saffron-600 hover:bg-saffron-700 text-white font-extrabold text-sm shadow-lg active:scale-[0.98] transition-all disabled:opacity-70"
+            >
+              {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+              {loading ? (isEditing ? 'Updating…' : 'Saving…') : (isEditing ? 'Update Entry' : 'Submit Entry')}
+            </button>
+          )}
         </div>
-
-        {/* Notes */}
-        <div className="pt-2 border-t border-gray-100 mt-4">
-          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Notes / Remark (Optional)</label>
-          <textarea
-            className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 outline-none text-sm min-h-[80px]"
-            placeholder="Add any specific instructions or observations..."
-            value={formData.notes || ''}
-            onChange={e => setFormData({ ...formData, notes: e.target.value })}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-saffron-600 to-saffron-700 hover:from-saffron-700 hover:to-saffron-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl flex justify-center items-center space-x-2 text-lg transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-4"
-        >
-          {loading ? <Loader2 className="animate-spin" /> : <Save size={24} />}
-          <span>{loading ? (isEditing ? 'Updating...' : 'Saving Entry...') : (isEditing ? 'Update Entry' : 'Submit Entry')}</span>
-        </button>
-
       </form>
-      </div>
     </div>
   );
 };

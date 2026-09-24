@@ -22,7 +22,6 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
-            'vendor-charts': ['recharts'],
             'vendor-pdf': ['jspdf', 'jspdf-autotable'],
             'vendor-excel': ['xlsx'],
           },
@@ -143,6 +142,34 @@ export default defineConfig(({ mode }) => {
                 res.end(result.body);
               } catch (e: any) {
                 console.error("Local mock error get-org-admins:", e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
+            } else if (req.url && req.url.startsWith('/.netlify/functions/get-org-sevak-contacts')) {
+              try {
+                const { handler } = await import('./netlify/functions/get-org-sevak-contacts.js');
+
+                let body = '';
+                req.on('data', chunk => { body += chunk.toString(); });
+                await new Promise(resolve => req.on('end', resolve));
+
+                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
+                process.env.SUPABASE_SERVICE_ROLE_KEY = _env.SUPABASE_SERVICE_ROLE_KEY || _env.VITE_SUPABASE_ANON_KEY || '';
+
+                const event = {
+                  httpMethod: req.method,
+                  body,
+                  headers: req.headers,
+                };
+
+                const result = await handler(event, {});
+
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error("Local mock error get-org-sevak-contacts:", e);
                 res.statusCode = 500;
                 res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
               }

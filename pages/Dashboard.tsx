@@ -1,29 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, ViharEntry, UserRole, Organization, AreaRoute } from '../types';
 import { dataService } from '../services/dataService';
-import StatCard from '../components/StatCard';
-import LeaderboardCard from '../components/LeaderboardCard';
-import { Trophy, Users, MapPin, Footprints, Download, FileText, Table, Medal, Handshake, Activity, AlertCircle, X } from 'lucide-react';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
-} from 'recharts';
-import jsPDF from 'jspdf';
+import UpcomingViharCard from '../components/UpcomingViharCard';
+import SankalpRing from '../components/SankalpRing';
+import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X } from 'lucide-react';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import vsgLogo from '../assets/vsg.jpg';
-import { NotoSansDevanagariBase64 } from '../assets/NotoSansDevanagari-Regular';
-import { NotoSansGujaratiBase64 } from '../assets/NotoSansGujarati-Regular';
-import * as XLSX from 'xlsx';
-
-import autoTable from 'jspdf-autotable';
 import { useToast } from '../context/ToastContext';
 import { supabase } from '../services/supabase';
 
 interface DashboardProps {
   currentUser: UserProfile;
   navigateToProfile?: () => void;
+  navigateToNotifications?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile }) => {
+const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, navigateToNotifications }) => {
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [sevakMap, setSevakMap] = useState<Record<string, string>>({}); // Add this state
@@ -44,8 +36,13 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
   });
 
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
+  const [yearlyGoal, setYearlyGoal] = useState(25);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const downloadMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    dataService.getYearlyGoal(currentUser.id).then(setYearlyGoal);
+  }, [currentUser.id]);
 
   // Profile completion modal state
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -127,11 +124,32 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
     const loadData = async () => {
       try {
         setIsLoading(true);
-        const [org, orgSevaks, routes] = await Promise.all([
+        const isAdmin = currentUser.role === UserRole.ORG_ADMIN;
+
+        // All of these only depend on currentUser (already known), not on each
+        // other's results — they were previously awaited in a 4-stage sequential
+        // chain. Firing them together turns ~4 round-trips into 1.
+        const [
+          org, orgSevaks, routes, secureMap, allOrgEntries, detailedStats, leaderboard, rankPair
+        ] = await Promise.all([
           dataService.getOrganization(currentUser.organization_id),
           dataService.getAllOrgUsers(currentUser.organization_id, true),
-          dataService.getRoutes(currentUser.organization_id)
+          dataService.getRoutes(currentUser.organization_id),
+          dataService.getSevakNameMap(currentUser.organization_id),
+          dataService.getEntries(currentUser.organization_id),
+          dataService.getDashboardStats(currentUser.organization_id).catch(e => {
+            console.error("Failed to load accurate dashboard stats", e);
+            return null;
+          }),
+          dataService.getTopSevaks(currentUser.organization_id),
+          isAdmin
+            ? Promise.resolve(null)
+            : Promise.all([
+                dataService.getSevakRank(currentUser.organization_id, currentUser.username),
+                dataService.getTotalOrgSevaks(currentUser.organization_id)
+              ]),
         ]);
+
         setOrgDetails(org);
         setAvailableRoutes(routes);
 
@@ -145,25 +163,18 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
 
         // Create username -> fullname map for Synergy display
         const nameMap: Record<string, string> = {};
-        
-        // Load map securely via proxy if possible
-        const secureMap = await dataService.getSevakNameMap(currentUser.organization_id);
         Object.assign(nameMap, secureMap);
-
         orgSevaks.forEach(s => {
           nameMap[s.username] = s.full_name;
           nameMap[s.username.split('@')[0]] = s.full_name;
         });
         setSevakMap(nameMap);
 
-        // To calculate RANK, we need ALL entries for the organization
-        const allOrgEntries = await dataService.getEntries(currentUser.organization_id);
+        let myEntries: ViharEntry[];
+        let rank: number | string;
+        let totalCount: number | null;
 
-        let myEntries: ViharEntry[] = [];
-        let rank: number | string = "N/A";
-        let totalCount: number | null = null;
-
-        if (currentUser.role === UserRole.ORG_ADMIN) {
+        if (isAdmin) {
           // Admin sees org stats
           myEntries = allOrgEntries;
           rank = "Admin";
@@ -171,11 +182,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
         } else {
           // Sevak sees own stats
           myEntries = allOrgEntries.filter(e => (e.sevaks || []).includes(currentUser.username));
-          // Calculate Rank & Total count (using RPC to bypass RLS)
-          const [rankRes, totalRes] = await Promise.all([
-            dataService.getSevakRank(currentUser.organization_id, currentUser.username),
-            dataService.getTotalOrgSevaks(currentUser.organization_id)
-          ]);
+          const [rankRes, totalRes] = rankPair as [number | string, number | null];
           rank = rankRes;
           totalCount = totalRes;
         }
@@ -183,8 +190,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
         const stats = dataService.calculateStats(myEntries, currentUser.username, nameMap);
         stats.vRank = rank;
 
-        try {
-          const detailedStats = await dataService.getDashboardStats(currentUser.organization_id);
+        if (detailedStats) {
           stats.totalOrgSevaks = detailedStats.totalMale + detailedStats.totalFemale;
           stats.activeSevaks = detailedStats.activeMale + detailedStats.activeFemale;
           stats.totalMale = detailedStats.totalMale;
@@ -192,13 +198,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
           stats.activeMale = detailedStats.activeMale;
           stats.activeFemale = detailedStats.activeFemale;
           stats.activeUsernames = detailedStats.activeUsernames || [];
-        } catch (e) {
-          console.error("Failed to load accurate dashboard stats", e);
-          if (totalCount !== null) {
-              stats.totalOrgSevaks = totalCount;
-          } else {
-              stats.totalOrgSevaks = 0;
-          }
+        } else {
+          stats.totalOrgSevaks = totalCount !== null ? totalCount : 0;
           stats.activeSevaks = 0;
           stats.totalMale = 0;
           stats.totalFemale = 0;
@@ -206,11 +207,6 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
           stats.activeFemale = 0;
           stats.activeUsernames = [];
         }
-
-        // (Active sevaks count is now fetched directly via dataService.getDashboardStats)
-
-        // Fetch Leaderboard for Everyone
-        let leaderboard = await dataService.getTopSevaks(currentUser.organization_id);
 
         setData({ entries: myEntries, stats, leaderboard });
       } catch (e) {
@@ -248,37 +244,23 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
     });
   };
 
-  // Prepare Chart Data (Aggregated by Date)
-  const groupedData: Record<string, { km: number, count: number, _rawDate: Date }> = {};
-
-  data.entries.forEach(e => {
-    const rawDate = new Date(e.vihar_date);
-    // Use ISO string base to cleanly group identical days regardless of timezone shifts
-    const key = rawDate.toISOString().split('T')[0];
-
-    if (!groupedData[key]) {
-      groupedData[key] = { km: 0, count: 0, _rawDate: rawDate };
-    }
-    groupedData[key].km += Number(e.distance_km || 0);
-    groupedData[key].count += 1;
-  });
-
-  // Convert to array, sort by date descending (newest first), take top 7, then reverse for L-to-R chronological chart
-  const recentDays = Object.values(groupedData)
-    .sort((a, b) => b._rawDate.getTime() - a._rawDate.getTime())
-    .slice(0, 7)
-    .reverse();
-
-  const chartData = recentDays.map(d => ({
-    date: d._rawDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
-    km: parseFloat(d.km.toFixed(2)),
-    count: d.count
-  }));
-
-  const maxKm = chartData.length > 0 ? Math.max(...chartData.map(d => d.km)) : 0;
-
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     try {
+      // jsPDF + autoTable (~420KB) and the Hindi/Gujarati font data (~570KB)
+      // are only needed for this rarely-used export action — load them on
+      // demand instead of bundling them into Dashboard's initial chunk, which
+      // every user pays for just to open the app.
+      const [
+        { default: jsPDF },
+        { default: autoTable },
+        { NotoSansDevanagariBase64 },
+        { NotoSansGujaratiBase64 },
+      ] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+        import('../assets/NotoSansDevanagari-Regular'),
+        import('../assets/NotoSansGujarati-Regular'),
+      ]);
       const doc = new jsPDF();
       const exportData = prepareExportData();
 
@@ -431,8 +413,11 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
     }
   };
 
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     try {
+      // xlsx (~280KB) is only needed for this rarely-used export action —
+      // load it on demand rather than bundling it into Dashboard's initial chunk.
+      const XLSX = await import('xlsx');
       const data = prepareExportData();
       const excelData = data.map(item => ({
         'Sr No': item.srNo,
@@ -463,6 +448,41 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
   const SkeletonLoader = ({ width = "w-16" }) => (
     <div className={`h-8 ${width} bg-gray-200 rounded animate-pulse mt-1`}></div>
   );
+
+  // Tangerine redesign: Consistency + Recent Activity + Sankalp count are all
+  // derived from data.entries — no new data source needed.
+  const currentYear = new Date().getFullYear();
+  const yearlyViharCount = data.entries.filter(e => new Date(`${e.vihar_date}T00:00:00`).getFullYear() === currentYear).length;
+
+  const weekDayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  const startOfWeek = (() => {
+    const d = new Date();
+    const day = (d.getDay() + 6) % 7; // 0 = Monday
+    d.setDate(d.getDate() - day);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  })();
+  const weeklyConsistency = weekDayLabels.map((label, i) => {
+    const dayDate = new Date(startOfWeek);
+    dayDate.setDate(startOfWeek.getDate() + i);
+    const dayKey = dayDate.toISOString().split('T')[0];
+    return { label, done: data.entries.some(e => e.vihar_date === dayKey) };
+  });
+
+  const recentActivity = [...data.entries]
+    .sort((a, b) => new Date(b.vihar_date).getTime() - new Date(a.vihar_date).getTime())
+    .slice(0, 3);
+
+  const formatRelativeDate = (dateStr: string) => {
+    const d = new Date(`${dateStr}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((today.getTime() - d.getTime()) / 86400000);
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays > 1 && diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  };
 
   return (
     <div className="space-y-8 animate-fade-in relative">
@@ -632,394 +652,189 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile })
 
 
 
-      {/* Header - Orange Gradient Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-5 sm:p-6 text-white shadow-lg">
-        {/* Decorative circles — clipped inside their own container so dropdown isn't cut */}
-        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-          <div className="absolute -top-10 -right-10 w-52 h-52 rounded-full bg-white/10" />
-          <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-white/10" />
-          <div className="absolute top-4 right-32 w-16 h-16 rounded-full bg-white/5" />
+      {/* Header - plain greeting bar (Tangerine redesign: gradient moved to Sankalp card below) */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-11 w-11 shrink-0 rounded-full bg-[#FCE6D8] flex items-center justify-center">
+            <span className="text-[#C05A2C] font-extrabold text-sm">
+              {currentUser.full_name ? currentUser.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'VS'}
+            </span>
+          </div>
+          <div className="flex flex-col min-w-0">
+            <p className="m-0 text-xs font-bold text-[#8A6A57]">Jai Jinendra,</p>
+            <h1 className="m-0 text-xl sm:text-2xl font-extrabold tracking-tight text-[#241C17] truncate">
+              {currentUser.full_name}
+            </h1>
+          </div>
         </div>
 
-        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-5">
-          {/* Left: greeting + org */}
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-full bg-orange-100 flex items-center justify-center border-2 border-white shadow-md">
-              <span className="text-saffron-600 font-bold text-lg sm:text-xl">
-                {currentUser.full_name ? currentUser.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'VS'}
-              </span>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight leading-tight drop-shadow-md text-white/95 truncate">
-                {currentUser.full_name}
-              </h1>
-              <div className="mt-1.5 sm:mt-2 inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full bg-white/20 border border-white/30 shadow-sm backdrop-blur-sm self-start max-w-full">
-                <span className="inline-block w-2 h-2 rounded-full bg-white shadow-sm shrink-0" />
-                <p className="text-white text-xs sm:text-sm font-semibold tracking-wide truncate">
-                  {orgDetails
-                    ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}`
-                    : currentUser.organization_id}
-                </p>
-              </div>
-            </div>
-          </div>
+        {/* Action buttons (admin only) */}
+        {currentUser.role === UserRole.ORG_ADMIN && (
+          <div className="flex flex-row gap-2 w-full md:w-auto shrink-0">
+            <button
+              onClick={() => setIsAlertOpen(true)}
+              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 sm:gap-2 bg-saffron-600 hover:bg-saffron-700 text-white font-bold px-3 sm:px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 text-sm"
+            >
+              <MapPin size={18} />
+              <span className="truncate">Alert Vihar</span>
+            </button>
 
-          {/* Right: action buttons (admin only) */}
-          {currentUser.role === UserRole.ORG_ADMIN && (
-            <div className="flex flex-row gap-2 w-full md:w-auto shrink-0 mt-2 md:mt-0">
+            <div ref={downloadMenuRef} className="relative flex-1 md:flex-none">
               <button
-                onClick={() => setIsAlertOpen(true)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-1.5 sm:gap-2 bg-white text-saffron-600 hover:bg-saffron-50 font-bold px-3 sm:px-4 py-2.5 rounded-xl shadow-lg transition-all active:scale-95 text-sm sm:text-base"
+                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                className="w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-[#241C17] font-semibold px-3 sm:px-4 py-2.5 rounded-xl transition-all active:scale-95 text-sm shadow-sm"
               >
-                <MapPin size={18} />
-                <span className="truncate">Alert Vihar</span>
+                <Download size={18} />
+                <span className="truncate">Export</span>
               </button>
-
-              <div ref={downloadMenuRef} className="relative flex-1 md:flex-none">
-                <button
-                  onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-                  className="w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-white font-semibold px-3 sm:px-4 py-2.5 rounded-xl transition-all active:scale-95 text-sm sm:text-base"
-                >
-                  <Download size={18} />
-                  <span className="truncate">Export</span>
-                </button>
-                {showDownloadMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                    <button onClick={downloadPDF} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700">
-                      <FileText size={16} className="text-red-500" />
-                      <span>Download PDF</span>
-                    </button>
-                    <button onClick={downloadExcel} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700 border-t border-gray-50">
-                      <Table size={16} className="text-green-500" />
-                      <span>Export Excel</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-
-
-        {/* Left Col: Stats & Chart */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Quick Stats Grid - Rich Modern */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* 1. Total Km */}
-            <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(234,88,12,0.15)] transition-all duration-300 border border-gray-100 hover:border-saffron-200 relative overflow-hidden hover:-translate-y-0.5">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 to-saffron-500 rounded-t-2xl" />
-              <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
-                <Footprints size={56} className="text-saffron-600" />
-              </div>
-              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-orange-50 to-saffron-100 rounded-xl border border-saffron-100 shadow-sm">
-                    <Footprints size={15} className="text-saffron-600 shrink-0" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Total Km</span>
-                </div>
-                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalKm}<span className="text-sm font-semibold text-saffron-400 ml-1">km</span></p>}
-              </div>
-            </div>
-
-            {/* 2. Total Vihars */}
-            <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(59,130,246,0.15)] transition-all duration-300 border border-gray-100 hover:border-blue-200 relative overflow-hidden hover:-translate-y-0.5">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-t-2xl" />
-              <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
-                <MapPin size={56} className="text-blue-600" />
-              </div>
-              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl border border-blue-100 shadow-sm">
-                    <MapPin size={15} className="text-blue-600 shrink-0" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Vihars</span>
-                </div>
-                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalVihars}</p>}
-              </div>
-            </div>
-
-            {/* 3. Sadhubhagwant */}
-            <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(239,68,68,0.15)] transition-all duration-300 border border-gray-100 hover:border-red-200 relative overflow-hidden hover:-translate-y-0.5">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-400 to-rose-500 rounded-t-2xl" />
-              <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
-                <Users size={56} className="text-red-600" />
-              </div>
-              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-red-50 to-rose-100 rounded-xl border border-red-100 shadow-sm">
-                    <Users size={15} className="text-red-600 shrink-0" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700" title="SADHUBHAGWANT">Sadhu</span>
-                </div>
-                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalSadhu}</p>}
-              </div>
-            </div>
-
-            {/* 4. Sadhvijibhagwant */}
-            <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(236,72,153,0.15)] transition-all duration-300 border border-gray-100 hover:border-pink-200 relative overflow-hidden hover:-translate-y-0.5">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-400 to-fuchsia-500 rounded-t-2xl" />
-              <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
-                <Users size={56} className="text-pink-600" />
-              </div>
-              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-pink-50 to-fuchsia-100 rounded-xl border border-pink-100 shadow-sm">
-                    <Users size={15} className="text-pink-600 shrink-0" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700" title="SADHVIJIBHAGWANT">Sadhvi</span>
-                </div>
-                {isLoading ? <SkeletonLoader /> : <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.totalSadhvi}</p>}
-              </div>
-            </div>
-
-            {/* 5. Rank (Sevaks Only) */}
-            {currentUser.role !== UserRole.ORG_ADMIN && (
-              <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(234,179,8,0.15)] transition-all duration-300 border border-gray-100 hover:border-yellow-200 relative overflow-hidden hover:-translate-y-0.5">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-t-2xl" />
-                <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
-                  <Medal size={56} className="text-yellow-600" />
-                </div>
-                <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-2 bg-gradient-to-br from-yellow-50 to-amber-100 rounded-xl border border-yellow-100 shadow-sm">
-                      <Medal size={15} className="text-yellow-600 shrink-0" />
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Rank</span>
-                  </div>
-                  {isLoading ? <SkeletonLoader /> : (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-extrabold text-gray-900 tracking-tight">#{data.stats.vRank}</span>
-                      <span className="text-xs text-amber-400 font-bold ml-1 bg-amber-50 px-1.5 py-0.5 rounded-full">Org</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 6. Synergy (Sevaks Only) */}
-            {currentUser.role !== UserRole.ORG_ADMIN && (
-              <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(234,88,12,0.15)] transition-all duration-300 border border-gray-100 hover:border-saffron-200 relative overflow-hidden hover:-translate-y-0.5">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-saffron-400 to-orange-500 rounded-t-2xl" />
-                <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
-                  <Handshake size={56} className="text-saffron-600" />
-                </div>
-                <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-2 bg-gradient-to-br from-orange-50 to-saffron-100 rounded-xl border border-saffron-100 shadow-sm">
-                      <Handshake size={15} className="text-saffron-600 shrink-0" />
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Co-Sevak</span>
-                  </div>
-                  {isLoading ? <SkeletonLoader /> : (
-                    <div className="flex flex-wrap gap-1">
-                      {data.stats.vSynergy && data.stats.vSynergy !== "N/A" ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-saffron-50 to-orange-50 text-saffron-700 border border-saffron-200 shadow-sm">
-                          {data.stats.vSynergy.split(',')[0]}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-400 italic">Find a partner</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 7. Total Sevaks */}
-            <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(16,185,129,0.15)] transition-all duration-300 border border-gray-100 hover:border-emerald-200 relative overflow-hidden hover:-translate-y-0.5">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-t-2xl" />
-              <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
-                <Users size={56} className="text-emerald-600" />
-              </div>
-              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-emerald-50 to-teal-100 rounded-xl border border-emerald-100 shadow-sm">
-                    <Users size={15} className="text-emerald-600 shrink-0" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Total Sevaks</span>
-                </div>
-                {isLoading ? <SkeletonLoader /> : (
-                  <div>
-                    <p className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">{data.stats.totalOrgSevaks}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center text-[10px] font-bold text-blue-600 border border-blue-100 shadow-sm">
-                        {data.stats.totalMale || 0}
-                      </span>
-                      <div className="h-3 w-[1px] bg-gray-200" />
-                      <span className="w-5 h-5 rounded-full bg-pink-50 flex items-center justify-center text-[10px] font-bold text-pink-600 border border-pink-100 shadow-sm">
-                        {data.stats.totalFemale || 0}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 8. Active Sevaks */}
-            <div className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(139,92,246,0.15)] transition-all duration-300 border border-gray-100 hover:border-violet-200 relative overflow-hidden hover:-translate-y-0.5">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-400 to-purple-500 rounded-t-2xl" />
-              <div className="absolute top-0 right-0 p-4 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 group-hover:rotate-6 duration-500">
-                <Activity size={56} className="text-violet-600" />
-              </div>
-              <div className="p-4 sm:p-5 pt-5 sm:pt-6 relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-violet-50 to-purple-100 rounded-xl border border-violet-100 shadow-sm">
-                    <Activity size={15} className="text-violet-600 shrink-0" />
-                  </div>
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider sm:tracking-widest text-orange-700" title=">= 1 Vihar in last 30 days">Active Sevaks</span>
-                </div>
-                {isLoading ? <SkeletonLoader /> : (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{data.stats.activeSevaks}</p>
-                      <button onClick={() => setShowActiveSevaksModal(true)} className="text-[9px] font-bold px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg hover:bg-violet-100 transition-colors shadow-[0_2px_4px_rgba(139,92,246,0.15)] active:scale-95 tracking-wider border border-violet-100">VIEW</button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center text-[10px] font-bold text-blue-600 border border-blue-100 shadow-sm">
-                        {data.stats.activeMale || 0}
-                      </span>
-                      <div className="h-3 w-[1px] bg-gray-200" />
-                      <span className="w-5 h-5 rounded-full bg-pink-50 flex items-center justify-center text-[10px] font-bold text-pink-600 border border-pink-100 shadow-sm">
-                        {data.stats.activeFemale || 0}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Leaderboards - ADMIN ONLY */}
-          {currentUser.role === UserRole.ORG_ADMIN && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <LeaderboardCard
-                title="Top Vihar Sevaks"
-                icon={<Trophy size={20} />}
-                items={data.leaderboard?.male || []}
-                colorClass="text-blue-600"
-                bgClass="bg-blue-50"
-                loading={isLoading}
-                orgName={orgDetails?.name || ''}
-              />
-              <LeaderboardCard
-                title="Top Vihar Sevikas"
-                icon={<Trophy size={20} />}
-                items={data.leaderboard?.female || []}
-                colorClass="text-pink-600"
-                bgClass="bg-pink-50"
-                loading={isLoading}
-                orgName={orgDetails?.name || ''}
-              />
-            </div>
-          )}
-
-          {/* Chart */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-6">Recent Vihar Activity</h3>
-            <div className="h-64 w-full">
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
-                    <Tooltip
-                      cursor={{ fill: '#f9fafb' }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="bg-white border border-gray-100 p-3 rounded-xl shadow-lg">
-                              <p className="font-bold text-gray-800 mb-1">{payload[0].payload.date}</p>
-                              <div className="flex items-center gap-3">
-                                <div>
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Distance</p>
-                                  <p className="text-saffron-600 font-bold">{payload[0].value} km</p>
-                                </div>
-                                <div className="h-8 w-px bg-gray-100"></div>
-                                <div>
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vihars</p>
-                                  <p className="text-gray-700 font-bold">{payload[0].payload.count}</p>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="km" radius={[4, 4, 0, 0]}>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.km === maxKm && maxKm > 0 ? '#ea580c' : '#fdba74'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-400">
-                  {isLoading ? "Loading activity..." : "No recent activity to show."}
+              {showDownloadMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                  <button onClick={downloadPDF} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700">
+                    <FileText size={16} className="text-red-500" />
+                    <span>Download PDF</span>
+                  </button>
+                  <button onClick={downloadExcel} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700 border-t border-gray-50">
+                    <Table size={16} className="text-green-500" />
+                    <span>Export Excel</span>
+                  </button>
                 </div>
               )}
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Leaderboards - SEVAK ONLY (Gender Specific) */}
-          {currentUser.role !== UserRole.ORG_ADMIN && (() => {
-            const gender = (currentUser.gender || '').toLowerCase();
-            const showMale = gender !== 'female'; // show male card for males or if gender unknown
-            const showFemale = gender !== 'male'; // show female card for females or if gender unknown
-            return (
-              <div className="grid grid-cols-1 gap-6 pt-2">
-                {showMale && (
-                  <LeaderboardCard
-                    title="Top Vihar Sevaks"
-                    icon={<Trophy size={20} />}
-                    items={data.leaderboard?.male || []}
-                    colorClass="text-blue-600"
-                    bgClass="bg-blue-50"
-                    loading={isLoading}
-                    orgName={orgDetails?.name || ''}
-                  />
-                )}
-                {showFemale && (
-                  <LeaderboardCard
-                    title="Top Vihar Sevikas"
-                    icon={<Trophy size={20} />}
-                    items={data.leaderboard?.female || []}
-                    colorClass="text-pink-600"
-                    bgClass="bg-pink-50"
-                    loading={isLoading}
-                    orgName={orgDetails?.name || ''}
-                  />
-                )}
-              </div>
-            );
-          })()}
-        </div>
+      {/* Yearly Sankalp — real progress vs. the goal set in Profile settings */}
+      <SankalpRing count={yearlyViharCount} goal={yearlyGoal} />
 
-        {/* Right Col: Stat Card Preview */}
-        <div className="flex flex-col items-center">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 w-full flex flex-col items-center">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 self-start">{currentUser.role === UserRole.ORG_ADMIN ? 'Your Vihar Group Summary' : 'Your Impact Card'}</h3>
-            <StatCard
-              stats={data.stats}
-              userName={currentUser.full_name}
-              orgName={orgDetails?.name || 'vSeva'}
-              orgCity={orgDetails?.city || ''}
-              loading={isLoading}
-              isAdmin={currentUser.role === UserRole.ORG_ADMIN}
-              topSevak={(data.leaderboard as any)?.male?.[0] || null}
-              topSevika={(data.leaderboard as any)?.female?.[0] || null}
-            />
+      <UpcomingViharCard currentUser={currentUser} onViewAll={navigateToNotifications} />
+
+      {/* Stats section */}
+      <div className="max-w-2xl space-y-8">
+        {/* Quick Stats Grid — 2x2 primary tiles (Tangerine redesign, flat tints) */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* 1. Total Km */}
+            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#FFF0E5', animationDelay: '0ms' }}>
+              {isLoading ? <SkeletonLoader /> : (
+                <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{data.stats.totalKm}<span className="text-[13px] font-bold text-[#8A6A57]"> km</span></p>
+              )}
+              <p className="mt-1 text-xs font-semibold text-[#B5602C]">Total KM</p>
+            </div>
+
+            {/* 2. Total Vihars */}
+            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#E9F4FD', animationDelay: '40ms' }}>
+              {isLoading ? <SkeletonLoader /> : (
+                <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{data.stats.totalVihars}</p>
+              )}
+              <p className="mt-1 text-xs font-semibold text-[#2E7EB0]">Vihars</p>
+            </div>
+
+            {/* 3. Sadhu / Sadhvi (combined) */}
+            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#FCEAEB', animationDelay: '80ms' }}>
+              {isLoading ? <SkeletonLoader /> : (
+                <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{data.stats.totalSadhu}<span className="text-sm text-[#D9A6A5]"> / </span>{data.stats.totalSadhvi}</p>
+              )}
+              <p className="mt-1 text-xs font-semibold text-[#C05A57]">Sadhu / Sadhvi</p>
+            </div>
+
+            {/* 4. Co-Sevak */}
+            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#F1EAFB', animationDelay: '120ms' }}>
+              {isLoading ? <SkeletonLoader /> : (
+                currentUser.role === UserRole.ORG_ADMIN ? (
+                  <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{data.stats.totalOrgSevaks}</p>
+                ) : data.stats.vSynergy && data.stats.vSynergy !== "N/A" ? (
+                  <p className="text-[15px] font-extrabold text-[#241C17] leading-tight truncate">{data.stats.vSynergy.split(',')[0]}</p>
+                ) : (
+                  <p className="text-[15px] font-semibold text-[#8A6A57]/70 italic">Find a partner</p>
+                )
+              )}
+              <p className="mt-1 text-xs font-semibold text-[#6B4FAE]">Co-Sevak</p>
+            </div>
           </div>
 
-        </div>
+          {/* Secondary stats — Rank / Total Sevaks / Active Sevaks (kept from existing dashboard, not in the pilot mock but not removed) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {currentUser.role !== UserRole.ORG_ADMIN && (
+              <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#FFF6E0', animationDelay: '160ms' }}>
+                {isLoading ? <SkeletonLoader /> : (
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-[22px] font-extrabold text-[#241C17] leading-none">#{data.stats.vRank}</span>
+                  </div>
+                )}
+                <p className="mt-1 text-xs font-semibold text-[#946800]">Rank in Org</p>
+              </div>
+            )}
+
+            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#E6F7F0', animationDelay: '200ms' }}>
+              {isLoading ? <SkeletonLoader /> : (
+                <div className="flex items-center gap-2">
+                  <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{data.stats.totalOrgSevaks}</span>
+                  <span className="text-[10px] font-bold text-[#1F8A63]/70">{data.stats.totalMale || 0}M / {data.stats.totalFemale || 0}F</span>
+                </div>
+              )}
+              <p className="mt-1 text-xs font-semibold text-[#1F8A63]">Total Sevaks</p>
+            </div>
+
+            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#E3F6F5', animationDelay: '240ms' }}>
+              {isLoading ? <SkeletonLoader /> : (
+                <div className="flex items-center justify-between">
+                  <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{data.stats.activeSevaks}</span>
+                  <button onClick={() => setShowActiveSevaksModal(true)} className="text-[9px] font-bold px-2.5 py-1 bg-white/70 text-[#1B8A94] rounded-lg hover:bg-white transition-colors active:scale-95 tracking-wider">VIEW</button>
+                </div>
+              )}
+              <p className="mt-1 text-xs font-semibold text-[#1B8A94]" title=">= 1 Vihar in last 30 days">Active Sevaks</p>
+            </div>
+          </div>
+
+          {/* Consistency — this week */}
+          <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+            <p className="m-0 mb-3.5 text-sm font-bold text-[#241C17]">Consistency · This week</p>
+            <div className="grid grid-cols-7 gap-2 text-center">
+              {weeklyConsistency.map((d, i) => (
+                <div key={d.label}>
+                  <p className="m-0 mb-1.5 text-[10px] font-bold text-gray-400">{d.label}</p>
+                  <div
+                    className="w-full aspect-square rounded-full vseva-stagger-in"
+                    style={{
+                      background: d.done ? '#DE6B38' : '#F2EEE8',
+                      animationDelay: `${i * 40}ms`,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="bg-white rounded-[22px] p-5 flex flex-col gap-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+            <div className="flex items-center justify-between">
+              <p className="m-0 text-sm font-bold text-[#241C17]">Recent Activity</p>
+              {navigateToNotifications && (
+                <button onClick={navigateToNotifications} className="text-[12.5px] font-bold text-saffron-600 hover:text-saffron-700">
+                  View all Vihars
+                </button>
+              )}
+            </div>
+            {recentActivity.length === 0 ? (
+              <p className="text-sm text-gray-400">No Vihars logged yet.</p>
+            ) : (
+              recentActivity.map((entry, i) => (
+                <div key={entry.id} className="flex items-center gap-3 vseva-stagger-in" style={{ animationDelay: `${i * 40}ms` }}>
+                  <div className="shrink-0 w-[38px] h-[38px] rounded-full bg-[#EAF6E6] flex items-center justify-center">
+                    <Footprints size={17} className="text-[#5A9A45]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="m-0 text-[13.5px] font-bold text-[#241C17] truncate">{entry.vihar_from} → {entry.vihar_to}</p>
+                    <p className="mt-0.5 text-xs text-gray-500 capitalize">
+                      {formatRelativeDate(entry.vihar_date)} · {entry.vihar_type} · {(entry.sevaks || []).length} Sevak{(entry.sevaks || []).length === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <p className="m-0 text-sm font-extrabold text-saffron-600 shrink-0">{(entry.distance_km ?? entry.haversine_km ?? 0).toFixed(1)} km</p>
+                </div>
+              ))
+            )}
+          </div>
+
       </div>
 
     </div>

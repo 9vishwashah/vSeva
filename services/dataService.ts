@@ -20,6 +20,25 @@ export const dataService = {
     return data as UserProfile;
   },
 
+  // Fetched separately from getProfile (not on the login-critical path) since it
+  // needs scripts/add_yearly_goal.sql run first. Falls back to 25 if that
+  // migration hasn't been applied yet, or on any other error.
+  async getYearlyGoal(userId: string): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('yearly_goal')
+        .eq('id', userId)
+        .single();
+      if (!error && data && typeof (data as any).yearly_goal === 'number') {
+        return (data as any).yearly_goal;
+      }
+    } catch {
+      // ignore — column likely doesn't exist yet
+    }
+    return 25;
+  },
+
   async getPublicProfile(username: string): Promise<Partial<UserProfile> | null> {
     // 1. Attempt RPC first (bypasses RLS for unauthenticated QR code scans)
     const { data: rpcData, error: rpcError } = await supabase.rpc('get_public_sevak_profile', { p_username: username });
@@ -146,6 +165,22 @@ export const dataService = {
       }
     } catch (e) {
       console.warn("Failed to fetch secure sevak name config via serverless");
+    }
+    return {};
+  },
+
+  async getOrgSevakContacts(orgId: string): Promise<Record<string, { full_name: string; mobile: string }>> {
+    try {
+      const response = await fetch('/.netlify/functions/get-org-sevak-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.warn("Failed to fetch secure sevak contacts via serverless");
     }
     return {};
   },
@@ -364,7 +399,7 @@ export const dataService = {
     return true;
   },
 
-  async updateOwnProfile(updates: { age?: number; bloodGroup?: string; emergencyNumber?: string; address?: string }) {
+  async updateOwnProfile(updates: { age?: number; bloodGroup?: string; emergencyNumber?: string; address?: string; yearlyGoal?: number }) {
     // Update age directly (not covered by the existing RPC)
     if (updates.age !== undefined) {
       const { data: { session } } = await supabase.auth.getSession();
@@ -376,6 +411,21 @@ export const dataService = {
         if (ageError) {
           console.error('updateOwnProfile age error:', ageError);
           throw ageError;
+        }
+      }
+    }
+
+    // yearly_goal is a separate call: needs scripts/add_yearly_goal.sql run first,
+    // and its failure (column not yet migrated) must not block age/blood group/etc.
+    if (updates.yearlyGoal !== undefined) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        const { error: goalError } = await supabase
+          .from('profiles')
+          .update({ yearly_goal: updates.yearlyGoal })
+          .eq('id', session.user.id);
+        if (goalError) {
+          console.warn('updateOwnProfile yearly_goal error (has scripts/add_yearly_goal.sql been run?):', goalError);
         }
       }
     }

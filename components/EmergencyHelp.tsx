@@ -163,7 +163,7 @@ export const EmergencyHelp: React.FC = () => {
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex flex-col md:items-center justify-end md:justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className="bg-gray-50 w-full max-w-lg rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom md:fade-in-up">
-                        <div className="bg-gradient-to-r from-saffron-500 to-orange-500 text-white p-5 flex items-center justify-between shrink-0">
+                        <div className="bg-gradient-to-r from-saffron-500 to-saffron-700 text-white p-5 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/20 p-2 rounded-full">
                                     <AlertTriangle size={20} />

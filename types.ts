@@ -25,6 +25,7 @@ export interface UserProfile {
   address?: string;
   is_active: boolean;
   last_login_at?: string; // ISO timestamp, updated on each login
+  yearly_goal?: number; // Sankalp: target number of Vihars this calendar year
 }
 
 export interface AreaRoute {
@@ -96,11 +97,20 @@ export interface UpcomingVihar {
   organization_id: string;
   created_by: string;
   vihar_date: string;
+  vihar_time?: string;
   from_location: string;
   to_location: string;
   vihar_type: 'morning' | 'evening';
   sadhu_count: number;
   sadhvi_count: number;
+  created_at: string;
+}
+
+// Matching public.vihar_interests — a sevak's "I'm Interested" response to an UpcomingVihar
+export interface ViharInterest {
+  id: string;
+  vihar_id: string;
+  user_id: string;
   created_at: string;
 }
 

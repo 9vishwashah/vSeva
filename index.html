@@ -63,7 +63,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@600;700&display=swap"
     rel="stylesheet">
   <!-- Font Awesome removed — replaced with inline SVGs to save ~80KB per load -->
   <script>
@@ -72,16 +72,16 @@
         extend: {
           colors: {
             saffron: {
-              50: '#fff7ed',
-              100: '#ffedd5',
-              200: '#fed7aa',
-              300: '#fdba74',
-              400: '#fb923c',
-              500: '#f97316', // Primary Brand Color
-              600: '#ea580c',
-              700: '#c2410c',
-              800: '#9a3412',
-              900: '#7c2d12',
+              50:  '#FFF3EA',
+              100: '#FFE4CC',
+              200: '#FFCBA0',
+              300: '#FFAD6E',
+              400: '#FF9947',
+              500: '#F0803A',
+              600: '#DE6B38', // Primary Brand Color (Tangerine redesign)
+              700: '#B5542A',
+              800: '#8A4318',
+              900: '#6B3412',
             },
             devotion: {
               light: '#FDFBF7', // Cream background
@@ -89,13 +89,26 @@
             }
           },
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
+            sans: ['Manrope', 'sans-serif'],
             serif: ['Playfair Display', 'serif'],
           }
         }
       }
     }
   </script>
+  <style>
+    /* Minimal entrance-animation shim: the Play CDN loads no plugins, so classes
+       like animate-in/fade-in/zoom-in are otherwise inert. Scoped to new redesign
+       elements only — pre-existing animate-in usage elsewhere is unaffected. */
+    @keyframes vseva-stagger-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .vseva-stagger-in {
+      opacity: 0;
+      animation: vseva-stagger-in 300ms ease-out forwards;
+    }
+  </style>
 
 
 
