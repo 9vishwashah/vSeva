@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
 import { StatSummary } from '../types';
 import { Share2, MapPin, Users, Handshake, Medal, Trophy, Sparkles, Instagram, Download, Footprints } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
@@ -30,6 +29,9 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
     let offscreen: HTMLDivElement | null = null;
 
     try {
+      // html2canvas (~200KB) is only needed for this on-demand share action —
+      // load it when actually used instead of on every dashboard visit.
+      const { default: html2canvas } = await import('html2canvas');
       // Wait for fonts and images to fully load
       await new Promise(r => setTimeout(r, 300));
 
@@ -199,7 +201,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
                   </h1>
                   {orgCity && (
                     <div
-                      className="px-5 py-1.5 bg-gradient-to-r from-saffron-500 to-orange-500 shadow-md rounded-full border border-orange-400 mb-2"
+                      className="px-5 py-1.5 bg-gradient-to-r from-saffron-500 to-saffron-700 shadow-md rounded-full border border-saffron-400 mb-2"
                       style={{ display: 'table', margin: '0 auto' }}
                     >
                       <span className="text-[11px] font-bold text-white tracking-wider uppercase drop-shadow-sm">{orgCity}</span>

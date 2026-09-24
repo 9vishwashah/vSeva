@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { ViharEntry } from '../types';
-import { MapPin, Navigation, MessageCircle, Download, Trash2, Pencil } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { MessageCircle, Download, Trash2, Pencil } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 interface EntryCardProps {
@@ -21,6 +20,9 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
         setIsSharing(true);
 
         try {
+            // html2canvas (~200KB) is only needed for this on-demand share action —
+            // load it when actually used instead of on every entries page visit.
+            const { default: html2canvas } = await import('html2canvas');
             // Wait for fonts/styles
             await new Promise(r => setTimeout(r, 100));
 
@@ -61,81 +63,79 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
 
     return (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow relative overflow-hidden">
-            {/* Left orange accent stripe */}
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-saffron-400 to-orange-500 rounded-l-2xl" />
+            {/* Left accent stripe */}
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-saffron-400 to-saffron-600 rounded-l-2xl" />
             {/* Capture Area */}
-            <div ref={cardRef} className="bg-white p-4 pl-5 rounded-2xl">
-                {/* Top Row: Date & Type */}
-                <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-saffron-50 border border-saffron-100 p-2 rounded-xl text-center min-w-[50px]">
-                            <span className="block text-[10px] text-saffron-500 uppercase font-bold">{new Date(entry.vihar_date).toLocaleString('default', { month: 'short' })}</span>
-                            <span className="block text-lg font-bold text-gray-800 leading-none">{new Date(entry.vihar_date).getDate()}</span>
-                        </div>
-                        <div>
-                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase mb-1 ${entry.vihar_type === 'morning' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                                }`}>
-                                {entry.vihar_type}
-                            </span>
-                            <div className="flex gap-1">
-                                {entry.group_sadhu && <span className="text-[10px] text-red-600 font-bold bg-red-50 px-1 rounded">Sadhu</span>}
-                                {entry.group_sadhvi && <span className="text-[10px] text-pink-600 font-bold bg-pink-50 px-1 rounded">Sadhvi</span>}
-                            </div>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <span className="text-xl font-bold text-saffron-600">{entry.distance_km}</span>
-                        <span className="text-xs text-gray-400 font-medium ml-0.5">km</span>
-                    </div>
+            <div ref={cardRef} className="bg-white p-4 pl-5 rounded-2xl relative">
+                {/* Date badge — absolute top-right, matches redesign mock */}
+                <div className="absolute top-3.5 right-3.5 rounded-xl text-center leading-none px-2.5 py-1.5" style={{ background: '#FFF0E5' }}>
+                    <p className="text-sm font-extrabold" style={{ color: '#DE6B38' }}>{new Date(`${entry.vihar_date}T00:00:00`).getDate()}</p>
+                    <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wide" style={{ color: '#B5602C' }}>{new Date(`${entry.vihar_date}T00:00:00`).toLocaleString('default', { month: 'short' })}</p>
                 </div>
 
-                {/* Route */}
-                <div className="flex items-center gap-2 mb-4">
-                    <MapPin size={16} className="text-gray-400 shrink-0" />
-                    <div className="flex items-center gap-2 text-sm text-gray-700 font-medium truncate w-full">
-                        <span className="truncate">{entry.vihar_from}</span>
-                        <Navigation size={12} className="text-gray-300 shrink-0 rotate-90" />
-                        <span className="truncate">{entry.vihar_to}</span>
+                {/* Route + Type pill */}
+                <div className="flex items-center gap-2 flex-wrap pr-14 mb-3">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[15px] font-extrabold text-[#241C17] truncate">{entry.vihar_from}</span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B7B7AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                        <span className="text-[15px] font-extrabold text-[#241C17] truncate">{entry.vihar_to}</span>
                     </div>
+                    <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-full" style={{ background: '#FFF0E5', color: '#B5602C' }}>
+                        {entry.vihar_type}
+                    </span>
+                    {(entry.group_sadhu || entry.group_sadhvi) && (
+                        <div className="flex gap-1">
+                            {entry.group_sadhu && <span className="text-[10px] text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded">Sadhu</span>}
+                            {entry.group_sadhvi && <span className="text-[10px] text-pink-600 font-bold bg-pink-50 px-1.5 py-0.5 rounded">Sadhvi</span>}
+                        </div>
+                    )}
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-3 gap-2 bg-gradient-to-r from-saffron-50 to-orange-50 border border-orange-100 p-3 rounded-xl mb-3">
-                    <div className="text-center border-r border-orange-100">
-                        <p className="text-[10px] text-saffron-500 uppercase tracking-wide font-semibold">Sadhu</p>
-                        <p className="font-bold text-gray-800">{entry.no_sadhubhagwan || 0}</p>
+                {/* Stats chips */}
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                    <div className="text-center rounded-xl py-2" style={{ background: '#FFF0E5' }}>
+                        <p className="text-sm font-extrabold text-[#241C17] leading-none">{entry.distance_km}<span className="text-[10px] font-bold" style={{ color: '#B5602C' }}> km</span></p>
+                        <p className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#B5602C' }}>Total KM</p>
                     </div>
-                    <div className="text-center border-r border-orange-100">
-                        <p className="text-[10px] text-saffron-500 uppercase tracking-wide font-semibold">Sadhvi</p>
-                        <p className="font-bold text-gray-800">{entry.no_sadhvijibhagwan || 0}</p>
+                    <div className="text-center rounded-xl py-2" style={{ background: '#FCEAEB' }}>
+                        <p className="text-sm font-extrabold text-[#241C17] leading-none">{entry.no_sadhubhagwan || 0}<span className="text-[10px]" style={{ color: '#D9A6A5' }}> / </span>{entry.no_sadhvijibhagwan || 0}</p>
+                        <p className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#C05A57' }}>Sadhu/Sadhvi</p>
                     </div>
-                    <div className="text-center">
-                        <p className="text-[10px] text-saffron-500 uppercase tracking-wide font-semibold">Sevaks</p>
-                        <p className="font-bold text-gray-800">{(entry.sevaks || []).length}</p>
+                    <div className="text-center rounded-xl py-2" style={{ background: '#F1EAFB' }}>
+                        <p className="text-sm font-extrabold text-[#241C17] leading-none">{(entry.sevaks || []).length}</p>
+                        <p className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#6B4FAE' }}>Sevaks</p>
                     </div>
                 </div>
 
                 {/* Sevaks List — single row, horizontally scrollable */}
                 <div className="mb-3">
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8A6A57]">Sevaks Present</p>
                     <div
                         className="flex flex-nowrap gap-1.5 overflow-x-auto pb-1"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
-                        {(entry.sevaks || []).map((u, i) => (
-                            <div
-                                key={i}
-                                className="shrink-0 flex flex-col items-center gap-0.5"
-                            >
-                                <span className="text-[10px] px-2.5 py-1 bg-saffron-50 text-saffron-700 rounded-full border border-saffron-200 font-semibold whitespace-nowrap">
-                                    {getSevakInfo(u).name}
-                                </span>
-                                {getSevakInfo(u).blood && (
-                                    <span className="text-[8px] px-1.5 py-0 bg-red-50 text-red-600 rounded border border-red-100 font-bold uppercase leading-tight">
-                                        {getSevakInfo(u).blood}
+                        {(entry.sevaks || []).map((u, i) => {
+                            const name = getSevakInfo(u).name;
+                            const initials = name.trim().split(/\s+/).map(p => p[0]).join('').substring(0, 2).toUpperCase();
+                            return (
+                                <div
+                                    key={i}
+                                    className="shrink-0 flex flex-col items-center gap-0.5"
+                                >
+                                    <span className="flex items-center gap-1.5 text-[11px] pl-0.5 pr-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: '#F7F4F0', color: '#241C17' }}>
+                                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-extrabold shrink-0" style={{ background: '#FCE6D8', color: '#C05A2C' }}>
+                                            {initials}
+                                        </span>
+                                        {name}
                                     </span>
-                                )}
-                            </div>
-                        ))}
+                                    {getSevakInfo(u).blood && (
+                                        <span className="text-[8px] px-1.5 py-0 bg-red-50 text-red-600 rounded border border-red-100 font-bold uppercase leading-tight">
+                                            {getSevakInfo(u).blood}
+                                        </span>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -172,7 +172,8 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                 {onEdit && (
                     <button
                         onClick={() => onEdit(entry)}
-                        className="flex items-center gap-1.5 bg-blue-50 text-blue-500 px-4 py-2 rounded-full text-xs font-bold hover:bg-blue-100 transition-colors ml-2"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-colors ml-2"
+                        style={{ background: '#F1EAFB', color: '#6B4FAE' }}
                     >
                         <Pencil size={16} />
                         <span className="md:hidden">Edit</span>
@@ -181,7 +182,8 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                 {onDelete && (
                     <button
                         onClick={() => onDelete(entry.id)}
-                        className="flex items-center gap-1.5 bg-red-50 text-red-500 px-4 py-2 rounded-full text-xs font-bold hover:bg-red-100 transition-colors ml-2"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-colors ml-2"
+                        style={{ background: '#FCEAEB', color: '#C05A57' }}
                     >
                         <Trash2 size={16} />
                         <span className="md:hidden">Delete</span>

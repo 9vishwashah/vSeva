@@ -23,6 +23,8 @@ const AdminContacts = React.lazy(() => import('./pages/AdminContacts'));
 const ViewReports = React.lazy(() => import('./pages/ViewReports'));
 const SubmitReport = React.lazy(() => import('./pages/SubmitReport'));
 const NearbyDerasar = React.lazy(() => import('./pages/NearbyDerasar'));
+const Notifications = React.lazy(() => import('./pages/Notifications'));
+const Statistics = React.lazy(() => import('./pages/Statistics'));
 
 
 // Suppress XAxis/YAxis defaultProps warning from Recharts in React 18+
@@ -228,7 +230,11 @@ const App: React.FC = () => {
       >
         {/* Admin Routes */}
         {currentPage === 'dashboard' && user.role === UserRole.ORG_ADMIN && (
-          <Dashboard currentUser={user} navigateToProfile={() => handleSetCurrentPage('profile')} />
+          <Dashboard
+            currentUser={user}
+            navigateToProfile={() => handleSetCurrentPage('profile')}
+            navigateToNotifications={() => handleSetCurrentPage('notifications')}
+          />
         )}
 
         {currentPage === 'new-entry' && user.role === UserRole.ORG_ADMIN && (
@@ -256,7 +262,19 @@ const App: React.FC = () => {
 
         {/* Sevak Routes */}
         {currentPage === 'analytics' && (
-          <Dashboard currentUser={user} navigateToProfile={() => handleSetCurrentPage('profile')} />
+          <Dashboard
+            currentUser={user}
+            navigateToProfile={() => handleSetCurrentPage('profile')}
+            navigateToNotifications={() => handleSetCurrentPage('notifications')}
+          />
+        )}
+
+        {currentPage === 'notifications' && (
+          <Notifications currentUser={user} />
+        )}
+
+        {currentPage === 'statistics' && (
+          <Statistics currentUser={user} />
         )}
         {currentPage === 'view-entries' && user.role === UserRole.ORG_ADMIN && (
           <ViewEntries currentUser={user} onEdit={handleEditEntry} />
@@ -274,6 +292,7 @@ const App: React.FC = () => {
                 console.warn('Could not refresh profile after update:', e);
               }
             }}
+            onLogout={handleLogout}
           />
         )}
 

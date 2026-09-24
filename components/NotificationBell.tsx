@@ -5,7 +5,7 @@ import { Bell, Check, MapPin, X, Users, Clock } from 'lucide-react';
 import { UserNotification } from '../types';
 import { useToast } from '../context/ToastContext';
 
-const NotificationBell: React.FC<{ userId?: string }> = ({ userId }) => {
+const NotificationBell: React.FC<{ userId?: string; onViewAll?: () => void }> = ({ userId, onViewAll }) => {
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -204,6 +204,15 @@ const NotificationBell: React.FC<{ userId?: string }> = ({ userId }) => {
               })
             )}
           </div>
+
+          {onViewAll && (
+            <button
+              onClick={() => { setIsOpen(false); onViewAll(); }}
+              className="w-full py-3 text-center text-sm font-bold text-saffron-600 hover:bg-saffron-50 border-t border-gray-100 sticky bottom-0 bg-white transition-colors"
+            >
+              View All Notifications
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -5,6 +5,7 @@ import { PhoneCall, PlusCircle, Trash2, Loader2, Phone } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { EmergencyHelp } from '../components/EmergencyHelp';
 import { JainTempleFinder } from '../components/JainTempleFinder';
+import Skeleton from '../components/Skeleton';
 
 interface AdminContactsProps {
     currentUser: UserProfile;
@@ -70,7 +71,7 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
     return (
         <div className="max-w-2xl mx-auto space-y-6 pb-8">
             {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-400 to-saffron-600 p-6 text-white shadow-lg">
                 <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
                 <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
                 <div className="relative">
@@ -173,9 +174,16 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                 </div>
 
                 {loading ? (
-                    <div className="flex justify-center items-center py-12 gap-3">
-                        <Loader2 className="animate-spin text-saffron-500" size={28} />
-                        <span className="text-sm text-gray-500">Loading...</span>
+                    <div className="p-5 space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                                <Skeleton className="w-11 h-11 rounded-xl shrink-0" />
+                                <div className="flex-1 space-y-2">
+                                    <Skeleton className="h-3.5 w-1/3" />
+                                    <Skeleton className="h-3 w-1/2" />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : contacts.length === 0 ? (
                     <div className="flex flex-col items-center py-14 text-center gap-3">
@@ -192,7 +200,7 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                                 className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50/80 transition-colors group"
                             >
                                 {/* Avatar */}
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-saffron-400 to-orange-500 flex items-center justify-center shrink-0 shadow-sm">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-saffron-400 to-saffron-600 flex items-center justify-center shrink-0 shadow-sm">
                                     <span className="text-white text-xs font-bold">
                                         {contact.label.substring(0, 2).toUpperCase()}
                                     </span>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, ViharEntry, Organization, UserRole } from '../types';
 import { dataService } from '../services/dataService';
-import { Search, Calendar, User, MessageCircle, Trash2, Pencil, X } from 'lucide-react';
+import { Search, Calendar, User, MessageCircle, Trash2, Pencil, X, ChevronLeft } from 'lucide-react';
 import EntryCard from '../components/EntryCard';
 import EntriesSkeleton from '../components/EntriesSkeleton';
 import { useToast } from '../context/ToastContext';
@@ -84,6 +84,17 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
     return textMatch;
   });
 
+  const formatDateDivider = (dateStr: string) => {
+    const d = new Date(`${dateStr}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((today.getTime() - d.getTime()) / 86400000);
+    const dm = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).toUpperCase();
+    if (diffDays === 0) return `TODAY · ${dm}`;
+    if (diffDays === 1) return `YESTERDAY · ${dm}`;
+    return dm;
+  };
+
   const formatWhatsAppLink = (entry: ViharEntry) => {
     const text = `*Vihar Update* 🚶‍♂️\n\n📅 Date: ${entry.vihar_date}\n📍 Route: ${entry.vihar_from} to ${entry.vihar_to}\n📏 Distance: ${entry.distance_km} km\n🙏 Sadhu: ${entry.no_sadhubhagwan || 0} | Sadhvi: ${entry.no_sadhvijibhagwan || 0}\n\nप्रेरणादाता: प. पु. महाबोधि सुरीश्वरजी महाराजा`;
     return `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -109,51 +120,35 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
 
   return (
     <div className="space-y-6 animate-fade-in pb-20 md:pb-0">
-      {/* Orange Gradient Banner Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
-        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
-        <div className="relative flex flex-col xl:flex-row xl:items-end justify-between gap-6 w-full">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Calendar size={22} className="text-white" />
-              </div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {currentUser.role === UserRole.SEVAK ? 'My Vihars' : 'Vihar Entries'}
-              </h1>
-            </div>
-            <p className="text-white/80 text-sm mt-1 ml-1 mb-3 xl:mb-0">
-              {currentUser.role === UserRole.SEVAK
-                ? 'Your personal Vihar journey log'
-                : 'Manage and view all recorded journeys'
-              }
-            </p>
-            {!loading && (
-              <span className="hidden xl:inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full mt-2">
-                {entries.length} {entries.length === 1 ? 'Entry' : 'Entries'}
-              </span>
-            )}
-          </div>
-          
-          <div className="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full xl:w-auto mt-4 xl:mt-0">
+      {/* Plain top bar — matches the tangerine redesign mock (no gradient banner) */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={() => window.history.back()}
+            className="w-9 h-9 shrink-0 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center"
+            title="Back"
+          >
+            <ChevronLeft size={16} className="text-[#241C17]" />
+          </button>
+          <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] truncate">
+            {currentUser.role === UserRole.SEVAK ? 'My Vihars' : 'Vihar Entries'}
+          </h1>
+          {!loading && (
+            <span className="hidden sm:inline-block text-xs font-semibold text-[#8A6A57] shrink-0">
+              {entries.length} {entries.length === 1 ? 'Entry' : 'Entries'}
+            </span>
+          )}
+        </div>
 
-
-            {/* Search */}
-            <div className="relative w-full md:w-56 shrink-0 h-full">
-              <label className="hidden md:block text-[10px] font-bold text-white/0 uppercase mb-1 ml-1 pointer-events-none">Search</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-[11px] text-white/60 z-10 pointer-events-none" size={18} />
-                <input
-                  type="text"
-                  placeholder="Search entries..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/80 focus:outline-none focus:ring-2 focus:ring-white text-sm"
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+        <div className="relative w-40 sm:w-56 shrink-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <input
+            type="text"
+            placeholder="Search..."
+            className="w-full pl-9 pr-3 py-2 rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] border-none text-sm text-[#241C17] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-saffron-200"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
@@ -205,8 +200,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                       </td>
                       <td className="p-4 max-w-[150px] truncate" title={entry.samuday}>{entry.samuday || '-'}</td>
                       <td className="p-4">
-                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${entry.vihar_type === 'morning' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                          }`}>
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase" style={{ background: '#FFF0E5', color: '#B5602C' }}>
                           {entry.vihar_type}
                         </span>
                       </td>
@@ -251,15 +245,31 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
 
           {/* Mobile Card View */}
           <div className="md:hidden grid grid-cols-1 gap-4">
-            {filteredEntries.map(entry => (
-              <EntryCard
-                key={entry.id}
-                entry={entry}
-                getSevakInfo={getSevakInfo}
-                onDelete={currentUser.role === UserRole.ORG_ADMIN ? handleDelete : undefined}
-                onEdit={currentUser.role === UserRole.ORG_ADMIN && onEdit ? onEdit : undefined}
-              />
-            ))}
+            {(() => {
+              let lastDate: string | null = null;
+              return filteredEntries.map(entry => {
+                const isNewGroup = entry.vihar_date !== lastDate;
+                lastDate = entry.vihar_date;
+                return (
+                  <React.Fragment key={entry.id}>
+                    {isNewGroup && (
+                      <div className="flex items-center gap-2.5 px-1 pt-1 first:pt-0">
+                        <span className="text-xs font-extrabold tracking-wide text-[#8A6A57] uppercase shrink-0">
+                          {formatDateDivider(entry.vihar_date)}
+                        </span>
+                        <div className="flex-1 h-px bg-[#EEE8E1]" />
+                      </div>
+                    )}
+                    <EntryCard
+                      entry={entry}
+                      getSevakInfo={getSevakInfo}
+                      onDelete={currentUser.role === UserRole.ORG_ADMIN ? handleDelete : undefined}
+                      onEdit={currentUser.role === UserRole.ORG_ADMIN && onEdit ? onEdit : undefined}
+                    />
+                  </React.Fragment>
+                );
+              });
+            })()}
           </div>
 
           {filteredEntries.length === 0 && (

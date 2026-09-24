@@ -49,7 +49,7 @@ const Contacts: React.FC<ContactsProps> = ({ currentUser }) => {
 
     return (
         <div className="max-w-2xl mx-auto space-y-6 pb-8">            {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-400 to-saffron-600 p-6 text-white shadow-lg">
                 {/* Decorative circles */}
                 <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
                 <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />

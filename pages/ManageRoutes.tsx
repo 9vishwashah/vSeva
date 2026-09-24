@@ -3,6 +3,7 @@ import { dataService } from '../services/dataService';
 import { UserProfile, AreaRoute } from '../types';
 import { Plus, Trash2, Save, Map, Search, ArrowRight, Table, Pencil, X, Check } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import Skeleton from '../components/Skeleton';
 
 interface ManageRoutesProps {
     currentUser: UserProfile;
@@ -187,7 +188,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Orange Gradient Banner Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-400 to-saffron-600 p-6 text-white shadow-lg">
                 <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
                 <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
                 <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -356,6 +357,13 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                         </div>
                     </div>
 
+                    {loading ? (
+                        <div className="p-4 space-y-3">
+                            {[...Array(5)].map((_, i) => (
+                                <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                            ))}
+                        </div>
+                    ) : (
                     <div className="overflow-x-auto">
                         {/* Mobile Card List */}
                         <div className="md:hidden space-y-3 p-4">
@@ -525,6 +533,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                             </tbody>
                         </table>
                     </div>
+                    )}
                 </div>
             )}
         </div>

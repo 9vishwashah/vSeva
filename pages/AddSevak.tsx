@@ -5,6 +5,7 @@ import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriang
 import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
 import CircularProgressBar from '../components/CircularProgressBar';
+import Skeleton from '../components/Skeleton';
 
 
 interface AddSevakProps {
@@ -71,10 +72,11 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const fetchData = async () => {
     try {
       setLoadingSevaks(true);
-      const sevaksData = await dataService.getOrgSevaks(currentUser.organization_id);
+      const [sevaksData, org] = await Promise.all([
+        dataService.getOrgSevaks(currentUser.organization_id),
+        dataService.getOrganization(currentUser.organization_id),
+      ]);
       setSevaks(sevaksData);
-      
-      const org = await dataService.getOrganization(currentUser.organization_id);
       if (org) setOrgDetails(org);
     } catch (err) {
       console.error("Failed to load data", err);
@@ -291,8 +293,8 @@ by VJAS`;
   return (
     <div className="max-w-4xl mx-auto space-y-8">
 
-      {/* Orange Gradient Banner Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
+      {/* Tangerine Gradient Banner Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-400 to-saffron-600 p-6 text-white shadow-lg">
         <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
         <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
         <div className="relative">
@@ -331,11 +333,11 @@ by VJAS`;
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Full Name</label>
               <input
                 type="text"
                 required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none"
+                className="w-full p-3 rounded-xl bg-[#F7F4F0] border-none focus:ring-2 focus:ring-saffron-300 outline-none font-semibold text-[#241C17]"
                 placeholder="e.g. Rahul Jain"
                 value={formData.fullName}
                 onChange={e => setFormData({ ...formData, fullName: e.target.value })}
@@ -343,12 +345,12 @@ by VJAS`;
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+              <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Mobile Number</label>
               <input
                 type="tel"
                 required
                 maxLength={10}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none"
+                className="w-full p-3 rounded-xl bg-[#F7F4F0] border-none focus:ring-2 focus:ring-saffron-300 outline-none font-semibold text-[#241C17]"
                 placeholder="10 digit number (Used as Password)"
                 value={formData.mobile}
                 onChange={e => {
@@ -360,8 +362,8 @@ by VJAS`;
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-              <div className="flex bg-gray-100 p-1 rounded-lg">
+              <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Gender</label>
+              <div className="flex bg-[#F7F4F0] p-1 rounded-xl">
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, gender: 'Male' })}
@@ -434,9 +436,10 @@ by VJAS`;
 
         <div className="overflow-x-auto">
           {loadingSevaks ? (
-            <div className="p-8 text-center text-gray-500 flex flex-col items-center">
-              <Loader2 className="animate-spin mb-2 text-saffron-600" />
-              Loading members...
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 bg-gray-50/50">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-[110px] w-full rounded-[20px]" />
+              ))}
             </div>
           ) : sevaks.length === 0 ? (
             <div className="p-8 text-center text-gray-500">No members found. Add your first member above.</div>
