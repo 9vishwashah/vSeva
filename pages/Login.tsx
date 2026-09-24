@@ -25,15 +25,23 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setErrorMsg(null);
 
     const safeInput = email.trim().toLowerCase();
+    // Sevak usernames are generated at creation time by stripping everything
+    // except letters/digits from their full name (see dataService.createSevak),
+    // so "Vishwa Shah", "vishwa shah", and "vishwashah" are all meant to be the
+    // same account — normalize the login input the same way before building
+    // the candidate email, so a Sevak doesn't need to remember the exact
+    // stripped-down username. Admin/captain logins (which use a real email
+    // address, matched by the '@') are left completely untouched.
+    const normalizedUsername = safeInput.replace(/[^a-z0-9]/g, '');
 
     try {
       // Build a list of email formats to try (new format first, then legacy)
       const emailCandidates = safeInput.includes('@')
         ? [safeInput] // admin/captain accounts or old-format users who typed full address
         : [
-            `${safeInput}@vsevak.in`, // new sevak format
-            `${safeInput}@vsevak`,    // legacy format (old sevaks)
-            safeInput,                // raw fallback (e.g. admin entering their email)
+            `${normalizedUsername}@vsevak.in`, // new sevak format
+            `${normalizedUsername}@vsevak`,    // legacy format (old sevaks)
+            safeInput,                          // raw fallback, just in case
           ];
 
       let authData: any = null;
@@ -151,7 +159,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               type="text"
               required
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-              placeholder="e.g. vishwashah"
+              placeholder="e.g. Vishwa Shah"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
