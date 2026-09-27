@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase';
 import { UserProfile, IncidentReport } from '../types';
 import { dataService } from '../services/dataService';
 import { useToast } from '../context/ToastContext';
+import { toLocalDateKey } from '../services/dateUtils';
 
 interface IncidentReportModalProps {
     isOpen: boolean;
@@ -21,7 +22,7 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
     
     // Form state
     const [formData, setFormData] = useState({
-        report_date: new Date().toISOString().split('T')[0],
+        report_date: toLocalDateKey(new Date()),
         report_time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
         vihar_from: '',
         vihar_to: '',

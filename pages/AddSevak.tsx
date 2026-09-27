@@ -6,6 +6,10 @@ import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
 import CircularProgressBar from '../components/CircularProgressBar';
 import Skeleton from '../components/Skeleton';
+import Avatar from '../components/Avatar';
+import Modal from '../components/Modal';
+import StatusScreen from '../components/StatusScreen';
+import { toLocalDateKey } from '../services/dateUtils';
 
 
 interface AddSevakProps {
@@ -49,6 +53,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   // State for the list of existing sevaks
   const [sevaks, setSevaks] = useState<UserProfile[]>([]);
   const [loadingSevaks, setLoadingSevaks] = useState(true);
+  const [sevaksLoadError, setSevaksLoadError] = useState<'offline' | 'error' | null>(null);
 
   // UI State
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -72,6 +77,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const fetchData = async () => {
     try {
       setLoadingSevaks(true);
+      setSevaksLoadError(null);
       const [sevaksData, org] = await Promise.all([
         dataService.getOrgSevaks(currentUser.organization_id),
         dataService.getOrganization(currentUser.organization_id),
@@ -81,6 +87,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     } catch (err) {
       console.error("Failed to load data", err);
       showToast("Could not load organization members", 'error');
+      setSevaksLoadError(navigator.onLine ? 'error' : 'offline');
     } finally {
       setLoadingSevaks(false);
     }
@@ -249,7 +256,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `sevaks_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `sevaks_${toLocalDateKey(new Date())}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -408,6 +415,11 @@ by VJAS`;
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <Users size={24} className="text-saffron-600" />
               Organization Members
+              {!loadingSevaks && (
+                <span className="text-xs font-bold text-saffron-700 bg-saffron-100 px-2.5 py-1 rounded-full">
+                  {sevaks.length} {sevaks.length === 1 ? 'Member' : 'Members'}
+                </span>
+              )}
             </h2>
           </div>
 
@@ -441,6 +453,10 @@ by VJAS`;
                 <Skeleton key={i} className="h-[110px] w-full rounded-[20px]" />
               ))}
             </div>
+          ) : sevaksLoadError ? (
+            <div className="p-4">
+              <StatusScreen variant={sevaksLoadError} onRetry={fetchData} compact />
+            </div>
           ) : sevaks.length === 0 ? (
             <div className="p-8 text-center text-gray-500">No members found. Add your first member above.</div>
           ) : (
@@ -456,7 +472,7 @@ by VJAS`;
                   const pct = getProfileCompletion(sevak);
 
                    return (
-                    <div key={sevak.id} className="bg-white rounded-[20px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-gray-200 transition-all duration-300 flex flex-col group transform hover:-translate-y-1 overflow-hidden relative">
+                    <div key={sevak.id} className="bg-white rounded-[20px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col group overflow-hidden relative">
                       
                       {/* Top Line: Sr No + Name + Last Seen */}
                       <div className="flex items-center justify-between gap-2">
@@ -478,14 +494,14 @@ by VJAS`;
                       {/* Bottom Row: Completion Ring + View More + WhatsApp */}
                       <div className="mt-3 flex gap-2 items-center">
                         {/* Circular Progress - now in bottom row */}
-                        <div className="w-8 h-8 flex-shrink-0" title={`${pct}% profile complete`}>
-                          <CircularProgressBar 
-                            percent={pct} 
-                            number={""}
+                        <div className="w-12 h-12 flex-shrink-0" title={`${pct}% profile complete`}>
+                          <CircularProgressBar
+                            percent={pct}
                             animate={false}
-                            strokeWidth={12}
+                            strokeWidth={8}
                             barColor={pct === 100 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626'}
                             trackColor="#e5e7eb"
+                            centerContent={<Avatar name={sevak.full_name} url={sevak.avatar_url} size={34} className="text-[11px]" />}
                           />
                         </div>
                         <button 
@@ -517,16 +533,10 @@ by VJAS`;
 
 
       {/* View More Details Modal */}
-      {selectedSevak && (
-        <div 
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-md bg-white/40 animate-fade-in"
-          onClick={() => { setSelectedSevak(null); setEditingId(null); setShowIdCard(false); }}
-        >
-          <div 
-            className="bg-white rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 w-full max-w-md overflow-hidden animate-slide-up flex flex-col max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-white">
+      <Modal open={!!selectedSevak} onClose={() => { setSelectedSevak(null); setEditingId(null); setShowIdCard(false); }} maxWidth="max-w-md">
+        {selectedSevak && (
+          <>
+            <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-white shrink-0">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <Users size={20} className="text-saffron-600" />
                 Sevak Details
@@ -547,10 +557,22 @@ by VJAS`;
               ) : (
                 <>
               <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-saffron-100 text-saffron-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold border border-saffron-200">
-                  {selectedSevak.full_name.charAt(0).toUpperCase()}
+                <div className="mx-auto mb-3 w-20 h-20">
+                  <Avatar name={selectedSevak.full_name} url={selectedSevak.avatar_url} size={80} variant="gradient" className="text-2xl" />
                 </div>
                 <h4 className="text-xl font-bold text-gray-900">{selectedSevak.full_name}</h4>
+                {(() => {
+                  const modalPct = getProfileCompletion(selectedSevak);
+                  const pctColor = modalPct === 100 ? { bg: '#dcfce7', text: '#16a34a' } : modalPct >= 50 ? { bg: '#fef3c7', text: '#d97706' } : { bg: '#fee2e2', text: '#dc2626' };
+                  return (
+                    <span
+                      className="inline-block mt-2 px-2.5 py-1 rounded-full text-[11px] font-bold"
+                      style={{ background: pctColor.bg, color: pctColor.text }}
+                    >
+                      Profile {modalPct}% Complete
+                    </span>
+                  );
+                })()}
                 {editingId === selectedSevak.id ? (
                   <div className="flex bg-gray-100 p-1 rounded-lg w-fit mx-auto mt-2">
                     <button
@@ -717,49 +739,41 @@ by VJAS`;
                 </>
               )}
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div 
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4 backdrop-blur-md bg-white/40 animate-fade-in"
-          onClick={() => setShowDeleteModal(null)}
-        >
-          <div 
-            className="bg-white rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 w-full max-w-md overflow-hidden animate-slide-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Sevak?</h3>
-              <p className="text-gray-500 mb-6">
-                Are you sure you want to delete <span className="font-semibold text-gray-800">{showDeleteModal.name}</span>? 
-                This action will clear all their data and cannot be undone.
-              </p>
-              
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowDeleteModal(null)}
-                  className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm shadow-red-200"
-                >
-                  <Trash2 size={18} />
-                  Delete
-                </button>
-              </div>
+      <Modal open={!!showDeleteModal} onClose={() => setShowDeleteModal(null)} maxWidth="max-w-md">
+        {showDeleteModal && (
+          <div className="p-6 text-center overflow-y-auto">
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Sevak?</h3>
+            <p className="text-gray-500 mb-6">
+              Are you sure you want to delete <span className="font-semibold text-gray-800">{showDeleteModal.name}</span>?
+              This action will clear all their data and cannot be undone.
+            </p>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowDeleteModal(null)}
+                className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm shadow-red-200"
+              >
+                <Trash2 size={18} />
+                Delete
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
     </div>
   );

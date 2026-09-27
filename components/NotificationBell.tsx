@@ -90,6 +90,24 @@ const NotificationBell: React.FC<{ userId?: string; onViewAll?: () => void }> = 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Opening the dropdown clears the "reminder" badge so it doesn't keep
+  // nagging after the user has actually looked at it. 'alert_upcoming' is
+  // deliberately excluded — its badge is meant to persist until the Vihar's
+  // own date/time passes (see the count logic above), not until it's viewed.
+  useEffect(() => {
+    if (!isOpen) return;
+    const unreadIds = notifications.filter(n => !n.is_read && n.type !== 'alert_upcoming').map(n => n.id);
+    if (unreadIds.length === 0) return;
+    supabase.from('notifications').update({ is_read: true }).in('id', unreadIds).then(({ error }) => {
+      if (error) {
+        console.error('Failed to auto mark-as-read', error);
+        return;
+      }
+      setNotifications(prev => prev.map(n => (unreadIds.includes(n.id) ? { ...n, is_read: true } : n)));
+      fetchNotifications();
+    });
+  }, [isOpen]);
+
   if (!userId) return null;
 
   return (

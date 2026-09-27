@@ -6,6 +6,9 @@ import { useToast } from '../context/ToastContext';
 import { EmergencyHelp } from '../components/EmergencyHelp';
 import { JainTempleFinder } from '../components/JainTempleFinder';
 import Skeleton from '../components/Skeleton';
+import SevakDirectorySection from '../components/SevakDirectorySection';
+import ContactActionButtons from '../components/ContactActionButtons';
+import StatusScreen from '../components/StatusScreen';
 
 interface AdminContactsProps {
     currentUser: UserProfile;
@@ -15,21 +18,26 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
     const { showToast } = useToast();
     const [contacts, setContacts] = useState<ContactNumber[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
     const [contactForm, setContactForm] = useState({ label: '', phone: '', description: '' });
     const [addingContact, setAddingContact] = useState(false);
     const [deletingContactId, setDeletingContactId] = useState<number | null>(null);
 
-    useEffect(() => {
-        const load = async () => {
+    const load = async () => {
+            setLoading(true);
+            setLoadError(null);
             try {
                 const data = await dataService.getContactNumbers(currentUser.organization_id);
                 setContacts(data);
             } catch (e: any) {
                 showToast('Could not load contacts', 'error');
+                setLoadError(navigator.onLine ? 'error' : 'offline');
             } finally {
                 setLoading(false);
             }
-        };
+    };
+
+    useEffect(() => {
         load();
     }, [currentUser.organization_id]);
 
@@ -169,8 +177,9 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                 <div className="p-5 border-b border-gray-100 bg-gray-50/60">
                     <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
                         <Phone size={18} className="text-saffron-600" />
-                        Current Contacts
+                        Emergency Contacts List
                     </h2>
+                    <p className="text-xs text-gray-400 mt-0.5">Added only by the Captain — shown to every Sevak</p>
                 </div>
 
                 {loading ? (
@@ -185,6 +194,10 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                             </div>
                         ))}
                     </div>
+                ) : loadError ? (
+                    <div className="p-4">
+                        <StatusScreen variant={loadError} onRetry={load} compact />
+                    </div>
                 ) : contacts.length === 0 ? (
                     <div className="flex flex-col items-center py-14 text-center gap-3">
                         <div className="p-4 bg-saffron-50 rounded-2xl">
@@ -194,7 +207,7 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                     </div>
                 ) : (
                     <div className="divide-y divide-gray-100">
-                        {contacts.map((contact, index) => (
+                        {contacts.map((contact) => (
                             <div
                                 key={contact.id}
                                 className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50/80 transition-colors group"
@@ -209,14 +222,12 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-gray-800 truncate">{contact.label}</p>
-                                    <p className="text-xs text-gray-500 font-mono">+91 {contact.phone}</p>
                                     {contact.description && (
                                         <p className="text-xs text-gray-400 mt-0.5 italic truncate">{contact.description}</p>
                                     )}
                                 </div>
 
-                                {/* Index badge */}
-                                <span className="text-xs font-medium text-gray-300 hidden sm:block">#{index + 1}</span>
+                                <ContactActionButtons phone={contact.phone} name={contact.label} size="sm" />
 
                                 {/* Delete */}
                                 <button
@@ -236,6 +247,9 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                     </div>
                 )}
             </div>
+
+            {/* Sevak Contact Directory — every sevak's own number, read-only */}
+            <SevakDirectorySection currentUser={currentUser} />
 
             <p className="text-center text-xs text-gray-400">
                 Sevaks will see these contacts on their Contacts page with Call &amp; WhatsApp options

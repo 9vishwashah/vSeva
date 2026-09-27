@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { UserProfile, UserRole } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { UserProfile, UserRole, Organization } from '../types';
 import { dataService } from '../services/dataService';
-import { Printer, ArrowLeft, ChevronLeft, Check, Loader2, Bell, BellOff, AlertTriangle, RefreshCw, CreditCard, LogOut } from 'lucide-react';
+import { Printer, ArrowLeft, ChevronLeft, Check, Loader2, Bell, BellOff, AlertTriangle, RefreshCw, CreditCard, LogOut, Camera } from 'lucide-react';
 import IDCardBadge from './IDCardBadge';
+import Avatar from './Avatar';
+import AvatarCropModal from './AvatarCropModal';
 import { useToast } from '../context/ToastContext';
+import { getViharYearBounds } from '../services/viharYear';
+
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB
 
 interface ProfileSectionProps {
     user: UserProfile;
-    orgName: string;
+    orgDetails: Organization | null;
     onProfileUpdated?: () => Promise<void>;
     onLogout?: () => void;
 }
@@ -17,16 +22,57 @@ const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 const fieldLabelClass = "text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider block mb-1.5";
 const fieldInputClass = "w-full py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm";
 
-const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfileUpdated, onLogout }) => {
+const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onProfileUpdated, onLogout }) => {
+    const orgName = orgDetails?.name || user.organization_id;
+    const currentVY = getViharYearBounds();
     const { showToast } = useToast();
     const [showIdCard, setShowIdCard] = useState(false);
     const [isActive, setIsActive] = useState(true);
     const [yearlyGoal, setYearlyGoal] = useState(25);
     const [isSaving, setIsSaving] = useState(false);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatar_url ?? null);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [cropFile, setCropFile] = useState<File | null>(null);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         dataService.getYearlyGoal(user.id).then(setYearlyGoal);
+        dataService.getAvatarUrl(user.id).then(url => { if (url) setAvatarUrl(url); });
     }, [user.id]);
+
+    const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = ''; // allow picking the same file again later
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            showToast('Please choose an image file', 'error');
+            return;
+        }
+        if (file.size > MAX_AVATAR_BYTES) {
+            showToast('Image is too large — please choose one under 5MB', 'error');
+            return;
+        }
+
+        setCropFile(file);
+    };
+
+    const handleCropConfirm = async (blob: Blob) => {
+        setCropFile(null);
+        setUploadingAvatar(true);
+        try {
+            const croppedFile = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+            const url = await dataService.uploadAvatar(user.id, croppedFile);
+            setAvatarUrl(url);
+            showToast('Profile photo updated!', 'success');
+            if (onProfileUpdated) await onProfileUpdated();
+        } catch (err: any) {
+            console.error('Avatar upload failed', err);
+            showToast(err.message || 'Failed to upload photo. Has scripts/add_avatar_url.sql been run?', 'error');
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
 
     // Every field here is the current user editing their OWN profile — there's no
     // "ask your captain" case: an admin has no one above them to ask, so this is
@@ -49,6 +95,17 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
         });
     }, [user, yearlyGoal]);
 
+    // Captain (ORG_ADMIN) fields — this profile represents the org's leadership,
+    // not a personal sevak, so it edits captain/vice-captain names instead of
+    // age/blood group/etc.
+    const [captainName, setCaptainName] = useState(user.full_name);
+    const [viceCaptainName, setViceCaptainName] = useState(orgDetails?.vice_captain_name || '');
+
+    useEffect(() => {
+        setCaptainName(user.full_name);
+        setViceCaptainName(orgDetails?.vice_captain_name || '');
+    }, [user.full_name, orgDetails?.vice_captain_name]);
+
     useEffect(() => {
         const load = async () => {
             try {
@@ -64,13 +121,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
         };
         load();
     }, [user]);
-
-    const getInitials = (name: string) => {
-        if (!name) return 'VS';
-        const parts = name.trim().split(/\s+/);
-        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-        return name.substring(0, 2).toUpperCase();
-    };
 
     const handleSave = async () => {
         if (editForm.emergency_number && editForm.emergency_number.replace(/\D/g, '').length !== 10) {
@@ -101,6 +151,26 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
             if (onProfileUpdated) await onProfileUpdated();
         } catch (err: any) {
             showToast(err.message || 'Failed to update profile', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSaveOrgDetails = async () => {
+        if (!captainName.trim()) {
+            showToast('Captain name is required', 'error');
+            return;
+        }
+        setIsSaving(true);
+        try {
+            await dataService.updateOrgLeadership({
+                captainName: captainName.trim(),
+                viceCaptainName: viceCaptainName.trim(),
+            });
+            showToast('Organization details updated!', 'success');
+            if (onProfileUpdated) await onProfileUpdated();
+        } catch (err: any) {
+            showToast(err.message || 'Failed to update organization details. Has scripts/add_vice_captain_name.sql been run?', 'error');
         } finally {
             setIsSaving(false);
         }
@@ -183,11 +253,28 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
 
             {/* Avatar card */}
             <div className="bg-white rounded-[22px] py-7 px-5 flex flex-col items-center gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-                <div
-                    className="w-[88px] h-[88px] rounded-full flex items-center justify-center text-[28px] font-extrabold text-white"
-                    style={{ background: 'linear-gradient(150deg,#FF9947 0%,#DE6B38 100%)' }}
-                >
-                    {getInitials(user.full_name)}
+                <div className="relative w-[88px] h-[88px]">
+                    <Avatar name={user.full_name} url={avatarUrl} size={88} variant="gradient" className="text-[28px]" />
+                    {uploadingAvatar && (
+                        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                            <Loader2 size={22} className="animate-spin text-white" />
+                        </div>
+                    )}
+                    <button
+                        onClick={() => avatarInputRef.current?.click()}
+                        disabled={uploadingAvatar}
+                        title="Change photo"
+                        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#241C17] border-2 border-white flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-60"
+                    >
+                        <Camera size={13} className="text-white" />
+                    </button>
+                    <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarFileChange}
+                    />
                 </div>
                 <div className="text-center mt-1">
                     <p className="m-0 text-lg font-extrabold text-[#241C17]">{user.full_name}</p>
@@ -215,104 +302,169 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
 
             {/* Your Details */}
             <div className="bg-white rounded-[22px] p-5 sm:p-6 flex flex-col gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-                <p className="m-0 text-sm font-bold text-[#241C17]">Your Details</p>
+                <p className="m-0 text-sm font-bold text-[#241C17]">{isSevak ? 'Your Details' : 'Organization Details'}</p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Username — read-only */}
-                    <div>
-                        <label className={fieldLabelClass}>Username</label>
-                        <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{user.username}</p>
-                    </div>
+                {isSevak ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Username — read-only */}
+                        <div>
+                            <label className={fieldLabelClass}>Username</label>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{user.username}</p>
+                        </div>
 
-                    {/* Mobile Number — read-only */}
-                    <div>
-                        <label className={fieldLabelClass}>Mobile Number</label>
-                        <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm">{user.mobile}</p>
-                    </div>
+                        {/* Mobile Number — read-only */}
+                        <div>
+                            <label className={fieldLabelClass}>Mobile Number</label>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm">{user.mobile}</p>
+                        </div>
 
-                    {/* Blood Group */}
-                    <div>
-                        <label className={fieldLabelClass}>Blood Group</label>
-                        <select
-                            value={editForm.blood_group}
-                            onChange={e => setEditForm({ ...editForm, blood_group: e.target.value })}
-                            className={fieldInputClass}
-                        >
-                            <option value="">— Select —</option>
-                            {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
-                        </select>
-                    </div>
+                        {/* Blood Group */}
+                        <div>
+                            <label className={fieldLabelClass}>Blood Group</label>
+                            <select
+                                value={editForm.blood_group}
+                                onChange={e => setEditForm({ ...editForm, blood_group: e.target.value })}
+                                className={fieldInputClass}
+                            >
+                                <option value="">— Select —</option>
+                                {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                            </select>
+                        </div>
 
-                    {/* Age */}
-                    <div>
-                        <label className={fieldLabelClass}>Age</label>
-                        <input
-                            type="number"
-                            min={1}
-                            max={120}
-                            value={editForm.age}
-                            onChange={e => setEditForm({ ...editForm, age: e.target.value })}
-                            placeholder="Your age"
-                            className={fieldInputClass}
-                        />
-                    </div>
+                        {/* Age */}
+                        <div>
+                            <label className={fieldLabelClass}>Age</label>
+                            <input
+                                type="number"
+                                min={1}
+                                max={120}
+                                value={editForm.age}
+                                onChange={e => setEditForm({ ...editForm, age: e.target.value })}
+                                placeholder="Your age"
+                                className={fieldInputClass}
+                            />
+                        </div>
 
-                    {/* Yearly Sankalp Goal */}
-                    <div>
-                        <label className={fieldLabelClass}>Yearly Sankalp Goal</label>
-                        <input
-                            type="number"
-                            min={1}
-                            max={365}
-                            value={editForm.yearly_goal}
-                            onChange={e => setEditForm({ ...editForm, yearly_goal: e.target.value })}
-                            placeholder="e.g. 25"
-                            className={fieldInputClass}
-                        />
-                    </div>
+                        {/* Yearly Sankalp Goal */}
+                        <div>
+                            <label className={fieldLabelClass}>Yearly Sankalp Goal</label>
+                            <input
+                                type="number"
+                                min={1}
+                                max={365}
+                                value={editForm.yearly_goal}
+                                onChange={e => setEditForm({ ...editForm, yearly_goal: e.target.value })}
+                                placeholder="e.g. 25"
+                                className={fieldInputClass}
+                            />
+                        </div>
 
-                    {/* Emergency Number */}
-                    <div>
-                        <label className={fieldLabelClass}>Emergency Number</label>
-                        <input
-                            type="tel"
-                            maxLength={10}
-                            value={editForm.emergency_number}
-                            onChange={e => setEditForm({ ...editForm, emergency_number: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                            placeholder="10-digit family number"
-                            className={fieldInputClass}
-                        />
-                    </div>
+                        {/* Emergency Number */}
+                        <div>
+                            <label className={fieldLabelClass}>Emergency Number</label>
+                            <input
+                                type="tel"
+                                maxLength={10}
+                                value={editForm.emergency_number}
+                                onChange={e => setEditForm({ ...editForm, emergency_number: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                                placeholder="10-digit family number"
+                                className={fieldInputClass}
+                            />
+                        </div>
 
-                    {/* Address */}
-                    <div className="sm:col-span-2">
-                        <label className={fieldLabelClass}>Address</label>
-                        <textarea
-                            value={editForm.address}
-                            onChange={e => setEditForm({ ...editForm, address: e.target.value })}
-                            placeholder="Your full address"
-                            rows={2}
-                            className={fieldInputClass + ' resize-none'}
-                        />
-                    </div>
+                        {/* Address */}
+                        <div className="sm:col-span-2">
+                            <label className={fieldLabelClass}>Address</label>
+                            <textarea
+                                value={editForm.address}
+                                onChange={e => setEditForm({ ...editForm, address: e.target.value })}
+                                placeholder="Your full address"
+                                rows={2}
+                                className={fieldInputClass + ' resize-none'}
+                            />
+                        </div>
 
-                    {/* Gender — read-only */}
-                    <div>
-                        <label className={fieldLabelClass}>Gender</label>
-                        <p className={`m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-sm ${user.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>
-                            {user.gender || 'Not specified'}
-                        </p>
-                    </div>
+                        {/* Gender — read-only */}
+                        <div>
+                            <label className={fieldLabelClass}>Gender</label>
+                            <p className={`m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-sm ${user.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>
+                                {user.gender || 'Not specified'}
+                            </p>
+                        </div>
 
-                    {/* Organization — read-only */}
-                    <div>
-                        <label className={fieldLabelClass}>Vihar Seva Group</label>
-                        <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{orgName || user.organization_id}</p>
+                        {/* Organization — read-only */}
+                        <div>
+                            <label className={fieldLabelClass}>Vihar Seva Group</label>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{orgName}</p>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Username — read-only */}
+                        <div>
+                            <label className={fieldLabelClass}>Username</label>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{user.username}</p>
+                        </div>
+
+                        {/* Mobile Number — read-only */}
+                        <div>
+                            <label className={fieldLabelClass}>Mobile Number</label>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm">{user.mobile}</p>
+                        </div>
+
+                        {/* Captain Name */}
+                        <div>
+                            <label className={fieldLabelClass}>Captain Name</label>
+                            <input
+                                type="text"
+                                value={captainName}
+                                onChange={e => setCaptainName(e.target.value)}
+                                placeholder="Captain's full name"
+                                className={fieldInputClass}
+                            />
+                        </div>
+
+                        {/* Vice Captain Name */}
+                        <div>
+                            <label className={fieldLabelClass}>Vice Captain Name</label>
+                            <input
+                                type="text"
+                                value={viceCaptainName}
+                                onChange={e => setViceCaptainName(e.target.value)}
+                                placeholder="Optional"
+                                className={fieldInputClass}
+                            />
+                        </div>
+
+                        {/* Vihar Seva Group — read-only */}
+                        <div>
+                            <label className={fieldLabelClass}>Vihar Seva Group</label>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{orgName}</p>
+                        </div>
+
+                        {/* City / Town — read-only */}
+                        <div>
+                            <label className={fieldLabelClass}>City</label>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">
+                                {orgDetails?.city || '—'}{orgDetails?.town ? `, ${orgDetails.town}` : ''}
+                            </p>
+                        </div>
+
+                        {/* Vihar Year duration — read-only, current VY */}
+                        <div className="sm:col-span-2">
+                            <label className={fieldLabelClass}>Vihar Year Duration</label>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">
+                                {currentVY.start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                {' – '}
+                                {currentVY.end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                <span className="text-[#8A6A57] font-bold ml-1.5">({currentVY.label})</span>
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 <button
-                    onClick={handleSave}
+                    onClick={isSevak ? handleSave : handleSaveOrgDetails}
                     disabled={isSaving}
                     className="w-full py-3.5 bg-saffron-600 hover:bg-saffron-700 text-white font-extrabold rounded-2xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
                 >
@@ -401,6 +553,15 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgName, onProfil
                     <LogOut size={16} />
                     Sign Out
                 </button>
+            )}
+
+            {/* Avatar Crop Modal */}
+            {cropFile && (
+                <AvatarCropModal
+                    file={cropFile}
+                    onCancel={() => setCropFile(null)}
+                    onConfirm={handleCropConfirm}
+                />
             )}
 
             {/* ID Card Modal */}

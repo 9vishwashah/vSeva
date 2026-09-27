@@ -62,12 +62,12 @@ const SEVAK_STEPS: Step[] = [
   {
     emoji: '🏠',
     title: 'Your Profile',
-    description: 'Tap "Home / My Profile" to see your personal stats — total km, vihars, ranking, and more. You can also update your blood group and emergency contact here.',
+    description: 'Your personal stats — total km, vihars, ranking, and more — live on the "Home" tab. Tap your avatar anytime to open Profile & Settings and update your blood group or emergency contact.',
   },
   {
     emoji: '📊',
     title: 'View Your Analytics',
-    description: 'The "Analytics" tab shows your contribution over time with beautiful charts and your organization rank.',
+    description: 'The "My Dashboard" tab shows your contribution over time with beautiful charts and your organization rank.',
   },
   {
     emoji: '🔄',

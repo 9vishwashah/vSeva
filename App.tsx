@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabase';
-import { UserRole, UserProfile, ViharEntry } from './types';
+import { UserRole, UserProfile, ViharEntry, Organization } from './types';
 import { dataService } from './services/dataService';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -8,6 +8,7 @@ import LandingPage from './pages/LandingPage';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal } from './services/oneSignalService';
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
+import StatusScreen from './components/StatusScreen';
 
 // Lazy load the inner components to reduce initial JS bundle size
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -43,14 +44,18 @@ const App: React.FC = () => {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [orgName, setOrgName] = useState<string>('');
+  const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<'offline' | 'error' | null>(null);
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
   const [editingEntry, setEditingEntry] = useState<ViharEntry | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // Captured once from a shared WhatsApp Vihar link (?vihar=<id>) — routes
+  // straight to that Vihar's card on Notifications once logged in.
+  const [pendingViharId] = useState<string | null>(() => new URLSearchParams(window.location.search).get('vihar'));
   // Show landing page only if NOT in standalone mode (PWA) and not on /login
   const isLoginRoute = window.location.pathname === '/login';
-  const [showLanding, setShowLanding] = useState(!isStandalone && !isLoginRoute);
+  const [showLanding, setShowLanding] = useState(!isStandalone && !isLoginRoute && !pendingViharId);
 
   // Check if onboarding should be shown for a given role
   const shouldShowOnboarding = (role: UserRole): boolean => {
@@ -66,6 +71,13 @@ const App: React.FC = () => {
   useEffect(() => {
     initOneSignal();
   }, []);
+
+  useEffect(() => {
+    if (pendingViharId) {
+      // Clean the URL so a refresh or back-navigation doesn't keep re-triggering this.
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [pendingViharId]);
 
   const handleEditEntry = (entry: ViharEntry) => {
     setEditingEntry(entry);
@@ -111,21 +123,26 @@ const App: React.FC = () => {
   }
   const isSuperAdmin = path === '/super-admin';
 
-  useEffect(() => {
-    // Check active session on load
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        try {
+  const checkSession = async () => {
+      setLoading(true);
+      setSessionError(null);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
           const profile = await dataService.getProfile(session.user.id);
           if (profile) {
             setUser(profile);
+            // Fetched separately (not on the login-critical path) — see
+            // dataService.getAvatarUrl for why.
+            dataService.getAvatarUrl(profile.id).then(url => {
+              if (url) setUser(prev => (prev ? { ...prev, avatar_url: url } : prev));
+            });
             const org = await dataService.getOrganization(profile.organization_id);
-            if (org) setOrgName(org.name);
+            if (org) setOrgDetails(org);
             // Link to OneSignal
             loginToOneSignal(profile.username);
-            // Redirect based on role if at root
-            setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
+            // Redirect based on role if at root — unless a shared Vihar link brought them here
+            setCurrentPage(pendingViharId ? 'notifications' : (profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard'));
             // Show onboarding walkthrough on first-ever session resume too
             if (shouldShowOnboarding(profile.role)) setShowOnboarding(true);
             // Track app open time (fire-and-forget)
@@ -137,29 +154,39 @@ const App: React.FC = () => {
                 if (error) console.warn('Could not update last_login_at:', error.message);
               });
           }
-        } catch (e) {
-          console.error("Profile load failed", e);
-          await supabase.auth.signOut();
         }
+      } catch (e) {
+        // A network hiccup here used to force a sign-out, silently logging out
+        // anyone who opened the app with a flaky connection. Now it's shown as
+        // a recoverable "offline"/"error" screen with Retry instead — the
+        // session itself is left untouched.
+        console.error("Session restore failed", e);
+        setSessionError(navigator.onLine ? 'error' : 'offline');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    };
+  };
+
+  useEffect(() => {
     checkSession();
   }, []);
 
   const handleLoginSuccess = async (profile: UserProfile) => {
     setUser(profile);
+    dataService.getAvatarUrl(profile.id).then(url => {
+      if (url) setUser(prev => (prev ? { ...prev, avatar_url: url } : prev));
+    });
     setShowLanding(false);
     loginToOneSignal(profile.username);
-    setCurrentPage(profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
+    setCurrentPage(pendingViharId ? 'notifications' : (profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard'));
     // Show onboarding walkthrough on first login
     if (shouldShowOnboarding(profile.role)) setShowOnboarding(true);
-    // Also fetch org name so it appears correctly in profile page
+    // Also fetch org details so they appear correctly in profile page & dashboard
     try {
       const org = await dataService.getOrganization(profile.organization_id);
-      if (org) setOrgName(org.name);
+      if (org) setOrgDetails(org);
     } catch (e) {
-      console.warn('Could not fetch org name:', e);
+      console.warn('Could not fetch org details:', e);
     }
   };
 
@@ -167,9 +194,10 @@ const App: React.FC = () => {
     await supabase.auth.signOut();
     logoutFromOneSignal();
     setUser(null);
-    setOrgName('');
+    setOrgDetails(null);
     sessionStorage.removeItem('hasSeenCompletenessPrompt');
-    if (!isStandalone) setShowLanding(true);
+    // Sign-out should return to the login screen, not the marketing landing page.
+    setShowLanding(false);
   };
 
   // While loading, show a white splash screen with the logo
@@ -178,6 +206,16 @@ const App: React.FC = () => {
       <img src={vSevaLogo} alt="vSeva" style={{ width: 96, height: 96, objectFit: 'contain' }} />
       <div style={{ marginTop: 20, width: 36, height: 36, borderRadius: '50%', border: '3px solid #f97316', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+
+  // Couldn't even restore the session — show a full-screen retry instead of
+  // silently dropping to the login page (which used to happen on any network hiccup).
+  if (sessionError) return (
+    <div style={{ position: 'fixed', inset: 0, background: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 9999 }}>
+      <div style={{ width: '100%', maxWidth: 380 }}>
+        <StatusScreen variant={sessionError} onRetry={checkSession} />
+      </div>
     </div>
   );
 
@@ -224,6 +262,8 @@ const App: React.FC = () => {
       <Layout
         role={user.role}
         userInitials={getInitials(user.full_name)}
+        userName={user.full_name}
+        avatarUrl={user.avatar_url}
         userId={user.id}
         onLogout={handleLogout}
         currentPage={currentPage}
@@ -236,6 +276,7 @@ const App: React.FC = () => {
             navigateToProfile={() => handleSetCurrentPage('profile')}
             navigateToNotifications={() => handleSetCurrentPage('notifications')}
             onAddVihar={() => handleSetCurrentPage('new-entry')}
+            orgDetails={orgDetails}
           />
         )}
 
@@ -285,11 +326,12 @@ const App: React.FC = () => {
             navigateToProfile={() => handleSetCurrentPage('profile')}
             navigateToNotifications={() => handleSetCurrentPage('notifications')}
             onAddVihar={() => handleSetCurrentPage('new-entry')}
+            orgDetails={orgDetails}
           />
         )}
 
         {currentPage === 'notifications' && (
-          <Notifications currentUser={user} />
+          <Notifications currentUser={user} highlightViharId={pendingViharId} />
         )}
 
         {currentPage === 'statistics' && (
@@ -302,11 +344,16 @@ const App: React.FC = () => {
         {currentPage === 'profile' && (
           <ProfileSection
             user={user}
-            orgName={orgName}
+            orgDetails={orgDetails}
             onProfileUpdated={async () => {
               try {
-                const updated = await dataService.getProfile(user.id);
-                if (updated) setUser(updated);
+                const [updated, avatarUrl, org] = await Promise.all([
+                  dataService.getProfile(user.id),
+                  dataService.getAvatarUrl(user.id),
+                  dataService.getOrganization(user.organization_id),
+                ]);
+                if (updated) setUser({ ...updated, avatar_url: avatarUrl });
+                if (org) setOrgDetails(org);
               } catch (e) {
                 console.warn('Could not refresh profile after update:', e);
               }

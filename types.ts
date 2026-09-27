@@ -8,7 +8,9 @@ export interface Organization {
   id: string; // uuid
   name: string;
   city?: string;
+  town?: string;
   created_by?: string;
+  vice_captain_name?: string | null;
 }
 
 export interface UserProfile {
@@ -26,6 +28,7 @@ export interface UserProfile {
   is_active: boolean;
   last_login_at?: string; // ISO timestamp, updated on each login
   yearly_goal?: number; // Sankalp: target number of Vihars this calendar year
+  avatar_url?: string | null;
 }
 
 export interface AreaRoute {
@@ -88,7 +91,7 @@ export interface UserNotification {
   id: string;
   user_id: string;
   organization_id?: string;
-  type: 'password_reset' | 'info' | 'alert' | 'alert_upcoming';
+  type: 'password_reset' | 'info' | 'alert' | 'alert_upcoming' | 'inactivity';
   title: string;
   message: string;
   payload?: any;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { UpcomingVihar, UserProfile } from '../types';
-import { MapPin, Clock, Users, Check, Phone } from 'lucide-react';
+import { MapPin, Clock, Users, Check, Phone, Share2 } from 'lucide-react';
 
 interface InterestedSevak {
   user_id: string;
@@ -20,11 +20,38 @@ interface ViharAlertCardProps {
   currentUser: UserProfile;
   contacts: Record<string, { full_name: string; mobile: string }>;
   isPast?: boolean;
+  highlighted?: boolean;
 }
+
+// Builds the WhatsApp share text: the Vihar's details plus a deep link that
+// opens straight to this card on the Notifications page (see App.tsx's
+// `?vihar=` handling) so whoever taps it can immediately tap "I'm Interested".
+const buildShareMessage = (v: UpcomingVihar): string => {
+  const dateStr = new Date(`${v.vihar_date}T00:00:00`).toLocaleDateString('en-IN', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+  const timeStr = v.vihar_time ? v.vihar_time.slice(0, 5) : '';
+  const lines = [
+    '🚶 *Upcoming Vihar Alert*',
+    '',
+    `📍 ${v.from_location} → ${v.to_location}`,
+    `📅 ${dateStr}${timeStr ? ` at ${timeStr}` : ''}`,
+    `🌗 ${v.vihar_type === 'morning' ? 'Morning' : 'Evening'} Vihar`,
+  ];
+  if (v.sadhu_count > 0 || v.sadhvi_count > 0) {
+    const parts: string[] = [];
+    if (v.sadhu_count > 0) parts.push(`${v.sadhu_count} Sadhu`);
+    if (v.sadhvi_count > 0) parts.push(`${v.sadhvi_count} Sadhviji`);
+    lines.push(`🙏 ${parts.join(' / ')}`);
+  }
+  lines.push('', "Tap below to open it and mark yourself as I'm Interested:");
+  lines.push(`${window.location.origin}/?vihar=${v.id}`);
+  return lines.join('\n');
+};
 
 // A single Vihar alert with its own independent "I'm Interested" state —
 // used standalone (list on the Notifications page) or embedded (Dashboard teaser).
-const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, contacts, isPast = false }) => {
+const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, contacts, isPast = false, highlighted = false }) => {
   const [interestedIds, setInterestedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
@@ -84,7 +111,10 @@ const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, con
   }));
 
   return (
-    <div className={`rounded-2xl bg-white border shadow-[0_2px_12px_rgba(0,0,0,0.06)] p-5 space-y-4 ${isPast ? 'border-gray-100' : 'border-saffron-100'}`}>
+    <div
+      id={`vihar-${vihar.id}`}
+      className={`rounded-2xl bg-white border shadow-[0_2px_12px_rgba(0,0,0,0.06)] p-5 space-y-4 transition-shadow ${isPast ? 'border-gray-100' : 'border-saffron-100'} ${highlighted ? 'ring-2 ring-saffron-500 ring-offset-2' : ''}`}
+    >
       <div className="flex items-center justify-between">
         <div className={`flex items-center gap-2 font-bold ${isPast ? 'text-gray-500' : 'text-saffron-700'}`}>
           <MapPin size={18} />
@@ -115,16 +145,27 @@ const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, con
       </div>
 
       {!isPast && (
-        <button
-          onClick={toggleInterest}
-          disabled={toggling || loading}
-          className={`w-full py-2.5 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 ${
-            isInterested ? 'bg-green-600 text-white' : 'bg-saffron-600 hover:bg-saffron-700 text-white'
-          }`}
-        >
-          <Check size={18} />
-          {isInterested ? "You're Interested" : "I'm Interested"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleInterest}
+            disabled={toggling || loading}
+            className={`flex-1 py-2.5 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 ${
+              isInterested ? 'bg-green-600 text-white' : 'bg-saffron-600 hover:bg-saffron-700 text-white'
+            }`}
+          >
+            <Check size={18} />
+            {isInterested ? "You're Interested" : "I'm Interested"}
+          </button>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(buildShareMessage(vihar))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Share to Vihar Group on WhatsApp"
+            className="shrink-0 w-[46px] h-[46px] rounded-xl bg-[#e8fdf0] hover:bg-[#25D366] text-[#25D366] hover:text-white transition-colors flex items-center justify-center active:scale-95"
+          >
+            <WhatsAppIcon size={20} />
+          </a>
+        </div>
       )}
 
       <div>

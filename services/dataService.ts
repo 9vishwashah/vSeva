@@ -39,6 +39,46 @@ export const dataService = {
     return 25;
   },
 
+  // Same defensive pattern as getYearlyGoal — fetched separately from
+  // getProfile so a missing scripts/add_avatar_url.sql migration can never
+  // break login. Returns null (→ initials fallback) on any error.
+  async getAvatarUrl(userId: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('id', userId)
+        .single();
+      if (!error && data && typeof (data as any).avatar_url === 'string') {
+        return (data as any).avatar_url;
+      }
+    } catch {
+      // ignore — column/bucket likely doesn't exist yet
+    }
+    return null;
+  },
+
+  async uploadAvatar(userId: string, file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const filePath = `${userId}/avatar_${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { cacheControl: '3600' });
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    const publicUrl = data.publicUrl;
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: publicUrl })
+      .eq('id', userId);
+    if (updateError) throw updateError;
+
+    return publicUrl;
+  },
+
   async getPublicProfile(username: string): Promise<Partial<UserProfile> | null> {
     // 1. Attempt RPC first (bypasses RLS for unauthenticated QR code scans)
     const { data: rpcData, error: rpcError } = await supabase.rpc('get_public_sevak_profile', { p_username: username });
@@ -64,27 +104,86 @@ export const dataService = {
   async getOrganization(orgId: string): Promise<Organization | null> {
     const { data, error } = await supabase
       .from('organizations')
+      .select('id, name, city, town, created_by, vice_captain_name')
+      .eq('id', orgId)
+      .single();
+
+    if (!error) return data as Organization;
+
+    // town/vice_captain_name need scripts/add_vice_captain_name.sql run first —
+    // fall back to the original narrow select rather than breaking org name/city
+    // everywhere until the migration runs.
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('organizations')
       .select('id, name, city, created_by')
       .eq('id', orgId)
       .single();
 
-    if (error) {
-      console.warn("Could not fetch org details:", error.message);
+    if (fallbackError) {
+      console.warn("Could not fetch org details:", fallbackError.message);
       return null;
     }
-    return data as Organization;
+    return fallbackData as Organization;
+  },
+
+  async updateOrgLeadership(updates: { captainName?: string; viceCaptainName?: string }): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error('Admin session required. Please login again.');
+
+    const response = await fetch('/.netlify/functions/update-org-leadership', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      let message = 'Failed to update organization details.';
+      try {
+        const err = await response.json();
+        message = err.error || message;
+      } catch {
+        // response body wasn't JSON (e.g. empty) — keep the generic message
+      }
+      throw new Error(message);
+    }
+  },
+
+  // Fire-and-forget: scans for sevaks with no Vihar in 5/7/15+ days and creates
+  // a "No Vihar Since..." notification for them (deduped per tier). Pass
+  // `username` to check just one sevak (their own dashboard), omit it to scan
+  // the whole org (the Captain's dashboard).
+  checkInactivity(orgId: string, username?: string): void {
+    fetch('/.netlify/functions/check-inactivity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orgId, username }),
+    }).catch(e => console.warn('Inactivity check failed:', e));
   },
 
   async getOrgSevaks(orgId: string): Promise<UserProfile[]> {
     const { data, error } = await supabase
+      .from('profiles')
+      .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at, avatar_url')
+      .eq('organization_id', orgId)
+      .eq('role', 'sevak')
+      .eq('is_active', true);
+
+    if (!error) return data as UserProfile[];
+
+    // avatar_url needs scripts/add_avatar_url.sql run first — fall back to the
+    // original select rather than breaking the whole Organization Members list.
+    const { data: fallbackData, error: fallbackError } = await supabase
       .from('profiles')
       .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at')
       .eq('organization_id', orgId)
       .eq('role', 'sevak')
       .eq('is_active', true);
 
-    if (error) throw error;
-    return data as UserProfile[];
+    if (fallbackError) throw fallbackError;
+    return fallbackData as UserProfile[];
   },
 
   async getAllOrgUsers(orgId: string, includeInactive: boolean = false): Promise<UserProfile[]> {
@@ -169,7 +268,26 @@ export const dataService = {
     return {};
   },
 
-  async getOrgSevakContacts(orgId: string): Promise<Record<string, { full_name: string; mobile: string }>> {
+  // Username -> avatar_url, same shape/scope as getSevakNameMap. Kept separate
+  // so callers of getSevakNameMap (which expect plain string values) are
+  // never affected by adding this.
+  async getSevakAvatarMap(orgId: string): Promise<Record<string, string>> {
+    try {
+      const response = await fetch('/.netlify/functions/get-sevak-avatars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.warn("Failed to fetch secure sevak avatar map via serverless");
+    }
+    return {};
+  },
+
+  async getOrgSevakContacts(orgId: string): Promise<Record<string, { full_name: string; mobile: string; avatar_url?: string | null; role?: string; is_active?: boolean }>> {
     try {
       const response = await fetch('/.netlify/functions/get-org-sevak-contacts', {
         method: 'POST',
@@ -189,7 +307,7 @@ export const dataService = {
   // their own row. Used by the Vihar Sevak picker so a Sevak submitting an entry
   // can still search/select org-mates by name; returns only username/full_name/
   // gender (never mobile/blood group/emergency contact/address).
-  async getOrgRoster(orgId: string, includeInactive: boolean = false): Promise<Pick<UserProfile, 'username' | 'full_name' | 'gender'>[]> {
+  async getOrgRoster(orgId: string, includeInactive: boolean = false): Promise<Pick<UserProfile, 'username' | 'full_name' | 'gender' | 'avatar_url'>[]> {
     try {
       const response = await fetch('/.netlify/functions/get-org-roster', {
         method: 'POST',
@@ -821,6 +939,72 @@ export const dataService = {
       vSynergy,
       vRank: "N/A" // Populated separately
     };
+  },
+
+  // Client-side equivalent of the get_top_sevaks_leaderboard RPC, but over
+  // whatever entries the caller passes in (e.g. a Vihar-Year-filtered subset)
+  // instead of always the full org history — same {male, female, overall}
+  // shape LeaderboardCard already expects.
+  getTopSevaksLeaderboard(
+    entries: ViharEntry[],
+    nameMap: Record<string, string>,
+    genderMap: Record<string, string>
+  ): { male: any[]; female: any[]; overall: any[] } {
+    const statsByUser: Record<string, { km: number; count: number }> = {};
+    entries.forEach(e => {
+      (e.sevaks || []).forEach(u => {
+        if (!statsByUser[u]) statsByUser[u] = { km: 0, count: 0 };
+        statsByUser[u].km += Number(e.distance_km || 0);
+        statsByUser[u].count += 1;
+      });
+    });
+
+    const all = Object.entries(statsByUser).map(([username, s]) => ({
+      username,
+      name: nameMap[username] || username.split('@')[0],
+      km: parseFloat(s.km.toFixed(2)),
+      count: s.count,
+      gender: (genderMap[username] || '').toLowerCase(),
+    }));
+
+    const sortFn = (a: { count: number; km: number }, b: { count: number; km: number }) =>
+      (b.count - a.count) || (b.km - a.km);
+
+    const withRank = (list: typeof all) => [...list].sort(sortFn).map((s, i) => ({ ...s, rank: i + 1 }));
+
+    return {
+      male: withRank(all.filter(s => s.gender === 'male')),
+      female: withRank(all.filter(s => s.gender === 'female')),
+      overall: withRank(all),
+    };
+  },
+
+  // Every sevak's current "consecutive calendar days with a Vihar" streak,
+  // sorted highest first — for the Captain's "Highest Streaks" leaderboard.
+  getStreakLeaderboard(entries: ViharEntry[], nameMap: Record<string, string>): { username: string; name: string; streak: number }[] {
+    const datesByUser: Record<string, string[]> = {};
+    entries.forEach(e => {
+      (e.sevaks || []).forEach(u => {
+        if (!datesByUser[u]) datesByUser[u] = [];
+        datesByUser[u].push(e.vihar_date);
+      });
+    });
+
+    return Object.entries(datesByUser)
+      .map(([username, dates]) => {
+        const uniqueDatesDesc = Array.from(new Set(dates)).sort((a, b) => b.localeCompare(a));
+        let streak = uniqueDatesDesc.length > 0 ? 1 : 0;
+        for (let i = 0; i < uniqueDatesDesc.length - 1; i++) {
+          const curr = new Date(uniqueDatesDesc[i]);
+          const prev = new Date(uniqueDatesDesc[i + 1]);
+          const diffDays = Math.round((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) streak++;
+          else break;
+        }
+        return { username, name: nameMap[username] || username.split('@')[0], streak };
+      })
+      .filter(s => s.streak > 0)
+      .sort((a, b) => b.streak - a.streak);
   },
 
   calculateRank: (allEntries: ViharEntry[], currentUsername: string): number | string => {

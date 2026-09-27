@@ -2,10 +2,11 @@ import React, { useRef, useState } from 'react';
 import { ViharEntry } from '../types';
 import { MessageCircle, Download, Trash2, Pencil } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import Avatar from './Avatar';
 
 interface EntryCardProps {
     entry: ViharEntry;
-    getSevakInfo: (username: string) => { name: string; blood?: string };
+    getSevakInfo: (username: string) => { name: string; blood?: string; avatar_url?: string };
     onDelete?: (id: number) => void;
     onEdit?: (entry: ViharEntry) => void;
 }
@@ -117,22 +118,19 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                         {(entry.sevaks || []).map((u, i) => {
-                            const name = getSevakInfo(u).name;
-                            const initials = name.trim().split(/\s+/).map(p => p[0]).join('').substring(0, 2).toUpperCase();
+                            const info = getSevakInfo(u);
                             return (
                                 <div
                                     key={i}
                                     className="shrink-0 flex flex-col items-center gap-0.5"
                                 >
                                     <span className="flex items-center gap-1.5 text-[11px] pl-0.5 pr-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: '#F7F4F0', color: '#241C17' }}>
-                                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-extrabold shrink-0" style={{ background: '#FCE6D8', color: '#C05A2C' }}>
-                                            {initials}
-                                        </span>
-                                        {name}
+                                        <Avatar name={info.name} url={info.avatar_url} size={20} className="text-[9px]" />
+                                        {info.name}
                                     </span>
-                                    {getSevakInfo(u).blood && (
+                                    {info.blood && (
                                         <span className="text-[8px] px-1.5 py-0 bg-red-50 text-red-600 rounded border border-red-100 font-bold uppercase leading-tight">
-                                            {getSevakInfo(u).blood}
+                                            {info.blood}
                                         </span>
                                     )}
                                 </div>

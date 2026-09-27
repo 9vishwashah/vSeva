@@ -4,6 +4,7 @@ import { dataService } from '../services/dataService';
 import { useToast } from '../context/ToastContext';
 import { supabase } from '../services/supabase';
 import { Calendar, MapPin, Users, User, Loader2, ClipboardCheck, ChevronDown, ChevronUp, Check, X as XIcon, Pencil, Clock } from 'lucide-react';
+import StatusScreen from '../components/StatusScreen';
 
 interface PendingApprovalsProps {
     currentUser: UserProfile;
@@ -14,17 +15,23 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({ currentUser, onEdit
     const { showToast } = useToast();
     const [entries, setEntries] = useState<ViharEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
     const [expanded, setExpanded] = useState<number | null>(null);
     const [nameMap, setNameMap] = useState<Record<string, string>>({});
     const [busyId, setBusyId] = useState<number | null>(null);
 
     useEffect(() => {
         load();
-    }, [currentUser]);
+        // Depend on the org id (a stable primitive), not the whole currentUser
+        // object — that reference gets replaced elsewhere in the app (e.g. after
+        // an avatar fetch resolves), which was re-triggering this full-page
+        // "Loading pending approvals..." spinner even when nothing here changed.
+    }, [currentUser.organization_id]);
 
     const load = async () => {
         try {
             setLoading(true);
+            setLoadError(null);
             const data = await dataService.getPendingViharEntries(currentUser.organization_id);
             setEntries(data);
 
@@ -44,6 +51,7 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({ currentUser, onEdit
         } catch (err: any) {
             console.error(err);
             showToast('Failed to load pending approvals', 'error');
+            setLoadError(navigator.onLine ? 'error' : 'offline');
         } finally {
             setLoading(false);
         }
@@ -91,6 +99,10 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({ currentUser, onEdit
                 <p className="text-gray-500 font-medium">Loading pending approvals...</p>
             </div>
         );
+    }
+
+    if (loadError) {
+        return <StatusScreen variant={loadError} onRetry={load} />;
     }
 
     return (
@@ -221,6 +233,7 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({ currentUser, onEdit
 
                                                 <div className="pt-4 border-t border-gray-50 space-y-3">
                                                     <button
+                                                        type="button"
                                                         onClick={() => onEdit(entry)}
                                                         disabled={isBusy}
                                                         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors border border-gray-200 disabled:opacity-50"
@@ -229,6 +242,7 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({ currentUser, onEdit
                                                     </button>
                                                     <div className="flex gap-3">
                                                         <button
+                                                            type="button"
                                                             onClick={() => handleReject(entry)}
                                                             disabled={isBusy}
                                                             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors border border-red-100 disabled:opacity-50"
@@ -236,6 +250,7 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({ currentUser, onEdit
                                                             <XIcon size={16} /> Reject
                                                         </button>
                                                         <button
+                                                            type="button"
                                                             onClick={() => handleApprove(entry)}
                                                             disabled={isBusy}
                                                             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-saffron-500 to-orange-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-saffron-100 hover:shadow-saffron-200 transition-all active:scale-[0.98] disabled:opacity-60"

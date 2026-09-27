@@ -1,5 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Mirrors get-sevak-names.js exactly (same org-wide, username-keyed shape),
+// just returning avatar_url instead of full_name — kept as its own endpoint
+// so existing callers of get-sevak-names.js (which expect plain string
+// values) are never affected.
 export async function handler(event) {
     try {
         if (event.httpMethod !== 'POST') {
@@ -23,37 +27,24 @@ export async function handler(event) {
             process.env.SUPABASE_SERVICE_ROLE_KEY
         );
 
-        // Fetch id/full_name/mobile/avatar_url securely, bypassing RLS, so any
-        // org member (not just admins) can resolve who someone is, reach them
-        // directly, and see their photo. avatar_url needs
-        // scripts/add_avatar_url.sql run first — fall back to the base select
-        // if that migration hasn't been applied yet, so name/mobile resolution
-        // never breaks because of it.
-        let data, error;
-        ({ data, error } = await supabaseAdmin
+        // avatar_url needs scripts/add_avatar_url.sql run first — fall back to
+        // an empty map (→ initials fallback everywhere) rather than erroring.
+        const { data, error } = await supabaseAdmin
             .from('profiles')
-            .select('id, full_name, mobile, avatar_url, role, is_active')
-            .eq('organization_id', orgId));
+            .select('username, avatar_url')
+            .eq('organization_id', orgId);
 
         if (error) {
-            ({ data, error } = await supabaseAdmin
-                .from('profiles')
-                .select('id, full_name, mobile, role, is_active')
-                .eq('organization_id', orgId));
+            return { statusCode: 200, body: JSON.stringify({}) };
         }
 
-        if (error) throw error;
-
-        // Build the dictionary keyed by profile id
         const map = {};
         (data || []).forEach(p => {
-            map[p.id] = {
-                full_name: p.full_name,
-                mobile: p.mobile || '',
-                avatar_url: p.avatar_url || null,
-                role: p.role,
-                is_active: p.is_active !== false,
-            };
+            if (p.username && p.avatar_url) {
+                map[p.username] = p.avatar_url;
+                const plainUsername = p.username.split('@')[0];
+                if (plainUsername) map[plainUsername] = p.avatar_url;
+            }
         });
 
         return {

@@ -4,6 +4,7 @@ import { Share2, MapPin, Users, Handshake, Medal, Trophy, Sparkles, Instagram, D
 import { useToast } from '../context/ToastContext';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import vsgLogo from '../assets/vsg.jpg';
+import Avatar from './Avatar';
 
 interface StatCardProps {
   stats: StatSummary;
@@ -14,9 +15,10 @@ interface StatCardProps {
   isAdmin?: boolean;
   topSevak?: { name: string; km: number; count: number } | null;
   topSevika?: { name: string; km: number; count: number } | null;
+  avatarUrl?: string | null;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, loading = false, isAdmin = false, topSevak = null, topSevika = null }) => {
+const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, loading = false, isAdmin = false, topSevak = null, topSevika = null, avatarUrl = null }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -183,6 +185,10 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
                 {isAdmin ? (
                   <div className="w-[88px] h-[88px] rounded-full flex items-center justify-center shadow-lg border-2 border-white bg-white z-20 relative" style={{padding: '6px'}}>
                      <img src={vSevaLogo} alt="vSeva Logo" className="w-full h-full object-contain" />
+                  </div>
+                ) : avatarUrl ? (
+                  <div className="w-20 h-20 rounded-full shadow-lg border-2 bg-white border-saffron-100 relative z-20 overflow-hidden">
+                    <Avatar name={userName} url={avatarUrl} size={80} className="text-2xl font-serif" />
                   </div>
                 ) : (
                   <div className="w-20 h-20 rounded-full flex items-center justify-center font-serif text-2xl font-bold shadow-lg border-2 bg-white text-saffron-600 border-saffron-100 relative z-20">

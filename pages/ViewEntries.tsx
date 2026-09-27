@@ -4,6 +4,9 @@ import { dataService } from '../services/dataService';
 import { Search, Calendar, User, MessageCircle, Trash2, Pencil, X, ChevronLeft } from 'lucide-react';
 import EntryCard from '../components/EntryCard';
 import EntriesSkeleton from '../components/EntriesSkeleton';
+import StatusScreen from '../components/StatusScreen';
+import ViharYearSelector from '../components/ViharYearSelector';
+import { getViharYearStartYear, getViharYearBoundsForStartYear, isDateInViharYear } from '../services/viharYear';
 import { useToast } from '../context/ToastContext';
 import { supabase } from '../services/supabase';
 
@@ -18,19 +21,28 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
 
   const [entries, setEntries] = useState<ViharEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sevakMap, setSevakMap] = useState<Record<string, string>>({}); // username -> fullname
-  useEffect(() => {
-    const fetchData = async () => {
+
+  // Same Vihar Year (VY) segregation as Dashboard/Group Analytics — purely a
+  // display filter over vihar_date, nothing stored or moved.
+  const currentVYStartYear = getViharYearStartYear();
+  const [selectedVYStartYear, setSelectedVYStartYear] = useState<number>(currentVYStartYear);
+  const selectedVY = getViharYearBoundsForStartYear(selectedVYStartYear);
+  const fetchData = async () => {
+      setLoading(true);
+      setLoadError(null);
       try {
         // Admin's "View Entries" is the official ledger (approved only). A Sevak's
-        // "My Vihars" also needs to show their own pending/rejected submissions,
-        // so it uses a dedicated query rather than the approved-only getEntries().
+        // "My Vihars" also needs to show their own pending submissions, so it uses
+        // a dedicated query rather than the approved-only getEntries() — but
+        // rejected ones are dropped entirely rather than shown, per request.
         const data = currentUser.role === UserRole.SEVAK
           ? await dataService.getMyViharEntries(currentUser.organization_id, currentUser.id, currentUser.username)
           : await dataService.getEntries(currentUser.organization_id);
 
-        let filteredData = data || [];
+        let filteredData = (data || []).filter(e => e.status !== 'rejected');
         setEntries(filteredData);
 
         // Collect all unique usernames across all entries, then do a single targeted query
@@ -41,40 +53,51 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
         if (allUsernames.length > 0) {
           // Attempt direct pull for admin or self, fallback to secure endpoint
           let orgMap: Record<string, string> = {};
+          let avatarMap: Record<string, string> = {};
           if (currentUser.role === UserRole.ORG_ADMIN) {
             const { data: profiles } = await supabase
               .from('profiles')
-              .select('username, full_name')
+              .select('username, full_name, avatar_url')
               .in('username', allUsernames);
-            (profiles || []).forEach((p: any) => orgMap[p.username] = p.full_name);
+            (profiles || []).forEach((p: any) => {
+              orgMap[p.username] = p.full_name;
+              if (p.avatar_url) avatarMap[p.username] = p.avatar_url;
+            });
           } else {
-             orgMap = await dataService.getSevakNameMap(currentUser.organization_id);
+            [orgMap, avatarMap] = await Promise.all([
+              dataService.getSevakNameMap(currentUser.organization_id),
+              dataService.getSevakAvatarMap(currentUser.organization_id),
+            ]);
           }
 
-          const map: Record<string, { name: string; blood?: string }> = {};
+          const map: Record<string, { name: string; blood?: string; avatar_url?: string }> = {};
           allUsernames.forEach(username => {
             const fullName = orgMap[username] || username.split('@')[0];
-            const info = { name: fullName };
+            const info = { name: fullName, avatar_url: avatarMap[username] };
             map[username] = info;               // exact match
             map[username.toLowerCase()] = info;
             map[username.split('@')[0]] = info; // part before @
             map[username.split('@')[0].toLowerCase()] = info;
           });
-          
+
           setSevakMap(map as any);
         }
 
       } catch (err) {
         console.error('Failed to load entries', err);
+        setLoadError(navigator.onLine ? 'error' : 'offline');
       } finally {
         setLoading(false);
       }
-    };
+  };
 
+  useEffect(() => {
     fetchData();
   }, [currentUser.organization_id]);
 
-  const filteredEntries = entries.filter((e) => {
+  const entriesInVY = entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
+
+  const filteredEntries = entriesInVY.filter((e) => {
     // Text search
     const textMatch =
       (e.vihar_from || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -137,25 +160,34 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
           </h1>
           {!loading && (
             <span className="hidden sm:inline-block text-xs font-semibold text-[#8A6A57] shrink-0">
-              {entries.length} {entries.length === 1 ? 'Entry' : 'Entries'}
+              {entriesInVY.length} {entriesInVY.length === 1 ? 'Entry' : 'Entries'}
             </span>
           )}
         </div>
 
-        <div className="relative w-40 sm:w-56 shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] border-none text-sm text-[#241C17] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-saffron-200"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+        <div className="flex items-center gap-2 shrink-0">
+          <ViharYearSelector
+            selectedStartYear={selectedVYStartYear}
+            currentStartYear={currentVYStartYear}
+            onChange={setSelectedVYStartYear}
           />
+          <div className="relative w-40 sm:w-56 shrink-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] border-none text-sm text-[#241C17] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-saffron-200"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
       {loading ? (
         <EntriesSkeleton />
+      ) : loadError ? (
+        <StatusScreen variant={loadError} onRetry={fetchData} />
       ) : (
         <>
           {/* Desktop Table View */}

@@ -2,17 +2,23 @@
 let initPromise: Promise<void> | null = null;
 
 /**
- * Helper to wait for OneSignal internal state to be ready
+ * Helper to wait for OneSignal internal state to be ready.
+ *
+ * `OneSignal.login`/`OneSignal.User` existing is not enough — the SDK keeps
+ * setting up internal managers (subscription/session state) as background
+ * tasks after `init()` resolves. Calling `login()` while those are still in
+ * flight throws deep inside the SDK's own minified code ("Cannot read
+ * properties of undefined"), which no external check can fully prevent —
+ * so this also checks the deeper `PushSubscription` object as a stronger
+ * (though still not perfect) readiness signal, and waits longer overall.
  */
-async function waitForOneSignalReady(OneSignal: any, maxAttempts = 10): Promise<boolean> {
+async function waitForOneSignalReady(OneSignal: any, maxAttempts = 14): Promise<boolean> {
   for (let i = 0; i < maxAttempts; i++) {
-    // Check if both the User object and the login function are available
-    if (OneSignal.login && OneSignal.User) {
-      // Small additional delay to ensure internal hydration completes
-      await new Promise(r => setTimeout(r, 100));
+    if (OneSignal.login && OneSignal.User && OneSignal.User.PushSubscription) {
+      // Additional delay to ensure internal hydration completes
+      await new Promise(r => setTimeout(r, 300));
       return true;
     }
-    console.log(`OneSignal: Waiting for SDK readiness (attempt ${i + 1}/${maxAttempts})...`);
     await new Promise(r => setTimeout(r, 300));
   }
   return false;
@@ -36,6 +42,11 @@ export const initOneSignal = async () => {
             enable: false,
           },
         });
+        // init() resolving doesn't mean the SDK's internal managers have
+        // finished hydrating — a login attempted right after init still
+        // races them. This settle delay is what actually closes that race,
+        // more than any property-existence check made afterwards.
+        await new Promise(r => setTimeout(r, 800));
         console.log('OneSignal: Initialized');
       } catch (err) {
         console.error('OneSignal: Initialization failed', err);
@@ -67,16 +78,23 @@ export const loginToOneSignal = async (username: string, retries = 3) => {
           return;
         }
 
-        console.log(`OneSignal: Attempting login for ${username} (retries left: ${remaining})`);
         await OneSignal.login(username);
         console.log(`OneSignal: Logged in successfully as ${username}`);
       } catch (err) {
         if (remaining > 0) {
-          console.warn(`OneSignal: Login failed, retrying in 1s...`, err);
-          await new Promise(r => setTimeout(r, 1000));
+          // The SDK's internal hydration race (see waitForOneSignalReady) is
+          // the expected cause here, not a real fault — logged quietly at
+          // debug level so it doesn't read as an app error on every login,
+          // with a growing backoff to give the SDK more time to settle.
+          const attemptNumber = retries - remaining + 1;
+          console.debug(`OneSignal: Login attempt ${attemptNumber} not ready yet, retrying...`);
+          await new Promise(r => setTimeout(r, 1200 * attemptNumber));
           return attemptLogin(remaining - 1);
         }
-        console.error("OneSignal: Login failed after retries", err);
+        // Non-critical — this only affects push-notification targeting, not
+        // login itself, and the next app open (or another login elsewhere in
+        // the app) will retry it.
+        console.warn("OneSignal: Login did not complete after retries — push notifications may not be targeted correctly until the next app open", err);
       }
     };
 

@@ -12,6 +12,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import { NotoSansDevanagariBase64 } from '../assets/NotoSansDevanagari-Regular';
+import StatusScreen from '../components/StatusScreen';
 
 interface RegistrationRequest {
     id: string;
@@ -54,6 +55,8 @@ const SuperAdminDashboard = () => {
     const [orgStats, setOrgStats] = useState<OrgStat[]>([]);
     const [loading, setLoading] = useState(false);
     const [statsLoading, setStatsLoading] = useState(false);
+    const [requestsError, setRequestsError] = useState<'offline' | 'error' | null>(null);
+    const [statsError, setStatsError] = useState<'offline' | 'error' | null>(null);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [orgAdmins, setOrgAdmins] = useState<Record<string, OrgAdminDetails>>({});
     const [pinEntry, setPinEntry] = useState('');
@@ -63,6 +66,7 @@ const SuperAdminDashboard = () => {
 
     const fetchRequests = async () => {
         setLoading(true);
+        setRequestsError(null);
         try {
             // Using RPC to bypass RLS for Super Admin dashboard
             const { data, error } = await supabase.rpc('get_pending_registration_requests');
@@ -72,6 +76,7 @@ const SuperAdminDashboard = () => {
         } catch (err: any) {
             console.error(err);
             showToast("Failed to fetch requests", "error");
+            setRequestsError(navigator.onLine ? 'error' : 'offline');
         } finally {
             setLoading(false);
         }
@@ -79,10 +84,11 @@ const SuperAdminDashboard = () => {
 
     const fetchStats = async () => {
         setStatsLoading(true);
+        setStatsError(null);
         try {
             const data = await dataService.getOrgActivityStats();
             setOrgStats(data);
-            
+
             // Fetch Admin Details for these Orgs
             if (data.length > 0) {
                 const orgIds = data.map(o => o.org_id);
@@ -91,6 +97,7 @@ const SuperAdminDashboard = () => {
             }
         } catch (err) {
             console.error(err);
+            setStatsError(navigator.onLine ? 'error' : 'offline');
         } finally {
             setStatsLoading(false);
         }
@@ -378,7 +385,7 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500 font-medium">Active Groups</p>
-                                <p className="text-2xl font-bold text-gray-900">{statsLoading ? '...' : totalOrgs}</p>
+                                <p className="text-2xl font-bold text-gray-900">{statsLoading ? '...' : statsError ? '—' : totalOrgs}</p>
                             </div>
                         </div>
                     </div>
@@ -390,7 +397,7 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500 font-medium">Global Sevaks</p>
-                                <p className="text-2xl font-bold text-gray-900">{statsLoading ? '...' : totalSevaks}</p>
+                                <p className="text-2xl font-bold text-gray-900">{statsLoading ? '...' : statsError ? '—' : totalSevaks}</p>
                             </div>
                         </div>
                     </div>
@@ -402,7 +409,7 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500 font-medium">Total Vihars</p>
-                                <p className="text-2xl font-bold text-gray-900">{statsLoading ? '...' : totalEntries}</p>
+                                <p className="text-2xl font-bold text-gray-900">{statsLoading ? '...' : statsError ? '—' : totalEntries}</p>
                             </div>
                         </div>
                     </div>
@@ -414,7 +421,7 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500 font-medium">Pending Approvals</p>
-                                <p className="text-2xl font-bold text-orange-600">{loading ? '...' : pendingRequests}</p>
+                                <p className="text-2xl font-bold text-orange-600">{loading ? '...' : requestsError ? '—' : pendingRequests}</p>
                             </div>
                         </div>
                     </div>
@@ -540,6 +547,8 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                                                         <Loader2 className="animate-spin text-saffron-600" size={32} />
                                                         <span className="text-gray-500 font-medium">Fetching requests...</span>
                                                     </div>
+                                                ) : requestsError ? (
+                                                    <StatusScreen variant={requestsError} onRetry={fetchRequests} compact bare />
                                                 ) : (
                                                     <div className="space-y-2">
                                                         <p className="text-gray-400 text-lg font-medium font-serif">All clear!</p>
@@ -670,6 +679,8 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                                                         <Loader2 className="animate-spin text-blue-600" size={32} />
                                                         <span className="text-gray-500 font-medium">Retrieving stats...</span>
                                                     </div>
+                                                ) : statsError ? (
+                                                    <StatusScreen variant={statsError} onRetry={fetchStats} compact bare />
                                                 ) : "No active groups found"}
                                             </td>
                                         </tr>

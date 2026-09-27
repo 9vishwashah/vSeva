@@ -1,14 +1,18 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck } from 'lucide-react';
+import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck, WifiOff } from 'lucide-react';
 
 import NotificationBell from './NotificationBell';
+import Avatar from './Avatar';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 interface LayoutProps {
   children: React.ReactNode;
   role: UserRole;
   userInitials: string;
+  userName?: string;
+  avatarUrl?: string | null;
   userId?: string;
   onLogout: () => void;
   currentPage: string;
@@ -16,8 +20,9 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({
-  children, role, userInitials, userId, onLogout, currentPage, setCurrentPage
+  children, role, userInitials, userName, avatarUrl, userId, onLogout, currentPage, setCurrentPage
 }) => {
+  const isOnline = useOnlineStatus();
   const [moreOpen, setMoreOpen] = React.useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(() => {
     try {
@@ -65,7 +70,7 @@ const Layout: React.FC<LayoutProps> = ({
     ]
     : [
       { page: 'new-entry', icon: <FilePlus size={18} />, label: 'Add Vihar' },
-      { page: 'statistics', icon: <BarChart2 size={18} />, label: 'Statistics' },
+      { page: 'statistics', icon: <BarChart2 size={18} />, label: 'Group Analytics' },
       { page: 'contacts', icon: <PhoneCall size={18} />, label: 'Contacts' },
       { page: 'notifications', icon: <Bell size={18} />, label: 'Notifications' },
       { page: 'reports', icon: <ShieldAlert size={18} />, label: 'Reports' },
@@ -111,6 +116,18 @@ const Layout: React.FC<LayoutProps> = ({
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 font-sans">
+      {/* Global offline notice — appears the instant the browser loses its
+          connection, regardless of which page is open or whether that page's
+          own fetch has failed yet. Auto-hides the moment 'online' fires. */}
+      {!isOnline && (
+        <div className="fixed top-2 inset-x-0 z-[60] flex justify-center px-4 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2 bg-amber-600 text-white text-xs sm:text-sm font-bold px-4 py-2 rounded-full shadow-lg vseva-modal-backdrop">
+            <WifiOff size={15} className="shrink-0" />
+            <span>You're offline — connect to the internet to continue</span>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar for Desktop */}
       <aside className={`hidden md:flex flex-col bg-white border-r border-gray-200 h-full flex-shrink-0 relative transition-[width] duration-200 ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
         {/* Collapse/expand toggle */}
@@ -152,9 +169,8 @@ const Layout: React.FC<LayoutProps> = ({
 
           {role === UserRole.SEVAK && (
             <>
-              <NavItem page="profile" icon={Home} label="My Profile" />
-              <NavItem page="analytics" icon={BarChart2} label="Analytics" />
-              <NavItem page="statistics" icon={BarChart2} label="Statistics" />
+              <NavItem page="analytics" icon={BarChart2} label="My Dashboard" />
+              <NavItem page="statistics" icon={BarChart2} label="Group Analytics" />
               <NavItem page="my-vihars" icon={Footprints} label="My Vihars" />
               <NavItem page="new-entry" icon={FilePlus} label="Add Vihar" />
               <NavItem page="notifications" icon={Bell} label="Notifications" />
@@ -166,17 +182,19 @@ const Layout: React.FC<LayoutProps> = ({
 
         <div className={`p-3 border-t border-gray-100 flex-shrink-0 ${sidebarCollapsed ? 'px-2' : ''}`}>
           <div className={`flex items-center mb-2.5 px-1 ${sidebarCollapsed ? 'flex-col gap-2' : 'justify-between'}`}>
-            <div className={`flex items-center ${sidebarCollapsed ? 'flex-col gap-1' : ''}`}>
-              <div className="w-7 h-7 rounded-full bg-saffron-100 text-saffron-600 flex items-center justify-center font-bold text-xs shrink-0">
-                {userInitials}
-              </div>
+            <button
+              onClick={() => setCurrentPage('profile')}
+              title="My Profile"
+              className={`flex items-center rounded-lg transition-colors -ml-1 px-1 py-1 ${currentPage === 'profile' ? 'bg-saffron-50' : 'hover:bg-gray-50'} ${sidebarCollapsed ? 'flex-col gap-1' : ''}`}
+            >
+              <Avatar name={userName || userInitials} url={avatarUrl} size={28} className="text-xs" />
               {!sidebarCollapsed && (
-                <div className="ml-2.5">
-                  <p className="text-xs font-medium text-gray-700 leading-tight">Account</p>
+                <div className="ml-2.5 text-left">
+                  <p className={`text-xs font-medium leading-tight ${currentPage === 'profile' ? 'text-saffron-700' : 'text-gray-700'}`}>Account</p>
                   <p className="text-[11px] text-gray-400 capitalize leading-tight">{role.replace('_', ' ').toLowerCase()}</p>
                 </div>
               )}
-            </div>
+            </button>
             <NotificationBell userId={userId} onViewAll={() => setCurrentPage('notifications')} />
           </div>
           <button
@@ -220,7 +238,7 @@ const Layout: React.FC<LayoutProps> = ({
           ref={mainRef}
           onScroll={handleMainScroll}
           className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 w-full"
-          style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+          style={{ WebkitOverflowScrolling: 'touch', scrollbarGutter: 'stable' } as React.CSSProperties}
         >
           <div className="max-w-7xl mx-auto px-4 pt-[72px] pb-28 md:p-8">
             {children}
@@ -284,12 +302,7 @@ const Layout: React.FC<LayoutProps> = ({
               onClick={() => setCurrentPage('profile')}
               className="shrink-0 flex items-center justify-center active:scale-95 transition-all duration-200"
             >
-              <div
-                className="rounded-full flex items-center justify-center font-bold text-[13px] text-white"
-                style={{ width: 34, height: 34, background: 'linear-gradient(150deg,#FF9947,#DE6B38)' }}
-              >
-                {userInitials}
-              </div>
+              <Avatar name={userName || userInitials} url={avatarUrl} size={34} variant="gradient" className="text-[13px]" />
             </button>
           </div>
         </nav>

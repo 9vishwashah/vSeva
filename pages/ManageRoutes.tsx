@@ -4,6 +4,7 @@ import { UserProfile, AreaRoute } from '../types';
 import { Plus, Trash2, Save, Map, Search, ArrowRight, Table, Pencil, X, Check } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import Skeleton from '../components/Skeleton';
+import StatusScreen from '../components/StatusScreen';
 
 interface ManageRoutesProps {
     currentUser: UserProfile;
@@ -23,6 +24,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
     // List State
     const [existingRoutes, setExistingRoutes] = useState<AreaRoute[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
     // Add State
@@ -35,6 +37,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
     const loadRoutes = async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const routes = await dataService.getRoutes(currentUser.organization_id);
             setExistingRoutes(routes);
@@ -48,6 +51,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
             setKnownAreas(Array.from(areas).sort());
         } catch (err) {
             showToast("Failed to load routes", "error");
+            setLoadError(navigator.onLine ? 'error' : 'offline');
         } finally {
             setLoading(false);
         }
@@ -362,6 +366,10 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                             {[...Array(5)].map((_, i) => (
                                 <Skeleton key={i} className="h-16 w-full rounded-xl" />
                             ))}
+                        </div>
+                    ) : loadError ? (
+                        <div className="p-4">
+                            <StatusScreen variant={loadError} onRetry={loadRoutes} compact />
                         </div>
                     ) : (
                     <div className="overflow-x-auto">

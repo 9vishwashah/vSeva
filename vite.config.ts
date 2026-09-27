@@ -174,6 +174,118 @@ export default defineConfig(({ mode }) => {
                 res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
               }
               return;
+            } else if (req.url && req.url.startsWith('/.netlify/functions/get-sevak-avatars')) {
+              try {
+                const { handler } = await import('./netlify/functions/get-sevak-avatars.js');
+
+                let body = '';
+                req.on('data', chunk => { body += chunk.toString(); });
+                await new Promise(resolve => req.on('end', resolve));
+
+                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
+                process.env.SUPABASE_SERVICE_ROLE_KEY = _env.SUPABASE_SERVICE_ROLE_KEY || _env.VITE_SUPABASE_ANON_KEY || '';
+
+                const event = {
+                  httpMethod: req.method,
+                  body,
+                  headers: req.headers,
+                };
+
+                const result = await handler(event, {});
+
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error("Local mock error get-sevak-avatars:", e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
+            } else if (req.url && req.url.startsWith('/.netlify/functions/create-user')) {
+              try {
+                const { handler } = await import('./netlify/functions/create-user.js');
+
+                let body = '';
+                req.on('data', chunk => { body += chunk.toString(); });
+                await new Promise(resolve => req.on('end', resolve));
+
+                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
+                process.env.SUPABASE_SERVICE_ROLE_KEY = _env.SUPABASE_SERVICE_ROLE_KEY || _env.VITE_SUPABASE_ANON_KEY || '';
+
+                const event = {
+                  httpMethod: req.method,
+                  body,
+                  headers: req.headers,
+                };
+
+                const result = await handler(event, {});
+
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error("Local mock error create-user:", e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
+            } else if (req.url && req.url.startsWith('/.netlify/functions/update-org-leadership')) {
+              try {
+                const { handler } = await import('./netlify/functions/update-org-leadership.js');
+
+                let body = '';
+                req.on('data', chunk => { body += chunk.toString(); });
+                await new Promise(resolve => req.on('end', resolve));
+
+                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
+                process.env.SUPABASE_SERVICE_ROLE_KEY = _env.SUPABASE_SERVICE_ROLE_KEY || _env.VITE_SUPABASE_ANON_KEY || '';
+
+                const event = {
+                  httpMethod: req.method,
+                  body,
+                  headers: req.headers,
+                };
+
+                const result = await handler(event, {});
+
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error("Local mock error update-org-leadership:", e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
+            } else if (req.url && req.url.startsWith('/.netlify/functions/check-inactivity')) {
+              try {
+                const { handler } = await import('./netlify/functions/check-inactivity.js');
+
+                let body = '';
+                req.on('data', chunk => { body += chunk.toString(); });
+                await new Promise(resolve => req.on('end', resolve));
+
+                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
+                process.env.SUPABASE_SERVICE_ROLE_KEY = _env.SUPABASE_SERVICE_ROLE_KEY || _env.VITE_SUPABASE_ANON_KEY || '';
+
+                const event = {
+                  httpMethod: req.method,
+                  body,
+                  headers: req.headers,
+                };
+
+                const result = await handler(event, {});
+
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error("Local mock error check-inactivity:", e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
             }
             next();
           });

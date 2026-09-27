@@ -3,6 +3,7 @@ import { UserProfile, IncidentReport } from '../types';
 import { dataService } from '../services/dataService';
 import { useToast } from '../context/ToastContext';
 import { Calendar, Clock, MapPin, Users, FileText, ExternalLink, Loader2, Footprints, ChevronDown, ChevronUp, AlertCircle, CheckCircle } from 'lucide-react';
+import StatusScreen from '../components/StatusScreen';
 
 interface ViewReportsProps {
     currentUser: UserProfile;
@@ -12,6 +13,7 @@ const ViewReports: React.FC<ViewReportsProps> = ({ currentUser }) => {
     const { showToast } = useToast();
     const [reports, setReports] = useState<IncidentReport[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
     const [expandedReport, setExpandedReport] = useState<string | null>(null);
 
     useEffect(() => {
@@ -21,11 +23,13 @@ const ViewReports: React.FC<ViewReportsProps> = ({ currentUser }) => {
     const loadReports = async () => {
         try {
             setLoading(true);
+            setLoadError(null);
             const data = await dataService.getIncidentReports(currentUser.organization_id);
             setReports(data);
         } catch (error: any) {
             console.error("Error loading reports:", error);
             showToast("Failed to load incident reports", "error");
+            setLoadError(navigator.onLine ? 'error' : 'offline');
         } finally {
             setLoading(false);
         }
@@ -49,6 +53,10 @@ const ViewReports: React.FC<ViewReportsProps> = ({ currentUser }) => {
                 <p className="text-gray-500 font-medium">Loading reports...</p>
             </div>
         );
+    }
+
+    if (loadError) {
+        return <StatusScreen variant={loadError} onRetry={loadReports} />;
     }
 
     return (

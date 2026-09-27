@@ -14,7 +14,8 @@ export default function CircularProgressBar(props: any) {
     style,
     label,
     labelColor = "#7B818E",
-    labelFont
+    labelFont,
+    centerContent,
   } = props;
 
   const size = 100;
@@ -137,29 +138,35 @@ export default function CircularProgressBar(props: any) {
           justifyContent: "center",
         }}
       >
-        <span
-          style={{
-            color: numberColor,
-            display: "inline-block",
-            width: "100%",
-            textAlign: "center",
-            ...font,
-          }}
-        >
-          {number}
-        </span>
-        {label && (
-          <span
-            style={{
-              color: labelColor,
-              marginTop: 4,
-              width: "100%",
-              textAlign: "center",
-              ...labelFont,
-            }}
-          >
-            {label}
-          </span>
+        {centerContent ? (
+          centerContent
+        ) : (
+          <>
+            <span
+              style={{
+                color: numberColor,
+                display: "inline-block",
+                width: "100%",
+                textAlign: "center",
+                ...font,
+              }}
+            >
+              {number}
+            </span>
+            {label && (
+              <span
+                style={{
+                  color: labelColor,
+                  marginTop: 4,
+                  width: "100%",
+                  textAlign: "center",
+                  ...labelFont,
+                }}
+              >
+                {label}
+              </span>
+            )}
+          </>
         )}
       </div>
     </div>

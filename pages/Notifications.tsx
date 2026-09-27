@@ -5,9 +5,13 @@ import { UpcomingVihar, UserProfile, UserNotification } from '../types';
 import ViharAlertCard from '../components/ViharAlertCard';
 import { Bell, MapPin, ChevronDown, ChevronLeft, Check, Users } from 'lucide-react';
 import Skeleton from '../components/Skeleton';
+import StatusScreen from '../components/StatusScreen';
 
 interface NotificationsProps {
   currentUser: UserProfile;
+  // Set when arriving via a shared WhatsApp deep link (?vihar=<id>) — scrolls
+  // to and highlights that specific Vihar's card so "I'm Interested" is one tap away.
+  highlightViharId?: string | null;
 }
 
 const relativeDaysAway = (v: UpcomingVihar): number => {
@@ -34,17 +38,18 @@ const bucketByDay = (rows: UserNotification[]) => {
 
 // Every Vihar alert (upcoming and past) plus general notifications, in one place.
 // Nothing here ever disappears when a new alert is created — each is its own card.
-const Notifications: React.FC<NotificationsProps> = ({ currentUser }) => {
+const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightViharId }) => {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
   const [upcoming, setUpcoming] = useState<UpcomingVihar[]>([]);
   const [past, setPast] = useState<UpcomingVihar[]>([]);
   const [showPast, setShowPast] = useState(false);
   const [contacts, setContacts] = useState<Record<string, { full_name: string; mobile: string }>>({});
   const [general, setGeneral] = useState<UserNotification[]>([]);
 
-  useEffect(() => {
-    const load = async () => {
+  const load = async () => {
       setLoading(true);
+      setLoadError(null);
       try {
         const [viharsRes, contactsMap, notifRes] = await Promise.all([
           supabase
@@ -61,6 +66,8 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser }) => {
             .order('created_at', { ascending: false })
             .limit(50),
         ]);
+
+        if (viharsRes.error) throw viharsRes.error;
 
         setContacts(contactsMap);
 
@@ -80,11 +87,15 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser }) => {
           // The rich Vihar cards above already cover 'alert_upcoming' — avoid showing it twice.
           setGeneral(((notifRes.data || []) as UserNotification[]).filter(n => n.type !== 'alert_upcoming'));
         }
+      } catch (err) {
+        console.error('Failed to load notifications', err);
+        setLoadError(navigator.onLine ? 'error' : 'offline');
       } finally {
         setLoading(false);
       }
-    };
+  };
 
+  useEffect(() => {
     load();
   }, [currentUser.organization_id, currentUser.id]);
 
@@ -109,9 +120,23 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser }) => {
   };
 
   const featured = upcoming[0];
-  const restUpcoming = upcoming.slice(1);
+  // Every upcoming Vihar gets its own actionable card (Interested + Share),
+  // including the soonest one — the gradient banner above is decorative only,
+  // so a deep-linked card is always reachable regardless of which Vihar it is.
+  const restUpcoming = upcoming;
   const { today, yesterday, earlier } = bucketByDay(general);
   const hasUnread = general.some(n => !n.is_read);
+
+  // Arrived via a shared WhatsApp link (?vihar=<id>) — scroll to that card and
+  // expand the past section too in case it's already happened.
+  useEffect(() => {
+    if (!highlightViharId || loading) return;
+    if (past.some(v => v.id === highlightViharId)) setShowPast(true);
+    const t = setTimeout(() => {
+      document.getElementById(`vihar-${highlightViharId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [highlightViharId, loading, past]);
 
   const NotificationRow: React.FC<{ n: UserNotification }> = ({ n }) => (
     <div className={`bg-white rounded-[18px] p-4 flex items-start gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${!n.is_read ? '' : 'opacity-80'}`}>
@@ -163,6 +188,8 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser }) => {
             <Skeleton className="h-[70px] w-full rounded-[18px]" />
           </div>
         </div>
+      ) : loadError ? (
+        <StatusScreen variant={loadError} onRetry={load} />
       ) : (
         <>
           {/* Featured Upcoming Vihar — gradient hero, same pattern as the Dashboard Sankalp card */}
@@ -201,11 +228,11 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser }) => {
             </div>
           )}
 
-          {/* Remaining upcoming (if more than one alert is active) */}
+          {/* Every upcoming Vihar as an actionable card */}
           {restUpcoming.length > 0 && (
             <div className="space-y-3">
               {restUpcoming.map(v => (
-                <ViharAlertCard key={v.id} vihar={v} currentUser={currentUser} contacts={contacts} />
+                <ViharAlertCard key={v.id} vihar={v} currentUser={currentUser} contacts={contacts} highlighted={v.id === highlightViharId} />
               ))}
             </div>
           )}
@@ -229,7 +256,7 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser }) => {
               {showPast && (
                 <div className="space-y-3">
                   {past.map(v => (
-                    <ViharAlertCard key={v.id} vihar={v} currentUser={currentUser} contacts={contacts} isPast />
+                    <ViharAlertCard key={v.id} vihar={v} currentUser={currentUser} contacts={contacts} isPast highlighted={v.id === highlightViharId} />
                   ))}
                 </div>
               )}

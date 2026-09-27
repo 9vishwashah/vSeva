@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { dataService } from '../services/dataService';
 import { UserProfile, UserRole, ViharEntry, AreaRoute } from '../types';
 import { Save, Loader2, MapPin, Search, X, Users, ChevronDown, Map, ChevronLeft, Clock } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { Organization } from '../types';
+import Avatar from '../components/Avatar';
+import { toLocalDateKey } from '../services/dateUtils';
 
 
 interface NewEntryProps {
@@ -41,7 +43,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
 
   const { showToast } = useToast();
   const [formData, setFormData] = useState<Partial<ViharEntry>>({
-    vihar_date: new Date().toISOString().split('T')[0],
+    vihar_date: toLocalDateKey(new Date()),
     vihar_type: 'morning',
     group_sadhu: false,
     group_sadhvi: false,
@@ -180,13 +182,23 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
     return null;
   };
 
+  // On touchscreens, tapping "Next" can fire a duplicate/ghost click right
+  // after it (a known mobile-browser quirk). Since Next and Submit occupy the
+  // same slot and Submit swaps in the instant the step advances, that ghost
+  // click was landing on Submit and saving the entry before step 4 ever
+  // rendered. This lock makes handleSubmit ignore any submit that fires in
+  // the brief window immediately after a step change.
+  const navLockRef = useRef(false);
+
   const goNext = () => {
     const err = stepError(step);
     if (err) {
       showToast(err, 'warning');
       return;
     }
+    navLockRef.current = true;
     setStep(s => Math.min(TOTAL_STEPS, s + 1));
+    setTimeout(() => { navLockRef.current = false; }, 400);
   };
 
   const goBack = () => {
@@ -199,6 +211,20 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // A ghost/duplicate click landed on the Submit button right after Next
+    // swapped it into the same spot (see navLockRef above) — ignore it.
+    if (navLockRef.current) {
+      return;
+    }
+    // Hard backstop: some browsers/keyboards implicitly submit a form (Enter in
+    // a text field, a <select> confirm, autofill) before the keydown guard on
+    // the form gets a chance to preventDefault. Whatever fired this submit, it
+    // must never actually save the entry before the wizard has reached the
+    // final step — just advance instead of silently completing early.
+    if (step < TOTAL_STEPS) {
+      setStep(TOTAL_STEPS);
+      return;
+    }
     if (!formData.sevaks?.length) {
       showToast("Please assign at least one Sevak", 'warning');
       return;
@@ -273,7 +299,8 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                 : 'bg-blue-50 text-blue-700 border-blue-200';
 
               return (
-                <div key={username} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${badgeStyle}`}>
+                <div key={username} className={`flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full border text-sm font-medium ${badgeStyle}`}>
+                  <Avatar name={s?.full_name || username} url={s?.avatar_url} size={22} className="text-[9px]" />
                   <span>{s?.full_name}</span>
                   <button
                     type="button"
@@ -312,9 +339,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                       className="p-3 hover:bg-gray-50 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${s.gender === 'Female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
-                          {s.full_name.charAt(0)}
-                        </div>
+                        <Avatar name={s.full_name} url={s.avatar_url} size={32} className="text-xs" />
                         <span className="text-sm font-medium text-gray-700">{s.full_name}</span>
                       </div>
                       <div className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
