@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://vseva.vjas.in/sitemap.xml
+Sitemap: https://vseva.vjas.in/directory-sitemap.xml

@@ -286,6 +286,49 @@ export default defineConfig(({ mode }) => {
                 res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
               }
               return;
+            } else if (req.url && req.url.startsWith('/.netlify/functions/resolve-location')) {
+              try {
+                const { handler } = await import('./netlify/functions/resolve-location.js');
+
+                let body = '';
+                req.on('data', chunk => { body += chunk.toString(); });
+                await new Promise(resolve => req.on('end', resolve));
+
+                const event = {
+                  httpMethod: req.method,
+                  body,
+                  headers: req.headers,
+                };
+
+                const result = await handler(event, {});
+
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error("Local mock error resolve-location:", e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
+            } else if (req.url && req.url.startsWith('/.netlify/functions/directory-sitemap')) {
+              try {
+                const { handler } = await import('./netlify/functions/directory-sitemap.js');
+
+                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
+                process.env.VITE_SUPABASE_ANON_KEY = _env.VITE_SUPABASE_ANON_KEY || '';
+
+                const result = await handler();
+
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/xml');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error("Local mock error directory-sitemap:", e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
             }
             next();
           });

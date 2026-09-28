@@ -53,7 +53,8 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed top-5 right-5 z-[60] flex flex-col gap-3 pointer-events-none">
+      {/* z-[200] — above Modal's z-[100], so a validation toast is never hidden behind an open modal (e.g. Suggest an Edit) */}
+      <div className="fixed top-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none">
         {toasts.map((toast) => (
           <div
             key={toast.id}

@@ -27,6 +27,7 @@ const NearbyDerasar = React.lazy(() => import('./pages/NearbyDerasar'));
 const Notifications = React.lazy(() => import('./pages/Notifications'));
 const Statistics = React.lazy(() => import('./pages/Statistics'));
 const PendingApprovals = React.lazy(() => import('./pages/PendingApprovals'));
+const DirectoryRouter = React.lazy(() => import('./pages/DirectoryRouter'));
 
 
 // Suppress XAxis/YAxis defaultProps warning from Recharts in React 18+
@@ -121,6 +122,17 @@ const App: React.FC = () => {
       </React.Suspense>
     );
   }
+
+  // Fully public — no login, no PIN gate, reachable by anyone including a
+  // crawler or a WhatsApp-shared link. Checked before the auth gate below.
+  if (normalizedPath === '/directory' || normalizedPath.startsWith('/directory/')) {
+    return (
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]"><div className="animate-pulse text-saffron-600 font-bold">Loading Directory...</div></div>}>
+        <DirectoryRouter />
+      </React.Suspense>
+    );
+  }
+
   const isSuperAdmin = path === '/super-admin';
 
   const checkSession = async () => {
@@ -230,7 +242,7 @@ const App: React.FC = () => {
     }
     return (
       <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-saffron-600"></div></div>}>
-        <SuperAdminDashboard />
+        <SuperAdminDashboard currentUser={user} />
       </React.Suspense>
     );
   }

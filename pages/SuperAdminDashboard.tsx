@@ -13,6 +13,7 @@ import autoTable from 'jspdf-autotable';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import { NotoSansDevanagariBase64 } from '../assets/NotoSansDevanagari-Regular';
 import StatusScreen from '../components/StatusScreen';
+import SuperAdminDirectoryPanel from '../components/directory/SuperAdminDirectoryPanel';
 
 interface RegistrationRequest {
     id: string;
@@ -50,7 +51,11 @@ interface OrgStat {
 
 const SUPER_ADMIN_PIN = "2424";
 
-const SuperAdminDashboard = () => {
+interface SuperAdminDashboardProps {
+    currentUser?: { id: string; full_name: string } | null;
+}
+
+const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }) => {
     const [requests, setRequests] = useState<RegistrationRequest[]>([]);
     const [orgStats, setOrgStats] = useState<OrgStat[]>([]);
     const [loading, setLoading] = useState(false);
@@ -690,6 +695,9 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                         </div>
                     </div>
                 </div>
+
+                {/* Public Community Directory — pending listings/edits review */}
+                <SuperAdminDirectoryPanel currentUser={currentUser} />
 
             </div>
         </div>

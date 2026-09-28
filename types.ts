@@ -147,3 +147,147 @@ export interface IncidentReport {
   status: 'pending' | 'reviewed' | 'resolved';
   created_at?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Public Community Directory
+// ---------------------------------------------------------------------------
+
+// A listing is one universal card, not a single category — it can carry a
+// main place (temple), a Vihar Group, and any combination of Upashray/
+// Bhojanshala/Library all at once. What a listing "is" is derived from which
+// of those fields are actually filled in, not a picked-once label. This kind
+// only describes an individual MAP PIN (a listing can produce several).
+export type DirectoryPinKind = 'main' | 'upashray' | 'bhojanshala' | 'library';
+
+export interface DirectoryTrustee {
+  name: string;
+  mobile?: string;
+}
+
+export interface DirectoryMemberContact {
+  name: string;
+  role?: string;
+  mobile?: string;
+}
+
+export interface DirectoryRoute {
+  from: string;
+  to: string;
+  distance_km?: number;
+  notes?: string;
+}
+
+export interface DirectoryFacility {
+  name: string;
+  google_maps_url?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  contact_name?: string;
+  contact_phone?: string;
+}
+
+export interface DirectoryPhoto {
+  url: string;
+  is_cover?: boolean;
+}
+
+export interface DirectoryTimings {
+  morning?: string;
+  evening?: string;
+}
+
+// The shared field set both a pending submission and an approved listing
+// carry — one "Community Directory Card" worth of data.
+export interface DirectoryCardFields {
+  name: string;
+  mulnayak?: string | null;
+  google_maps_url?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  pincode?: string | null;
+  area?: string | null;
+  city?: string | null;
+  state?: string | null;
+  full_address?: string | null;
+  trustees: DirectoryTrustee[];
+  vihar_group_name?: string | null;
+  captain_name?: string | null;
+  captain_mobile?: string | null;
+  vice_captain_name?: string | null;
+  vice_captain_mobile?: string | null;
+  member_contacts: DirectoryMemberContact[];
+  upashray?: DirectoryFacility | null;
+  bhojanshala?: DirectoryFacility | null;
+  library?: DirectoryFacility | null;
+  routes: DirectoryRoute[];
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  contact_phone_public: boolean;
+  website?: string | null;
+  timings?: DirectoryTimings | null;
+  photos: DirectoryPhoto[];
+  notes?: string | null;
+}
+
+export interface DirectoryListing extends DirectoryCardFields {
+  id: string;
+  slug: string;
+  status: 'approved' | 'archived';
+  last_verified_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DirectorySubmission extends DirectoryCardFields {
+  id: string;
+  contributor_name: string;
+  contributor_mobile?: string | null;
+  possible_duplicate_of?: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  approved_listing_id?: string | null;
+  rejection_reason?: string | null;
+  reviewed_by_id?: string | null;
+  reviewed_by_name?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+}
+
+export interface DirectoryChangeRequest {
+  id: string;
+  listing_id: string;
+  proposed_fields: Partial<DirectoryCardFields>;
+  current_snapshot?: Partial<DirectoryCardFields> | null;
+  contributor_name: string;
+  contributor_mobile?: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string | null;
+  reviewed_by_id?: string | null;
+  reviewed_by_name?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+}
+
+export interface ResolvedLocation {
+  latitude: number;
+  longitude: number;
+  formatted_address?: string;
+  pincode?: string;
+  area?: string;
+  city?: string;
+  state?: string;
+  resolved: boolean;
+}
+
+// One map marker — a listing can produce several (its own main pin plus one
+// per attached facility that has its own location), all pointing back at the
+// same listing/slug so clicking any of them opens the same card.
+export interface DirectoryPin {
+  key: string;
+  listingId: string;
+  slug: string;
+  kind: DirectoryPinKind;
+  label: string;
+  tagLabel: string;
+  latitude: number;
+  longitude: number;
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck, WifiOff } from 'lucide-react';
+import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck, WifiOff, Compass } from 'lucide-react';
 
 import NotificationBell from './NotificationBell';
 import Avatar from './Avatar';
@@ -164,6 +164,16 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="notifications" icon={Bell} label="Notifications" />
               <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
               <NavItem page="reports" icon={ShieldAlert} label="Reports" />
+              <a
+                href="/directory"
+                target="_blank"
+                rel="noopener noreferrer"
+                title={sidebarCollapsed ? 'Community Directory' : undefined}
+                className={`flex items-center w-full py-2 px-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'}`}
+              >
+                <Compass size={17} className="shrink-0" />
+                {!sidebarCollapsed && <span>Community Directory</span>}
+              </a>
             </>
           )}
 
@@ -176,6 +186,16 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="notifications" icon={Bell} label="Notifications" />
               <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
               <NavItem page="reports" icon={ShieldAlert} label="Reports" />
+              <a
+                href="/directory"
+                target="_blank"
+                rel="noopener noreferrer"
+                title={sidebarCollapsed ? 'Community Directory' : undefined}
+                className={`flex items-center w-full py-2 px-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'}`}
+              >
+                <Compass size={17} className="shrink-0" />
+                {!sidebarCollapsed && <span>Community Directory</span>}
+              </a>
             </>
           )}
         </nav>
@@ -331,6 +351,16 @@ const Layout: React.FC<LayoutProps> = ({
                     </button>
                   );
                 })}
+                <a
+                  href="/directory"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMoreOpen(false)}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] text-[#241C17] hover:bg-gray-50"
+                >
+                  <span className="text-[#8A6A57]"><Compass size={18} /></span>
+                  <span className="text-sm font-bold">Community Directory</span>
+                </a>
               </div>
             </div>
           </div>
