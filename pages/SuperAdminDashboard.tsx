@@ -14,6 +14,7 @@ import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import { NotoSansDevanagariBase64 } from '../assets/NotoSansDevanagari-Regular';
 import StatusScreen from '../components/StatusScreen';
 import SuperAdminDirectoryPanel from '../components/directory/SuperAdminDirectoryPanel';
+import { deliverPdf } from '../services/pdfDelivery';
 
 interface RegistrationRequest {
     id: string;
@@ -159,7 +160,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
         const img = new Image();
         img.src = vSevaLogo;
 
-        img.onload = () => {
+        img.onload = async () => {
             requests.forEach((req, index) => {
                 if (index > 0) doc.addPage();
 
@@ -228,7 +229,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
                 doc.text(`Page ${index + 1} of ${requests.length}`, 195, 285, { align: "right" });
             });
 
-            doc.save(`vSeva_Pending_Requests_${new Date().toLocaleDateString()}.pdf`);
+            await deliverPdf(doc, `vSeva_Pending_Requests_${new Date().toLocaleDateString()}.pdf`);
             showToast("Combined PDF Downloaded", "success");
         };
 

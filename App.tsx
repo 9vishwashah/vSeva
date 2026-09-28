@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './services/supabase';
 import { UserRole, UserProfile, ViharEntry, Organization } from './types';
 import { dataService } from './services/dataService';
@@ -90,8 +90,61 @@ const App: React.FC = () => {
     if (page !== 'new-entry') {
       setEditingEntry(null);
     }
+    if (page !== currentPage) pageHistoryRef.current.push(currentPage);
     setCurrentPage(page);
   };
+
+  // In-memory back-stack for the Android hardware/gesture back button. The
+  // app's main navigation (currentPage above) never touches browser history —
+  // only DirectoryRouter's own pushState/popstate does, scoped to /directory/*
+  // — so this is a separate, additive mechanism rather than a rewrite of it.
+  const pageHistoryRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    const capacitor = (globalThis as any).Capacitor;
+    if (!capacitor || typeof capacitor.isNativePlatform !== 'function' || !capacitor.isNativePlatform()) return;
+
+    let listenerHandle: { remove: () => void } | undefined;
+    let cancelled = false;
+
+    import('@capacitor/app').then(({ App: CapacitorApp }) => {
+      if (cancelled) return;
+      CapacitorApp.addListener('backButton', () => {
+        // 1. /directory/* has its own working pushState/popstate router
+        // (DirectoryRouter.tsx) that already responds to real browser back
+        // navigation. Registering this listener replaces Capacitor's default
+        // WebView back behavior app-wide, so delegate explicitly here rather
+        // than let the currentPage stack below (which knows nothing about
+        // that router) intercept it.
+        if (window.location.pathname.startsWith('/directory')) {
+          window.history.back();
+          return;
+        }
+        // 2. An open Modal (every pop-up in the app shares this component and
+        // only renders .vseva-modal-backdrop while open) already closes on
+        // Escape — reuse that instead of duplicating each page's close logic.
+        if (document.querySelector('.vseva-modal-backdrop')) {
+          document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+          return;
+        }
+        // 3. Step back to the previous in-app page, if any.
+        const previous = pageHistoryRef.current.pop();
+        if (previous) {
+          if (previous !== 'new-entry') setEditingEntry(null);
+          setCurrentPage(previous);
+          return;
+        }
+        // 4. Nothing left to go back to — let the app exit, same as pressing
+        // Back on any Android app's home/root screen.
+        CapacitorApp.exitApp();
+      }).then(handle => { listenerHandle = handle; });
+    });
+
+    return () => {
+      cancelled = true;
+      listenerHandle?.remove();
+    };
+  }, []);
 
   // Check for public routes
   const path = window.location.pathname;

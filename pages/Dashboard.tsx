@@ -14,6 +14,7 @@ import { useToast } from '../context/ToastContext';
 import { supabase } from '../services/supabase';
 import { getViharYearStartYear, getViharYearBoundsForStartYear, getViharYearForDate, isDateInViharYear } from '../services/viharYear';
 import { toLocalDateKey } from '../services/dateUtils';
+import { deliverPdf } from '../services/pdfDelivery';
 
 type ExportColumnKey = 'date' | 'from' | 'to' | 'sadhu' | 'sadhvi' | 'samuday' | 'wheelchair' | 'type' | 'kms' | 'sevaks';
 
@@ -585,7 +586,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         didDrawPage: () => drawWatermark(),
       });
 
-      doc.save(`vSeva_Report_${toLocalDateKey(new Date())}.pdf`);
+      await deliverPdf(doc, `vSeva_Report_${toLocalDateKey(new Date())}.pdf`);
       showToast("PDF Report downloaded successfully", 'success');
       setShowExportModal(false);
     } catch (error) {

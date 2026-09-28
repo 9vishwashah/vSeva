@@ -1,6 +1,11 @@
 // Track initialization state
 let initPromise: Promise<void> | null = null;
 
+const isNativePlatform = (): boolean => {
+  const capacitor = (globalThis as any).Capacitor;
+  return !!capacitor && typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform();
+};
+
 /**
  * Helper to wait for OneSignal internal state to be ready.
  *
@@ -26,6 +31,20 @@ async function waitForOneSignalReady(OneSignal: any, maxAttempts = 14): Promise<
 
 export const initOneSignal = async () => {
   if (initPromise) return initPromise;
+
+  // Confirmed via Logcat: the OneSignal Web SDK (loaded in index.html) logs
+  // "Incompatible browser" inside the Capacitor Android WebView and never
+  // functions there — pushing into its deferred queue just retries uselessly.
+  // Same VSeva notification events remain the source of truth either way;
+  // only the delivery layer differs. Native push needs OneSignal's Android
+  // (FCM-backed) integration, which requires Firebase project credentials
+  // (google-services.json) this codebase doesn't have yet — that's a
+  // deliberately separate follow-up, not silently faked here.
+  if (isNativePlatform()) {
+    console.log('OneSignal: Skipping Web SDK on native platform (Android push not yet wired — see services/oneSignalService.ts)');
+    initPromise = Promise.resolve();
+    return initPromise;
+  }
 
   initPromise = new Promise((resolve) => {
     // @ts-ignore
@@ -61,7 +80,8 @@ export const initOneSignal = async () => {
 
 export const loginToOneSignal = async (username: string, retries = 3) => {
   if (!username) return;
-  
+  if (isNativePlatform()) return; // See initOneSignal — Web SDK is a no-op on native.
+
   await initOneSignal();
 
   // @ts-ignore
@@ -103,6 +123,8 @@ export const loginToOneSignal = async (username: string, retries = 3) => {
 };
 
 export const logoutFromOneSignal = async () => {
+  if (isNativePlatform()) return; // See initOneSignal — Web SDK is a no-op on native.
+
   await initOneSignal();
 
   // @ts-ignore

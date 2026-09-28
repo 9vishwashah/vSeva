@@ -3,6 +3,7 @@ import { Trophy, Medal, Download } from 'lucide-react';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import vsgLogo from '../assets/vsg.jpg';
 import { toLocalDateKey } from '../services/dateUtils';
+import { deliverPdf } from '../services/pdfDelivery';
 
 interface LeaderboardItem {
     rank: number;
@@ -166,7 +167,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
 
             const safeName = title.replace(/\s+/g, '_');
             const dateTag = toLocalDateKey(new Date());
-            doc.save(`${safeName}_${dateTag}.pdf`);
+            await deliverPdf(doc, `${safeName}_${dateTag}.pdf`);
         } catch (err) {
             console.error('PDF failed:', err);
             alert('Could not generate PDF. Please try again.');
