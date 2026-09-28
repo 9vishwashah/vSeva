@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { MapPin, Clock, User, Phone, Check, X, ClipboardList, Pencil } from 'lucide-react';
+import { Clock, User, Phone, Check, X, ClipboardList, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import { directoryService } from '../../services/directoryService';
-import { DirectorySubmission, DirectoryChangeRequest, DirectoryCardFields } from '../../types';
+import { DirectorySubmission, DirectoryChangeRequest, DirectoryCardFields, DirectoryListing } from '../../types';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../Modal';
 import DirectoryMap from './DirectoryMap';
+import DirectoryListingForm from './DirectoryListingForm';
 import { getListingTags } from './listingTags';
 
 interface SuperAdminDirectoryPanelProps {
@@ -32,14 +33,17 @@ const EDITABLE_FIELDS: { key: keyof DirectoryCardFields; label: string }[] = [
 
 const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ currentUser }) => {
   const { showToast } = useToast();
-  const [tab, setTab] = useState<'listings' | 'edits'>('listings');
+  const [tab, setTab] = useState<'listings' | 'edits' | 'all'>('listings');
   const [submissions, setSubmissions] = useState<DirectorySubmission[]>([]);
   const [changeRequests, setChangeRequests] = useState<DirectoryChangeRequest[]>([]);
+  const [allListings, setAllListings] = useState<DirectoryListing[]>([]);
   const [counts, setCounts] = useState({ pending_listings: 0, pending_edits: 0, approved_listings: 0, rejected_listings: 0 });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [reviewSubmission, setReviewSubmission] = useState<DirectorySubmission | null>(null);
   const [reviewChangeRequest, setReviewChangeRequest] = useState<DirectoryChangeRequest | null>(null);
+  const [editingListing, setEditingListing] = useState<DirectoryListing | null>(null);
+  const [deletingListing, setDeletingListing] = useState<DirectoryListing | null>(null);
   const [overrides, setOverrides] = useState<Partial<DirectoryCardFields>>({});
   const [busy, setBusy] = useState(false);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -50,14 +54,16 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
     setLoading(true);
     setLoadError(false);
     try {
-      const [subs, edits, c] = await Promise.all([
+      const [subs, edits, c, listings] = await Promise.all([
         directoryService.getPendingSubmissions(),
         directoryService.getPendingChangeRequests(),
         directoryService.getCounts(),
+        directoryService.getApprovedListings(),
       ]);
       setSubmissions(subs);
       setChangeRequests(edits);
       setCounts(c);
+      setAllListings(listings);
     } catch (err) {
       console.error('Failed to load directory review queue', err);
       setLoadError(true);
@@ -144,6 +150,22 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
     }
   };
 
+  const handleDeleteListing = async () => {
+    if (!deletingListing || !adminId) return;
+    setBusy(true);
+    try {
+      await directoryService.adminDeleteListing(deletingListing.id, adminId);
+      showToast('Listing removed from the public directory', 'success');
+      setAllListings((prev) => prev.filter((l) => l.id !== deletingListing.id));
+      setCounts((c) => ({ ...c, approved_listings: c.approved_listings - 1 }));
+      setDeletingListing(null);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete listing', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -164,6 +186,9 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
         </button>
         <button onClick={() => setTab('edits')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'edits' ? 'bg-saffron-600 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>
           Pending Edits {counts.pending_edits > 0 && <span className="ml-1 opacity-80">({counts.pending_edits})</span>}
+        </button>
+        <button onClick={() => setTab('all')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'all' ? 'bg-saffron-600 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>
+          All Listings {allListings.length > 0 && <span className="ml-1 opacity-80">({allListings.length})</span>}
         </button>
       </div>
 
@@ -191,17 +216,45 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
               ))}
             </div>
           )
-        ) : changeRequests.length === 0 ? (
-          <div className="p-10 text-center text-gray-400 text-sm">All clear — no pending edits.</div>
+        ) : tab === 'edits' ? (
+          changeRequests.length === 0 ? (
+            <div className="p-10 text-center text-gray-400 text-sm">All clear — no pending edits.</div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {changeRequests.map((r) => (
+                <div key={r.id} className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="font-bold text-gray-800 text-sm">Edit request</p>
+                    <p className="text-xs text-gray-400">Submitted by {r.contributor_name} · {timeAgo(r.created_at)}</p>
+                  </div>
+                  <button onClick={() => setReviewChangeRequest(r)} className="px-4 py-2 bg-saffron-50 text-saffron-700 rounded-xl font-bold text-xs hover:bg-saffron-100">Review</button>
+                </div>
+              ))}
+            </div>
+          )
+        ) : allListings.length === 0 ? (
+          <div className="p-10 text-center text-gray-400 text-sm">No published listings yet.</div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {changeRequests.map((r) => (
-              <div key={r.id} className="flex items-center justify-between p-4">
-                <div>
-                  <p className="font-bold text-gray-800 text-sm">Edit request</p>
-                  <p className="text-xs text-gray-400">Submitted by {r.contributor_name} · {timeAgo(r.created_at)}</p>
+            {allListings.map((l) => (
+              <div key={l.id} className="flex items-center justify-between p-4 gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-gray-800 text-sm truncate">{l.name}</p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {[l.area, l.city].filter(Boolean).join(', ') || 'No location'} · {getListingTags(l).map((t) => t.label).join(', ') || 'No tags yet'}
+                  </p>
                 </div>
-                <button onClick={() => setReviewChangeRequest(r)} className="px-4 py-2 bg-saffron-50 text-saffron-700 rounded-xl font-bold text-xs hover:bg-saffron-100">Review</button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <a href={`/directory/${l.slug}`} target="_blank" rel="noopener noreferrer" title="View public page" className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                    <ExternalLink size={15} />
+                  </a>
+                  <button onClick={() => setEditingListing(l)} title="Edit" className="p-2 text-saffron-600 hover:bg-saffron-50 rounded-lg transition-colors">
+                    <Pencil size={15} />
+                  </button>
+                  <button onClick={() => setDeletingListing(l)} title="Delete" className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -307,6 +360,41 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
                 <button onClick={() => handleApproveChangeRequest(reviewChangeRequest)} disabled={busy} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-green-600 text-white rounded-xl font-bold text-sm"><Check size={15} /> Approve Changes</button>
               </div>
             )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Direct admin edit of a published listing — full form, no approval round trip */}
+      <Modal open={!!editingListing} onClose={() => setEditingListing(null)} maxWidth="max-w-2xl">
+        {editingListing && (
+          <div className="p-5 overflow-y-auto max-h-[85vh]">
+            <h2 className="text-lg font-bold text-[#241C17] mb-4">Edit Listing</h2>
+            <DirectoryListingForm
+              mode="admin-edit"
+              listingId={editingListing.id}
+              adminId={adminId}
+              initialValues={editingListing as DirectoryCardFields}
+              onCancel={() => setEditingListing(null)}
+              onSubmitted={() => { setEditingListing(null); load(); }}
+            />
+          </div>
+        )}
+      </Modal>
+
+      {/* Delete confirmation — implemented as archiving under the hood
+          (see admin_delete_directory_listing), so it's reversible even
+          though the button reads "Delete". */}
+      <Modal open={!!deletingListing} onClose={() => setDeletingListing(null)} maxWidth="max-w-sm">
+        {deletingListing && (
+          <div className="p-5">
+            <h3 className="text-base font-bold text-gray-800 mb-1">Delete this listing?</h3>
+            <p className="text-sm text-gray-500 mb-5">
+              <span className="font-semibold text-gray-700">{deletingListing.name}</span> will be removed from the public directory immediately.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setDeletingListing(null)} className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm">Cancel</button>
+              <button onClick={handleDeleteListing} disabled={busy} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-red-600 text-white rounded-xl font-bold text-sm"><Trash2 size={15} /> Delete</button>
+            </div>
           </div>
         )}
       </Modal>

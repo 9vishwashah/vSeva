@@ -74,14 +74,18 @@ const inputClass = "w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outli
 const labelClass = "block text-xs font-bold text-gray-500 mb-1.5";
 
 interface DirectoryListingFormProps {
-  mode: 'add' | 'edit';
+  // 'edit' = public "Suggest an Edit" (produces a change request needing
+  // approval). 'admin-edit' = Super Admin editing a published listing
+  // directly — no contributor section, no approval round trip.
+  mode: 'add' | 'edit' | 'admin-edit';
   initialValues?: DirectoryCardFields;
   listingId?: string;
+  adminId?: string;
   onSubmitted: () => void;
   onCancel?: () => void;
 }
 
-const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initialValues, listingId, onSubmitted, onCancel }) => {
+const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initialValues, listingId, adminId, onSubmitted, onCancel }) => {
   const { showToast } = useToast();
   const [fields, setFields] = useState<DirectoryCardFields>(initialValues || emptyFields());
   const [mapsUrl, setMapsUrl] = useState(initialValues?.google_maps_url || '');
@@ -177,14 +181,16 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
     if (!fields.name.trim()) return 'Please enter a name.';
     if (!mapsUrl.trim()) return 'Please add the Google Maps link for the exact location.';
     if (!fields.city?.trim()) return 'Please confirm the city.';
-    if (!contributorName.trim()) return 'Please enter your name.';
+    if (mode !== 'admin-edit' && !contributorName.trim()) return 'Please enter your name.';
     return null;
   };
 
   // Drives the submit button's disabled state directly, so a contributor
   // can never click through with required fields missing in the first
   // place — the toast-on-click validate() above stays as a backstop.
-  const isFormValid = !!(fields.name.trim() && mapsUrl.trim() && fields.city?.trim() && contributorName.trim());
+  const isFormValid = !!(
+    fields.name.trim() && mapsUrl.trim() && fields.city?.trim() && (mode === 'admin-edit' || contributorName.trim())
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,6 +209,10 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
           contributorMobile.trim() || undefined,
           duplicates[0]?.id
         );
+      } else if (mode === 'admin-edit' && listingId && adminId) {
+        // Full replace — the admin sees and can change every field at once,
+        // not a sparse diff — and needs no one else's approval to save it.
+        await directoryService.adminUpdateListing(listingId, adminId, { ...fields, google_maps_url: mapsUrl.trim() });
       } else if (listingId) {
         // Sparse diff — only fields that actually changed from initialValues,
         // so the admin's diff view is meaningful and unrelated fields never
@@ -234,12 +244,14 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
           <CheckCircle2 size={28} />
         </div>
         <h3 className="text-lg font-bold text-[#241C17] mb-2">
-          {mode === 'add' ? 'Thank you for contributing!' : 'Thanks — your suggestion was submitted!'}
+          {mode === 'add' ? 'Thank you for contributing!' : mode === 'admin-edit' ? 'Listing updated' : 'Thanks — your suggestion was submitted!'}
         </h3>
         <p className="text-sm text-gray-500 mb-6">
           {mode === 'add'
             ? 'Your listing has been submitted for review. Once approved by the VSeva team, it will appear in the public directory.'
-            : 'Your change has been submitted for review. The public listing will update once approved.'}
+            : mode === 'admin-edit'
+              ? 'The public listing has been updated.'
+              : 'Your change has been submitted for review. The public listing will update once approved.'}
         </p>
         <button onClick={onSubmitted} className="px-6 py-2.5 bg-saffron-600 hover:bg-saffron-700 text-white font-bold rounded-xl shadow-sm transition-all active:scale-95 text-sm">
           Back to Directory
@@ -457,12 +469,14 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
         </div>
       </SectionCard>
 
-      <SectionCard title="Contributor Information" description="We may contact you if clarification is required. Your mobile number will not be displayed publicly.">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2"><label className={labelClass}>Your Name *</label><input className={inputClass} value={contributorName} onChange={(e) => setContributorName(e.target.value)} /></div>
-          <div className="col-span-2"><label className={labelClass}>Your Mobile Number</label><input type="tel" className={inputClass} value={contributorMobile} onChange={(e) => setContributorMobile(e.target.value)} /></div>
-        </div>
-      </SectionCard>
+      {mode !== 'admin-edit' && (
+        <SectionCard title="Contributor Information" description="We may contact you if clarification is required. Your mobile number will not be displayed publicly.">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2"><label className={labelClass}>Your Name *</label><input className={inputClass} value={contributorName} onChange={(e) => setContributorName(e.target.value)} /></div>
+            <div className="col-span-2"><label className={labelClass}>Your Mobile Number</label><input type="tel" className={inputClass} value={contributorMobile} onChange={(e) => setContributorMobile(e.target.value)} /></div>
+          </div>
+        </SectionCard>
+      )}
 
       <div className="flex gap-3">
         {onCancel && (
@@ -475,7 +489,7 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
           className="flex-1 flex items-center justify-center gap-2 py-3 bg-saffron-600 hover:bg-saffron-700 text-white font-extrabold rounded-xl shadow-lg shadow-saffron-100 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
           {submitting ? <Loader2 size={18} className="animate-spin" /> : <MapPin size={18} />}
-          {submitting ? 'Submitting…' : 'Submit for Review'}
+          {submitting ? (mode === 'admin-edit' ? 'Saving…' : 'Submitting…') : mode === 'admin-edit' ? 'Save Changes' : 'Submit for Review'}
         </button>
       </div>
     </form>

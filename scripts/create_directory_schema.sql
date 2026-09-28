@@ -543,6 +543,102 @@ $$;
 GRANT EXECUTE ON FUNCTION public.reject_directory_change_request(uuid, uuid, text, text) TO authenticated;
 
 
+-- Direct admin edit/delete of an already-published listing — unlike a public
+-- "Suggest an Edit" (which only ever produces a change request needing
+-- approval), the admin editing their own directory doesn't need a second
+-- admin to approve their own change. Full field replacement (the whole form
+-- is resubmitted), not a sparse merge, since the admin sees and can change
+-- every field at once.
+CREATE OR REPLACE FUNCTION public.admin_update_directory_listing(
+  p_listing_id uuid,
+  p_admin_id uuid,
+  p_fields jsonb
+)
+RETURNS public.directory_listings
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_listing public.directory_listings;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = p_admin_id AND role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: only a Captain/Admin can edit a directory listing.';
+  END IF;
+
+  UPDATE public.directory_listings SET
+    name = coalesce(p_fields->>'name', name),
+    mulnayak = p_fields->>'mulnayak',
+    google_maps_url = p_fields->>'google_maps_url',
+    latitude = (p_fields->>'latitude')::double precision,
+    longitude = (p_fields->>'longitude')::double precision,
+    pincode = p_fields->>'pincode',
+    area = p_fields->>'area',
+    city = p_fields->>'city',
+    state = p_fields->>'state',
+    full_address = p_fields->>'full_address',
+    trustees = coalesce(p_fields->'trustees', '[]'::jsonb),
+    vihar_group_name = p_fields->>'vihar_group_name',
+    captain_name = p_fields->>'captain_name',
+    captain_mobile = p_fields->>'captain_mobile',
+    vice_captain_name = p_fields->>'vice_captain_name',
+    vice_captain_mobile = p_fields->>'vice_captain_mobile',
+    member_contacts = coalesce(p_fields->'member_contacts', '[]'::jsonb),
+    upashray = p_fields->'upashray',
+    bhojanshala = p_fields->'bhojanshala',
+    library = p_fields->'library',
+    routes = coalesce(p_fields->'routes', '[]'::jsonb),
+    contact_name = p_fields->>'contact_name',
+    contact_phone = p_fields->>'contact_phone',
+    contact_phone_public = coalesce((p_fields->>'contact_phone_public')::boolean, false),
+    website = p_fields->>'website',
+    timings = p_fields->'timings',
+    photos = coalesce(p_fields->'photos', '[]'::jsonb),
+    notes = p_fields->>'notes',
+    updated_at = now()
+  WHERE id = p_listing_id
+  RETURNING * INTO v_listing;
+
+  IF v_listing IS NULL THEN
+    RAISE EXCEPTION 'Listing not found.';
+  END IF;
+
+  RETURN v_listing;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_update_directory_listing(uuid, uuid, jsonb) TO authenticated;
+
+
+-- "Delete" from the admin's point of view — implemented as archiving rather
+-- than a hard DELETE, matching directory_listings.status already having an
+-- 'archived' value for exactly this. An archived listing disappears from the
+-- public directory immediately (the public SELECT policy only allows
+-- status = 'approved') but stays recoverable rather than being destroyed
+-- outright, consistent with how the rest of this app avoids hard deletes.
+CREATE OR REPLACE FUNCTION public.admin_delete_directory_listing(
+  p_listing_id uuid,
+  p_admin_id uuid
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = p_admin_id AND role = 'admin') THEN
+    RAISE EXCEPTION 'Unauthorized: only a Captain/Admin can delete a directory listing.';
+  END IF;
+
+  UPDATE public.directory_listings
+  SET status = 'archived', updated_at = now()
+  WHERE id = p_listing_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_delete_directory_listing(uuid, uuid) TO authenticated;
+
+
 -- 6. Storage bucket for directory photos --------------------------------------
 -- Public bucket, same pattern as the existing 'avatars'/'incident-reports'
 -- buckets (public getPublicUrl, no signed URLs). NOTE: unlike those two, this

@@ -26,9 +26,17 @@ const NOMINATIM_HEADERS = {
     'Accept-Language': 'en',
 };
 
+// Order matters: for a .../place/Name/@viewportLat,viewportLng,17z/data=...
+// !3d<pinLat>!4d<pinLng>... URL, the @lat,lng is only where the MAP CAMERA
+// happened to be centered when the link was copied (it drifts if the map was
+// panned/zoomed first) — the !3d/!4d pair inside `data=` is the actual place
+// marker's own coordinate and is authoritative whenever both are present.
+// Checking @lat,lng first (as an earlier version of this function did) could
+// silently return the wrong one for exactly the same "pin looks placed a
+// building or two off" symptom this fixes.
 const COORD_PATTERNS = [
-    /@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,       // .../@19.033,73.017,15z
-    /!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/,    // ...!3d19.033!4d73.017 (place data blob)
+    /!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/,    // ...!3d19.033!4d73.017 (the actual place pin)
+    /@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,       // .../@19.033,73.017,15z (map viewport center — fallback only)
     /[?&]q=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,   // ...?q=19.033,73.017
     /[?&]ll=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,  // ...?ll=19.033,73.017
 ];

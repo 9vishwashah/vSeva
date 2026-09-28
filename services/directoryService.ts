@@ -194,4 +194,24 @@ export const directoryService = {
     });
     if (error) throw error;
   },
+
+  // Direct edit/delete of an already-published listing from the Super Admin
+  // panel — no change-request round trip, since the admin IS the approver.
+  async adminUpdateListing(listingId: string, adminId: string, fields: DirectoryCardFields): Promise<DirectoryListing> {
+    const { data, error } = await supabase.rpc('admin_update_directory_listing', {
+      p_listing_id: listingId,
+      p_admin_id: adminId,
+      p_fields: fields,
+    });
+    if (error) throw error;
+    return data as DirectoryListing;
+  },
+
+  async adminDeleteListing(listingId: string, adminId: string): Promise<void> {
+    const { error } = await supabase.rpc('admin_delete_directory_listing', {
+      p_listing_id: listingId,
+      p_admin_id: adminId,
+    });
+    if (error) throw error;
+  },
 };
