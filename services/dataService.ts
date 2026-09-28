@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { fnUrl } from './apiBase';
 import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary, Organization, ContactNumber, IncidentReport } from '../types';
 
 
@@ -130,7 +131,7 @@ export const dataService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) throw new Error('Admin session required. Please login again.');
 
-    const response = await fetch('/.netlify/functions/update-org-leadership', {
+    const response = await fetch(fnUrl('update-org-leadership'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -156,7 +157,7 @@ export const dataService = {
   // `username` to check just one sevak (their own dashboard), omit it to scan
   // the whole org (the Captain's dashboard).
   checkInactivity(orgId: string, username?: string): void {
-    fetch('/.netlify/functions/check-inactivity', {
+    fetch(fnUrl('check-inactivity'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orgId, username }),
@@ -216,7 +217,7 @@ export const dataService = {
     if (!orgIds || orgIds.length === 0) return map;
 
     try {
-      const response = await fetch('/.netlify/functions/get-org-admins', {
+      const response = await fetch(fnUrl('get-org-admins'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orgIds })
@@ -241,7 +242,7 @@ export const dataService = {
   },
 
   async getDashboardStats(orgId: string) {
-    const response = await fetch('/.netlify/functions/get-dashboard-stats', {
+    const response = await fetch(fnUrl('get-dashboard-stats'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orgId })
@@ -254,7 +255,7 @@ export const dataService = {
 
   async getSevakNameMap(orgId: string): Promise<Record<string, string>> {
     try {
-      const response = await fetch('/.netlify/functions/get-sevak-names', {
+      const response = await fetch(fnUrl('get-sevak-names'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orgId })
@@ -273,7 +274,7 @@ export const dataService = {
   // never affected by adding this.
   async getSevakAvatarMap(orgId: string): Promise<Record<string, string>> {
     try {
-      const response = await fetch('/.netlify/functions/get-sevak-avatars', {
+      const response = await fetch(fnUrl('get-sevak-avatars'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orgId })
@@ -289,7 +290,7 @@ export const dataService = {
 
   async getOrgSevakContacts(orgId: string): Promise<Record<string, { full_name: string; mobile: string; avatar_url?: string | null; role?: string; is_active?: boolean }>> {
     try {
-      const response = await fetch('/.netlify/functions/get-org-sevak-contacts', {
+      const response = await fetch(fnUrl('get-org-sevak-contacts'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orgId })
@@ -309,7 +310,7 @@ export const dataService = {
   // gender (never mobile/blood group/emergency contact/address).
   async getOrgRoster(orgId: string, includeInactive: boolean = false): Promise<Pick<UserProfile, 'username' | 'full_name' | 'gender' | 'avatar_url'>[]> {
     try {
-      const response = await fetch('/.netlify/functions/get-org-roster', {
+      const response = await fetch(fnUrl('get-org-roster'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orgId, includeInactive })
@@ -348,7 +349,7 @@ export const dataService = {
     }
 
     // 3. Create Auth User via Netlify Function (ADMIN ONLY)
-    const response = await fetch('/.netlify/functions/create-user', {
+    const response = await fetch(fnUrl('create-user'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -437,7 +438,7 @@ export const dataService = {
     const { data: { session } } = await supabase.auth.getSession();
 
     // Call Netlify function to delete from Auth (service role required)
-    const response = await fetch('/.netlify/functions/delete-user', {
+    const response = await fetch(fnUrl('delete-user'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -474,7 +475,7 @@ export const dataService = {
 
     // 1. Call Netlify function to update Auth password if mobile changed
     if (updates.mobile) {
-      const response = await fetch('/.netlify/functions/update-user-phone', {
+      const response = await fetch(fnUrl('update-user-phone'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -596,7 +597,7 @@ export const dataService = {
     const passwordToUse = request.password || request.mobile;
 
     // Call Secure Netlify Function
-    const response = await fetch('/.netlify/functions/approve-org', {
+    const response = await fetch(fnUrl('approve-org'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

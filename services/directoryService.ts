@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { fnUrl } from './apiBase';
 import {
   DirectoryListing,
   DirectorySubmission,
@@ -74,7 +75,7 @@ export const directoryService = {
   // reverse-geocodes via free/keyless Nominatim — see resolve-location.js) ---
 
   async resolveGoogleMapsLink(url: string): Promise<ResolvedLocation> {
-    const res = await fetch('/.netlify/functions/resolve-location', {
+    const res = await fetch(fnUrl('resolve-location'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),

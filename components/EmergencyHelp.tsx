@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Loader2, PlusSquare, Shield, MapPin, X, Navigation, Phone } from 'lucide-react';
+import { fnUrl } from '../services/apiBase';
 
 interface Place {
     name: string;
@@ -34,7 +35,7 @@ export const EmergencyHelp: React.FC = () => {
     const fetchPlaces = async (lat: number, lng: number, type: 'hospital' | 'police') => {
         try {
             // Mapping directly to .netlify/functions/nearby bypasses potential re-write failures
-            const response = await fetch(`/.netlify/functions/nearby?lat=${lat}&lng=${lng}&type=${type}`);
+            const response = await fetch(`${fnUrl('nearby')}?lat=${lat}&lng=${lng}&type=${type}`);
             if (!response.ok) throw new Error(`Failed to fetch ${type}`);
             const data = await response.json();
             return data.places || [];

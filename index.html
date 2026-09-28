@@ -59,43 +59,13 @@
   <link rel="apple-touch-icon" href="/vseva-logo-full.png?v=2">
   <link rel="mask-icon" href="/vseva-logo-full.png?v=2" color="#EA580C">
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@600;700&display=swap"
     rel="stylesheet">
   <!-- Font Awesome removed — replaced with inline SVGs to save ~80KB per load -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            saffron: {
-              50:  '#FFF3EA',
-              100: '#FFE4CC',
-              200: '#FFCBA0',
-              300: '#FFAD6E',
-              400: '#FF9947',
-              500: '#F0803A',
-              600: '#DE6B38', // Primary Brand Color (Tangerine redesign)
-              700: '#B5542A',
-              800: '#8A4318',
-              900: '#6B3412',
-            },
-            devotion: {
-              light: '#FDFBF7', // Cream background
-              dark: '#2D2A26', // Text color
-            }
-          },
-          fontFamily: {
-            sans: ['Manrope', 'sans-serif'],
-            serif: ['Playfair Display', 'serif'],
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Tailwind theme.extend now lives in tailwind.config.js (build-time compiled) -->
   <style>
     /* Minimal entrance-animation shim: the Play CDN loads no plugins, so classes
        like animate-in/fade-in/zoom-in are otherwise inert. Scoped to new redesign
@@ -131,23 +101,6 @@
 
 
 
-  <script type="importmap">
-{
-  "imports": {
-    "recharts": "https://esm.sh/recharts@2.12.3?external=react,react-dom",
-    "lucide-react": "https://esm.sh/lucide-react@0.344.0?external=react,react-dom",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react": "https://esm.sh/react@18.2.0",
-    "html2canvas": "https://esm.sh/html2canvas@1.4.1",
-    "jspdf": "https://esm.sh/jspdf@2.5.1",
-    "jspdf-autotable": "https://esm.sh/jspdf-autotable@3.8.2",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.91.1"
-  }
-}
-</script>
 </head>
 
 <body style="background:#fff;margin:0">
