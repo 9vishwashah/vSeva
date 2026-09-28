@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import { withCors } from './_shared/cors.js';
 
-export async function handler(event) {
+async function rawHandler(event) {
     try {
         if (event.httpMethod !== 'POST') {
              return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
@@ -52,3 +53,5 @@ export async function handler(event) {
         return { statusCode: 500, body: JSON.stringify({ error: err.message || 'Internal Server Error' }) };
     }
 }
+
+export const handler = withCors(rawHandler);

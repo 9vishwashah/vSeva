@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+import { withCors } from './_shared/cors.js';
 
 // Lets a Captain (ORG_ADMIN) edit their own display name and their org's
 // Vice Captain name. Both writes go through the service role because a
 // Sevak's session has no "update organizations" RLS policy today, and this
 // keeps the admin-role check server-verified rather than trusted from the client.
-export async function handler(event) {
+async function rawHandler(event) {
   try {
     if (event.httpMethod !== 'POST') {
       return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
@@ -67,3 +68,5 @@ export async function handler(event) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message || 'Internal Server Error' }) };
   }
 }
+
+export const handler = withCors(rawHandler);

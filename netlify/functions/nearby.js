@@ -1,4 +1,6 @@
-export const handler = async (event, context) => {
+import { withCors } from './_shared/cors.js';
+
+const rawHandler = async (event, context) => {
     try {
         const { lat, lng, type } = event.queryStringParameters;
 
@@ -198,3 +200,5 @@ export const handler = async (event, context) => {
         };
     }
 };
+
+export const handler = withCors(rawHandler);

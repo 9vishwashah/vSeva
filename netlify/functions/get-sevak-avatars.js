@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+import { withCors } from './_shared/cors.js';
 
 // Mirrors get-sevak-names.js exactly (same org-wide, username-keyed shape),
 // just returning avatar_url instead of full_name — kept as its own endpoint
 // so existing callers of get-sevak-names.js (which expect plain string
 // values) are never affected.
-export async function handler(event) {
+async function rawHandler(event) {
     try {
         if (event.httpMethod !== 'POST') {
             return {
@@ -59,3 +60,5 @@ export async function handler(event) {
         };
     }
 }
+
+export const handler = withCors(rawHandler);

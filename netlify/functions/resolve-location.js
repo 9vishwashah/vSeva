@@ -85,7 +85,9 @@ function addressFromNominatim(result) {
     };
 }
 
-export const handler = async (event) => {
+import { withCors } from './_shared/cors.js';
+
+const rawHandler = async (event) => {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
     }
@@ -150,3 +152,5 @@ export const handler = async (event) => {
         return { statusCode: 500, body: JSON.stringify({ error: 'Internal Server Error' }) };
     }
 };
+
+export const handler = withCors(rawHandler);
