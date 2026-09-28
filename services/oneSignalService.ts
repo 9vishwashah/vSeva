@@ -34,15 +34,25 @@ export const initOneSignal = async () => {
 
   // Confirmed via Logcat: the OneSignal Web SDK (loaded in index.html) logs
   // "Incompatible browser" inside the Capacitor Android WebView and never
-  // functions there — pushing into its deferred queue just retries uselessly.
-  // Same VSeva notification events remain the source of truth either way;
-  // only the delivery layer differs. Native push needs OneSignal's Android
-  // (FCM-backed) integration, which requires Firebase project credentials
-  // (google-services.json) this codebase doesn't have yet — that's a
-  // deliberately separate follow-up, not silently faked here.
+  // functions there. Same VSeva notification events remain the source of
+  // truth either way — only the delivery layer differs here: native uses
+  // OneSignal's own Capacitor plugin (FCM-backed, configured via the
+  // Firebase project's google-services.json placed in android/app/), never
+  // the web SDK.
   if (isNativePlatform()) {
-    console.log('OneSignal: Skipping Web SDK on native platform (Android push not yet wired — see services/oneSignalService.ts)');
-    initPromise = Promise.resolve();
+    initPromise = (async () => {
+      try {
+        const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
+        await OneSignal.initialize(import.meta.env.VITE_ONESIGNAL_APP_ID);
+        // Push notifications need explicit runtime permission on Android 13+
+        // (API 33+, which this app's minSdk/targetSdk cover) — silently no-op
+        // on older Android versions where permission is implicit.
+        await OneSignal.Notifications.requestPermission(false);
+        console.log('OneSignal: Native SDK initialized');
+      } catch (err) {
+        console.error('OneSignal: Native initialization failed', err);
+      }
+    })();
     return initPromise;
   }
 
@@ -80,9 +90,21 @@ export const initOneSignal = async () => {
 
 export const loginToOneSignal = async (username: string, retries = 3) => {
   if (!username) return;
-  if (isNativePlatform()) return; // See initOneSignal — Web SDK is a no-op on native.
 
   await initOneSignal();
+
+  if (isNativePlatform()) {
+    try {
+      const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
+      // Same identifier VSeva already uses to target a user's notifications
+      // (see the Web SDK path below — both associate on this externalId).
+      await OneSignal.login(username);
+      console.log(`OneSignal: Native login successful as ${username}`);
+    } catch (err) {
+      console.warn('OneSignal: Native login failed — push notifications may not be targeted correctly until the next app open', err);
+    }
+    return;
+  }
 
   // @ts-ignore
   window.OneSignalDeferred.push(async function(OneSignal: any) {
@@ -123,7 +145,16 @@ export const loginToOneSignal = async (username: string, retries = 3) => {
 };
 
 export const logoutFromOneSignal = async () => {
-  if (isNativePlatform()) return; // See initOneSignal — Web SDK is a no-op on native.
+  if (isNativePlatform()) {
+    try {
+      const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
+      console.log('OneSignal: Native logout');
+      await OneSignal.logout();
+    } catch (err) {
+      console.error('OneSignal: Native logout failed', err);
+    }
+    return;
+  }
 
   await initOneSignal();
 
