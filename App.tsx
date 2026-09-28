@@ -139,7 +139,15 @@ const App: React.FC = () => {
       setLoading(true);
       setSessionError(null);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Safety net: session restore should resolve or reject in a few
+        // seconds. If it ever hangs indefinitely for any reason, don't leave
+        // the user stuck on the loading screen forever — surface the
+        // existing offline/error retry screen instead, same as any other
+        // failure caught below.
+        const sessionTimeout = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Session restore timed out')), 15000);
+        });
+        const { data: { session } } = await Promise.race([supabase.auth.getSession(), sessionTimeout]);
         if (session?.user) {
           const profile = await dataService.getProfile(session.user.id);
           if (profile) {
