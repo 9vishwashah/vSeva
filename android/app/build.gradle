@@ -7,6 +7,16 @@ android {
         applicationId "in.vjas.vseva"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+        // Versioning strategy: versionCode is what Google Play actually tracks —
+        // it MUST strictly increase on every single upload (internal testing,
+        // closed testing, and production alike; Play rejects a re-used or lower
+        // value outright). Bump it by 1 for every AAB you upload, regardless of
+        // whether versionName changed. versionName is the human-readable string
+        // shown to users (Play Store listing, Settings > Apps) — bump it
+        // following normal semver-ish conventions (1.0 -> 1.1 -> 2.0) whenever
+        // you want the visible version to change; it can lag behind versionCode
+        // incrementing on every build. There is no auto-increment configured —
+        // bump both by hand right before each `./gradlew bundleRelease`.
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
