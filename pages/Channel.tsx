@@ -104,6 +104,22 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
       </div>
 
       {!query && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => onOpenOrganization(currentUser.organization_id)}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onOpenOrganization(currentUser.organization_id); }}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3.5 bg-saffron-50 rounded-2xl border border-saffron-100 cursor-pointer hover:border-saffron-300 transition-colors"
+        >
+          <div>
+            <p className="text-sm font-bold text-[#241C17]">Your Channel</p>
+            <p className="text-xs text-[#8A6A57]">Post updates and view your organization's Channel</p>
+          </div>
+          <ChevronRight size={16} className="text-saffron-400 shrink-0" />
+        </div>
+      )}
+
+      {!query && (
         <div className="space-y-2.5">
           <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] px-1">Following</h2>
           {loading ? (
