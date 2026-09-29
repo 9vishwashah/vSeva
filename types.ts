@@ -291,3 +291,44 @@ export interface DirectoryPin {
   latitude: number;
   longitude: number;
 }
+
+// ---------------------------------------------------------------------------
+// Channel — organization-to-organization communication
+// ---------------------------------------------------------------------------
+
+export type ChannelPostingPermission = 'captain_only' | 'all_members';
+
+export interface ChannelOrgSummary {
+  id: string;
+  name: string;
+  city?: string | null;
+  town?: string | null;
+}
+
+export interface ChannelOrgProfile extends ChannelOrgSummary {
+  vice_captain_name?: string | null;
+  created_at: string;
+}
+
+export interface ChannelRecentVihar {
+  vihar_date: string;
+  vihar_from: string;
+  vihar_to: string;
+  vihar_type: 'morning' | 'evening';
+  distance_km?: number | null;
+  sevak_count: number;
+}
+
+export interface ChannelPost {
+  id: string;
+  organization_id: string;
+  author_user_id: string;
+  message: string;
+  created_at: string;
+}
+
+export interface ChannelSettings {
+  organization_id: string;
+  posting_permission: ChannelPostingPermission;
+  updated_at: string;
+}

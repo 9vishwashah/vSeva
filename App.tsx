@@ -28,6 +28,8 @@ const Notifications = React.lazy(() => import('./pages/Notifications'));
 const Statistics = React.lazy(() => import('./pages/Statistics'));
 const PendingApprovals = React.lazy(() => import('./pages/PendingApprovals'));
 const DirectoryRouter = React.lazy(() => import('./pages/DirectoryRouter'));
+const Channel = React.lazy(() => import('./pages/Channel'));
+const ChannelOrganization = React.lazy(() => import('./pages/ChannelOrganization'));
 
 
 // Suppress XAxis/YAxis defaultProps warning from Recharts in React 18+
@@ -57,6 +59,7 @@ const App: React.FC = () => {
   const [sessionError, setSessionError] = useState<'offline' | 'error' | null>(null);
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
   const [editingEntry, setEditingEntry] = useState<ViharEntry | null>(null);
+  const [channelOrgId, setChannelOrgId] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   // Captured once from a shared WhatsApp Vihar link (?vihar=<id>) — routes
   // straight to that Vihar's card on Notifications once logged in.
@@ -97,6 +100,9 @@ const App: React.FC = () => {
     if (page !== 'new-entry') {
       setEditingEntry(null);
     }
+    if (page !== 'channel') {
+      setChannelOrgId(null);
+    }
     if (page !== currentPage) pageHistoryRef.current.push(currentPage);
     setCurrentPage(page);
   };
@@ -106,6 +112,10 @@ const App: React.FC = () => {
   // only DirectoryRouter's own pushState/popstate does, scoped to /directory/*
   // — so this is a separate, additive mechanism rather than a rewrite of it.
   const pageHistoryRef = useRef<string[]>([]);
+  const currentPageRef = useRef(currentPage);
+  useEffect(() => { currentPageRef.current = currentPage; }, [currentPage]);
+  const channelOrgIdRef = useRef(channelOrgId);
+  useEffect(() => { channelOrgIdRef.current = channelOrgId; }, [channelOrgId]);
 
   useEffect(() => {
     const capacitor = (globalThis as any).Capacitor;
@@ -134,14 +144,20 @@ const App: React.FC = () => {
           document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
           return;
         }
-        // 3. Step back to the previous in-app page, if any.
+        // 3. Inside Channel, viewing one organization: step back to the
+        // Channel list first, same as any other drill-down page would.
+        if (currentPageRef.current === 'channel' && channelOrgIdRef.current) {
+          setChannelOrgId(null);
+          return;
+        }
+        // 4. Step back to the previous in-app page, if any.
         const previous = pageHistoryRef.current.pop();
         if (previous) {
           if (previous !== 'new-entry') setEditingEntry(null);
           setCurrentPage(previous);
           return;
         }
-        // 4. Nothing left to go back to — let the app exit, same as pressing
+        // 5. Nothing left to go back to — let the app exit, same as pressing
         // Back on any Android app's home/root screen.
         CapacitorApp.exitApp();
       }).then(handle => { listenerHandle = handle; });
@@ -167,17 +183,24 @@ const App: React.FC = () => {
   // after setUser(profile) in checkSession below needs the just-fetched
   // profile's role, which userRef won't reflect until the next render.
   const resolveNotificationTargetPage = (data: any, role: UserRole | undefined): string => {
-    // Same `payload.kind` send-push.js already attaches (see
-    // scripts/vihar_approval_workflow.sql's notify_captains_new_vihar_submission) —
-    // only Captains/admins have a Pending Approvals page to land on.
+    // Same `payload.kind` send-push.js/notify_channel_followers_new_post
+    // already attach — only Captains/admins have a Pending Approvals page
+    // to land on; a Channel post opens straight to that organization's
+    // Channel (channelOrgId is set alongside this at both call sites below).
     if (data?.payload?.kind === 'vihar_submission' && role === UserRole.ORG_ADMIN) {
       return 'pending-approvals';
+    }
+    if (data?.payload?.kind === 'channel_post' && data?.payload?.organization_id) {
+      return 'channel';
     }
     return 'notifications';
   };
 
   useEffect(() => {
     onNotificationClick((data) => {
+      if (data?.payload?.kind === 'channel_post' && data?.payload?.organization_id) {
+        setChannelOrgId(data.payload.organization_id);
+      }
       if (userRef.current) {
         handleSetCurrentPage(resolveNotificationTargetPage(data, userRef.current.role));
       } else {
@@ -257,7 +280,11 @@ const App: React.FC = () => {
             // Redirect based on role if at root — unless a shared Vihar link,
             // or a tapped native notification (cold start), brought them here
             if (pendingNotificationDataRef.current) {
-              setCurrentPage(resolveNotificationTargetPage(pendingNotificationDataRef.current, profile.role));
+              const pendingData = pendingNotificationDataRef.current;
+              if (pendingData?.payload?.kind === 'channel_post' && pendingData?.payload?.organization_id) {
+                setChannelOrgId(pendingData.payload.organization_id);
+              }
+              setCurrentPage(resolveNotificationTargetPage(pendingData, profile.role));
               pendingNotificationDataRef.current = null;
             } else {
               setCurrentPage(pendingViharId ? 'notifications' : (profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard'));
@@ -509,6 +536,18 @@ const App: React.FC = () => {
 
         {currentPage === 'reports' && user.role === UserRole.SEVAK && (
           <SubmitReport currentUser={user} />
+        )}
+
+        {currentPage === 'channel' && (
+          channelOrgId ? (
+            <ChannelOrganization
+              currentUser={user}
+              organizationId={channelOrgId}
+              onBack={() => setChannelOrgId(null)}
+            />
+          ) : (
+            <Channel currentUser={user} onOpenOrganization={setChannelOrgId} />
+          )
         )}
       </Layout>
     </React.Suspense>

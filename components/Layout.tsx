@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserRole } from '../types';
-import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck, WifiOff, Compass } from 'lucide-react';
+import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck, WifiOff, Compass, MessageSquare } from 'lucide-react';
 
 import NotificationBell from './NotificationBell';
 import Avatar from './Avatar';
@@ -65,12 +65,14 @@ const Layout: React.FC<LayoutProps> = ({
       { page: 'pending-approvals', icon: <ClipboardCheck size={18} />, label: 'Pending Approvals' },
       { page: 'manage-routes', icon: <Map size={18} />, label: 'Manage Routes' },
       { page: 'add-sevak', icon: <UserPlus size={18} />, label: 'Add Sevaks' },
+      { page: 'channel', icon: <MessageSquare size={18} />, label: 'Channel' },
       { page: 'contacts', icon: <PhoneCall size={18} />, label: 'Contacts' },
       { page: 'reports', icon: <ShieldAlert size={18} />, label: 'Reports' },
     ]
     : [
       { page: 'new-entry', icon: <FilePlus size={18} />, label: 'Add Vihar' },
       { page: 'statistics', icon: <BarChart2 size={18} />, label: 'Group Analytics' },
+      { page: 'channel', icon: <MessageSquare size={18} />, label: 'Channel' },
       { page: 'contacts', icon: <PhoneCall size={18} />, label: 'Contacts' },
       { page: 'notifications', icon: <Bell size={18} />, label: 'Notifications' },
       { page: 'reports', icon: <ShieldAlert size={18} />, label: 'Reports' },
