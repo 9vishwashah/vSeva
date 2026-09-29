@@ -43,22 +43,28 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
   const [showSettings, setShowSettings] = useState(false);
   const [postingPermission, setPostingPermission] = useState<ChannelPostingPermission>('captain_only');
   const seenPostIds = useRef(new Set<string>());
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const skipAutoScrollRef = useRef(false);
 
+  // `posts` is kept oldest-first (ascending) so it renders top-to-bottom
+  // like a normal chat, with new messages appended at the end — not the
+  // reverse-chronological feed order used elsewhere in the app.
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [profileData, viharsData, postsData, followingOrgs, permission] = await Promise.all([
+      const [profileData, viharsData, postsDataDesc, followingOrgs, permission] = await Promise.all([
         channelService.getOrgProfile(organizationId),
         channelService.getRecentVihars(organizationId, 5),
         channelService.getPosts(organizationId),
         isOwnOrg ? Promise.resolve([]) : channelService.isFollowing(organizationId).then(v => (v ? [organizationId] : [])),
         channelService.getSettings(organizationId),
       ]);
+      const postsData = postsDataDesc.slice().reverse();
       setProfile(profileData);
       setRecentVihars(viharsData);
       setPosts(postsData);
       seenPostIds.current = new Set(postsData.map(p => p.id));
-      setHasMore(postsData.length >= 30);
+      setHasMore(postsDataDesc.length >= 30);
       setIsFollowing(isOwnOrg || followingOrgs.length > 0);
       setPostingPermission(permission);
       setCanPost(
@@ -74,12 +80,22 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
 
   useEffect(() => { load(); }, [load]);
 
+  // Scroll to the newest message on first load and whenever one is appended
+  // — but not right after "Load earlier" prepends older ones above.
+  useEffect(() => {
+    if (skipAutoScrollRef.current) {
+      skipAutoScrollRef.current = false;
+      return;
+    }
+    bottomRef.current?.scrollIntoView({ block: 'end' });
+  }, [posts.length]);
+
   // Realtime: only while this screen is open, only for this one organization.
   useEffect(() => {
     const unsubscribe = channelService.subscribeToOrgPosts(organizationId, (post) => {
       if (seenPostIds.current.has(post.id)) return; // dedupe vs. optimistic insert
       seenPostIds.current.add(post.id);
-      setPosts(prev => [post, ...prev]);
+      setPosts(prev => [...prev, post]);
     });
     return unsubscribe;
   }, [organizationId]);
@@ -88,9 +104,10 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
     if (posts.length === 0 || loadingMore) return;
     setLoadingMore(true);
     try {
-      const older = await channelService.getPosts(organizationId, posts[posts.length - 1].created_at);
+      const older = await channelService.getPosts(organizationId, posts[0].created_at);
       older.forEach(p => seenPostIds.current.add(p.id));
-      setPosts(prev => [...prev, ...older]);
+      skipAutoScrollRef.current = true;
+      setPosts(prev => [...older.slice().reverse(), ...prev]);
       setHasMore(older.length >= 30);
     } catch (e) {
       console.error('Failed to load earlier Channel messages', e);
@@ -138,15 +155,25 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
       id: optimisticId,
       organization_id: organizationId,
       author_user_id: currentUser.id,
+      author_name: currentUser.full_name,
       message,
       created_at: new Date().toISOString(),
     };
-    setPosts(prev => [optimisticPost, ...prev]);
+    setPosts(prev => [...prev, optimisticPost]);
     setDraft('');
     try {
-      const saved = await channelService.sendPost(organizationId, currentUser.id, message);
+      const saved = await channelService.sendPost(organizationId, currentUser.id, currentUser.full_name, message);
       seenPostIds.current.add(saved.id);
-      setPosts(prev => prev.map(p => (p.id === optimisticId ? saved : p)));
+      setPosts(prev => {
+        // The realtime broadcast for this same post can arrive before this
+        // insert's own response does — if so it's already in the list under
+        // its real id, so just drop the optimistic placeholder instead of
+        // also swapping it in (that would double it).
+        if (prev.some(p => p.id === saved.id)) {
+          return prev.filter(p => p.id !== optimisticId);
+        }
+        return prev.map(p => (p.id === optimisticId ? saved : p));
+      });
     } catch (e: any) {
       setPosts(prev => prev.filter(p => p.id !== optimisticId));
       setDraft(message);
@@ -242,11 +269,48 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 flex flex-col">
         <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3">Channel</h2>
 
+        <div className="max-h-[60vh] overflow-y-auto flex flex-col">
+          {posts.length === 0 ? (
+            <p className="text-sm text-[#8A6A57] py-4">No Channel updates yet.</p>
+          ) : (
+            <>
+              {hasMore && (
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="w-full text-center text-xs font-bold text-saffron-600 py-2 shrink-0"
+                >
+                  {loadingMore ? 'Loading...' : 'Load earlier'}
+                </button>
+              )}
+              <div className="space-y-4">
+                {posts.map(post => (
+                  <div key={post.id} className="border-b border-gray-50 last:border-0 pb-4 last:pb-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-xs font-extrabold uppercase tracking-wide text-saffron-600">{post.author_name}</p>
+                        <p className="text-[10px] text-[#8A6A57]">{formatRelativeTime(post.created_at)}</p>
+                      </div>
+                      {post.author_user_id === currentUser.id && !post.id.startsWith('optimistic-') && (
+                        <button onClick={() => handleDelete(post.id)} className="text-gray-300 hover:text-red-500 shrink-0">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-sm text-[#241C17] mt-1.5 whitespace-pre-wrap break-words">{post.message}</p>
+                  </div>
+                ))}
+              </div>
+              <div ref={bottomRef} />
+            </>
+          )}
+        </div>
+
         {canPost && (
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 shrink-0">
             <input
               type="text"
               value={draft}
@@ -263,38 +327,6 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
             >
               <Send size={16} />
             </button>
-          </div>
-        )}
-
-        {posts.length === 0 ? (
-          <p className="text-sm text-[#8A6A57] py-4">No Channel updates yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {posts.map(post => (
-              <div key={post.id} className="border-b border-gray-50 last:border-0 pb-4 last:pb-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-xs font-extrabold uppercase tracking-wide text-saffron-600">{profile.name}</p>
-                    <p className="text-[10px] text-[#8A6A57]">{formatRelativeTime(post.created_at)}</p>
-                  </div>
-                  {post.author_user_id === currentUser.id && !post.id.startsWith('optimistic-') && (
-                    <button onClick={() => handleDelete(post.id)} className="text-gray-300 hover:text-red-500 shrink-0">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-                <p className="text-sm text-[#241C17] mt-1.5 whitespace-pre-wrap break-words">{post.message}</p>
-              </div>
-            ))}
-            {hasMore && (
-              <button
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="w-full text-center text-xs font-bold text-saffron-600 py-2"
-              >
-                {loadingMore ? 'Loading...' : 'Load earlier'}
-              </button>
-            )}
           </div>
         )}
       </div>

@@ -102,27 +102,32 @@ export const channelService = {
 
   // --- Messages ---
 
+  // Goes through get_channel_posts (not a direct table select) specifically
+  // to get author_name — channel_posts itself only stores author_user_id,
+  // and other organizations' profiles aren't readable via profiles' own RLS
+  // (scoped to your own org), so this RPC joins it server-side, narrowly
+  // (full_name only), same pattern as Channel's other cross-org reads.
   async getPosts(organizationId: string, beforeCreatedAt?: string): Promise<ChannelPost[]> {
-    let query = supabase
-      .from('channel_posts')
-      .select('id, organization_id, author_user_id, message, created_at')
-      .eq('organization_id', organizationId)
-      .order('created_at', { ascending: false })
-      .limit(MESSAGE_PAGE_SIZE);
-    if (beforeCreatedAt) query = query.lt('created_at', beforeCreatedAt);
-    const { data, error } = await query;
+    const { data, error } = await supabase.rpc('get_channel_posts', {
+      p_organization_id: organizationId,
+      p_before: beforeCreatedAt || null,
+      p_limit: MESSAGE_PAGE_SIZE,
+    });
     if (error) throw error;
     return (data || []) as ChannelPost[];
   },
 
-  async sendPost(organizationId: string, authorUserId: string, message: string): Promise<ChannelPost> {
+  // authorName is the caller's own already-known name (it's always the
+  // current user posting) — attached client-side rather than re-fetched,
+  // since the plain insert's response has no author_name column to return.
+  async sendPost(organizationId: string, authorUserId: string, authorName: string, message: string): Promise<ChannelPost> {
     const { data, error } = await supabase
       .from('channel_posts')
       .insert({ organization_id: organizationId, author_user_id: authorUserId, message: message.slice(0, 4000) })
       .select('id, organization_id, author_user_id, message, created_at')
       .single();
     if (error) throw error;
-    return data as ChannelPost;
+    return { ...(data as any), author_name: authorName } as ChannelPost;
   },
 
   async deletePost(postId: string): Promise<void> {
@@ -140,8 +145,10 @@ export const channelService = {
     const channel = supabase
       .channel(`channel:org:${organizationId}`, { config: { private: true } })
       .on('broadcast', { event: 'INSERT' }, (payload: any) => {
-        const record = payload?.payload?.record;
-        if (record) onInsert(record as ChannelPost);
+        // realtime.send() delivers the payload flat (not nested under
+        // .record — that nesting is specific to broadcast_changes()).
+        const post = payload?.payload;
+        if (post?.id) onInsert(post as ChannelPost);
       })
       .subscribe();
     return () => {

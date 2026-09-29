@@ -323,6 +323,7 @@ export interface ChannelPost {
   id: string;
   organization_id: string;
   author_user_id: string;
+  author_name: string;
   message: string;
   created_at: string;
 }
