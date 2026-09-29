@@ -163,6 +163,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="manage-routes" icon={Map} label="Manage Routes" />
               <NavItem page="new-entry" icon={FilePlus} label="New Entry" />
               <NavItem page="add-sevak" icon={UserPlus} label="Add Sevaks" />
+              <NavItem page="channel" icon={MessageSquare} label="Channel" />
               <NavItem page="notifications" icon={Bell} label="Notifications" />
               <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
               <NavItem page="reports" icon={ShieldAlert} label="Reports" />
@@ -185,6 +186,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="statistics" icon={BarChart2} label="Group Analytics" />
               <NavItem page="my-vihars" icon={Footprints} label="My Vihars" />
               <NavItem page="new-entry" icon={FilePlus} label="Add Vihar" />
+              <NavItem page="channel" icon={MessageSquare} label="Channel" />
               <NavItem page="notifications" icon={Bell} label="Notifications" />
               <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
               <NavItem page="reports" icon={ShieldAlert} label="Reports" />
