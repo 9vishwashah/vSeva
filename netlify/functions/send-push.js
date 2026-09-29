@@ -82,7 +82,7 @@ export async function handler(event, context) {
         // external navigation, so the existing native
         // OneSignal.Notifications 'click' listener (services/oneSignalService.ts,
         // wired in App.tsx) does the in-app routing instead.
-        web_url: 'https://vseva.netlify.app' // Open app on click (web only)
+        web_url: 'https://vseva.vjas.in' // Open app on click (web only)
       })
     });
 

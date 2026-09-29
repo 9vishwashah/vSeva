@@ -12,7 +12,7 @@ interface IDCardBadgeProps {
 
 const IDCardBadge: React.FC<IDCardBadgeProps> = ({ user, orgName }) => {
   const baseUrl = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') 
-    ? 'https://vseva.netlify.app' 
+    ? 'https://vseva.vjas.in'
     : window.location.origin;
   const publicUrl = `${baseUrl}/verify/${encodeURIComponent(user.username)}`;
   const cardRef = useRef<HTMLDivElement>(null);
