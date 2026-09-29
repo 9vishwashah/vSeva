@@ -144,6 +144,24 @@ export const loginToOneSignal = async (username: string, retries = 3) => {
   });
 };
 
+// Registers the in-app handler for a tapped native push notification (no-op
+// on web — the web push flow doesn't route through this). Fires with
+// whatever the notification's `additionalData` carries, which is exactly
+// send-push.js's `data` object (`{ url, type, payload }`) — same shape the
+// web notifications already use, just delivered a different way.
+export const onNotificationClick = async (handler: (data: any) => void) => {
+  if (!isNativePlatform()) return;
+  await initOneSignal();
+  try {
+    const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
+    OneSignal.Notifications.addEventListener('click', (event) => {
+      handler(event?.notification?.additionalData || {});
+    });
+  } catch (err) {
+    console.error('OneSignal: Failed to register native click listener', err);
+  }
+};
+
 export const logoutFromOneSignal = async () => {
   if (isNativePlatform()) {
     try {

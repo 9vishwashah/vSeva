@@ -6,7 +6,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
-import { initOneSignal, loginToOneSignal, logoutFromOneSignal } from './services/oneSignalService';
+import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationClick } from './services/oneSignalService';
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
 import StatusScreen from './components/StatusScreen';
 
@@ -41,8 +41,15 @@ console.error = (...args) => {
 };
 
 const App: React.FC = () => {
-  // Check PWA standalone mode
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  // Check PWA standalone mode. The Capacitor Android WebView never matches
+  // `display-mode: standalone` (it isn't a browser-installed PWA), so treat
+  // native the same way — an installed app has no reason to show the
+  // marketing landing page, that's a website-only concern.
+  const isNativeApp = (() => {
+    const capacitor = (globalThis as any).Capacitor;
+    return !!capacitor && typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform();
+  })();
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || isNativeApp;
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
@@ -146,6 +153,39 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // Tapping a native push notification should land on the relevant page
+  // in-app, not just open to whatever's already on screen. Stores the raw
+  // click data (not a resolved page — resolving needs the user's role,
+  // which isn't known yet on a cold start) for checkSession's post-login
+  // logic below to consume once; the listener itself also covers the app
+  // already being open in the foreground.
+  const pendingNotificationDataRef = useRef<any>(null);
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
+
+  // Pure by design (role passed in, not read off a ref) — the caller right
+  // after setUser(profile) in checkSession below needs the just-fetched
+  // profile's role, which userRef won't reflect until the next render.
+  const resolveNotificationTargetPage = (data: any, role: UserRole | undefined): string => {
+    // Same `payload.kind` send-push.js already attaches (see
+    // scripts/vihar_approval_workflow.sql's notify_captains_new_vihar_submission) —
+    // only Captains/admins have a Pending Approvals page to land on.
+    if (data?.payload?.kind === 'vihar_submission' && role === UserRole.ORG_ADMIN) {
+      return 'pending-approvals';
+    }
+    return 'notifications';
+  };
+
+  useEffect(() => {
+    onNotificationClick((data) => {
+      if (userRef.current) {
+        handleSetCurrentPage(resolveNotificationTargetPage(data, userRef.current.role));
+      } else {
+        pendingNotificationDataRef.current = data;
+      }
+    });
+  }, []);
+
   // Check for public routes
   const path = window.location.pathname;
   
@@ -214,8 +254,14 @@ const App: React.FC = () => {
             if (org) setOrgDetails(org);
             // Link to OneSignal
             loginToOneSignal(profile.username);
-            // Redirect based on role if at root — unless a shared Vihar link brought them here
-            setCurrentPage(pendingViharId ? 'notifications' : (profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard'));
+            // Redirect based on role if at root — unless a shared Vihar link,
+            // or a tapped native notification (cold start), brought them here
+            if (pendingNotificationDataRef.current) {
+              setCurrentPage(resolveNotificationTargetPage(pendingNotificationDataRef.current, profile.role));
+              pendingNotificationDataRef.current = null;
+            } else {
+              setCurrentPage(pendingViharId ? 'notifications' : (profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard'));
+            }
             // Show onboarding walkthrough on first-ever session resume too
             if (shouldShowOnboarding(profile.role)) setShowOnboarding(true);
             // Track app open time (fire-and-forget)
@@ -276,9 +322,19 @@ const App: React.FC = () => {
   // While loading, show a white splash screen with the logo
   if (loading) return (
     <div style={{ position: 'fixed', inset: 0, background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-      <img src={vSevaLogo} alt="vSeva" style={{ width: 96, height: 96, objectFit: 'contain' }} />
-      <div style={{ marginTop: 20, width: 36, height: 36, borderRadius: '50%', border: '3px solid #f97316', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <img src={vSevaLogo} alt="vSeva" style={{ width: 96, height: 96, objectFit: 'contain', animation: 'vseva-splash-logo-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both' }} />
+      <div style={{ marginTop: 20, width: 36, height: 36, borderRadius: '50%', border: '3px solid #f97316', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite, vseva-splash-fade-in 300ms ease-out 350ms both' }} />
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes vseva-splash-logo-in {
+          from { opacity: 0; transform: scale(0.85); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes vseva-splash-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 

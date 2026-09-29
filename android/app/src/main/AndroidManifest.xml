@@ -27,6 +27,11 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Accent color OneSignal tints the notification small icon with on
+             Android 5.0-7.1 (where the platform draws icon + text in this
+             color) — matches saffron-600, the app's brand color. -->
+        <meta-data android:name="com.onesignal.NotificationAccentColor" android:value="FFDE6B38" />
     </application>
 
     <!-- Permissions -->
