@@ -74,7 +74,15 @@ export async function handler(event, context) {
           type: notification.type,
           payload: notification.payload
         },
-        url: 'https://vseva.netlify.app' // Open app on click
+        // Platform-specific launch URL (not the single global `url`, which
+        // OneSignal's Android SDK opens externally in a browser on tap):
+        // web_url only applies to web push subscribers, unchanged from
+        // before. Deliberately no app_url — leaving mobile with no launch
+        // URL at all means tapping just opens/focuses the app with no
+        // external navigation, so the existing native
+        // OneSignal.Notifications 'click' listener (services/oneSignalService.ts,
+        // wired in App.tsx) does the in-app routing instead.
+        web_url: 'https://vseva.netlify.app' // Open app on click (web only)
       })
     });
 
