@@ -10,6 +10,7 @@ import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationCli
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
 import StatusScreen from './components/StatusScreen';
 import { ViharYearProvider } from './context/ViharYearContext';
+import SosButton from './components/SosButton';
 
 // Lazy load the inner components to reduce initial JS bundle size
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -31,6 +32,7 @@ const PendingApprovals = React.lazy(() => import('./pages/PendingApprovals'));
 const DirectoryRouter = React.lazy(() => import('./pages/DirectoryRouter'));
 const Channel = React.lazy(() => import('./pages/Channel'));
 const ChannelOrganization = React.lazy(() => import('./pages/ChannelOrganization'));
+const SosDetail = React.lazy(() => import('./pages/SosDetail'));
 
 
 // Suppress XAxis/YAxis defaultProps warning from Recharts in React 18+
@@ -61,6 +63,7 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
   const [editingEntry, setEditingEntry] = useState<ViharEntry | null>(null);
   const [channelOrgId, setChannelOrgId] = useState<string | null>(null);
+  const [sosId, setSosId] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   // Captured once from a shared WhatsApp Vihar link (?vihar=<id>) — routes
   // straight to that Vihar's card on Notifications once logged in.
@@ -103,6 +106,9 @@ const App: React.FC = () => {
     }
     if (page !== 'channel') {
       setChannelOrgId(null);
+    }
+    if (page !== 'sos-detail') {
+      setSosId(null);
     }
     if (page !== currentPage) pageHistoryRef.current.push(currentPage);
     setCurrentPage(page);
@@ -194,6 +200,11 @@ const App: React.FC = () => {
     if (data?.payload?.kind === 'channel_post' && data?.payload?.organization_id) {
       return 'channel';
     }
+    // Not trusted as authoritative on its own — SosDetail re-fetches the
+    // alert (and its own authorization) straight from Supabase by sos_id.
+    if (data?.payload?.kind === 'sos' && data?.payload?.sos_id) {
+      return 'sos-detail';
+    }
     return 'notifications';
   };
 
@@ -201,6 +212,9 @@ const App: React.FC = () => {
     onNotificationClick((data) => {
       if (data?.payload?.kind === 'channel_post' && data?.payload?.organization_id) {
         setChannelOrgId(data.payload.organization_id);
+      }
+      if (data?.payload?.kind === 'sos' && data?.payload?.sos_id) {
+        setSosId(data.payload.sos_id);
       }
       if (userRef.current) {
         handleSetCurrentPage(resolveNotificationTargetPage(data, userRef.current.role));
@@ -284,6 +298,9 @@ const App: React.FC = () => {
               const pendingData = pendingNotificationDataRef.current;
               if (pendingData?.payload?.kind === 'channel_post' && pendingData?.payload?.organization_id) {
                 setChannelOrgId(pendingData.payload.organization_id);
+              }
+              if (pendingData?.payload?.kind === 'sos' && pendingData?.payload?.sos_id) {
+                setSosId(pendingData.payload.sos_id);
               }
               setCurrentPage(resolveNotificationTargetPage(pendingData, profile.role));
               pendingNotificationDataRef.current = null;
@@ -551,7 +568,12 @@ const App: React.FC = () => {
             <Channel currentUser={user} onOpenOrganization={setChannelOrgId} />
           )
         )}
+
+        {currentPage === 'sos-detail' && sosId && (
+          <SosDetail currentUser={user} sosId={sosId} onBack={() => handleSetCurrentPage('notifications')} />
+        )}
       </Layout>
+      <SosButton currentUser={user} onOpenDetail={(id) => { setSosId(id); handleSetCurrentPage('sos-detail'); }} />
       </ViharYearProvider>
     </React.Suspense>
   );
