@@ -212,8 +212,8 @@ export const dataService = {
     return data || [];
   },
 
-  async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string; state: string }>> {
-    const map: Record<string, { full_name: string; mobile: string; town: string; state: string }> = {};
+  async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string; state: string; yearly_goal?: number }>> {
+    const map: Record<string, { full_name: string; mobile: string; town: string; state: string; yearly_goal?: number }> = {};
     if (!orgIds || orgIds.length === 0) return map;
 
     try {
@@ -229,7 +229,8 @@ export const dataService = {
             full_name: p.full_name,
             mobile: p.mobile,
             town: p.town || '',
-            state: p.state || ''
+            state: p.state || '',
+            yearly_goal: typeof p.yearly_goal === 'number' ? p.yearly_goal : undefined
           };
         });
       } else {

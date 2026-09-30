@@ -36,14 +36,17 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
       setLoading(true);
       setLoadError(null);
       try {
-        const [allOrgEntries, rankingEntries, orgSevaks, goal, org] = await Promise.all([
+        const [allOrgEntries, rankingEntries, orgSevaks, org] = await Promise.all([
           dataService.getEntries(currentUser.organization_id),
           // Org-wide, for the leaderboard only — getEntries() above is RLS-
           // limited to a Sevak's own entries, which would make the "Top
           // Vihar Sevaks/Sevikas" leaderboard only ever show themselves.
           dataService.getOrgEntriesForRanking(currentUser.organization_id),
-          dataService.getAllOrgUsers(currentUser.organization_id, true),
-          dataService.getYearlyGoal(currentUser.id),
+          // Org-wide roster (username/full_name/gender) — profiles RLS only
+          // lets a Sevak read their own row, so getAllOrgUsers() here would
+          // have silently returned just themselves, dropping every other
+          // sevak out of the gender-filtered leaderboard/Participation split.
+          dataService.getOrgRoster(currentUser.organization_id, true),
           dataService.getOrganization(currentUser.organization_id),
         ]);
 
@@ -53,7 +56,6 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
 
         setEntries(myEntries);
         setOrgEntriesAll(rankingEntries);
-        setYearlyGoal(goal);
         setOrgDetails(org);
 
         const nm: Record<string, string> = {};
@@ -65,13 +67,20 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
         setNameMap(nm);
         setGenderMap(gm);
 
+        // The Vihar Group's own Yearly Sankalp — the Captain's goal, set on
+        // their own Profile & Settings, not whichever Sevak happens to be
+        // looking at this page. An Admin viewing their own org IS the
+        // Captain, so this is a plain self-lookup for them; a Sevak instead
+        // waits for the org-wide Captain lookup shared with captainName.
         if (isAdmin) {
           setCaptainName(currentUser.full_name);
           setStreakLeaderboard(dataService.getStreakLeaderboard(allOrgEntries, nm));
+          dataService.getYearlyGoal(currentUser.id).then(setYearlyGoal);
         } else {
           dataService.getOrgAdmins([currentUser.organization_id]).then(map => {
             const admin = map[currentUser.organization_id];
             if (admin?.full_name) setCaptainName(admin.full_name);
+            if (typeof admin?.yearly_goal === 'number') setYearlyGoal(admin.yearly_goal);
           });
         }
       } catch (e) {
@@ -225,7 +234,9 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
       </div>
 
       {/* Sankalp */}
-      <SankalpRing count={entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length} goal={yearlyGoal} periodLabel={selectedVY.label} />
+      {/* The Vihar Group's own Sankalp — org-wide progress against the
+          Captain's org-wide goal, not just whoever's looking at the page. */}
+      <SankalpRing count={orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length} goal={yearlyGoal} periodLabel={selectedVY.label} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Weekly trend */}

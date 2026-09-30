@@ -10,7 +10,6 @@ import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationCli
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
 import StatusScreen from './components/StatusScreen';
 import { ViharYearProvider } from './context/ViharYearContext';
-import SosButton from './components/SosButton';
 
 // Lazy load the inner components to reduce initial JS bundle size
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -536,6 +535,7 @@ const App: React.FC = () => {
               }
             }}
             onLogout={handleLogout}
+            onOpenSos={(id) => { setSosId(id); handleSetCurrentPage('sos-detail'); }}
           />
         )}
 
@@ -575,7 +575,6 @@ const App: React.FC = () => {
           <SosDetail currentUser={user} sosId={sosId} onBack={() => handleSetCurrentPage('notifications')} />
         )}
       </Layout>
-      <SosButton currentUser={user} onOpenDetail={(id) => { setSosId(id); handleSetCurrentPage('sos-detail'); }} />
       </ViharYearProvider>
     </React.Suspense>
   );

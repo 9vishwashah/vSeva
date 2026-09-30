@@ -183,7 +183,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           org, orgSevaks, routes, secureMap, allOrgEntries, rankingEntries, detailedStats, totalOrgSevaksCount
         ] = await Promise.all([
           dataService.getOrganization(currentUser.organization_id),
-          dataService.getAllOrgUsers(currentUser.organization_id, true),
+          // Org-wide roster (username/full_name/gender) via the service-role
+          // Netlify function — profiles RLS only lets a Sevak read their own
+          // row (no "same org" policy), so getAllOrgUsers() here would have
+          // silently returned just themselves, breaking gender-based
+          // grouping (Active Sevaks split, VY leaderboard) for any Sevak.
+          dataService.getOrgRoster(currentUser.organization_id, true),
           dataService.getRoutes(currentUser.organization_id),
           dataService.getSevakNameMap(currentUser.organization_id),
           dataService.getEntries(currentUser.organization_id),
@@ -710,11 +715,17 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
     d.setHours(0, 0, 0, 0);
     return d;
   })();
+  // data.entries is already correctly scoped per role (a Sevak's own
+  // entries, or — for an Admin — the whole org's), so this is a Sevak's own
+  // consistency or the org's own, without any extra branching here. Count
+  // (not just presence) drives the color tier: 1 Vihar that day = orange,
+  // 2 = yellow, 3+ = green.
   const weeklyConsistency = weekDayLabels.map((label, i) => {
     const dayDate = new Date(startOfWeek);
     dayDate.setDate(startOfWeek.getDate() + i);
     const dayKey = toLocalDateKey(dayDate);
-    return { label, done: data.entries.some(e => e.vihar_date === dayKey) };
+    const count = data.entries.filter(e => e.vihar_date === dayKey).length;
+    return { label, count };
   });
 
   const recentActivity = [...data.entries]
@@ -1280,9 +1291,10 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                   <div
                     className="w-full aspect-square rounded-full vseva-stagger-in"
                     style={{
-                      background: d.done ? '#DE6B38' : '#F2EEE8',
+                      background: d.count >= 3 ? '#3FA34D' : d.count === 2 ? '#E8B923' : d.count === 1 ? '#DE6B38' : '#F2EEE8',
                       animationDelay: `${i * 40}ms`,
                     }}
+                    title={d.count > 0 ? `${d.count} Vihar${d.count === 1 ? '' : 's'}` : undefined}
                   />
                 </div>
               ))}

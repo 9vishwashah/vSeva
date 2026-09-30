@@ -12,9 +12,9 @@ interface SosButtonProps {
 
 const COUNTDOWN_SECONDS = 3;
 
-// Floating, always-available SOS entry point — deliberately rendered outside
-// Layout/<main> (see App.tsx) so it sits on top of every page without
-// touching any existing screen's own layout.
+// Lives in Profile & Settings' top-right corner (see ProfileSection.tsx) —
+// not a global floating control, so it can't cover other screens' content
+// or get in the way of anything else in the app.
 const SosButton: React.FC<SosButtonProps> = ({ currentUser, onOpenDetail }) => {
   const { showToast } = useToast();
   const [activeSosId, setActiveSosId] = useState<string | null>(null);
@@ -86,12 +86,11 @@ const SosButton: React.FC<SosButtonProps> = ({ currentUser, onOpenDetail }) => {
         type="button"
         onClick={startConfirm}
         title={activeSosId ? 'SOS active — tap to view' : 'Send SOS to your Captain'}
-        className={`fixed z-40 right-4 md:right-6 flex items-center justify-center rounded-full shadow-lg active:scale-95 transition-transform ${
+        className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center shadow-[0_1px_3px_rgba(0,0,0,0.06)] active:scale-95 transition-transform ${
           activeSosId ? 'animate-pulse bg-red-600' : 'bg-red-500 hover:bg-red-600'
         }`}
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 96px)', width: 56, height: 56 }}
       >
-        <AlertTriangle size={24} className="text-white" strokeWidth={2.5} />
+        <AlertTriangle size={17} className="text-white" strokeWidth={2.5} />
       </button>
 
       <Modal open={confirming} onClose={cancelConfirm} maxWidth="max-w-xs" closeOnBackdrop={!sending}>

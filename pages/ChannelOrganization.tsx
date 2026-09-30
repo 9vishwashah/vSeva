@@ -272,11 +272,14 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
 
       {/* Chat first — the primary reason to be on this screen — then Recent
           Vihars below it, not competing for the initial scroll position. */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 flex flex-col h-[65vh]">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 flex flex-col h-[65dvh]">
         <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3 shrink-0">VChat</h2>
 
-        {/* Only this box scrolls as messages grow — not the whole page. */}
-        <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto">
+        {/* Only this box scrolls as messages grow — not the whole page.
+            overscroll-contain stops the scroll gesture from "chaining" up to
+            the page once you hit the top/bottom of this list, which is what
+            made the whole page drag along with it. */}
+        <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
           {posts.length === 0 ? (
             <p className="text-sm text-[#8A6A57] py-4">No messages yet.</p>
           ) : (
@@ -290,30 +293,37 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
                   {loadingMore ? 'Loading...' : 'Load earlier'}
                 </button>
               )}
-              <div className="space-y-4">
-                {posts.map(post => (
-                  <div key={post.id} className="border-b border-gray-50 last:border-0 pb-4 last:pb-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setProfilePost(post)}
-                        className="flex items-center gap-2 min-w-0 text-left hover:opacity-80 transition-opacity"
-                      >
+              <div className="space-y-3">
+                {posts.map(post => {
+                  const isMine = post.author_user_id === currentUser.id;
+                  return (
+                    <div key={post.id} className={`flex gap-2 ${isMine ? 'flex-row-reverse' : ''}`}>
+                      <button type="button" onClick={() => setProfilePost(post)} className="shrink-0 hover:opacity-80 transition-opacity">
                         <Avatar name={post.author_name} url={post.author_avatar_url} size={26} />
-                        <div className="min-w-0">
-                          <p className="text-xs font-extrabold uppercase tracking-wide text-saffron-600 truncate">{post.author_name}</p>
-                          <p className="text-[10px] text-[#8A6A57]">{formatRelativeTime(post.created_at)}</p>
-                        </div>
                       </button>
-                      {post.author_user_id === currentUser.id && !post.id.startsWith('optimistic-') && (
-                        <button onClick={() => handleDelete(post.id)} className="text-gray-300 hover:text-red-500 shrink-0">
-                          <Trash2 size={14} />
-                        </button>
-                      )}
+                      <div className={`max-w-[78%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                        <div className={`flex items-center gap-2 ${isMine ? 'flex-row-reverse' : ''}`}>
+                          <button type="button" onClick={() => setProfilePost(post)} className="text-xs font-extrabold uppercase tracking-wide text-saffron-600 hover:opacity-80 transition-opacity truncate">
+                            {isMine ? 'You' : post.author_name}
+                          </button>
+                          <p className="text-[10px] text-[#8A6A57] shrink-0">{formatRelativeTime(post.created_at)}</p>
+                          {isMine && !post.id.startsWith('optimistic-') && (
+                            <button onClick={() => handleDelete(post.id)} className="text-gray-300 hover:text-red-500 shrink-0">
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                        <div
+                          className={`mt-1 px-3.5 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
+                            isMine ? 'bg-saffron-100 text-[#241C17] rounded-tr-sm' : 'bg-[#F7F4F0] text-[#241C17] rounded-tl-sm'
+                          }`}
+                        >
+                          {post.message}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm text-[#241C17] mt-1.5 ml-[34px] whitespace-pre-wrap break-words">{post.message}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}

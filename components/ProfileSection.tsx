@@ -7,6 +7,7 @@ import Avatar from './Avatar';
 import AvatarCropModal from './AvatarCropModal';
 import { useToast } from '../context/ToastContext';
 import { getViharYearBounds } from '../services/viharYear';
+import SosButton from './SosButton';
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -15,6 +16,7 @@ interface ProfileSectionProps {
     orgDetails: Organization | null;
     onProfileUpdated?: () => Promise<void>;
     onLogout?: () => void;
+    onOpenSos?: (sosId: string) => void;
 }
 
 const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
@@ -22,7 +24,7 @@ const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 const fieldLabelClass = "text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider block mb-1.5";
 const fieldInputClass = "w-full py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm";
 
-const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onProfileUpdated, onLogout }) => {
+const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onProfileUpdated, onLogout, onOpenSos }) => {
     const orgName = orgDetails?.name || user.organization_id;
     const currentVY = getViharYearBounds();
     const { showToast } = useToast();
@@ -227,11 +229,14 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
     return (
         <div className="max-w-xl mx-auto space-y-5 pb-10">
             {/* Top bar */}
-            <div className="flex items-center gap-3">
-                <button onClick={() => window.history.back()} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-                    <ChevronLeft size={16} className="text-[#241C17]" />
-                </button>
-                <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17]">Profile & Settings</h1>
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                    <button onClick={() => window.history.back()} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
+                        <ChevronLeft size={16} className="text-[#241C17]" />
+                    </button>
+                    <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] truncate">Profile & Settings</h1>
+                </div>
+                {onOpenSos && <SosButton currentUser={user} onOpenDetail={onOpenSos} />}
             </div>
 
             {/* Avatar card */}
