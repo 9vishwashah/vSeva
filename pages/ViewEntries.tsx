@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, ViharEntry, Organization, UserRole } from '../types';
 import { dataService } from '../services/dataService';
-import { Search, Calendar, User, MessageCircle, Trash2, Pencil, X, ChevronLeft } from 'lucide-react';
+import { Search, Calendar, User, MessageCircle, Trash2, Pencil, X } from 'lucide-react';
 import EntryCard from '../components/EntryCard';
 import EntriesSkeleton from '../components/EntriesSkeleton';
 import StatusScreen from '../components/StatusScreen';
@@ -146,13 +146,6 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
       {/* Plain top bar — matches the tangerine redesign mock (no gradient banner) */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <button
-            onClick={() => window.history.back()}
-            className="w-9 h-9 shrink-0 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center"
-            title="Back"
-          >
-            <ChevronLeft size={16} className="text-[#241C17]" />
-          </button>
           <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] truncate">
             {currentUser.role === UserRole.SEVAK ? 'My Vihars' : 'Vihar Entries'}
           </h1>
