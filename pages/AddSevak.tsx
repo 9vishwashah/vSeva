@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { UserProfile, Organization, ContactNumber } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { UserProfile, Organization, ContactNumber, ViharEntry } from '../types';
 import { dataService } from '../services/dataService';
-import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft, Footprints } from 'lucide-react';
 import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
 import CircularProgressBar from '../components/CircularProgressBar';
@@ -10,6 +10,8 @@ import Avatar from '../components/Avatar';
 import Modal from '../components/Modal';
 import StatusScreen from '../components/StatusScreen';
 import { toLocalDateKey } from '../services/dateUtils';
+import { isDateInViharYear } from '../services/viharYear';
+import { useViharYear } from '../context/ViharYearContext';
 
 
 interface AddSevakProps {
@@ -33,6 +35,24 @@ const formatLastLogin = (isoString?: string): { label: string; color: string } =
   else if (days < 7) label = `${days} days ago`;
   else if (days < 30) label = `${Math.floor(days / 7)}w ago`;
   else label = new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+
+  const color = days < 3 ? 'text-green-500' : days < 14 ? 'text-amber-500' : days < 30 ? 'text-red-500' : 'text-gray-400';
+  return { label, color };
+};
+
+// Same relative-day treatment as formatLastLogin, but for a Vihar date
+// (a plain date, not a timestamp) scoped to whichever Vihar Year is selected.
+const formatLastVihar = (dateStr?: string): { label: string; color: string } => {
+  if (!dateStr) return { label: 'No Vihar', color: 'text-gray-400' };
+
+  const days = Math.floor((Date.now() - new Date(`${dateStr}T00:00:00`).getTime()) / 86400000);
+
+  let label: string;
+  if (days <= 0) label = 'Today';
+  else if (days === 1) label = 'Yesterday';
+  else if (days < 7) label = `${days} days ago`;
+  else if (days < 30) label = `${Math.floor(days / 7)}w ago`;
+  else label = new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
 
   const color = days < 3 ? 'text-green-500' : days < 14 ? 'text-amber-500' : days < 30 ? 'text-red-500' : 'text-gray-400';
   return { label, color };
@@ -72,17 +92,21 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   
   // Organization State
   const [orgDetails, setOrgDetails] = useState<any>(null);
+  const [orgEntries, setOrgEntries] = useState<ViharEntry[]>([]);
+  const { selectedVY } = useViharYear();
 
 
   const fetchData = async () => {
     try {
       setLoadingSevaks(true);
       setSevaksLoadError(null);
-      const [sevaksData, org] = await Promise.all([
+      const [sevaksData, org, entries] = await Promise.all([
         dataService.getOrgSevaks(currentUser.organization_id),
         dataService.getOrganization(currentUser.organization_id),
+        dataService.getEntries(currentUser.organization_id),
       ]);
       setSevaks(sevaksData);
+      setOrgEntries(entries);
       if (org) setOrgDetails(org);
     } catch (err) {
       console.error("Failed to load data", err);
@@ -211,6 +235,21 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       setSavingId(null);
     }
   };
+
+  // Most recent Vihar date per sevak within the selected Vihar Year — same
+  // relative-time treatment as last login, but scoped to selectedVY.
+  const lastViharMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    orgEntries.forEach(entry => {
+      if (!isDateInViharYear(entry.vihar_date, selectedVY)) return;
+      (entry.sevaks || []).forEach(username => {
+        if (!map[username] || entry.vihar_date > map[username]) {
+          map[username] = entry.vihar_date;
+        }
+      });
+    });
+    return map;
+  }, [orgEntries, selectedVY.start.getTime(), selectedVY.end.getTime()]);
 
   // Profile completion: counts blood_group, emergency_number, address, age
   const getProfileCompletion = (sevak: UserProfile): number => {
@@ -469,6 +508,7 @@ by VJAS`;
                 filteredSevaks.map((sevak, index) => {
                   const { label, color } = formatLastLogin(sevak.last_login_at);
                   const statusDotColor = color.replace('text-', 'bg-');
+                  const { label: viharLabel, color: viharColor } = formatLastVihar(lastViharMap[sevak.username]);
                   const pct = getProfileCompletion(sevak);
 
                    return (
@@ -488,6 +528,14 @@ by VJAS`;
                         <div className="flex items-center gap-1 whitespace-nowrap bg-gray-50 px-2 py-0.5 rounded border border-gray-100 flex-shrink-0">
                            <div className={`w-1.5 h-1.5 rounded-full ${statusDotColor} shadow-sm`}></div>
                            <span className={`text-[9px] font-bold ${color} uppercase tracking-wider`}>{label}</span>
+                        </div>
+                      </div>
+
+                      {/* Last Vihar — scoped to the selected Vihar Year */}
+                      <div className="mt-1.5 flex items-center justify-end">
+                        <div className="flex items-center gap-1 whitespace-nowrap bg-gray-50 px-2 py-0.5 rounded border border-gray-100 flex-shrink-0">
+                          <Footprints size={10} className={viharColor} />
+                          <span className={`text-[9px] font-bold ${viharColor} uppercase tracking-wider`}>{viharLabel}</span>
                         </div>
                       </div>
 

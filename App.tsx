@@ -9,6 +9,7 @@ import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationClick } from './services/oneSignalService';
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
 import StatusScreen from './components/StatusScreen';
+import { ViharYearProvider } from './context/ViharYearContext';
 
 // Lazy load the inner components to reduce initial JS bundle size
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -415,6 +416,7 @@ const App: React.FC = () => {
           onDone={() => markOnboardingDone(user.role)}
         />
       )}
+      <ViharYearProvider>
       <Layout
         role={user.role}
         userInitials={getInitials(user.full_name)}
@@ -550,6 +552,7 @@ const App: React.FC = () => {
           )
         )}
       </Layout>
+      </ViharYearProvider>
     </React.Suspense>
   );
 };

@@ -2,8 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { UserProfile, ViharEntry, UserRole, Organization } from '../types';
 import { dataService } from '../services/dataService';
 import SankalpRing from '../components/SankalpRing';
-import ViharYearSelector from '../components/ViharYearSelector';
-import { getViharYearStartYear, getViharYearBoundsForStartYear, isDateInViharYear } from '../services/viharYear';
+import { isDateInViharYear } from '../services/viharYear';
+import { useViharYear } from '../context/ViharYearContext';
 import { toLocalDateKey } from '../services/dateUtils';
 import LeaderboardCard from '../components/LeaderboardCard';
 import { ChevronLeft, Trophy, Medal, Flame } from 'lucide-react';
@@ -30,9 +30,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
 
   const isAdmin = currentUser.role === UserRole.ORG_ADMIN;
 
-  const currentVYStartYear = getViharYearStartYear();
-  const [selectedVYStartYear, setSelectedVYStartYear] = useState<number>(currentVYStartYear);
-  const selectedVY = getViharYearBoundsForStartYear(selectedVYStartYear);
+  const { selectedVY, selectedVYStartYear, currentVYStartYear } = useViharYear();
 
   const load = async () => {
       setLoading(true);
@@ -206,11 +204,6 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
             <p className="text-xs text-[#8A6A57]">Every number behind your Seva, this Vihar Year</p>
           </div>
         </div>
-        <ViharYearSelector
-          selectedStartYear={selectedVYStartYear}
-          currentStartYear={currentVYStartYear}
-          onChange={setSelectedVYStartYear}
-        />
       </div>
 
       {/* KPI grid */}

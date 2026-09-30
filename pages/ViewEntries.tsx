@@ -5,9 +5,9 @@ import { Search, Calendar, User, MessageCircle, Trash2, Pencil, X, ChevronLeft }
 import EntryCard from '../components/EntryCard';
 import EntriesSkeleton from '../components/EntriesSkeleton';
 import StatusScreen from '../components/StatusScreen';
-import ViharYearSelector from '../components/ViharYearSelector';
-import { getViharYearStartYear, getViharYearBoundsForStartYear, isDateInViharYear } from '../services/viharYear';
+import { isDateInViharYear } from '../services/viharYear';
 import { useToast } from '../context/ToastContext';
+import { useViharYear } from '../context/ViharYearContext';
 import { supabase } from '../services/supabase';
 
 
@@ -25,11 +25,9 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sevakMap, setSevakMap] = useState<Record<string, string>>({}); // username -> fullname
 
-  // Same Vihar Year (VY) segregation as Dashboard/Group Analytics — purely a
-  // display filter over vihar_date, nothing stored or moved.
-  const currentVYStartYear = getViharYearStartYear();
-  const [selectedVYStartYear, setSelectedVYStartYear] = useState<number>(currentVYStartYear);
-  const selectedVY = getViharYearBoundsForStartYear(selectedVYStartYear);
+  // Same Vihar Year (VY) segregation as Dashboard/Group Analytics — shared
+  // app-wide via ViharYearContext, set only from the Dashboard's selector.
+  const { selectedVY } = useViharYear();
   const fetchData = async () => {
       setLoading(true);
       setLoadError(null);
@@ -166,11 +164,9 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <ViharYearSelector
-            selectedStartYear={selectedVYStartYear}
-            currentStartYear={currentVYStartYear}
-            onChange={setSelectedVYStartYear}
-          />
+          <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full bg-saffron-50 text-saffron-700 text-[10px] font-extrabold shrink-0">
+            {selectedVY.label}
+          </span>
           <div className="relative w-40 sm:w-56 shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input

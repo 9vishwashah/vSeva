@@ -11,8 +11,9 @@ import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCi
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import vsgLogo from '../assets/vsg.jpg';
 import { useToast } from '../context/ToastContext';
+import { useViharYear } from '../context/ViharYearContext';
 import { supabase } from '../services/supabase';
-import { getViharYearStartYear, getViharYearBoundsForStartYear, getViharYearForDate, isDateInViharYear } from '../services/viharYear';
+import { getViharYearForDate, isDateInViharYear } from '../services/viharYear';
 import { toLocalDateKey } from '../services/dateUtils';
 import { deliverPdf } from '../services/pdfDelivery';
 
@@ -67,9 +68,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   const [yearlyGoal, setYearlyGoal] = useState(25);
   const [captainName, setCaptainName] = useState<string | null>(null);
   const [orgEntriesAll, setOrgEntriesAll] = useState<ViharEntry[]>([]);
-  const currentVYStartYear = getViharYearStartYear();
-  const [selectedVYStartYear, setSelectedVYStartYear] = useState<number>(currentVYStartYear);
-  const selectedVY = getViharYearBoundsForStartYear(selectedVYStartYear);
+  const { selectedVYStartYear, setSelectedVYStartYear, currentVYStartYear, selectedVY } = useViharYear();
 
   // Export configuration modal
   const [showExportModal, setShowExportModal] = useState(false);
