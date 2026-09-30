@@ -324,6 +324,8 @@ export interface ChannelPost {
   organization_id: string;
   author_user_id: string;
   author_name: string;
+  author_avatar_url?: string | null;
+  author_role?: string | null;
   message: string;
   created_at: string;
 }

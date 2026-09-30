@@ -117,17 +117,25 @@ export const channelService = {
     return (data || []) as ChannelPost[];
   },
 
-  // authorName is the caller's own already-known name (it's always the
-  // current user posting) — attached client-side rather than re-fetched,
-  // since the plain insert's response has no author_name column to return.
-  async sendPost(organizationId: string, authorUserId: string, authorName: string, message: string): Promise<ChannelPost> {
+  // authorName/authorAvatarUrl/authorRole are the caller's own already-known
+  // profile fields (it's always the current user posting) — attached
+  // client-side rather than re-fetched, since the plain insert's response
+  // has no columns for them to return.
+  async sendPost(
+    organizationId: string,
+    authorUserId: string,
+    authorName: string,
+    message: string,
+    authorAvatarUrl?: string | null,
+    authorRole?: string | null
+  ): Promise<ChannelPost> {
     const { data, error } = await supabase
       .from('channel_posts')
       .insert({ organization_id: organizationId, author_user_id: authorUserId, message: message.slice(0, 4000) })
       .select('id, organization_id, author_user_id, message, created_at')
       .single();
     if (error) throw error;
-    return { ...(data as any), author_name: authorName } as ChannelPost;
+    return { ...(data as any), author_name: authorName, author_avatar_url: authorAvatarUrl, author_role: authorRole } as ChannelPost;
   },
 
   async deletePost(postId: string): Promise<void> {

@@ -3,7 +3,10 @@ import { UserProfile, UserRole, ChannelOrgProfile, ChannelRecentVihar, ChannelPo
 import { channelService } from '../services/channelService';
 import { useToast } from '../context/ToastContext';
 import Modal from '../components/Modal';
+import Avatar from '../components/Avatar';
 import { ChevronLeft, Loader2, Send, Trash2, Settings } from 'lucide-react';
+
+const roleLabel = (role?: string | null): string => (role === UserRole.ORG_ADMIN ? 'Captain / Organization Head' : 'Vihar Sevak');
 
 interface ChannelOrganizationProps {
   currentUser: UserProfile;
@@ -42,6 +45,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
   const [loadingMore, setLoadingMore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [postingPermission, setPostingPermission] = useState<ChannelPostingPermission>('captain_only');
+  const [profilePost, setProfilePost] = useState<ChannelPost | null>(null);
   const seenPostIds = useRef(new Set<string>());
   const bottomRef = useRef<HTMLDivElement>(null);
   const skipAutoScrollRef = useRef(false);
@@ -156,13 +160,15 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
       organization_id: organizationId,
       author_user_id: currentUser.id,
       author_name: currentUser.full_name,
+      author_avatar_url: currentUser.avatar_url,
+      author_role: currentUser.role,
       message,
       created_at: new Date().toISOString(),
     };
     setPosts(prev => [...prev, optimisticPost]);
     setDraft('');
     try {
-      const saved = await channelService.sendPost(organizationId, currentUser.id, currentUser.full_name, message);
+      const saved = await channelService.sendPost(organizationId, currentUser.id, currentUser.full_name, message, currentUser.avatar_url, currentUser.role);
       seenPostIds.current.add(saved.id);
       setPosts(prev => {
         // The realtime broadcast for this same post can arrive before this
@@ -225,7 +231,9 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-extrabold text-[#241C17] truncate">{profile.name}</h1>
-          {(profile.town || profile.city) && (
+          {isOwnOrg ? (
+            <p className="text-xs font-bold text-saffron-600">Your Organization's Channel</p>
+          ) : (profile.town || profile.city) && (
             <p className="text-xs text-[#8A6A57]">{[profile.town, profile.city].filter(Boolean).join(', ')}</p>
           )}
         </div>
@@ -290,17 +298,24 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
                 {posts.map(post => (
                   <div key={post.id} className="border-b border-gray-50 last:border-0 pb-4 last:pb-0">
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-xs font-extrabold uppercase tracking-wide text-saffron-600">{post.author_name}</p>
-                        <p className="text-[10px] text-[#8A6A57]">{formatRelativeTime(post.created_at)}</p>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProfilePost(post)}
+                        className="flex items-center gap-2 min-w-0 text-left hover:opacity-80 transition-opacity"
+                      >
+                        <Avatar name={post.author_name} url={post.author_avatar_url} size={26} />
+                        <div className="min-w-0">
+                          <p className="text-xs font-extrabold uppercase tracking-wide text-saffron-600 truncate">{post.author_name}</p>
+                          <p className="text-[10px] text-[#8A6A57]">{formatRelativeTime(post.created_at)}</p>
+                        </div>
+                      </button>
                       {post.author_user_id === currentUser.id && !post.id.startsWith('optimistic-') && (
                         <button onClick={() => handleDelete(post.id)} className="text-gray-300 hover:text-red-500 shrink-0">
                           <Trash2 size={14} />
                         </button>
                       )}
                     </div>
-                    <p className="text-sm text-[#241C17] mt-1.5 whitespace-pre-wrap break-words">{post.message}</p>
+                    <p className="text-sm text-[#241C17] mt-1.5 ml-[34px] whitespace-pre-wrap break-words">{post.message}</p>
                   </div>
                 ))}
               </div>
@@ -364,6 +379,27 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
           </div>
           <button onClick={() => setShowSettings(false)} className="w-full mt-5 py-2.5 rounded-xl bg-saffron-600 text-sm font-bold text-white">Done</button>
         </div>
+      </Modal>
+
+      {/* Mini sender profile — "who sent this", nothing more. Every sender in
+          this list belongs to this same organization (posting is scoped to
+          organizationId), so org name/city come straight from `profile`
+          already loaded above rather than a further query. */}
+      <Modal open={!!profilePost} onClose={() => setProfilePost(null)} maxWidth="max-w-xs">
+        {profilePost && (
+          <div className="p-6 flex flex-col items-center text-center">
+            <Avatar name={profilePost.author_name} url={profilePost.author_avatar_url} size={64} />
+            <p className="mt-3 text-base font-extrabold text-[#241C17]">{profilePost.author_name}</p>
+            <p className="text-xs font-bold text-saffron-600 mt-0.5">{roleLabel(profilePost.author_role)}</p>
+            <div className="w-full mt-4 pt-4 border-t border-gray-100 space-y-1">
+              <p className="text-sm font-semibold text-[#241C17]">{profile.name}</p>
+              {(profile.town || profile.city) && (
+                <p className="text-xs text-[#8A6A57]">{[profile.town, profile.city].filter(Boolean).join(', ')}</p>
+              )}
+            </div>
+            <button onClick={() => setProfilePost(null)} className="w-full mt-5 py-2.5 rounded-xl bg-gray-100 text-sm font-bold text-[#241C17]">Close</button>
+          </div>
+        )}
       </Modal>
     </div>
   );
