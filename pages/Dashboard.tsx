@@ -177,13 +177,17 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         // other's results — they were previously awaited in a 4-stage sequential
         // chain. Firing them together turns ~4 round-trips into 1.
         const [
-          org, orgSevaks, routes, secureMap, allOrgEntries, detailedStats, totalOrgSevaksCount
+          org, orgSevaks, routes, secureMap, allOrgEntries, rankingEntries, detailedStats, totalOrgSevaksCount
         ] = await Promise.all([
           dataService.getOrganization(currentUser.organization_id),
           dataService.getAllOrgUsers(currentUser.organization_id, true),
           dataService.getRoutes(currentUser.organization_id),
           dataService.getSevakNameMap(currentUser.organization_id),
           dataService.getEntries(currentUser.organization_id),
+          // Org-wide, for rank/leaderboard only — getEntries() above is RLS-
+          // limited to a Sevak's own entries, which breaks ranking (everyone's
+          // "whole org" view of themselves trivially ranks #1).
+          dataService.getOrgEntriesForRanking(currentUser.organization_id),
           dataService.getDashboardStats(currentUser.organization_id).catch(e => {
             console.error("Failed to load accurate dashboard stats", e);
             return null;
@@ -228,7 +232,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           myEntries = allOrgEntries.filter(e => (e.sevaks || []).includes(currentUser.username));
           totalCount = totalOrgSevaksCount;
         }
-        setOrgEntriesAll(allOrgEntries);
+        setOrgEntriesAll(rankingEntries);
 
         // Vihar Year (VY) scoping for the headline KPI tiles (Km/Vihars/Sadhu/
         // Sadhvi/Co-Sevak), rank, and the leaderboard happens in the vyStats/

@@ -284,7 +284,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
           </div>
 
           {/* Mobile Card View */}
-          <div className="md:hidden grid grid-cols-1 gap-4">
+          <div className="md:hidden grid grid-cols-1 gap-2.5">
             {(() => {
               let lastDate: string | null = null;
               return filteredEntries.map(entry => {

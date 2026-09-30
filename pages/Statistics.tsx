@@ -36,8 +36,12 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
       setLoading(true);
       setLoadError(null);
       try {
-        const [allOrgEntries, orgSevaks, goal, org] = await Promise.all([
+        const [allOrgEntries, rankingEntries, orgSevaks, goal, org] = await Promise.all([
           dataService.getEntries(currentUser.organization_id),
+          // Org-wide, for the leaderboard only — getEntries() above is RLS-
+          // limited to a Sevak's own entries, which would make the "Top
+          // Vihar Sevaks/Sevikas" leaderboard only ever show themselves.
+          dataService.getOrgEntriesForRanking(currentUser.organization_id),
           dataService.getAllOrgUsers(currentUser.organization_id, true),
           dataService.getYearlyGoal(currentUser.id),
           dataService.getOrganization(currentUser.organization_id),
@@ -48,7 +52,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
           : allOrgEntries.filter(e => (e.sevaks || []).includes(currentUser.username));
 
         setEntries(myEntries);
-        setOrgEntriesAll(allOrgEntries);
+        setOrgEntriesAll(rankingEntries);
         setYearlyGoal(goal);
         setOrgDetails(org);
 

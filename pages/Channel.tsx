@@ -32,6 +32,7 @@ const OrgRow: React.FC<{ org: ChannelOrgSummary; trailing: React.ReactNode; onCl
 
 const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) => {
   const { showToast } = useToast();
+  const isAdmin = currentUser.role === UserRole.ORG_ADMIN;
   const [following, setFollowing] = useState<ChannelOrgSummary[]>([]);
   const [results, setResults] = useState<ChannelOrgSummary[]>([]);
   const [myOrgName, setMyOrgName] = useState<string | null>(null);
@@ -58,6 +59,9 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
   useEffect(() => { loadFollowing(); }, [loadFollowing]);
 
   useEffect(() => {
+    // Discover (and the org search behind it) is a Captain-only action —
+    // only Captains can follow a new org, so a Sevak has nothing to do here.
+    if (!isAdmin) return;
     const handle = setTimeout(async () => {
       setSearching(true);
       try {
@@ -70,7 +74,7 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
       }
     }, 300);
     return () => clearTimeout(handle);
-  }, [query]);
+  }, [query, isAdmin]);
 
   const toggleFollow = async (org: ChannelOrgSummary) => {
     const alreadyFollowing = followingIds.has(org.id);
@@ -97,16 +101,18 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
         <p className="text-xs text-[#8A6A57]">Updates from Vihar organizations</p>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-        <input
-          type="text"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder="Search organizations..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-200"
-        />
-      </div>
+      {isAdmin && (
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search organizations..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-200"
+          />
+        </div>
+      )}
 
       {!query && (
         <div className="space-y-2.5">
@@ -149,6 +155,7 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
         </div>
       )}
 
+      {isAdmin && (
       <div className="space-y-2.5">
         <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] px-1">Discover</h2>
         {searching ? (
@@ -185,6 +192,7 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
           })
         )}
       </div>
+      )}
     </div>
   );
 };
