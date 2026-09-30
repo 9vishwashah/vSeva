@@ -188,7 +188,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           // row (no "same org" policy), so getAllOrgUsers() here would have
           // silently returned just themselves, breaking gender-based
           // grouping (Active Sevaks split, VY leaderboard) for any Sevak.
-          dataService.getOrgRoster(currentUser.organization_id, true),
+          dataService.getOrgRosterForStats(currentUser.organization_id, true),
           dataService.getRoutes(currentUser.organization_id),
           dataService.getSevakNameMap(currentUser.organization_id),
           dataService.getEntries(currentUser.organization_id),

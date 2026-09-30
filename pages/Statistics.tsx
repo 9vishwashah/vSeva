@@ -46,7 +46,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
           // lets a Sevak read their own row, so getAllOrgUsers() here would
           // have silently returned just themselves, dropping every other
           // sevak out of the gender-filtered leaderboard/Participation split.
-          dataService.getOrgRoster(currentUser.organization_id, true),
+          dataService.getOrgRosterForStats(currentUser.organization_id, true),
           dataService.getOrganization(currentUser.organization_id),
         ]);
 

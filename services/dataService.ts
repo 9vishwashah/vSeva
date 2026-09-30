@@ -325,6 +325,22 @@ export const dataService = {
     return [];
   },
 
+  // Same data as getOrgRoster (username/full_name/gender), via a plain
+  // Postgres RPC instead of the Netlify function — used specifically where
+  // that data feeds a leaderboard/participation split that would otherwise
+  // silently render "empty" (rather than visibly error) if the serverless
+  // fetch ever failed for infra reasons (deployment, env vars, CORS on
+  // native). Throws on failure instead of swallowing it, so callers surface
+  // a real error rather than a quietly-wrong empty leaderboard.
+  async getOrgRosterForStats(orgId: string, includeInactive: boolean = false): Promise<{ username: string; full_name: string; gender: string | null }[]> {
+    const { data, error } = await supabase.rpc('get_org_roster_for_stats', {
+      p_organization_id: orgId,
+      p_include_inactive: includeInactive,
+    });
+    if (error) throw error;
+    return (data || []) as { username: string; full_name: string; gender: string | null }[];
+  },
+
   async createSevak(
     adminOrgId: string,
     sevakData: { fullName: string; mobile: string; gender: string; age: number; bloodGroup?: string; emergencyNumber?: string; address?: string }
