@@ -104,9 +104,12 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
     return dataService.getTopSevaksLeaderboard(orgEntriesVY, nameMap, genderMap);
   }, [orgEntriesAll, selectedVY.start.getTime(), selectedVY.end.getTime(), nameMap, genderMap]);
 
+  // Org-wide (Participation by Gender is about the whole org's Seva, not
+  // just whoever happens to be looking at the page) — same orgEntriesAll
+  // source as the leaderboard below.
   const genderSplit = useMemo(() => {
     let male = 0, female = 0;
-    entries
+    orgEntriesAll
       .filter(e => isDateInViharYear(e.vihar_date, selectedVY))
       .forEach(e => {
         (e.sevaks || []).forEach(u => {
@@ -116,7 +119,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
         });
       });
     return { male, female };
-  }, [entries, selectedVY.start.getTime(), selectedVY.end.getTime(), genderMap]);
+  }, [orgEntriesAll, selectedVY.start.getTime(), selectedVY.end.getTime(), genderMap]);
 
   if (loading) {
     return (
@@ -175,9 +178,10 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
     });
   });
 
-  // Top routes — scoped to the selected VY, same as the rest of this page
+  // Top routes — org-wide (not just the viewer's own entries), scoped to
+  // the selected VY like the rest of this page.
   const routeCounts: Record<string, number> = {};
-  entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).forEach(e => {
+  orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).forEach(e => {
     const key = `${e.vihar_from} → ${e.vihar_to}`;
     routeCounts[key] = (routeCounts[key] || 0) + 1;
   });
