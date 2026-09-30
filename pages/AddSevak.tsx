@@ -253,18 +253,6 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     return map;
   }, [orgEntries, selectedVY.start.getTime(), selectedVY.end.getTime()]);
 
-  // Each sevak's Vihar rank within the org for the selected VY — same
-  // calculateRank logic the Dashboard's "Rank in Org" tile uses, so both
-  // stay consistent with each other.
-  const sevakRankMap = useMemo(() => {
-    const entriesVY = orgEntries.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
-    const map: Record<string, number | string> = {};
-    sevaks.forEach(s => {
-      map[s.username] = dataService.calculateRank(entriesVY, s.username);
-    });
-    return map;
-  }, [orgEntries, sevaks, selectedVY.start.getTime(), selectedVY.end.getTime()]);
-
   // Profile completion: counts blood_group, emergency_number, address, age
   const getProfileCompletion = (sevak: UserProfile): number => {
     const fields = [sevak.blood_group, sevak.emergency_number, sevak.address, sevak.age];
@@ -348,6 +336,29 @@ vSeva
 by VJAS`;
 
     return encodeURIComponent(message);
+  };
+
+  // A gentle Vihar reminder, prefilled with the sevak's own last-recorded
+  // Vihar date (within the selected Vihar Year) so it reads as personal.
+  const generateViharReminderMessage = (sevak: UserProfile) => {
+    const lastDate = lastViharMap[sevak.username];
+    const lastDateLabel = lastDate
+      ? new Date(`${lastDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : 'not yet recorded this Vihar Year';
+    const message = `Jai Jinendra ${sevak.full_name},
+This is a gentle reminder regarding your Vihar Seva.
+Your last Vihar was on ${lastDateLabel}.
+Kindly do Vihar and continue your Seva.`;
+    return encodeURIComponent(message);
+  };
+
+  // Border/background/text triplet per last-Vihar recency, matching the
+  // color scale formatLastVihar already computes.
+  const viharButtonClasses = (color: string) => {
+    if (color === 'text-green-500') return 'bg-green-50 hover:bg-green-100 text-green-600 border-green-100';
+    if (color === 'text-amber-500') return 'bg-amber-50 hover:bg-amber-100 text-amber-600 border-amber-100';
+    if (color === 'text-red-500') return 'bg-red-50 hover:bg-red-100 text-red-600 border-red-100';
+    return 'bg-gray-50 hover:bg-gray-100 text-gray-500 border-gray-100';
   };
 
   return (
@@ -519,21 +530,20 @@ by VJAS`;
                   No members found matching "{searchQuery}"
                 </div>
               ) : (
-                filteredSevaks.map((sevak) => {
+                filteredSevaks.map((sevak, index) => {
                   const { label, color } = formatLastLogin(sevak.last_login_at);
                   const statusDotColor = color.replace('text-', 'bg-');
                   const { label: viharLabel, color: viharColor } = formatLastVihar(lastViharMap[sevak.username]);
-                  const rank = sevakRankMap[sevak.username] ?? 'N/A';
                   const pct = getProfileCompletion(sevak);
 
                    return (
                     <div key={sevak.id} className="bg-white rounded-[20px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col group overflow-hidden relative">
 
-                      {/* Top Line: Rank/Total + Name + Last Seen */}
+                      {/* Top Line: Sr No + Name + Last Seen */}
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded tracking-widest uppercase border border-gray-100 whitespace-nowrap flex-shrink-0">
-                            #{rank} / {sevaks.length}
+                            #{index + 1}
                           </span>
                           <h3 className="text-base font-bold text-gray-900 tracking-tight truncate group-hover:text-saffron-600 transition-colors">
                             {sevak.full_name}
@@ -546,7 +556,7 @@ by VJAS`;
                         </div>
                       </div>
 
-                      {/* Bottom Row: Completion Ring + Profile + WhatsApp */}
+                      {/* Bottom Row: Completion Ring + Profile + WhatsApp + Last Vihar reminder */}
                       <div className="mt-3 flex gap-2 items-center">
                         {/* Circular Progress - now in bottom row */}
                         <div className="w-12 h-12 flex-shrink-0" title={`${pct}% profile complete`}>
@@ -561,7 +571,7 @@ by VJAS`;
                         </div>
                         <button
                           onClick={() => openModal(sevak)}
-                          className="flex-1 py-2.5 px-5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-[12px] font-extrabold text-[11px] tracking-wider uppercase transition-colors flex justify-center items-center gap-2 border border-indigo-100 hover:border-indigo-200 shadow-sm"
+                          className="flex-1 py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-[12px] font-extrabold text-[11px] tracking-wider uppercase transition-colors flex justify-center items-center gap-2 border border-indigo-100 hover:border-indigo-200 shadow-sm"
                         >
                           Profile
                         </button>
@@ -575,14 +585,17 @@ by VJAS`;
                         >
                           <svg viewBox="0 0 24 24" fill="currentColor" className="w-[15px] h-[15px] shrink-0" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                         </a>
-                      </div>
-
-                      {/* Last Vihar — scoped to the selected Vihar Year */}
-                      <div className="mt-2 flex items-center justify-end">
-                        <div className="flex items-center gap-1 whitespace-nowrap bg-gray-50 px-2 py-0.5 rounded border border-gray-100 flex-shrink-0">
-                          <Footprints size={10} className={viharColor} />
-                          <span className={`text-[9px] font-bold ${viharColor} uppercase tracking-wider`}>{viharLabel}</span>
-                        </div>
+                        <a
+                          href={`https://wa.me/91${sevak.mobile}?text=${generateViharReminderMessage(sevak)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center gap-1 h-9 px-2.5 rounded-[12px] border transition-colors shrink-0 ${viharButtonClasses(viharColor)}`}
+                          title="Send Vihar reminder via WhatsApp"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Footprints size={12} className="shrink-0" />
+                          <span className="text-[9px] font-extrabold uppercase tracking-wider whitespace-nowrap">{viharLabel}</span>
+                        </a>
                       </div>
                     </div>
                   );

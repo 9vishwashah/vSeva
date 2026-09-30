@@ -658,11 +658,30 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   const vyStats = useMemo(() => {
     const myEntriesVY = data.entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
     const orgEntriesVY = orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
-    const base = dataService.calculateStats(myEntriesVY, currentUser.username, sevakMap);
-    base.streak = dataService.calculateStats(data.entries, currentUser.username, sevakMap).streak;
+    // calculateStats(myEntriesVY, ...) already scopes .streak to this VY's
+    // entries (its own streak logic just walks consecutive-day runs from
+    // whatever's passed in) — no separate override needed here.
+    const base: any = dataService.calculateStats(myEntriesVY, currentUser.username, sevakMap);
     base.vRank = currentUser.role === UserRole.ORG_ADMIN ? 'Admin' : dataService.calculateRank(orgEntriesVY, currentUser.username);
+
+    // Active Sevaks — who actually did a Vihar during the selected VY,
+    // instead of the org-wide "active in the last 30 days" snapshot, which
+    // stays pinned to today regardless of which VY is being viewed.
+    const activeUsernamesVY = new Set<string>();
+    orgEntriesVY.forEach(e => (e.sevaks || []).forEach(u => activeUsernamesVY.add(u)));
+    let activeMale = 0, activeFemale = 0;
+    activeUsernamesVY.forEach(u => {
+      const g = (sevakGenderMap[u] || '').toLowerCase();
+      if (g === 'female' || g === 'સ્ત્રી' || g === 'mahila') activeFemale++;
+      else activeMale++;
+    });
+    base.activeMale = activeMale;
+    base.activeFemale = activeFemale;
+    base.activeSevaks = activeMale + activeFemale;
+    base.activeUsernames = Array.from(activeUsernamesVY);
+
     return base;
-  }, [data.entries, orgEntriesAll, selectedVY.start.getTime(), selectedVY.end.getTime(), sevakMap, currentUser.username, currentUser.role]);
+  }, [data.entries, orgEntriesAll, selectedVY.start.getTime(), selectedVY.end.getTime(), sevakMap, sevakGenderMap, currentUser.username, currentUser.role]);
 
   const vyLeaderboard = useMemo(() => {
     const orgEntriesVY = orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
@@ -1195,6 +1214,9 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex items-baseline gap-1">
                       <span className="text-[22px] font-extrabold text-[#241C17] leading-none">#{displayStats.vRank}</span>
+                      {typeof displayStats.vRank === 'number' && displayStats.totalOrgSevaks > 0 && (
+                        <span className="text-xs font-bold text-[#8A6A57]">/ {displayStats.totalOrgSevaks}</span>
+                      )}
                     </div>
                   )}
                   <Medal size={21} style={{ color: '#C9A227' }} className="shrink-0" />
