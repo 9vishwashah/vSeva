@@ -65,14 +65,14 @@ const Layout: React.FC<LayoutProps> = ({
       { page: 'pending-approvals', icon: <ClipboardCheck size={18} />, label: 'Pending Approvals' },
       { page: 'manage-routes', icon: <Map size={18} />, label: 'Manage Routes' },
       { page: 'add-sevak', icon: <UserPlus size={18} />, label: 'Add Sevaks' },
-      { page: 'channel', icon: <MessageSquare size={18} />, label: 'Channel' },
+      { page: 'channel', icon: <MessageSquare size={18} />, label: 'VChat' },
       { page: 'contacts', icon: <PhoneCall size={18} />, label: 'Contacts' },
       { page: 'reports', icon: <ShieldAlert size={18} />, label: 'Reports' },
     ]
     : [
       { page: 'new-entry', icon: <FilePlus size={18} />, label: 'Add Vihar' },
       { page: 'statistics', icon: <BarChart2 size={18} />, label: 'Group Analytics' },
-      { page: 'channel', icon: <MessageSquare size={18} />, label: 'Channel' },
+      { page: 'channel', icon: <MessageSquare size={18} />, label: 'VChat' },
       { page: 'contacts', icon: <PhoneCall size={18} />, label: 'Contacts' },
       { page: 'notifications', icon: <Bell size={18} />, label: 'Notifications' },
       { page: 'reports', icon: <ShieldAlert size={18} />, label: 'Reports' },
@@ -163,7 +163,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="manage-routes" icon={Map} label="Manage Routes" />
               <NavItem page="new-entry" icon={FilePlus} label="New Entry" />
               <NavItem page="add-sevak" icon={UserPlus} label="Add Sevaks" />
-              <NavItem page="channel" icon={MessageSquare} label="Channel" />
+              <NavItem page="channel" icon={MessageSquare} label="VChat" />
               <NavItem page="notifications" icon={Bell} label="Notifications" />
               <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
               <NavItem page="reports" icon={ShieldAlert} label="Reports" />
@@ -186,7 +186,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem page="statistics" icon={BarChart2} label="Group Analytics" />
               <NavItem page="my-vihars" icon={Footprints} label="My Vihars" />
               <NavItem page="new-entry" icon={FilePlus} label="Add Vihar" />
-              <NavItem page="channel" icon={MessageSquare} label="Channel" />
+              <NavItem page="channel" icon={MessageSquare} label="VChat" />
               <NavItem page="notifications" icon={Bell} label="Notifications" />
               <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
               <NavItem page="reports" icon={ShieldAlert} label="Reports" />
@@ -215,7 +215,7 @@ const Layout: React.FC<LayoutProps> = ({
               {!sidebarCollapsed && (
                 <div className="ml-2.5 text-left">
                   <p className={`text-xs font-medium leading-tight ${currentPage === 'profile' ? 'text-saffron-700' : 'text-gray-700'}`}>Account</p>
-                  <p className="text-[11px] text-gray-400 capitalize leading-tight">{role.replace('_', ' ').toLowerCase()}</p>
+                  <p className="text-[11px] text-gray-400 capitalize leading-tight">{role === UserRole.ORG_ADMIN ? 'Captain' : 'Sevak'}</p>
                 </div>
               )}
             </button>

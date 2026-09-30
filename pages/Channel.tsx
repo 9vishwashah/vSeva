@@ -96,7 +96,7 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
       <div>
         <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2">
           <MessageSquare size={20} className="text-saffron-600" />
-          Channel
+          VChat
         </h1>
         <p className="text-xs text-[#8A6A57]">Updates from Vihar organizations</p>
       </div>
@@ -116,7 +116,7 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
 
       {!query && (
         <div className="space-y-2.5">
-          <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] px-1">My Channel</h2>
+          <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] px-1">My VChat</h2>
           <div
             role="button"
             tabIndex={0}
@@ -126,10 +126,10 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
           >
             <div className="min-w-0">
               <p className="text-sm font-bold text-[#241C17] truncate">{myOrgName || 'Your Organization'}</p>
-              <p className="text-xs text-[#8A6A57]">Your organization's Channel</p>
+              <p className="text-xs text-[#8A6A57]">My Vihar Group Chat</p>
             </div>
             <span className="shrink-0 flex items-center gap-1 text-xs font-bold text-saffron-600">
-              Open My Channel <ChevronRight size={16} />
+              Open <ChevronRight size={16} />
             </span>
           </div>
         </div>

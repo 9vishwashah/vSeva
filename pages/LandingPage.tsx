@@ -237,7 +237,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative z-10">
                             {[
-                                { step: 1, title: "Org Setup", desc: "Admin logs in & creates organization" },
+                                { step: 1, title: "Org Setup", desc: "Captain logs in & creates organization" },
                                 { step: 2, title: "Add Sevaks", desc: "Sevaks are added securely" },
                                 { step: 3, title: "Log Vihar", desc: "Vihar entries are logged daily" },
                                 { step: 4, title: "Analysis", desc: "System calculates stats & rankings" },

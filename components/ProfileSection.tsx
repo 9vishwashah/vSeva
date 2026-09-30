@@ -261,7 +261,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 </div>
                 <div className="text-center mt-1">
                     <p className="m-0 text-lg font-extrabold text-[#241C17]">{user.full_name}</p>
-                    <p className="m-0 text-xs font-semibold text-[#8A6A57] uppercase tracking-wide mt-1">{user.role}</p>
+                    <p className="m-0 text-xs font-semibold text-[#8A6A57] uppercase tracking-wide mt-1">{user.role === UserRole.ORG_ADMIN ? 'Captain' : 'Sevak'}</p>
                 </div>
             </div>
 

@@ -6,7 +6,7 @@ import { isDateInViharYear } from '../services/viharYear';
 import { useViharYear } from '../context/ViharYearContext';
 import { toLocalDateKey } from '../services/dateUtils';
 import LeaderboardCard from '../components/LeaderboardCard';
-import { ChevronLeft, Trophy, Medal, Flame } from 'lucide-react';
+import { Trophy, Medal, Flame } from 'lucide-react';
 import Skeleton from '../components/Skeleton';
 import StatusScreen from '../components/StatusScreen';
 
@@ -121,14 +121,9 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto space-y-5 pb-10">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-            <ChevronLeft size={16} className="text-[#241C17]" />
-          </div>
-          <div>
-            <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17]">Group Analytics</h1>
-            <p className="text-xs text-[#8A6A57]">Every number behind your Seva</p>
-          </div>
+        <div>
+          <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17]">Group Analytics</h1>
+          <p className="text-xs text-[#8A6A57]">Every number behind your Seva</p>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {['#FFF0E5', '#E9F4FD', '#FCEAEB', '#F1EAFB'].map((bg, i) => (
@@ -196,17 +191,12 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
     <div className="max-w-5xl mx-auto space-y-5 pb-10">
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <button onClick={() => window.history.back()} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-            <ChevronLeft size={16} className="text-[#241C17]" />
-          </button>
-          <div>
-            <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2 flex-wrap">
-              Group Analytics
-              <span className="text-[10px] font-extrabold bg-saffron-100 text-saffron-700 px-2 py-0.5 rounded-full">{selectedVY.label}</span>
-            </h1>
-            <p className="text-xs text-[#8A6A57]">Every number behind your Seva, this Vihar Year</p>
-          </div>
+        <div>
+          <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2 flex-wrap">
+            Group Analytics
+            <span className="text-[10px] font-extrabold bg-saffron-100 text-saffron-700 px-2 py-0.5 rounded-full">{selectedVY.label}</span>
+          </h1>
+          <p className="text-xs text-[#8A6A57]">Every number behind your Seva, this Vihar Year</p>
         </div>
       </div>
 

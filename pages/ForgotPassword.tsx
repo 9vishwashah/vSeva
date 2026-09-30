@@ -33,12 +33,12 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
                     throw new Error(data.message || 'Sevak not found');
                 }
 
-                setSuccessMessage(`We have notified your Organization Admin to reset the password for ${emailOrUsername}.`);
+                setSuccessMessage(`We have notified your Captain to reset the password for ${emailOrUsername}.`);
             } else {
-                // Admin Flow: Standard Supabase Reset
+                // Captain Flow: Standard Supabase Reset
                 // Validate it's an email
                 if (!emailOrUsername.includes('@')) {
-                    throw new Error("Please enter a valid email address for Admin accounts.");
+                    throw new Error("Please enter a valid email address for Captain accounts.");
                 }
 
                 const { error } = await supabase.auth.resetPasswordForEmail(emailOrUsername, {

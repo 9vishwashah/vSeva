@@ -47,7 +47,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
   const [postingPermission, setPostingPermission] = useState<ChannelPostingPermission>('captain_only');
   const [profilePost, setProfilePost] = useState<ChannelPost | null>(null);
   const seenPostIds = useRef(new Set<string>());
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const skipAutoScrollRef = useRef(false);
 
   // `posts` is kept oldest-first (ascending) so it renders top-to-bottom
@@ -76,7 +76,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         (currentUser.role === UserRole.ORG_ADMIN || permission === 'all_members')
       );
     } catch (e: any) {
-      showToast(e?.message || 'Failed to load Channel', 'error');
+      showToast(e?.message || 'Failed to load VChat', 'error');
     } finally {
       setLoading(false);
     }
@@ -85,13 +85,18 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
   useEffect(() => { load(); }, [load]);
 
   // Scroll to the newest message on first load and whenever one is appended
-  // — but not right after "Load earlier" prepends older ones above.
+  // — but not right after "Load earlier" prepends older ones above. Sets
+  // scrollTop directly on the messages container itself (not
+  // scrollIntoView, which walks every scrollable ancestor — including the
+  // whole page's own <main> scroller — and was dragging the entire page
+  // down every time a message arrived instead of just this one box).
   useEffect(() => {
     if (skipAutoScrollRef.current) {
       skipAutoScrollRef.current = false;
       return;
     }
-    bottomRef.current?.scrollIntoView({ block: 'end' });
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [posts.length]);
 
   // Realtime: only while this screen is open, only for this one organization.
@@ -111,8 +116,15 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
       const older = await channelService.getPosts(organizationId, posts[0].created_at);
       older.forEach(p => seenPostIds.current.add(p.id));
       skipAutoScrollRef.current = true;
+      const el = messagesContainerRef.current;
+      const prevScrollHeight = el?.scrollHeight ?? 0;
       setPosts(prev => [...older.slice().reverse(), ...prev]);
       setHasMore(older.length >= 30);
+      // Keep the user's visual position instead of jumping to the top once
+      // the older messages are prepended above what they were looking at.
+      requestAnimationFrame(() => {
+        if (el) el.scrollTop = el.scrollHeight - prevScrollHeight;
+      });
     } catch (e) {
       console.error('Failed to load earlier Channel messages', e);
     } finally {
@@ -218,7 +230,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
     return (
       <div className="max-w-3xl mx-auto py-16 text-center">
         <p className="text-sm text-[#8A6A57]">Organization not found.</p>
-        <button onClick={onBack} className="mt-3 text-sm font-bold text-saffron-600">Back to Channel</button>
+        <button onClick={onBack} className="mt-3 text-sm font-bold text-saffron-600">Back to VChat</button>
       </div>
     );
   }
@@ -232,7 +244,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-extrabold text-[#241C17] truncate">{profile.name}</h1>
           {isOwnOrg ? (
-            <p className="text-xs font-bold text-saffron-600">Your Organization's Channel</p>
+            <p className="text-xs font-bold text-saffron-600">My Vihar Group Chat</p>
           ) : (profile.town || profile.city) && (
             <p className="text-xs text-[#8A6A57]">{[profile.town, profile.city].filter(Boolean).join(', ')}</p>
           )}
@@ -258,31 +270,15 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         )}
       </div>
 
-      {recentVihars.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-          <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3">Recent Vihars</h2>
-          <div className="space-y-2.5">
-            {recentVihars.map((v, i) => (
-              <div key={i} className="text-sm">
-                <p className="font-bold text-[#241C17]">{v.vihar_from} → {v.vihar_to}</p>
-                <p className="text-xs text-[#8A6A57]">
-                  {new Date(v.vihar_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                  {' · '}{v.vihar_type === 'morning' ? 'Morning' : 'Evening'}
-                  {' · '}{v.sevak_count} {v.sevak_count === 1 ? 'Sevak' : 'Sevaks'}
-                  {v.distance_km != null && ` · ${v.distance_km} km`}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Chat first — the primary reason to be on this screen — then Recent
+          Vihars below it, not competing for the initial scroll position. */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 flex flex-col h-[65vh]">
+        <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3 shrink-0">VChat</h2>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 flex flex-col">
-        <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3">Channel</h2>
-
-        <div className="max-h-[60vh] overflow-y-auto flex flex-col">
+        {/* Only this box scrolls as messages grow — not the whole page. */}
+        <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto">
           {posts.length === 0 ? (
-            <p className="text-sm text-[#8A6A57] py-4">No Channel updates yet.</p>
+            <p className="text-sm text-[#8A6A57] py-4">No messages yet.</p>
           ) : (
             <>
               {hasMore && (
@@ -319,7 +315,6 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
                   </div>
                 ))}
               </div>
-              <div ref={bottomRef} />
             </>
           )}
         </div>
@@ -346,10 +341,29 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         )}
       </div>
 
+      {recentVihars.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+          <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3">Recent Vihars</h2>
+          <div className="space-y-2.5">
+            {recentVihars.map((v, i) => (
+              <div key={i} className="text-sm">
+                <p className="font-bold text-[#241C17]">{v.vihar_from} → {v.vihar_to}</p>
+                <p className="text-xs text-[#8A6A57]">
+                  {new Date(v.vihar_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  {' · '}{v.vihar_type === 'morning' ? 'Morning' : 'Evening'}
+                  {' · '}{v.sevak_count} {v.sevak_count === 1 ? 'Sevak' : 'Sevaks'}
+                  {v.distance_km != null && ` · ${v.distance_km} km`}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <Modal open={confirmUnfollow} onClose={() => setConfirmUnfollow(false)} maxWidth="max-w-sm">
         <div className="p-6">
           <h3 className="text-base font-bold text-[#241C17]">Unfollow {profile.name}?</h3>
-          <p className="text-sm text-[#8A6A57] mt-1.5">Your organization will no longer receive their Channel updates.</p>
+          <p className="text-sm text-[#8A6A57] mt-1.5">Your organization will no longer receive their VChat updates.</p>
           <div className="flex gap-3 mt-5">
             <button onClick={() => setConfirmUnfollow(false)} className="flex-1 py-2.5 rounded-xl bg-gray-100 text-sm font-bold text-[#241C17]">Cancel</button>
             <button onClick={handleUnfollow} disabled={followBusy} className="flex-1 py-2.5 rounded-xl bg-red-500 text-sm font-bold text-white disabled:opacity-50">Unfollow</button>
@@ -359,7 +373,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
 
       <Modal open={showSettings} onClose={() => setShowSettings(false)} maxWidth="max-w-sm">
         <div className="p-6">
-          <h3 className="text-base font-bold text-[#241C17]">Channel Settings</h3>
+          <h3 className="text-base font-bold text-[#241C17]">VChat Settings</h3>
           <p className="text-sm text-[#8A6A57] mt-1">Who can send messages?</p>
           <div className="mt-4 space-y-2">
             {(['captain_only', 'all_members'] as ChannelPostingPermission[]).map(option => (

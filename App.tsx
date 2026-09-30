@@ -450,6 +450,7 @@ const App: React.FC = () => {
             currentUser={user}
             navigateToProfile={() => handleSetCurrentPage('profile')}
             navigateToNotifications={() => handleSetCurrentPage('notifications')}
+            navigateToEntries={() => handleSetCurrentPage('view-entries')}
             onAddVihar={() => handleSetCurrentPage('new-entry')}
             orgDetails={orgDetails}
           />
@@ -500,6 +501,7 @@ const App: React.FC = () => {
             currentUser={user}
             navigateToProfile={() => handleSetCurrentPage('profile')}
             navigateToNotifications={() => handleSetCurrentPage('notifications')}
+            navigateToEntries={() => handleSetCurrentPage('my-vihars')}
             onAddVihar={() => handleSetCurrentPage('new-entry')}
             orgDetails={orgDetails}
           />

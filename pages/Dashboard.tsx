@@ -36,13 +36,16 @@ interface DashboardProps {
   currentUser: UserProfile;
   navigateToProfile?: () => void;
   navigateToNotifications?: () => void;
+  // Vihar Entries (Admin) / My Vihars (Sevak) — for "View all Vihars" on
+  // Recent Activity, distinct from navigateToNotifications (Vihar alerts).
+  navigateToEntries?: () => void;
   onAddVihar?: () => void;
   // Fetched once at login (same time as currentUser) so the org badge can paint
   // instantly instead of waiting on this page's own heavier data load below.
   orgDetails?: Organization | null;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, navigateToNotifications, onAddVihar, orgDetails: orgDetailsProp }) => {
+const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, navigateToNotifications, navigateToEntries, onAddVihar, orgDetails: orgDetailsProp }) => {
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
@@ -239,7 +242,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         // vyLeaderboard memos below, reacting to the year selector — like a
         // Financial Year P&L, computed live from vihar_date, nothing stored or
         // moved. Only the roster-based numbers (active/total sevaks) are set here.
-        const stats: any = { totalKm: 0, totalVihars: 0, totalSadhu: 0, totalSadhvi: 0, longestVihar: 0, streak: 0, vSynergy: 'N/A', vRank: isAdmin ? 'Admin' : 'N/A' };
+        const stats: any = { totalKm: 0, totalVihars: 0, totalSadhu: 0, totalSadhvi: 0, longestVihar: 0, streak: 0, vSynergy: 'N/A', vRank: isAdmin ? 'Captain' : 'N/A' };
 
         if (detailedStats) {
           stats.totalOrgSevaks = detailedStats.totalMale + detailedStats.totalFemale;
@@ -666,7 +669,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
     // entries (its own streak logic just walks consecutive-day runs from
     // whatever's passed in) — no separate override needed here.
     const base: any = dataService.calculateStats(myEntriesVY, currentUser.username, sevakMap);
-    base.vRank = currentUser.role === UserRole.ORG_ADMIN ? 'Admin' : dataService.calculateRank(orgEntriesVY, currentUser.username);
+    base.vRank = currentUser.role === UserRole.ORG_ADMIN ? 'Captain' : dataService.calculateRank(orgEntriesVY, currentUser.username);
 
     // Active Sevaks — who actually did a Vihar during the selected VY,
     // instead of the org-wide "active in the last 30 days" snapshot, which
@@ -696,15 +699,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
   const yearlyViharCount = data.entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length;
 
-  // When browsing a past VY, anchor the rolling windows (week strip, recent
-  // activity) to the end of that VY instead of today, so they show that
-  // period's own data rather than an unrelated "right now".
-  const isViewingCurrentVY = selectedVYStartYear === currentVYStartYear;
-  const vyAnchorDate = isViewingCurrentVY ? new Date() : selectedVY.end;
-
+  // Always the real current week, regardless of which VY is selected for
+  // the other KPIs — "Consistency" answers "have I kept it up this actual
+  // week", not "this week within whatever period I'm browsing".
   const weekDayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   const startOfWeek = (() => {
-    const d = new Date(vyAnchorDate);
+    const d = new Date();
     const day = (d.getDay() + 6) % 7; // 0 = Monday
     d.setDate(d.getDate() - day);
     d.setHours(0, 0, 0, 0);
@@ -1192,22 +1192,24 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               <p className="mt-1 text-xs font-semibold text-[#C05A57]">Sadhu / Sadhvi</p>
             </div>
 
-            {/* 4. Co-Sevak */}
-            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#F1EAFB', animationDelay: '120ms' }}>
-              <div className="flex items-start justify-between gap-2">
-                {isLoading ? <SkeletonLoader /> : (
-                  currentUser.role === UserRole.ORG_ADMIN ? (
-                    <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{displayStats.totalOrgSevaks}</p>
-                  ) : displayStats.vSynergy && displayStats.vSynergy !== "N/A" ? (
-                    <p className="text-[15px] font-extrabold text-[#241C17] leading-tight truncate">{displayStats.vSynergy.split(',')[0]}</p>
-                  ) : (
-                    <p className="text-[15px] font-semibold text-[#8A6A57]/70 italic">Find a partner</p>
-                  )
-                )}
-                <Handshake size={21} style={{ color: '#9A85C9' }} className="shrink-0" />
+            {/* 4. Co-Sevak — a Sevak's own most-frequent partner; not meaningful
+                for an Admin (who already sees Total Sevaks elsewhere), so
+                hidden there instead of showing a redundant sevak count. */}
+            {currentUser.role !== UserRole.ORG_ADMIN && (
+              <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#F1EAFB', animationDelay: '120ms' }}>
+                <div className="flex items-start justify-between gap-2">
+                  {isLoading ? <SkeletonLoader /> : (
+                    displayStats.vSynergy && displayStats.vSynergy !== "N/A" ? (
+                      <p className="text-[15px] font-extrabold text-[#241C17] leading-tight truncate">{displayStats.vSynergy.split(',')[0]}</p>
+                    ) : (
+                      <p className="text-[15px] font-semibold text-[#8A6A57]/70 italic">Find a partner</p>
+                    )
+                  )}
+                  <Handshake size={21} style={{ color: '#9A85C9' }} className="shrink-0" />
+                </div>
+                <p className="mt-1 text-xs font-semibold text-[#6B4FAE]">Co-Sevak</p>
               </div>
-              <p className="mt-1 text-xs font-semibold text-[#6B4FAE]">Co-Sevak</p>
-            </div>
+            )}
           </div>
 
           {/* Secondary stats — Rank / Streak / Total Sevaks / Active Sevaks (kept from existing dashboard, not in the pilot mock but not removed) */}
@@ -1291,8 +1293,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           <div className="bg-white rounded-[22px] p-5 flex flex-col gap-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
             <div className="flex items-center justify-between">
               <p className="m-0 text-sm font-bold text-[#241C17]">Recent Activity</p>
-              {navigateToNotifications && (
-                <button onClick={navigateToNotifications} className="text-[12.5px] font-bold text-saffron-600 hover:text-saffron-700">
+              {navigateToEntries && (
+                <button onClick={navigateToEntries} className="text-[12.5px] font-bold text-saffron-600 hover:text-saffron-700">
                   View all Vihars
                 </button>
               )}
