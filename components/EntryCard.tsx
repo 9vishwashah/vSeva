@@ -24,8 +24,29 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
             // html2canvas (~200KB) is only needed for this on-demand share action —
             // load it when actually used instead of on every entries page visit.
             const { default: html2canvas } = await import('html2canvas');
-            // Wait for fonts/styles
-            await new Promise(r => setTimeout(r, 100));
+
+            // isSharing switches Sevaks Present from a horizontal scroller to a
+            // wrapped, fully-visible layout and reveals the branding footer —
+            // both only for the capture, never for normal on-screen browsing.
+            // Capturing before that reflow/paint actually settles is exactly
+            // what was dragging text down / distorting the shared image, so
+            // wait two frames for it, then for any sevak avatar photos to
+            // finish loading (or fail) before handing the DOM to html2canvas.
+            await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+            if (cardRef.current) {
+                const imgs = Array.from(cardRef.current.querySelectorAll<HTMLImageElement>('img'));
+                await Promise.race([
+                    Promise.all(imgs.map((img: HTMLImageElement) => img.complete
+                        ? Promise.resolve()
+                        : new Promise<void>(res => {
+                            img.addEventListener('load', () => res(), { once: true });
+                            img.addEventListener('error', () => res(), { once: true });
+                        })
+                    )),
+                    new Promise(res => setTimeout(res, 1200)),
+                ]);
+            }
+            await new Promise(r => setTimeout(r, 80));
 
             const canvas = await html2canvas(cardRef.current, {
                 scale: 2, // Retain quality
@@ -78,24 +99,21 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                     <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wide" style={{ color: '#B5602C' }}>{new Date(`${entry.vihar_date}T00:00:00`).toLocaleString('default', { month: 'short' })}</p>
                 </div>
 
-                {/* Route + Type pill */}
-                <div className="flex items-center gap-2 flex-wrap pr-14 mb-3">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[15px] font-extrabold text-[#241C17] truncate">{entry.vihar_from}</span>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B7B7AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                        <span className="text-[15px] font-extrabold text-[#241C17] truncate">{entry.vihar_to}</span>
-                    </div>
+                {/* Route — its own line, full width (no pill sharing the line
+                    and truncating it) */}
+                <div className="flex items-center gap-1.5 min-w-0 pr-14 mb-1.5">
+                    <span className="text-[15px] font-extrabold text-[#241C17] truncate">{entry.vihar_from}</span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B7B7AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                    <span className="text-[15px] font-extrabold text-[#241C17] truncate">{entry.vihar_to}</span>
+                </div>
+
+                {/* Type + status — own line below the route */}
+                <div className="flex items-center gap-1.5 flex-wrap mb-3">
                     <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-full" style={{ background: '#FFF0E5', color: '#B5602C' }}>
                         {entry.vihar_type}
                     </span>
-                    {(entry.group_sadhu || entry.group_sadhvi || entry.status === 'pending' || entry.status === 'rejected') && (
-                        <div className="flex gap-1 flex-wrap">
-                            {entry.group_sadhu && <span className="text-[10px] text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded">Sadhu</span>}
-                            {entry.group_sadhvi && <span className="text-[10px] text-pink-600 font-bold bg-pink-50 px-1.5 py-0.5 rounded">Sadhvi</span>}
-                            {entry.status === 'pending' && <span className="text-[10px] text-orange-700 font-bold bg-orange-100 px-1.5 py-0.5 rounded uppercase">Pending Captain Approval</span>}
-                            {entry.status === 'rejected' && <span className="text-[10px] text-red-700 font-bold bg-red-100 px-1.5 py-0.5 rounded uppercase">Rejected</span>}
-                        </div>
-                    )}
+                    {entry.status === 'pending' && <span className="text-[10px] text-orange-700 font-bold bg-orange-100 px-1.5 py-0.5 rounded uppercase">Pending Captain Approval</span>}
+                    {entry.status === 'rejected' && <span className="text-[10px] text-red-700 font-bold bg-red-100 px-1.5 py-0.5 rounded uppercase">Rejected</span>}
                 </div>
 
                 {/* Stats chips */}
@@ -114,16 +132,21 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                     </div>
                 </div>
 
-                {/* Sevaks List — wraps onto multiple lines so every sevak is
-                    actually visible/captured (a scrolling row would crop
-                    whoever's past the visible width out of the shared image). */}
+                {/* Sevaks List — a horizontal scroller for normal on-screen
+                    browsing (mobile-friendly, compact), but wraps onto
+                    multiple lines only while isSharing so every sevak is
+                    actually visible/captured in the shared image instead of
+                    being cropped past the visible width. */}
                 <div className="mb-2">
                     <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8A6A57]">Sevaks Present</p>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div
+                        className={isSharing ? 'flex flex-wrap gap-1.5' : 'flex flex-nowrap gap-1.5 overflow-x-auto pb-1'}
+                        style={isSharing ? undefined : { scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
                         {(entry.sevaks || []).map((u, i) => {
                             const info = getSevakInfo(u);
                             return (
-                                <div key={i} className="flex flex-col items-center gap-0.5">
+                                <div key={i} className="shrink-0 flex flex-col items-center gap-0.5">
                                     <span className="flex items-center gap-1.5 text-[11px] pl-0.5 pr-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: '#F7F4F0', color: '#241C17' }}>
                                         <Avatar name={info.name} url={info.avatar_url} size={20} className="text-[9px]" />
                                         {info.name}
@@ -167,11 +190,14 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                     </div>
                 )}
 
-                {/* Branding Footer for Image Share */}
-                <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center opacity-70">
-                    <div className="text-[10px] font-bold text-saffron-600 uppercase tracking-widest">vSeva App</div>
-                    <div className="text-[8px] text-gray-400">Track. Serve. Inspire.</div>
-                </div>
+                {/* Branding footer — only for the shared image, not the
+                    normal on-screen card. */}
+                {isSharing && (
+                    <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center opacity-70">
+                        <div className="text-[10px] font-bold text-saffron-600 uppercase tracking-widest">vSeva App</div>
+                        <div className="text-[8px] text-gray-400">Track. Serve. Inspire.</div>
+                    </div>
+                )}
             </div>
 
             {/* Footer: Edit/Delete only (Share moved under Sevaks Present, above) */}
