@@ -1,9 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { Search, MapPin, Plus, Map as MapIcon, List as ListIcon, Users, Landmark, Home, Utensils, BookOpen, LayoutGrid } from 'lucide-react';
 import { directoryService } from '../services/directoryService';
 import { DirectoryListing } from '../types';
 import ListingCard from '../components/directory/ListingCard';
-import DirectoryMap from '../components/directory/DirectoryMap';
+
+// maplibre-gl (~800KB) is deferred into its own chunk so it loads in
+// parallel with/after the page shell instead of blocking this page's
+// initial parse — the list (the primary content on mobile) can render
+// and become interactive before the map finishes downloading.
+const DirectoryMap = React.lazy(() => import('../components/directory/DirectoryMap'));
 import ShareButton from '../components/directory/ShareButton';
 import StatusScreen from '../components/StatusScreen';
 import Skeleton from '../components/Skeleton';
@@ -163,7 +168,9 @@ const Directory: React.FC<DirectoryProps> = ({ onNavigate }) => {
 
           {/* Map */}
           <div className={`${mobileView === 'list' ? 'hidden md:block' : ''} sticky top-[168px] h-[calc(100vh-200px)] rounded-2xl overflow-hidden border border-gray-100 shadow-sm`}>
-            <DirectoryMap listings={filtered} selectedId={selectedId} onSelect={setSelectedId} />
+            <Suspense fallback={<div className="w-full h-full bg-gray-50 animate-pulse" />}>
+              <DirectoryMap listings={filtered} selectedId={selectedId} onSelect={setSelectedId} />
+            </Suspense>
           </div>
         </div>
       </div>

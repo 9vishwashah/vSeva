@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { MapPin, Loader2, CheckCircle2, AlertTriangle, Image as ImageIcon, X } from 'lucide-react';
 import { DirectoryCardFields, DirectoryListing, DirectoryTrustee, DirectoryMemberContact, DirectoryRoute, DirectoryPhoto } from '../../types';
 import { directoryService } from '../../services/directoryService';
 import { useToast } from '../../context/ToastContext';
 import RepeaterField from './RepeaterField';
-import DirectoryMap from './DirectoryMap';
+
+// maplibre-gl (~800KB) only matters once a location has actually been
+// resolved (see the latitude/longitude guard below) — lazy so it never
+// loads on simple/laptop connections just to open this form.
+const DirectoryMap = React.lazy(() => import('./DirectoryMap'));
 
 const emptyFields = (): DirectoryCardFields => ({
   name: '',
@@ -308,10 +312,12 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
         )}
         {fields.latitude != null && fields.longitude != null && (
           <div className="mb-3 rounded-xl overflow-hidden border border-gray-100">
-            <DirectoryMap
-              listings={[{ id: 'preview', slug: 'preview', latitude: fields.latitude, longitude: fields.longitude, status: 'approved', created_at: '', updated_at: '', name: fields.name || 'Location', trustees: [], member_contacts: [], routes: [], photos: [], contact_phone_public: false } as any]}
-              height={180}
-            />
+            <Suspense fallback={<div style={{ height: 180 }} className="bg-gray-50 animate-pulse" />}>
+              <DirectoryMap
+                listings={[{ id: 'preview', slug: 'preview', latitude: fields.latitude, longitude: fields.longitude, status: 'approved', created_at: '', updated_at: '', name: fields.name || 'Location', trustees: [], member_contacts: [], routes: [], photos: [], contact_phone_public: false } as any]}
+                height={180}
+              />
+            </Suspense>
             <p className="text-[11px] text-gray-400 px-3 py-1.5 bg-gray-50">
               ✓ Location detected — Lat: {fields.latitude.toFixed(5)}, Lng: {fields.longitude.toFixed(5)}
             </p>

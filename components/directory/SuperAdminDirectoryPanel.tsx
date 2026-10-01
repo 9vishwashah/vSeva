@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { Clock, User, Phone, Check, X, ClipboardList, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import { directoryService } from '../../services/directoryService';
 import { DirectorySubmission, DirectoryChangeRequest, DirectoryCardFields, DirectoryListing } from '../../types';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../Modal';
-import DirectoryMap from './DirectoryMap';
+
+// maplibre-gl (~800KB) only matters inside the review modal — deferred so
+// opening the admin panel's pending-queue list doesn't pay for it upfront.
+const DirectoryMap = React.lazy(() => import('./DirectoryMap'));
 import DirectoryListingForm from './DirectoryListingForm';
 import { getListingTags } from './listingTags';
 
@@ -274,7 +277,9 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
 
             {reviewSubmission.latitude != null && reviewSubmission.longitude != null && (
               <div className="rounded-xl overflow-hidden border border-gray-100 mb-4">
-                <DirectoryMap listings={[{ ...reviewSubmission, id: 'preview', slug: 'preview', status: 'approved', updated_at: reviewSubmission.created_at } as any]} height={160} />
+                <Suspense fallback={<div style={{ height: 160 }} className="bg-gray-50 animate-pulse" />}>
+                  <DirectoryMap listings={[{ ...reviewSubmission, id: 'preview', slug: 'preview', status: 'approved', updated_at: reviewSubmission.created_at } as any]} height={160} />
+                </Suspense>
               </div>
             )}
 

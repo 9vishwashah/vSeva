@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { ChevronLeft, MapPin, Navigation, CheckCircle2, Globe, Clock, Pencil, Users, Home, Utensils, BookOpen } from 'lucide-react';
 import { directoryService } from '../services/directoryService';
 import { DirectoryListing, DirectoryCardFields } from '../types';
-import DirectoryMap from '../components/directory/DirectoryMap';
+
+// maplibre-gl (~800KB) is deferred so the listing's text/contact info can
+// render and become interactive before the map (below the fold on most
+// screens) finishes downloading.
+const DirectoryMap = React.lazy(() => import('../components/directory/DirectoryMap'));
 import ShareButton from '../components/directory/ShareButton';
 import ContactActionButtons from '../components/ContactActionButtons';
 import Modal from '../components/Modal';
@@ -153,7 +157,9 @@ const DirectoryListingDetail: React.FC<DirectoryListingDetailProps> = ({ slug, o
 
         {listing.latitude != null && listing.longitude != null && (
           <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-            <DirectoryMap listings={[listing]} height={220} />
+            <Suspense fallback={<div style={{ height: 220 }} className="bg-gray-50 animate-pulse" />}>
+              <DirectoryMap listings={[listing]} height={220} />
+            </Suspense>
             <button
               onClick={() => openInGoogleMaps(listing.google_maps_url, listing.latitude, listing.longitude)}
               className="w-full flex items-center justify-center gap-2 py-3 bg-white hover:bg-gray-50 text-saffron-700 font-bold text-sm border-t border-gray-100"
