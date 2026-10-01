@@ -8,10 +8,7 @@ import {
     Download, FileText
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
-import { NotoSansDevanagariBase64 } from '../assets/NotoSansDevanagari-Regular';
 import StatusScreen from '../components/StatusScreen';
 import SuperAdminDirectoryPanel from '../components/directory/SuperAdminDirectoryPanel';
 import { deliverPdf } from '../services/pdfDelivery';
@@ -145,14 +142,28 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
     };
 
     // PDF Generation
-    const downloadAllRequestsPDF = () => {
+    const downloadAllRequestsPDF = async () => {
         if (requests.length === 0) {
             showToast("No pending requests to download", "info");
             return;
         }
 
+        // jsPDF + autoTable (~420KB) and the Devanagari font data (~290KB) are
+        // only needed for this export action — load on demand instead of
+        // bundling them into this page's chunk, which every Super Admin pays
+        // for just to open the dashboard.
+        const [
+            { default: jsPDF },
+            { default: autoTable },
+            { NotoSansDevanagariBase64 },
+        ] = await Promise.all([
+            import('jspdf'),
+            import('jspdf-autotable'),
+            import('../assets/NotoSansDevanagari-Regular'),
+        ]);
+
         const doc = new jsPDF();
-        
+
         // Add Devanagari font support
         doc.addFileToVFS('NotoSansDevanagari-Regular.ttf', NotoSansDevanagariBase64);
         doc.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
