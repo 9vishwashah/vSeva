@@ -41,9 +41,22 @@ build/
 android/.gradle/
 android/build/
 android/app/build/
+android-twa/app/build/
+android-twa/app/.gradle/
 
 # Java / JDK
 jdk-link/
+
+# PWA dev build output (vite-plugin-pwa)
+dev-dist/
+
+# Secrets — never commit real keys; only *.example templates
+vapid.json
+
+# Ad-hoc debug/output dumps
+output.txt
+output-utf8.txt
+*_out.json
 
 # Netlify
 .netlify/

@@ -55,8 +55,9 @@ async function rawHandler(event) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        let created = 0;
-
+        // Figure out, in memory, which sevaks are due a nudge and at what tier —
+        // no DB calls in this loop.
+        const candidates = [];
         for (const sevak of sevaks) {
             const lastDate = lastViharByUsername[sevak.username];
             if (!lastDate) continue; // never done a Vihar — not what this specific reminder is for
@@ -65,30 +66,49 @@ async function rawHandler(event) {
             const tier = TIERS.find(t => daysSince >= t);
             if (!tier) continue;
 
-            // Already nudged at this tier and still unread — don't spam a duplicate.
-            const { data: existing } = await supabaseAdmin
-                .from('notifications')
-                .select('id')
-                .eq('user_id', sevak.id)
-                .eq('type', 'inactivity')
-                .eq('is_read', false)
-                .contains('payload', { tier })
-                .limit(1);
-            if (existing && existing.length > 0) continue;
-
-            const { error: insertError } = await supabaseAdmin.from('notifications').insert({
-                user_id: sevak.id,
-                organization_id: orgId,
-                type: 'inactivity',
-                title: `No Vihar Since ${daysSince} Days`,
-                message: 'Kindly Join In Seva',
-                payload: { tier, days_since: daysSince },
-                is_read: false,
-            });
-            if (!insertError) created++;
+            candidates.push({ sevak, tier, daysSince });
         }
 
-        return { statusCode: 200, body: JSON.stringify({ created }) };
+        if (candidates.length === 0) {
+            return { statusCode: 200, body: JSON.stringify({ created: 0 }) };
+        }
+
+        // One batched fetch (instead of one query per candidate) of every unread
+        // inactivity notification already sitting in any candidate's inbox, so we
+        // can skip re-nudging someone already nudged at the same tier.
+        const { data: existingNotifs, error: existingError } = await supabaseAdmin
+            .from('notifications')
+            .select('user_id, payload')
+            .in('user_id', candidates.map(c => c.sevak.id))
+            .eq('type', 'inactivity')
+            .eq('is_read', false);
+        if (existingError) throw existingError;
+
+        const alreadyNudgedAtTier = new Set(
+            (existingNotifs || []).map(n => `${n.user_id}:${n.payload?.tier}`)
+        );
+
+        const rowsToInsert = candidates
+            .filter(c => !alreadyNudgedAtTier.has(`${c.sevak.id}:${c.tier}`))
+            .map(c => ({
+                user_id: c.sevak.id,
+                organization_id: orgId,
+                type: 'inactivity',
+                title: `No Vihar Since ${c.daysSince} Days`,
+                message: 'Kindly Join In Seva',
+                payload: { tier: c.tier, days_since: c.daysSince },
+                is_read: false,
+            }));
+
+        if (rowsToInsert.length === 0) {
+            return { statusCode: 200, body: JSON.stringify({ created: 0 }) };
+        }
+
+        // One batched insert instead of one per sevak.
+        const { error: insertError } = await supabaseAdmin.from('notifications').insert(rowsToInsert);
+        if (insertError) throw insertError;
+
+        return { statusCode: 200, body: JSON.stringify({ created: rowsToInsert.length }) };
     } catch (err) {
         console.error(err);
         return { statusCode: 500, body: JSON.stringify({ error: err.message || 'Internal Server Error' }) };
