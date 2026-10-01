@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
+import UpdateAppBanner from './components/UpdateAppBanner';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationClick } from './services/oneSignalService';
 import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
 import StatusScreen from './components/StatusScreen';
@@ -578,6 +579,7 @@ const App: React.FC = () => {
         )}
       </Layout>
       </ViharYearProvider>
+      <UpdateAppBanner />
     </React.Suspense>
   );
 };
