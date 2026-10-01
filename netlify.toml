@@ -47,3 +47,11 @@
   for = "/registerSW.js"
   [headers.values]
     Cache-Control = "no-cache"
+
+# Vite content-hashes every filename under /assets/ — if the content
+# changes, so does the URL, so caching forever in the browser is safe and
+# never serves stale content.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
