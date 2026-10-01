@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2, MapPin, X, Navigation, Phone, Search } from 'lucide-react';
-import { fnUrl } from '../services/apiBase';
+import { callFn } from '../services/apiBase';
 
 interface Place {
     name: string;
@@ -33,9 +33,11 @@ export const JainTempleFinder: React.FC = () => {
 
     const fetchTemples = async (lat: number, lng: number) => {
         try {
-            const response = await fetch(`${fnUrl('nearby')}?lat=${lat}&lng=${lng}&type=jain_temple`);
-            if (!response.ok) throw new Error('Failed to fetch nearby temples');
-            const data = await response.json();
+            const data = await callFn<{ places?: Place[] }>('nearby', {
+                method: 'GET',
+                query: { lat, lng, type: 'jain_temple' },
+                retry: true,
+            });
             return data.places || [];
         } catch (err) {
             console.error(err);

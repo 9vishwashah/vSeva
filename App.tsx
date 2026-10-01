@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './services/supabase';
 import { UserRole, UserProfile, ViharEntry, Organization } from './types';
 import { dataService } from './services/dataService';
+import { clearAll as clearRequestCache } from './services/requestCache';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
@@ -356,6 +357,7 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     logoutFromOneSignal();
+    clearRequestCache(); // never let the next person to use this device/browser see a leftover cached response
     setUser(null);
     setOrgDetails(null);
     sessionStorage.removeItem('hasSeenCompletenessPrompt');

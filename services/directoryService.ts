@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import { fnUrl } from './apiBase';
+import { callFn } from './apiBase';
+import { getCached, invalidate } from './requestCache';
 import {
   DirectoryListing,
   DirectorySubmission,
@@ -27,30 +28,34 @@ export const directoryService = {
   // pushing each filter down to its own query is worth the complexity. ---
 
   async getApprovedListings(): Promise<DirectoryListing[]> {
-    const { data, error } = await supabase
-      .from('directory_listings')
-      .select(LISTING_COLUMNS)
-      .order('created_at', { ascending: false })
-      .limit(500);
-    if (error) {
-      console.error('Failed to load directory listings', error);
-      throw error;
-    }
-    return (data || []) as DirectoryListing[];
+    return getCached('directoryListings:approved', async () => {
+      const { data, error } = await supabase
+        .from('directory_listings')
+        .select(LISTING_COLUMNS)
+        .order('created_at', { ascending: false })
+        .limit(500);
+      if (error) {
+        console.error('Failed to load directory listings', error);
+        throw error;
+      }
+      return (data || []) as DirectoryListing[];
+    }, 60_000); // directory entries change rarely — 1 minute is safe
   },
 
   async getListingBySlug(slug: string): Promise<DirectoryListing | null> {
-    const { data, error } = await supabase
-      .from('directory_listings')
-      .select(LISTING_COLUMNS)
-      .eq('slug', slug)
-      .maybeSingle();
+    return getCached(`directoryListing:${slug}`, async () => {
+      const { data, error } = await supabase
+        .from('directory_listings')
+        .select(LISTING_COLUMNS)
+        .eq('slug', slug)
+        .maybeSingle();
 
-    if (error) {
-      console.error('Failed to load listing', error);
-      throw error;
-    }
-    return data as DirectoryListing | null;
+      if (error) {
+        console.error('Failed to load listing', error);
+        throw error;
+      }
+      return data as DirectoryListing | null;
+    }, 60_000);
   },
 
   // A lightweight, non-AI duplicate check: same-ish name nearby. Only ever
@@ -75,15 +80,7 @@ export const directoryService = {
   // reverse-geocodes via free/keyless Nominatim — see resolve-location.js) ---
 
   async resolveGoogleMapsLink(url: string): Promise<ResolvedLocation> {
-    const res = await fetch(fnUrl('resolve-location'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
-    });
-    if (!res.ok) {
-      throw new Error('Could not resolve location');
-    }
-    return res.json();
+    return callFn<ResolvedLocation>('resolve-location', { body: { url } });
   },
 
   // --- Photo uploads — public bucket, same shape as avatars/incident-reports ---
@@ -161,6 +158,7 @@ export const directoryService = {
       p_overrides: overrides,
     });
     if (error) throw error;
+    invalidate('directoryListing');
     return data as DirectoryListing;
   },
 
@@ -182,6 +180,7 @@ export const directoryService = {
       p_overrides: overrides,
     });
     if (error) throw error;
+    invalidate('directoryListing');
     return data as DirectoryListing;
   },
 
@@ -204,6 +203,7 @@ export const directoryService = {
       p_fields: fields,
     });
     if (error) throw error;
+    invalidate('directoryListing');
     return data as DirectoryListing;
   },
 
@@ -213,5 +213,6 @@ export const directoryService = {
       p_admin_id: adminId,
     });
     if (error) throw error;
+    invalidate('directoryListing');
   },
 };

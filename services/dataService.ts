@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import { fnUrl } from './apiBase';
+import { callFn } from './apiBase';
+import { getCached, invalidate, clearAll } from './requestCache';
 import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary, Organization, ContactNumber, IncidentReport } from '../types';
 
 
@@ -8,55 +9,61 @@ export const dataService = {
   // --- Profiles & Sevaks ---
 
   async getProfile(userId: string): Promise<UserProfile | null> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at')
-      .eq('id', userId)
-      .single();
+    return getCached(`profile:${userId}`, async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at')
+        .eq('id', userId)
+        .single();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return null;
-    }
-    return data as UserProfile;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      return data as UserProfile;
+    }, 30_000);
   },
 
   // Fetched separately from getProfile (not on the login-critical path) since it
   // needs scripts/add_yearly_goal.sql run first. Falls back to 25 if that
   // migration hasn't been applied yet, or on any other error.
   async getYearlyGoal(userId: string): Promise<number> {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('yearly_goal')
-        .eq('id', userId)
-        .single();
-      if (!error && data && typeof (data as any).yearly_goal === 'number') {
-        return (data as any).yearly_goal;
+    return getCached(`yearlyGoal:${userId}`, async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('yearly_goal')
+          .eq('id', userId)
+          .single();
+        if (!error && data && typeof (data as any).yearly_goal === 'number') {
+          return (data as any).yearly_goal;
+        }
+      } catch {
+        // ignore — column likely doesn't exist yet
       }
-    } catch {
-      // ignore — column likely doesn't exist yet
-    }
-    return 25;
+      return 25;
+    }, 60_000);
   },
 
   // Same defensive pattern as getYearlyGoal — fetched separately from
   // getProfile so a missing scripts/add_avatar_url.sql migration can never
   // break login. Returns null (→ initials fallback) on any error.
   async getAvatarUrl(userId: string): Promise<string | null> {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', userId)
-        .single();
-      if (!error && data && typeof (data as any).avatar_url === 'string') {
-        return (data as any).avatar_url;
+    return getCached(`avatarUrl:${userId}`, async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', userId)
+          .single();
+        if (!error && data && typeof (data as any).avatar_url === 'string') {
+          return (data as any).avatar_url;
+        }
+      } catch {
+        // ignore — column/bucket likely doesn't exist yet
       }
-    } catch {
-      // ignore — column/bucket likely doesn't exist yet
-    }
-    return null;
+      return null;
+    }, 60_000);
   },
 
   async uploadAvatar(userId: string, file: File): Promise<string> {
@@ -77,79 +84,74 @@ export const dataService = {
       .eq('id', userId);
     if (updateError) throw updateError;
 
+    invalidate(userId);
     return publicUrl;
   },
 
   async getPublicProfile(username: string): Promise<Partial<UserProfile> | null> {
-    // 1. Attempt RPC first (bypasses RLS for unauthenticated QR code scans)
-    const { data: rpcData, error: rpcError } = await supabase.rpc('get_public_sevak_profile', { p_username: username });
-    
-    if (!rpcError && rpcData && rpcData.length > 0) {
-       return rpcData[0];
-    }
+    return getCached(`publicProfile:${username}`, async () => {
+      // 1. Attempt RPC first (bypasses RLS for unauthenticated QR code scans)
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_public_sevak_profile', { p_username: username });
 
-    // 2. Fallback if RPC isn't deployed yet (works if logged in, but fails for public scans due to RLS)
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('full_name, organization_id, is_active, blood_group, mobile, emergency_number, address, gender, role')
-      .eq('username', username)
-      .single();
+      if (!rpcError && rpcData && rpcData.length > 0) {
+         return rpcData[0];
+      }
 
-    if (error) {
-      console.warn("Could not fetch public profile:", error.message);
-      return null;
-    }
-    return data;
+      // 2. Fallback if RPC isn't deployed yet (works if logged in, but fails for public scans due to RLS)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, organization_id, is_active, blood_group, mobile, emergency_number, address, gender, role')
+        .eq('username', username)
+        .single();
+
+      if (error) {
+        console.warn("Could not fetch public profile:", error.message);
+        return null;
+      }
+      return data;
+    }, 30_000);
   },
 
   async getOrganization(orgId: string): Promise<Organization | null> {
-    const { data, error } = await supabase
-      .from('organizations')
-      .select('id, name, city, town, created_by, vice_captain_name')
-      .eq('id', orgId)
-      .single();
+    return getCached(`org:${orgId}`, async () => {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id, name, city, town, created_by, vice_captain_name')
+        .eq('id', orgId)
+        .single();
 
-    if (!error) return data as Organization;
+      if (!error) return data as Organization;
 
-    // town/vice_captain_name need scripts/add_vice_captain_name.sql run first —
-    // fall back to the original narrow select rather than breaking org name/city
-    // everywhere until the migration runs.
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('organizations')
-      .select('id, name, city, created_by')
-      .eq('id', orgId)
-      .single();
+      // town/vice_captain_name need scripts/add_vice_captain_name.sql run first —
+      // fall back to the original narrow select rather than breaking org name/city
+      // everywhere until the migration runs.
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('organizations')
+        .select('id, name, city, created_by')
+        .eq('id', orgId)
+        .single();
 
-    if (fallbackError) {
-      console.warn("Could not fetch org details:", fallbackError.message);
-      return null;
-    }
-    return fallbackData as Organization;
+      if (fallbackError) {
+        console.warn("Could not fetch org details:", fallbackError.message);
+        return null;
+      }
+      return fallbackData as Organization;
+    }, 60_000);
   },
 
   async updateOrgLeadership(updates: { captainName?: string; viceCaptainName?: string }): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) throw new Error('Admin session required. Please login again.');
 
-    const response = await fetch(fnUrl('update-org-leadership'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify(updates),
-    });
-
-    if (!response.ok) {
-      let message = 'Failed to update organization details.';
-      try {
-        const err = await response.json();
-        message = err.error || message;
-      } catch {
-        // response body wasn't JSON (e.g. empty) — keep the generic message
-      }
-      throw new Error(message);
+    try {
+      await callFn('update-org-leadership', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: updates,
+      });
+    } catch (e: any) {
+      throw new Error(e?.message || 'Failed to update organization details.');
     }
+    clearAll(); // no orgId in scope here — this is a rare admin action, a full clear is cheap
   },
 
   // Fire-and-forget: scans for sevaks with no Vihar in 5/7/15+ days and creates
@@ -157,85 +159,80 @@ export const dataService = {
   // `username` to check just one sevak (their own dashboard), omit it to scan
   // the whole org (the Captain's dashboard).
   checkInactivity(orgId: string, username?: string): void {
-    fetch(fnUrl('check-inactivity'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orgId, username }),
-    }).catch(e => console.warn('Inactivity check failed:', e));
+    callFn('check-inactivity', { body: { orgId, username } })
+      .catch(e => console.warn('Inactivity check failed:', e));
   },
 
   async getOrgSevaks(orgId: string): Promise<UserProfile[]> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at, avatar_url')
-      .eq('organization_id', orgId)
-      .eq('role', 'sevak')
-      .eq('is_active', true);
+    return getCached(`orgSevaks:${orgId}`, async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at, avatar_url')
+        .eq('organization_id', orgId)
+        .eq('role', 'sevak')
+        .eq('is_active', true);
 
-    if (!error) return data as UserProfile[];
+      if (!error) return data as UserProfile[];
 
-    // avatar_url needs scripts/add_avatar_url.sql run first — fall back to the
-    // original select rather than breaking the whole Organization Members list.
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('profiles')
-      .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at')
-      .eq('organization_id', orgId)
-      .eq('role', 'sevak')
-      .eq('is_active', true);
+      // avatar_url needs scripts/add_avatar_url.sql run first — fall back to the
+      // original select rather than breaking the whole Organization Members list.
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('profiles')
+        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at')
+        .eq('organization_id', orgId)
+        .eq('role', 'sevak')
+        .eq('is_active', true);
 
-    if (fallbackError) throw fallbackError;
-    return fallbackData as UserProfile[];
+      if (fallbackError) throw fallbackError;
+      return fallbackData as UserProfile[];
+    }, 30_000);
   },
 
   async getAllOrgUsers(orgId: string, includeInactive: boolean = false): Promise<UserProfile[]> {
-    let query = supabase
-      .from('profiles')
-      .select('*')
-      .eq('organization_id', orgId);
+    return getCached(`allOrgUsers:${orgId}:${includeInactive}`, async () => {
+      let query = supabase
+        .from('profiles')
+        .select('*')
+        .eq('organization_id', orgId);
 
-    if (!includeInactive) {
-      query = query.eq('is_active', true);
-    }
+      if (!includeInactive) {
+        query = query.eq('is_active', true);
+      }
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return data as UserProfile[];
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as UserProfile[];
+    }, 30_000);
   },
 
   async getOrgActivityStats(): Promise<{ org_id: string; org_name: string; city: string; created_at: string; total_sevaks: number; total_entries: number; last_updated: string | null }[]> {
-    const { data, error } = await supabase.rpc('get_org_activity_stats');
-    
-    if (error) {
-      console.error("Error fetching org activity stats:", error);
-      return [];
-    }
-    return data || [];
+    return getCached('orgActivityStats', async () => {
+      const { data, error } = await supabase.rpc('get_org_activity_stats');
+
+      if (error) {
+        console.error("Error fetching org activity stats:", error);
+        return [];
+      }
+      return data || [];
+    }, 30_000);
   },
 
   async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string; state: string; yearly_goal?: number }>> {
     const map: Record<string, { full_name: string; mobile: string; town: string; state: string; yearly_goal?: number }> = {};
     if (!orgIds || orgIds.length === 0) return map;
 
+    const cacheKey = `orgAdmins:${[...orgIds].sort().join(',')}`;
     try {
-      const response = await fetch(fnUrl('get-org-admins'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orgIds })
+      const data = await getCached(cacheKey, () => callFn<any[]>('get-org-admins', { body: { orgIds }, retry: true }), 30_000);
+      (data || []).forEach((p: any) => {
+        map[p.organization_id] = {
+          full_name: p.full_name,
+          mobile: p.mobile,
+          town: p.town || '',
+          state: p.state || '',
+          yearly_goal: typeof p.yearly_goal === 'number' ? p.yearly_goal : undefined
+        };
       });
-      if (response.ok) {
-        const data = await response.json();
-        (data || []).forEach((p: any) => {
-          map[p.organization_id] = {
-            full_name: p.full_name,
-            mobile: p.mobile,
-            town: p.town || '',
-            state: p.state || '',
-            yearly_goal: typeof p.yearly_goal === 'number' ? p.yearly_goal : undefined
-          };
-        });
-      } else {
-        console.warn("Failed to fetch org admins:", response.statusText);
-      }
     } catch (e) {
       console.error("Error fetching org admins:", e);
     }
@@ -243,66 +240,49 @@ export const dataService = {
   },
 
   async getDashboardStats(orgId: string) {
-    const response = await fetch(fnUrl('get-dashboard-stats'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orgId })
-    });
-    if (!response.ok) {
-      throw new Error("Failed to fetch dashboard stats");
-    }
-    return response.json();
+    return getCached(`dashboardStats:${orgId}`, async () => {
+      try {
+        return await callFn('get-dashboard-stats', { body: { orgId }, retry: true });
+      } catch (e: any) {
+        throw new Error(e?.message || "Failed to fetch dashboard stats");
+      }
+    }, 20_000);
   },
 
   async getSevakNameMap(orgId: string): Promise<Record<string, string>> {
-    try {
-      const response = await fetch(fnUrl('get-sevak-names'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orgId })
-      });
-      if (response.ok) {
-        return await response.json();
+    return getCached(`sevakNameMap:${orgId}`, async () => {
+      try {
+        return await callFn<Record<string, string>>('get-sevak-names', { body: { orgId }, retry: true });
+      } catch (e) {
+        console.warn("Failed to fetch secure sevak name config via serverless");
+        return {};
       }
-    } catch (e) {
-      console.warn("Failed to fetch secure sevak name config via serverless");
-    }
-    return {};
+    }, 60_000);
   },
 
   // Username -> avatar_url, same shape/scope as getSevakNameMap. Kept separate
   // so callers of getSevakNameMap (which expect plain string values) are
   // never affected by adding this.
   async getSevakAvatarMap(orgId: string): Promise<Record<string, string>> {
-    try {
-      const response = await fetch(fnUrl('get-sevak-avatars'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orgId })
-      });
-      if (response.ok) {
-        return await response.json();
+    return getCached(`sevakAvatarMap:${orgId}`, async () => {
+      try {
+        return await callFn<Record<string, string>>('get-sevak-avatars', { body: { orgId }, retry: true });
+      } catch (e) {
+        console.warn("Failed to fetch secure sevak avatar map via serverless");
+        return {};
       }
-    } catch (e) {
-      console.warn("Failed to fetch secure sevak avatar map via serverless");
-    }
-    return {};
+    }, 60_000);
   },
 
   async getOrgSevakContacts(orgId: string): Promise<Record<string, { full_name: string; mobile: string; avatar_url?: string | null; role?: string; is_active?: boolean }>> {
-    try {
-      const response = await fetch(fnUrl('get-org-sevak-contacts'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orgId })
-      });
-      if (response.ok) {
-        return await response.json();
+    return getCached(`orgSevakContacts:${orgId}`, async () => {
+      try {
+        return await callFn<Record<string, any>>('get-org-sevak-contacts', { body: { orgId }, retry: true });
+      } catch (e) {
+        console.warn("Failed to fetch secure sevak contacts via serverless");
+        return {};
       }
-    } catch (e) {
-      console.warn("Failed to fetch secure sevak contacts via serverless");
-    }
-    return {};
+    }, 30_000);
   },
 
   // profiles has no "same org" SELECT policy — a Sevak's session can only read
@@ -310,19 +290,14 @@ export const dataService = {
   // can still search/select org-mates by name; returns only username/full_name/
   // gender (never mobile/blood group/emergency contact/address).
   async getOrgRoster(orgId: string, includeInactive: boolean = false): Promise<Pick<UserProfile, 'username' | 'full_name' | 'gender' | 'avatar_url'>[]> {
-    try {
-      const response = await fetch(fnUrl('get-org-roster'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orgId, includeInactive })
-      });
-      if (response.ok) {
-        return await response.json();
+    return getCached(`orgRoster:${orgId}:${includeInactive}`, async () => {
+      try {
+        return await callFn<any[]>('get-org-roster', { body: { orgId, includeInactive }, retry: true });
+      } catch (e) {
+        console.warn("Failed to fetch org roster via serverless");
+        return [];
       }
-    } catch (e) {
-      console.warn("Failed to fetch org roster via serverless");
-    }
-    return [];
+    }, 30_000);
   },
 
   // Same data as getOrgRoster (username/full_name/gender), via a plain
@@ -333,12 +308,14 @@ export const dataService = {
   // native). Throws on failure instead of swallowing it, so callers surface
   // a real error rather than a quietly-wrong empty leaderboard.
   async getOrgRosterForStats(orgId: string, includeInactive: boolean = false): Promise<{ username: string; full_name: string; gender: string | null }[]> {
-    const { data, error } = await supabase.rpc('get_org_roster_for_stats', {
-      p_organization_id: orgId,
-      p_include_inactive: includeInactive,
-    });
-    if (error) throw error;
-    return (data || []) as { username: string; full_name: string; gender: string | null }[];
+    return getCached(`orgRosterForStats:${orgId}:${includeInactive}`, async () => {
+      const { data, error } = await supabase.rpc('get_org_roster_for_stats', {
+        p_organization_id: orgId,
+        p_include_inactive: includeInactive,
+      });
+      if (error) throw error;
+      return (data || []) as { username: string; full_name: string; gender: string | null }[];
+    }, 30_000);
   },
 
   async createSevak(
@@ -365,54 +342,31 @@ export const dataService = {
       throw new Error('Admin session not found. Please login again.');
     }
 
-    // 3. Create Auth User via Netlify Function (ADMIN ONLY)
-    const response = await fetch(fnUrl('create-user'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`, // ✅ REQUIRED
-      },
-      body: JSON.stringify({
-        email: authEmail,
-        password: password,
-        user_metadata: { // Added this back to ensure metadata is passed as per previous logic for profile creation consistency if needed by function, though function handles creation.
-          full_name: sevakData.fullName,
-          role: UserRole.SEVAK,
-          organization_id: adminOrgId
-        }
-      }),
-    });
-
-    if (!response.ok) {
-      let errorMessage = 'Could not create login credentials.';
-      const responseText = await response.text();
-      
-      if (!responseText) {
-        errorMessage = 'Backend server not responding. Ensure you are running "npx netlify dev" for local development.';
-      } else {
-        console.error('Raw error response from function:', responseText);
-        try {
-          const errorData = JSON.parse(responseText);
-          console.error('Parsed error data:', errorData);
-          
-          if (errorData.details) {
-            errorMessage = `${errorData.error}: ${errorData.details}`;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
+    // 3. Create Auth User via Netlify Function (ADMIN ONLY). Never retried —
+    // a retry after an ambiguous timeout could create two auth users for one
+    // Sevak.
+    let newUserId: string | undefined;
+    try {
+      const result = await callFn<{ user_id?: string }>('create-user', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: {
+          email: authEmail,
+          password: password,
+          user_metadata: {
+            full_name: sevakData.fullName,
+            role: UserRole.SEVAK,
+            organization_id: adminOrgId
           }
-
-          if (errorMessage.toLowerCase().includes('already')) {
-            errorMessage = `Username ${username} already exists. Please modify the name slightly.`;
-          }
-        } catch (e) {
-          console.error('Failed to parse error response as JSON:', e);
-        }
+        },
+      });
+      newUserId = result.user_id;
+    } catch (e: any) {
+      let errorMessage = e?.message || 'Could not create login credentials.';
+      if (errorMessage.toLowerCase().includes('already')) {
+        errorMessage = `Username ${username} already exists. Please modify the name slightly.`;
       }
-
       throw new Error(errorMessage);
     }
-
-    const { user_id: newUserId } = await response.json();
 
     if (!newUserId) {
       throw new Error('No User ID returned from auth creation');
@@ -448,38 +402,29 @@ export const dataService = {
 
     if (sevakError) throw sevakError;
 
+    invalidate(adminOrgId);
     return { username, password };
   },
 
   async deleteSevak(userId: string) {
     const { data: { session } } = await supabase.auth.getSession();
 
-    // Call Netlify function to delete from Auth (service role required)
-    const response = await fetch(fnUrl('delete-user'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session?.access_token || ''}`
-      },
-      body: JSON.stringify({ user_id: userId })
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      let errorMsg = "Failed to delete user";
-      try {
-        const err = JSON.parse(text);
-        errorMsg = err.error || errorMsg;
-      } catch {
-        errorMsg = text || errorMsg;
-      }
-      throw new Error(errorMsg);
+    // Call Netlify function to delete from Auth (service role required).
+    // Never retried — delete is not safely repeatable.
+    try {
+      await callFn('delete-user', {
+        headers: { Authorization: `Bearer ${session?.access_token || ''}` },
+        body: { user_id: userId },
+      });
+    } catch (e: any) {
+      throw new Error(e?.message || "Failed to delete user");
     }
 
     // Optionally delete from public profiles if cascade isn't set up
     // We attempt it, but ignore 404s or permissions issues if auth delete succeeded
     await supabase.from('profiles').delete().eq('id', userId);
 
+    clearAll(); // no orgId in scope here — rare admin action, a full clear is cheap
     return true;
   },
 
@@ -490,23 +435,16 @@ export const dataService = {
       throw new Error('Admin session not found. Please login again.');
     }
 
-    // 1. Call Netlify function to update Auth password if mobile changed
+    // 1. Call Netlify function to update Auth password if mobile changed.
+    // Never retried — not safely repeatable.
     if (updates.mobile) {
-      const response = await fetch(fnUrl('update-user-phone'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          new_mobile: updates.mobile
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || 'Could not update contact number in Auth.');
+      try {
+        await callFn('update-user-phone', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: { user_id: userId, new_mobile: updates.mobile },
+        });
+      } catch (e: any) {
+        throw new Error(e?.message || 'Could not update contact number in Auth.');
       }
     }
 
@@ -546,43 +484,42 @@ export const dataService = {
           throw new Error("Could not update profile. Please contact your administrator.");
         }
 
+        invalidate(userId);
         return true;
       }
 
       throw rpcError;
     }
 
+    invalidate(userId);
     return true;
   },
 
   async updateOwnProfile(updates: { age?: number; bloodGroup?: string; emergencyNumber?: string; address?: string; yearlyGoal?: number }) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const selfId = session?.user?.id;
+
     // Update age directly (not covered by the existing RPC)
-    if (updates.age !== undefined) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        const { error: ageError } = await supabase
-          .from('profiles')
-          .update({ age: updates.age })
-          .eq('id', session.user.id);
-        if (ageError) {
-          console.error('updateOwnProfile age error:', ageError);
-          throw ageError;
-        }
+    if (updates.age !== undefined && selfId) {
+      const { error: ageError } = await supabase
+        .from('profiles')
+        .update({ age: updates.age })
+        .eq('id', selfId);
+      if (ageError) {
+        console.error('updateOwnProfile age error:', ageError);
+        throw ageError;
       }
     }
 
     // yearly_goal is a separate call: needs scripts/add_yearly_goal.sql run first,
     // and its failure (column not yet migrated) must not block age/blood group/etc.
-    if (updates.yearlyGoal !== undefined) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        const { error: goalError } = await supabase
-          .from('profiles')
-          .update({ yearly_goal: updates.yearlyGoal })
-          .eq('id', session.user.id);
-        if (goalError) {
-          console.warn('updateOwnProfile yearly_goal error (has scripts/add_yearly_goal.sql been run?):', goalError);
-        }
+    if (updates.yearlyGoal !== undefined && selfId) {
+      const { error: goalError } = await supabase
+        .from('profiles')
+        .update({ yearly_goal: updates.yearlyGoal })
+        .eq('id', selfId);
+      if (goalError) {
+        console.warn('updateOwnProfile yearly_goal error (has scripts/add_yearly_goal.sql been run?):', goalError);
       }
     }
 
@@ -595,6 +532,7 @@ export const dataService = {
       console.error('updateOwnProfile RPC error:', error);
       throw error;
     }
+    if (selfId) invalidate(selfId);
     return true;
   },
 
@@ -613,59 +551,59 @@ export const dataService = {
 
     const passwordToUse = request.password || request.mobile;
 
-    // Call Secure Netlify Function
-    const response = await fetch(fnUrl('approve-org'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        requestId: request.id,
-        orgName: request.org_name,
-        city: request.city,
-        fullName: request.full_name,
-        email: request.email,
-        mobile: request.mobile,
-        town: request.town,
-        password: passwordToUse
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to approve organization");
+    // Call Secure Netlify Function. Never retried — would create a second org/admin.
+    try {
+      await callFn('approve-org', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: {
+          requestId: request.id,
+          orgName: request.org_name,
+          city: request.city,
+          fullName: request.full_name,
+          email: request.email,
+          mobile: request.mobile,
+          town: request.town,
+          password: passwordToUse
+        },
+      });
+    } catch (e: any) {
+      throw new Error(e?.message || "Failed to approve organization");
     }
 
+    clearAll(); // creates a brand new org — nothing scoped to invalidate against
     return true;
   },
 
   // --- Routes & Areas ---
 
   async getRoutes(orgId?: string): Promise<AreaRoute[]> {
-    let query = supabase.from('area_routes').select('*');
-    if (orgId) {
-      query = query.eq('organization_id', orgId);
-    }
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
+    return getCached(`routes:${orgId || 'all'}`, async () => {
+      let query = supabase.from('area_routes').select('*');
+      if (orgId) {
+        query = query.eq('organization_id', orgId);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    }, 60_000);
   },
 
   async getDistance(from: string, to: string, orgId?: string): Promise<number> {
-    let query = supabase
-      .from('area_routes')
-      .select('distance_km')
-      .eq('from_name', from)
-      .eq('to_name', to);
+    return getCached(`distance:${from}:${to}:${orgId || ''}`, async () => {
+      let query = supabase
+        .from('area_routes')
+        .select('distance_km')
+        .eq('from_name', from)
+        .eq('to_name', to);
 
-    if (orgId) {
-      query = query.eq('organization_id', orgId);
-    }
+      if (orgId) {
+        query = query.eq('organization_id', orgId);
+      }
 
-    const { data, error } = await query.single(); // Might error if multiple found and no orgId provided, but existing behavior was single() anyway.
+      const { data } = await query.single(); // Might error if multiple found and no orgId provided, but existing behavior was single() anyway.
 
-    return data ? data.distance_km : 0;
+      return data ? data.distance_km : 0;
+    }, 60_000);
   },
 
   async addRoute(route: Omit<AreaRoute, 'id' | 'created_at'>) {
@@ -696,6 +634,8 @@ export const dataService = {
         .eq('organization_id', data.organization_id)
         .eq('vihar_from', route.to_name)
         .eq('vihar_to', route.from_name);
+
+      invalidate(data.organization_id);
     }
 
     return data;
@@ -708,6 +648,7 @@ export const dataService = {
       .eq('id', routeId);
 
     if (error) throw error;
+    clearAll(); // no orgId in scope here — rare action, a full clear is cheap
     return true;
   },
 
@@ -738,6 +679,7 @@ export const dataService = {
         .eq('vihar_to', data.from_name);
     }
 
+    if (data && data.organization_id) invalidate(data.organization_id);
     return data;
   },
 
@@ -762,6 +704,7 @@ export const dataService = {
       if (notifyErr) console.warn('Failed to notify Vihar participants:', notifyErr.message);
     });
 
+    if (data?.organization_id) invalidate(data.organization_id);
     return data;
   },
 
@@ -783,20 +726,23 @@ export const dataService = {
       if (notifyErr) console.warn('Failed to notify Captains of new submission:', notifyErr.message);
     });
 
+    if (data?.organization_id) invalidate(data.organization_id);
     return data;
   },
 
   async getEntries(orgId: string): Promise<ViharEntry[]> {
-    // Only official (approved) Vihars feed stats, KPIs, leaderboard and exports.
-    const { data, error } = await supabase
-      .from('vihar_entries')
-      .select('id, organization_id, created_by, vihar_date, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, vihar_from, vihar_to, sevaks, notes, wheelchair, distance_km, haversine_km, vihar_type, samuday, created_at, status, reviewed_by, reviewed_at')
-      .eq('organization_id', orgId)
-      .eq('status', 'approved')
-      .order('vihar_date', { ascending: false });
+    return getCached(`entries:${orgId}`, async () => {
+      // Only official (approved) Vihars feed stats, KPIs, leaderboard and exports.
+      const { data, error } = await supabase
+        .from('vihar_entries')
+        .select('id, organization_id, created_by, vihar_date, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, vihar_from, vihar_to, sevaks, notes, wheelchair, distance_km, haversine_km, vihar_type, samuday, created_at, status, reviewed_by, reviewed_at')
+        .eq('organization_id', orgId)
+        .eq('status', 'approved')
+        .order('vihar_date', { ascending: false });
 
-    if (error) throw error;
-    return data as ViharEntry[];
+      if (error) throw error;
+      return data as ViharEntry[];
+    }, 20_000);
   },
 
   // Org-wide (vihar_date, distance_km, sevaks) only — for rank/leaderboard
@@ -806,26 +752,30 @@ export const dataService = {
   // Sevak's "whole org" would really just be themselves. This goes through
   // a narrow SECURITY DEFINER RPC scoped to the caller's own org instead.
   async getOrgEntriesForRanking(orgId: string): Promise<ViharEntry[]> {
-    const { data, error } = await supabase.rpc('get_org_entries_for_ranking', {
-      p_organization_id: orgId,
-      p_from: null,
-      p_to: null,
-    });
-    if (error) throw error;
-    return (data || []) as ViharEntry[];
+    return getCached(`entriesForRanking:${orgId}`, async () => {
+      const { data, error } = await supabase.rpc('get_org_entries_for_ranking', {
+        p_organization_id: orgId,
+        p_from: null,
+        p_to: null,
+      });
+      if (error) throw error;
+      return (data || []) as ViharEntry[];
+    }, 20_000);
   },
 
   async getSevakEntries(username: string): Promise<ViharEntry[]> {
-    // We filter where the username is in the text[] array 'sevaks'
-    const { data, error } = await supabase
-      .from('vihar_entries')
-      .select('*')
-      .eq('status', 'approved')
-      .contains('sevaks', [username])
-      .order('vihar_date', { ascending: false });
+    return getCached(`sevakEntries:${username}`, async () => {
+      // We filter where the username is in the text[] array 'sevaks'
+      const { data, error } = await supabase
+        .from('vihar_entries')
+        .select('*')
+        .eq('status', 'approved')
+        .contains('sevaks', [username])
+        .order('vihar_date', { ascending: false });
 
-    if (error) throw error;
-    return data as ViharEntry[];
+      if (error) throw error;
+      return data as ViharEntry[];
+    }, 20_000);
   },
 
   // A Sevak's own Vihar history: their own submissions (any status — pending/approved/
@@ -833,43 +783,49 @@ export const dataService = {
   // Sevak-facing "My Vihars" screen so a pending submission is still visible to its
   // submitter even though getEntries() above excludes it from official stats.
   async getMyViharEntries(orgId: string, userId: string, username: string): Promise<ViharEntry[]> {
-    const [ownSubmissions, participantEntries] = await Promise.all([
-      supabase.from('vihar_entries').select('*').eq('organization_id', orgId).eq('created_by', userId),
-      supabase.from('vihar_entries').select('*').eq('organization_id', orgId).eq('status', 'approved').contains('sevaks', [username]),
-    ]);
+    return getCached(`myViharEntries:${orgId}:${userId}`, async () => {
+      const [ownSubmissions, participantEntries] = await Promise.all([
+        supabase.from('vihar_entries').select('*').eq('organization_id', orgId).eq('created_by', userId),
+        supabase.from('vihar_entries').select('*').eq('organization_id', orgId).eq('status', 'approved').contains('sevaks', [username]),
+      ]);
 
-    if (ownSubmissions.error) throw ownSubmissions.error;
-    if (participantEntries.error) throw participantEntries.error;
+      if (ownSubmissions.error) throw ownSubmissions.error;
+      if (participantEntries.error) throw participantEntries.error;
 
-    const byId = new Map<number, ViharEntry>();
-    [...(ownSubmissions.data || []), ...(participantEntries.data || [])].forEach((e: any) => byId.set(e.id, e));
+      const byId = new Map<number, ViharEntry>();
+      [...(ownSubmissions.data || []), ...(participantEntries.data || [])].forEach((e: any) => byId.set(e.id, e));
 
-    return Array.from(byId.values()).sort((a, b) => (a.vihar_date < b.vihar_date ? 1 : -1));
+      return Array.from(byId.values()).sort((a, b) => (a.vihar_date < b.vihar_date ? 1 : -1));
+    }, 20_000);
   },
 
   // --- Vihar Approval Workflow (Captain review) ---
 
   async getPendingViharEntries(orgId: string): Promise<ViharEntry[]> {
-    const { data, error } = await supabase
-      .from('vihar_entries')
-      .select('*')
-      .eq('organization_id', orgId)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false });
+    return getCached(`pendingViharEntries:${orgId}`, async () => {
+      const { data, error } = await supabase
+        .from('vihar_entries')
+        .select('*')
+        .eq('organization_id', orgId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data as ViharEntry[];
+      if (error) throw error;
+      return data as ViharEntry[];
+    }, 15_000);
   },
 
   async approveViharEntry(entryId: number): Promise<ViharEntry> {
     const { data, error } = await supabase.rpc('approve_vihar_entry', { p_entry_id: entryId });
     if (error) throw error;
+    if ((data as any)?.organization_id) invalidate((data as any).organization_id);
     return data as ViharEntry;
   },
 
   async rejectViharEntry(entryId: number, reason?: string): Promise<ViharEntry> {
     const { data, error } = await supabase.rpc('reject_vihar_entry', { p_entry_id: entryId, p_reason: reason || null });
     if (error) throw error;
+    if ((data as any)?.organization_id) invalidate((data as any).organization_id);
     return data as ViharEntry;
   },
 
@@ -880,6 +836,7 @@ export const dataService = {
       .eq('id', entryId);
 
     if (error) throw error;
+    clearAll(); // no orgId in scope here — a full clear is cheap for this rare action
     return true;
   },
 
@@ -894,6 +851,7 @@ export const dataService = {
       .single();
 
     if (error) throw error;
+    if (data?.organization_id) invalidate(data.organization_id);
     return data;
   },
 
@@ -1094,80 +1052,88 @@ export const dataService = {
   },
 
   async getSevakRank(orgId: string, username: string): Promise<number | string> {
-    const { data, error } = await supabase.rpc('get_sevak_rank', {
-      org_id: orgId,
-      sevak_username: username
-    });
-
-    if (error) {
-      console.error("Error fetching rank:", error);
-      // Fallback to "N/A" instead of breaking
-      return "N/A";
-    }
-    return data || "N/A";
-  },
-
-  async getTotalOrgSevaks(orgId: string): Promise<number | null> {
-    const { data, error } = await supabase.rpc('get_total_org_sevaks', {
-      org_id: orgId
-    });
-
-    if (error) {
-      console.error("Error fetching total org sevaks:", error);
-      return null;
-    }
-    return data as number;
-  },
-
-  async getTopSevaks(orgId: string, limit: number = 1000) {
-    try {
-      // Use RPC to bypass RLS and get all org stats
-      const { data, error } = await supabase.rpc('get_top_sevaks_leaderboard', {
+    return getCached(`sevakRank:${orgId}:${username}`, async () => {
+      const { data, error } = await supabase.rpc('get_sevak_rank', {
         org_id: orgId,
-        limit_val: limit
+        sevak_username: username
       });
 
       if (error) {
-        throw new Error("RPC failed: " + error.message);
+        console.error("Error fetching rank:", error);
+        // Fallback to "N/A" instead of breaking
+        return "N/A";
       }
+      return data || "N/A";
+    }, 20_000);
+  },
 
-      // The RPC returns { male: [], female: [], overall: [] } JSON
-      // Remap SQL column names (full_name, gender_rank) to what LeaderboardCard expects (name, rank)
-      if (data) {
-        const remap = (arr: any[], useGenderRank = false) =>
-          (arr || []).map((s: any) => ({
-            username: s.username,
-            name: s.full_name,
-            km: parseFloat(parseFloat(s.km || 0).toFixed(2)),
-            count: Number(s.count || 0),
-            gender: s.gender,
-            rank: useGenderRank ? Number(s.gender_rank) : Number(s.overall_rank)
-          }));
+  async getTotalOrgSevaks(orgId: string): Promise<number | null> {
+    return getCached(`totalOrgSevaks:${orgId}`, async () => {
+      const { data, error } = await supabase.rpc('get_total_org_sevaks', {
+        org_id: orgId
+      });
 
-        return {
-          male: remap(data.male, true),
-          female: remap(data.female, true),
-          overall: remap(data.overall, false)
-        };
+      if (error) {
+        console.error("Error fetching total org sevaks:", error);
+        return null;
       }
+      return data as number;
+    }, 30_000);
+  },
 
-      return { male: [], female: [], overall: [] };
-    } catch (err) {
-      console.error(err);
-      return { male: [], female: [], overall: [] };
-    }
+  async getTopSevaks(orgId: string, limit: number = 1000) {
+    return getCached(`topSevaks:${orgId}:${limit}`, async () => {
+      try {
+        // Use RPC to bypass RLS and get all org stats
+        const { data, error } = await supabase.rpc('get_top_sevaks_leaderboard', {
+          org_id: orgId,
+          limit_val: limit
+        });
+
+        if (error) {
+          throw new Error("RPC failed: " + error.message);
+        }
+
+        // The RPC returns { male: [], female: [], overall: [] } JSON
+        // Remap SQL column names (full_name, gender_rank) to what LeaderboardCard expects (name, rank)
+        if (data) {
+          const remap = (arr: any[], useGenderRank = false) =>
+            (arr || []).map((s: any) => ({
+              username: s.username,
+              name: s.full_name,
+              km: parseFloat(parseFloat(s.km || 0).toFixed(2)),
+              count: Number(s.count || 0),
+              gender: s.gender,
+              rank: useGenderRank ? Number(s.gender_rank) : Number(s.overall_rank)
+            }));
+
+          return {
+            male: remap(data.male, true),
+            female: remap(data.female, true),
+            overall: remap(data.overall, false)
+          };
+        }
+
+        return { male: [], female: [], overall: [] };
+      } catch (err) {
+        console.error(err);
+        return { male: [], female: [], overall: [] };
+      }
+    }, 20_000);
   },
 
   // --- Contact Numbers ---
 
   async getContactNumbers(orgId: string): Promise<ContactNumber[]> {
-    const { data, error } = await supabase
-      .from('contact_numbers')
-      .select('*')
-      .eq('organization_id', orgId)
-      .order('created_at', { ascending: true });
-    if (error) throw error;
-    return data as ContactNumber[];
+    return getCached(`contactNumbers:${orgId}`, async () => {
+      const { data, error } = await supabase
+        .from('contact_numbers')
+        .select('*')
+        .eq('organization_id', orgId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data as ContactNumber[];
+    }, 60_000);
   },
 
   async addContactNumber(contact: { organization_id: string; label: string; phone: string; description?: string }): Promise<ContactNumber> {
@@ -1177,6 +1143,7 @@ export const dataService = {
       .select()
       .single();
     if (error) throw error;
+    invalidate(contact.organization_id);
     return data as ContactNumber;
   },
 
@@ -1186,6 +1153,7 @@ export const dataService = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    clearAll(); // no orgId in scope here — rare action, a full clear is cheap
   },
 
   // --- Incident Reports ---
@@ -1198,18 +1166,21 @@ export const dataService = {
       .single();
 
     if (error) throw error;
+    if (data?.organization_id) invalidate(data.organization_id);
     return data as IncidentReport;
   },
 
   async getIncidentReports(orgId: string): Promise<IncidentReport[]> {
-    const { data, error } = await supabase
-      .from('incident_reports')
-      .select('*')
-      .eq('organization_id', orgId)
-      .order('created_at', { ascending: false });
+    return getCached(`incidentReports:${orgId}`, async () => {
+      const { data, error } = await supabase
+        .from('incident_reports')
+        .select('*')
+        .eq('organization_id', orgId)
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data as IncidentReport[];
+      if (error) throw error;
+      return data as IncidentReport[];
+    }, 30_000);
   },
 
   async updateIncidentReportStatus(reportId: string, status: IncidentReport['status']) {
@@ -1221,6 +1192,7 @@ export const dataService = {
       .single();
 
     if (error) throw error;
+    if (data?.organization_id) invalidate(data.organization_id);
     return data as IncidentReport;
   },
 

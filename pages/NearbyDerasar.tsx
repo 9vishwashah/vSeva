@@ -3,7 +3,7 @@ import { Loader2, MapPin, X, Navigation, Phone, Search, Map, Star, ArrowRight, F
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 
 import { usePWAInstall } from '../hooks/usePWAInstall';
-import { fnUrl } from '../services/apiBase';
+import { callFn } from '../services/apiBase';
 
 interface Place {
   name: string;
@@ -198,9 +198,11 @@ const NearbyDerasar: React.FC = () => {
   }, []);
 
   const fetchTemples = async (lat: number, lng: number) => {
-    const response = await fetch(`${fnUrl('nearby')}?lat=${lat}&lng=${lng}&type=jain_temple&radius=${radius}`);
-    if (!response.ok) throw new Error('Failed to fetch nearby temples');
-    const data = await response.json();
+    const data = await callFn<{ places?: any[] }>('nearby', {
+      method: 'GET',
+      query: { lat, lng, type: 'jain_temple', radius },
+      retry: true,
+    });
     return data.places || [];
   };
 
