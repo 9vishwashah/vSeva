@@ -3,8 +3,6 @@ import { UserProfile, ContactNumber } from '../types';
 import { dataService } from '../services/dataService';
 import { PhoneCall, PlusCircle, Trash2, Loader2, Phone } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import { EmergencyHelp } from '../components/EmergencyHelp';
-import { JainTempleFinder } from '../components/JainTempleFinder';
 import Skeleton from '../components/Skeleton';
 import SevakDirectorySection from '../components/SevakDirectorySection';
 import ContactActionButtons from '../components/ContactActionButtons';
@@ -79,32 +77,12 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
     return (
         <div className="max-w-2xl mx-auto space-y-6 pb-8">
             {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-400 to-saffron-600 p-6 text-white shadow-lg">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
-                <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
-                <div className="relative">
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                            <PhoneCall size={22} className="text-white" />
-                        </div>
-                        <h1 className="text-2xl font-bold tracking-tight">Manage Contacts</h1>
-                    </div>
-                    <p className="text-white/80 text-sm mt-1">
-                        Contacts added here appear on every Sevak's Contacts page
-                    </p>
-                    {!loading && (
-                        <span className="mt-3 inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
-                            {contacts.length} {contacts.length === 1 ? 'Contact' : 'Contacts'}
-                        </span>
-                    )}
-                </div>
-            </div>
-
-            <EmergencyHelp />
-
-            {/* Jain Temple Finder - Location Based */}
-            <div className="w-full">
-                <JainTempleFinder />
+            <div>
+                <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2">
+                    <PhoneCall size={20} className="text-saffron-600" />
+                    Manage Contacts
+                </h1>
+                <p className="text-xs text-[#8A6A57]">Contacts added here appear on every Sevak's Contacts page</p>
             </div>
 
             {/* Add Contact Form */}

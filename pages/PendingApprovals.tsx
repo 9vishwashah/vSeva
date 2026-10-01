@@ -107,23 +107,18 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({ currentUser, onEdit
 
     return (
         <div className="space-y-6 pb-20 md:pb-0">
-            {/* Header Banner */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-500 via-orange-500 to-amber-400 p-6 text-white shadow-lg">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
-                <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
-                <div className="relative">
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                            <ClipboardCheck size={22} className="text-white" />
-                        </div>
-                        <h1 className="text-2xl font-bold tracking-tight">Pending Approvals</h1>
-                    </div>
-                    <p className="text-white/80 text-sm mt-1">Review Vihar entries submitted by Sevaks before they become official</p>
-                    <span className="mt-4 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full border border-white/10">
-                        <Clock size={14} />
-                        {entries.length} Pending Review
-                    </span>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                    <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2">
+                        <ClipboardCheck size={20} className="text-saffron-600" />
+                        Pending Approvals
+                    </h1>
+                    <p className="text-xs text-[#8A6A57]">Review Vihar entries submitted by Sevaks before they become official</p>
                 </div>
+                <span className="shrink-0 flex items-center gap-1.5 text-xs font-bold bg-saffron-100 text-saffron-700 px-3 py-1 rounded-full">
+                    <Clock size={13} />
+                    {entries.length} Pending Review
+                </span>
             </div>
 
             {entries.length === 0 ? (

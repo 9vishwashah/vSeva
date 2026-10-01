@@ -2,11 +2,11 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { UserProfile, ViharEntry, UserRole, Organization } from '../types';
 import { dataService } from '../services/dataService';
 import SankalpRing from '../components/SankalpRing';
-import ViharYearSelector from '../components/ViharYearSelector';
-import { getViharYearStartYear, getViharYearBoundsForStartYear, isDateInViharYear } from '../services/viharYear';
+import { isDateInViharYear } from '../services/viharYear';
+import { useViharYear } from '../context/ViharYearContext';
 import { toLocalDateKey } from '../services/dateUtils';
 import LeaderboardCard from '../components/LeaderboardCard';
-import { ChevronLeft, Trophy, Medal, Flame } from 'lucide-react';
+import { Trophy, Medal, Flame } from 'lucide-react';
 import Skeleton from '../components/Skeleton';
 import StatusScreen from '../components/StatusScreen';
 
@@ -30,18 +30,23 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
 
   const isAdmin = currentUser.role === UserRole.ORG_ADMIN;
 
-  const currentVYStartYear = getViharYearStartYear();
-  const [selectedVYStartYear, setSelectedVYStartYear] = useState<number>(currentVYStartYear);
-  const selectedVY = getViharYearBoundsForStartYear(selectedVYStartYear);
+  const { selectedVY, selectedVYStartYear, currentVYStartYear } = useViharYear();
 
   const load = async () => {
       setLoading(true);
       setLoadError(null);
       try {
-        const [allOrgEntries, orgSevaks, goal, org] = await Promise.all([
+        const [allOrgEntries, rankingEntries, orgSevaks, org] = await Promise.all([
           dataService.getEntries(currentUser.organization_id),
-          dataService.getAllOrgUsers(currentUser.organization_id, true),
-          dataService.getYearlyGoal(currentUser.id),
+          // Org-wide, for the leaderboard only — getEntries() above is RLS-
+          // limited to a Sevak's own entries, which would make the "Top
+          // Vihar Sevaks/Sevikas" leaderboard only ever show themselves.
+          dataService.getOrgEntriesForRanking(currentUser.organization_id),
+          // Org-wide roster (username/full_name/gender) — profiles RLS only
+          // lets a Sevak read their own row, so getAllOrgUsers() here would
+          // have silently returned just themselves, dropping every other
+          // sevak out of the gender-filtered leaderboard/Participation split.
+          dataService.getOrgRosterForStats(currentUser.organization_id, true),
           dataService.getOrganization(currentUser.organization_id),
         ]);
 
@@ -50,8 +55,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
           : allOrgEntries.filter(e => (e.sevaks || []).includes(currentUser.username));
 
         setEntries(myEntries);
-        setOrgEntriesAll(allOrgEntries);
-        setYearlyGoal(goal);
+        setOrgEntriesAll(rankingEntries);
         setOrgDetails(org);
 
         const nm: Record<string, string> = {};
@@ -63,13 +67,20 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
         setNameMap(nm);
         setGenderMap(gm);
 
+        // The Vihar Group's own Yearly Sankalp — the Captain's goal, set on
+        // their own Profile & Settings, not whichever Sevak happens to be
+        // looking at this page. An Admin viewing their own org IS the
+        // Captain, so this is a plain self-lookup for them; a Sevak instead
+        // waits for the org-wide Captain lookup shared with captainName.
         if (isAdmin) {
           setCaptainName(currentUser.full_name);
           setStreakLeaderboard(dataService.getStreakLeaderboard(allOrgEntries, nm));
+          dataService.getYearlyGoal(currentUser.id).then(setYearlyGoal);
         } else {
           dataService.getOrgAdmins([currentUser.organization_id]).then(map => {
             const admin = map[currentUser.organization_id];
             if (admin?.full_name) setCaptainName(admin.full_name);
+            if (typeof admin?.yearly_goal === 'number') setYearlyGoal(admin.yearly_goal);
           });
         }
       } catch (e) {
@@ -102,9 +113,12 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
     return dataService.getTopSevaksLeaderboard(orgEntriesVY, nameMap, genderMap);
   }, [orgEntriesAll, selectedVY.start.getTime(), selectedVY.end.getTime(), nameMap, genderMap]);
 
+  // Org-wide (Participation by Gender is about the whole org's Seva, not
+  // just whoever happens to be looking at the page) — same orgEntriesAll
+  // source as the leaderboard below.
   const genderSplit = useMemo(() => {
     let male = 0, female = 0;
-    entries
+    orgEntriesAll
       .filter(e => isDateInViharYear(e.vihar_date, selectedVY))
       .forEach(e => {
         (e.sevaks || []).forEach(u => {
@@ -114,19 +128,14 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
         });
       });
     return { male, female };
-  }, [entries, selectedVY.start.getTime(), selectedVY.end.getTime(), genderMap]);
+  }, [orgEntriesAll, selectedVY.start.getTime(), selectedVY.end.getTime(), genderMap]);
 
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto space-y-5 pb-10">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-            <ChevronLeft size={16} className="text-[#241C17]" />
-          </div>
-          <div>
-            <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17]">Group Analytics</h1>
-            <p className="text-xs text-[#8A6A57]">Every number behind your Seva</p>
-          </div>
+        <div>
+          <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17]">Group Analytics</h1>
+          <p className="text-xs text-[#8A6A57]">Every number behind your Seva</p>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {['#FFF0E5', '#E9F4FD', '#FCEAEB', '#F1EAFB'].map((bg, i) => (
@@ -178,9 +187,10 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
     });
   });
 
-  // Top routes — scoped to the selected VY, same as the rest of this page
+  // Top routes — org-wide (not just the viewer's own entries), scoped to
+  // the selected VY like the rest of this page.
   const routeCounts: Record<string, number> = {};
-  entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).forEach(e => {
+  orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).forEach(e => {
     const key = `${e.vihar_from} → ${e.vihar_to}`;
     routeCounts[key] = (routeCounts[key] || 0) + 1;
   });
@@ -194,23 +204,13 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
     <div className="max-w-5xl mx-auto space-y-5 pb-10">
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <button onClick={() => window.history.back()} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-            <ChevronLeft size={16} className="text-[#241C17]" />
-          </button>
-          <div>
-            <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2 flex-wrap">
-              Group Analytics
-              <span className="text-[10px] font-extrabold bg-saffron-100 text-saffron-700 px-2 py-0.5 rounded-full">{selectedVY.label}</span>
-            </h1>
-            <p className="text-xs text-[#8A6A57]">Every number behind your Seva, this Vihar Year</p>
-          </div>
+        <div>
+          <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2 flex-wrap">
+            Group Analytics
+            <span className="text-[10px] font-extrabold bg-saffron-100 text-saffron-700 px-2 py-0.5 rounded-full">{selectedVY.label}</span>
+          </h1>
+          <p className="text-xs text-[#8A6A57]">Every number behind your Seva, this Vihar Year</p>
         </div>
-        <ViharYearSelector
-          selectedStartYear={selectedVYStartYear}
-          currentStartYear={currentVYStartYear}
-          onChange={setSelectedVYStartYear}
-        />
       </div>
 
       {/* KPI grid */}
@@ -234,7 +234,9 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
       </div>
 
       {/* Sankalp */}
-      <SankalpRing count={entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length} goal={yearlyGoal} periodLabel={selectedVY.label} />
+      {/* The Vihar Group's own Sankalp — org-wide progress against the
+          Captain's org-wide goal, not just whoever's looking at the page. */}
+      <SankalpRing count={orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length} goal={yearlyGoal} periodLabel={selectedVY.label} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Weekly trend */}

@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UpcomingVihar, UserProfile, UserNotification } from '../types';
 import ViharAlertCard from '../components/ViharAlertCard';
-import { Bell, MapPin, ChevronDown, ChevronLeft, Check, Users } from 'lucide-react';
+import { Bell, MapPin, ChevronDown, Check, Users } from 'lucide-react';
 import Skeleton from '../components/Skeleton';
 import StatusScreen from '../components/StatusScreen';
 
@@ -167,9 +167,6 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => window.history.back()} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-            <ChevronLeft size={16} className="text-[#241C17]" />
-          </button>
           <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17]">Notifications</h1>
         </div>
         {hasUnread && (

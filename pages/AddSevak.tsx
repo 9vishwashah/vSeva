@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { UserProfile, Organization, ContactNumber } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { UserProfile, Organization, ContactNumber, ViharEntry } from '../types';
 import { dataService } from '../services/dataService';
-import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft, Footprints } from 'lucide-react';
 import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
 import CircularProgressBar from '../components/CircularProgressBar';
@@ -10,6 +10,8 @@ import Avatar from '../components/Avatar';
 import Modal from '../components/Modal';
 import StatusScreen from '../components/StatusScreen';
 import { toLocalDateKey } from '../services/dateUtils';
+import { isDateInViharYear } from '../services/viharYear';
+import { useViharYear } from '../context/ViharYearContext';
 
 
 interface AddSevakProps {
@@ -35,6 +37,26 @@ const formatLastLogin = (isoString?: string): { label: string; color: string } =
   else label = new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
 
   const color = days < 3 ? 'text-green-500' : days < 14 ? 'text-amber-500' : days < 30 ? 'text-red-500' : 'text-gray-400';
+  return { label, color };
+};
+
+// Same relative-day treatment as formatLastLogin, but for a Vihar date
+// (a plain date, not a timestamp) scoped to whichever Vihar Year is selected.
+// Unlike last-login, this never fades to gray for old dates — long-inactive
+// stays red so it reads as a signal worth acting on, not a stale detail.
+const formatLastVihar = (dateStr?: string): { label: string; color: string } => {
+  if (!dateStr) return { label: 'No Vihar', color: 'text-gray-400' };
+
+  const days = Math.floor((Date.now() - new Date(`${dateStr}T00:00:00`).getTime()) / 86400000);
+
+  let label: string;
+  if (days <= 0) label = 'Today';
+  else if (days === 1) label = 'Yesterday';
+  else if (days < 7) label = `${days} days ago`;
+  else if (days < 30) label = `${Math.floor(days / 7)}w ago`;
+  else label = new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+
+  const color = days < 7 ? 'text-green-500' : days < 30 ? 'text-amber-500' : 'text-red-500';
   return { label, color };
 };
 
@@ -72,17 +94,21 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   
   // Organization State
   const [orgDetails, setOrgDetails] = useState<any>(null);
+  const [orgEntries, setOrgEntries] = useState<ViharEntry[]>([]);
+  const { selectedVY } = useViharYear();
 
 
   const fetchData = async () => {
     try {
       setLoadingSevaks(true);
       setSevaksLoadError(null);
-      const [sevaksData, org] = await Promise.all([
+      const [sevaksData, org, entries] = await Promise.all([
         dataService.getOrgSevaks(currentUser.organization_id),
         dataService.getOrganization(currentUser.organization_id),
+        dataService.getEntries(currentUser.organization_id),
       ]);
       setSevaks(sevaksData);
+      setOrgEntries(entries);
       if (org) setOrgDetails(org);
     } catch (err) {
       console.error("Failed to load data", err);
@@ -212,6 +238,21 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     }
   };
 
+  // Most recent Vihar date per sevak within the selected Vihar Year — same
+  // relative-time treatment as last login, but scoped to selectedVY.
+  const lastViharMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    orgEntries.forEach(entry => {
+      if (!isDateInViharYear(entry.vihar_date, selectedVY)) return;
+      (entry.sevaks || []).forEach(username => {
+        if (!map[username] || entry.vihar_date > map[username]) {
+          map[username] = entry.vihar_date;
+        }
+      });
+    });
+    return map;
+  }, [orgEntries, selectedVY.start.getTime(), selectedVY.end.getTime()]);
+
   // Profile completion: counts blood_group, emergency_number, address, age
   const getProfileCompletion = (sevak: UserProfile): number => {
     const fields = [sevak.blood_group, sevak.emergency_number, sevak.address, sevak.age];
@@ -297,22 +338,38 @@ by VJAS`;
     return encodeURIComponent(message);
   };
 
+  // A gentle Vihar reminder, prefilled with the sevak's own last-recorded
+  // Vihar date (within the selected Vihar Year) so it reads as personal.
+  const generateViharReminderMessage = (sevak: UserProfile) => {
+    const lastDate = lastViharMap[sevak.username];
+    const lastDateLabel = lastDate
+      ? new Date(`${lastDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : 'not yet recorded this Vihar Year';
+    const message = `Jai Jinendra ${sevak.full_name},
+This is a gentle reminder regarding your Vihar Seva.
+Your last Vihar was on ${lastDateLabel}.
+Kindly do Vihar and continue your Seva.`;
+    return encodeURIComponent(message);
+  };
+
+  // Border/background/text triplet per last-Vihar recency, matching the
+  // color scale formatLastVihar already computes.
+  const viharButtonClasses = (color: string) => {
+    if (color === 'text-green-500') return 'bg-green-50 hover:bg-green-100 text-green-600 border-green-100';
+    if (color === 'text-amber-500') return 'bg-amber-50 hover:bg-amber-100 text-amber-600 border-amber-100';
+    if (color === 'text-red-500') return 'bg-red-50 hover:bg-red-100 text-red-600 border-red-100';
+    return 'bg-gray-50 hover:bg-gray-100 text-gray-500 border-gray-100';
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
 
-      {/* Tangerine Gradient Banner Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-saffron-400 to-saffron-600 p-6 text-white shadow-lg">
-        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/10" />
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-              <UserPlus size={22} className="text-white" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">Add New Sevak</h1>
-          </div>
-          <p className="text-white/80 text-sm mt-1 ml-1">Create a profile and login credentials for a new volunteer.</p>
-        </div>
+      <div>
+        <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2">
+          <UserPlus size={20} className="text-saffron-600" />
+          Add New Sevak
+        </h1>
+        <p className="text-xs text-[#8A6A57]">Create a profile and login credentials for a new volunteer</p>
       </div>
 
       {/* Form Section - white card */}
@@ -469,11 +526,12 @@ by VJAS`;
                 filteredSevaks.map((sevak, index) => {
                   const { label, color } = formatLastLogin(sevak.last_login_at);
                   const statusDotColor = color.replace('text-', 'bg-');
+                  const { label: viharLabel, color: viharColor } = formatLastVihar(lastViharMap[sevak.username]);
                   const pct = getProfileCompletion(sevak);
 
                    return (
                     <div key={sevak.id} className="bg-white rounded-[20px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col group overflow-hidden relative">
-                      
+
                       {/* Top Line: Sr No + Name + Last Seen */}
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
@@ -491,7 +549,7 @@ by VJAS`;
                         </div>
                       </div>
 
-                      {/* Bottom Row: Completion Ring + View More + WhatsApp */}
+                      {/* Bottom Row: Completion Ring + Profile + WhatsApp + Last Vihar reminder */}
                       <div className="mt-3 flex gap-2 items-center">
                         {/* Circular Progress - now in bottom row */}
                         <div className="w-12 h-12 flex-shrink-0" title={`${pct}% profile complete`}>
@@ -504,22 +562,32 @@ by VJAS`;
                             centerContent={<Avatar name={sevak.full_name} url={sevak.avatar_url} size={34} className="text-[11px]" />}
                           />
                         </div>
-                        <button 
+                        <button
                           onClick={() => openModal(sevak)}
-                          className="py-2.5 px-5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-[12px] font-extrabold text-[11px] tracking-wider uppercase transition-colors flex justify-center items-center gap-2 border border-indigo-100 hover:border-indigo-200 shadow-sm"
+                          className="flex-1 py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-[12px] font-extrabold text-[11px] tracking-wider uppercase transition-colors flex justify-center items-center gap-2 border border-indigo-100 hover:border-indigo-200 shadow-sm"
                         >
-                          View More
+                          Profile
                         </button>
                         <a
                           href={`https://wa.me/91${sevak.mobile}?text=${generateWhatsAppMessage(sevak)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-[12px] transition-colors border border-[#25D366]/20 focus:outline-none shadow-sm font-extrabold text-[11px] tracking-wider uppercase"
+                          className="flex items-center justify-center w-9 h-9 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-[12px] transition-colors border border-[#25D366]/20 focus:outline-none shadow-sm shrink-0"
                           title="Notify via WhatsApp"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <svg viewBox="0 0 24 24" fill="currentColor" className="w-[15px] h-[15px] shrink-0" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                          <span>Alert</span>
+                        </a>
+                        <a
+                          href={`https://wa.me/91${sevak.mobile}?text=${generateViharReminderMessage(sevak)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center gap-1 h-9 px-2.5 rounded-[12px] border transition-colors shrink-0 ${viharButtonClasses(viharColor)}`}
+                          title="Send Vihar reminder via WhatsApp"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Footprints size={12} className="shrink-0" />
+                          <span className="text-[9px] font-extrabold uppercase tracking-wider whitespace-nowrap">{viharLabel}</span>
                         </a>
                       </div>
                     </div>

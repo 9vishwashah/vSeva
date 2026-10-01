@@ -61,7 +61,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       const profile = await dataService.getProfile(authData.user.id);
 
       if (!profile) {
-        throw new Error("Profile not found. Contact Admin.");
+        throw new Error("Profile not found. Contact your Captain.");
       }
 
       if (!profile.is_active) {

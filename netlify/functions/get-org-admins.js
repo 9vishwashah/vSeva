@@ -20,7 +20,7 @@ async function rawHandler(event) {
 
         const { data, error } = await supabaseAdmin
             .from('profiles')
-            .select('organization_id, full_name, mobile, town, username')
+            .select('organization_id, full_name, mobile, town, username, yearly_goal')
             .in('organization_id', orgIds)
             .eq('role', 'admin');
 

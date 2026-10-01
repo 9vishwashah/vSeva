@@ -11,8 +11,9 @@ import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCi
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import vsgLogo from '../assets/vsg.jpg';
 import { useToast } from '../context/ToastContext';
+import { useViharYear } from '../context/ViharYearContext';
 import { supabase } from '../services/supabase';
-import { getViharYearStartYear, getViharYearBoundsForStartYear, getViharYearForDate, isDateInViharYear } from '../services/viharYear';
+import { getViharYearForDate, isDateInViharYear } from '../services/viharYear';
 import { toLocalDateKey } from '../services/dateUtils';
 import { deliverPdf } from '../services/pdfDelivery';
 
@@ -35,13 +36,16 @@ interface DashboardProps {
   currentUser: UserProfile;
   navigateToProfile?: () => void;
   navigateToNotifications?: () => void;
+  // Vihar Entries (Admin) / My Vihars (Sevak) — for "View all Vihars" on
+  // Recent Activity, distinct from navigateToNotifications (Vihar alerts).
+  navigateToEntries?: () => void;
   onAddVihar?: () => void;
   // Fetched once at login (same time as currentUser) so the org badge can paint
   // instantly instead of waiting on this page's own heavier data load below.
   orgDetails?: Organization | null;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, navigateToNotifications, onAddVihar, orgDetails: orgDetailsProp }) => {
+const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, navigateToNotifications, navigateToEntries, onAddVihar, orgDetails: orgDetailsProp }) => {
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
@@ -67,9 +71,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   const [yearlyGoal, setYearlyGoal] = useState(25);
   const [captainName, setCaptainName] = useState<string | null>(null);
   const [orgEntriesAll, setOrgEntriesAll] = useState<ViharEntry[]>([]);
-  const currentVYStartYear = getViharYearStartYear();
-  const [selectedVYStartYear, setSelectedVYStartYear] = useState<number>(currentVYStartYear);
-  const selectedVY = getViharYearBoundsForStartYear(selectedVYStartYear);
+  const { selectedVYStartYear, setSelectedVYStartYear, currentVYStartYear, selectedVY } = useViharYear();
 
   // Export configuration modal
   const [showExportModal, setShowExportModal] = useState(false);
@@ -178,13 +180,22 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         // other's results — they were previously awaited in a 4-stage sequential
         // chain. Firing them together turns ~4 round-trips into 1.
         const [
-          org, orgSevaks, routes, secureMap, allOrgEntries, detailedStats, totalOrgSevaksCount
+          org, orgSevaks, routes, secureMap, allOrgEntries, rankingEntries, detailedStats, totalOrgSevaksCount
         ] = await Promise.all([
           dataService.getOrganization(currentUser.organization_id),
-          dataService.getAllOrgUsers(currentUser.organization_id, true),
+          // Org-wide roster (username/full_name/gender) via the service-role
+          // Netlify function — profiles RLS only lets a Sevak read their own
+          // row (no "same org" policy), so getAllOrgUsers() here would have
+          // silently returned just themselves, breaking gender-based
+          // grouping (Active Sevaks split, VY leaderboard) for any Sevak.
+          dataService.getOrgRosterForStats(currentUser.organization_id, true),
           dataService.getRoutes(currentUser.organization_id),
           dataService.getSevakNameMap(currentUser.organization_id),
           dataService.getEntries(currentUser.organization_id),
+          // Org-wide, for rank/leaderboard only — getEntries() above is RLS-
+          // limited to a Sevak's own entries, which breaks ranking (everyone's
+          // "whole org" view of themselves trivially ranks #1).
+          dataService.getOrgEntriesForRanking(currentUser.organization_id),
           dataService.getDashboardStats(currentUser.organization_id).catch(e => {
             console.error("Failed to load accurate dashboard stats", e);
             return null;
@@ -229,14 +240,14 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           myEntries = allOrgEntries.filter(e => (e.sevaks || []).includes(currentUser.username));
           totalCount = totalOrgSevaksCount;
         }
-        setOrgEntriesAll(allOrgEntries);
+        setOrgEntriesAll(rankingEntries);
 
         // Vihar Year (VY) scoping for the headline KPI tiles (Km/Vihars/Sadhu/
         // Sadhvi/Co-Sevak), rank, and the leaderboard happens in the vyStats/
         // vyLeaderboard memos below, reacting to the year selector — like a
         // Financial Year P&L, computed live from vihar_date, nothing stored or
         // moved. Only the roster-based numbers (active/total sevaks) are set here.
-        const stats: any = { totalKm: 0, totalVihars: 0, totalSadhu: 0, totalSadhvi: 0, longestVihar: 0, streak: 0, vSynergy: 'N/A', vRank: isAdmin ? 'Admin' : 'N/A' };
+        const stats: any = { totalKm: 0, totalVihars: 0, totalSadhu: 0, totalSadhvi: 0, longestVihar: 0, streak: 0, vSynergy: 'N/A', vRank: isAdmin ? 'Captain' : 'N/A' };
 
         if (detailedStats) {
           stats.totalOrgSevaks = detailedStats.totalMale + detailedStats.totalFemale;
@@ -659,11 +670,30 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   const vyStats = useMemo(() => {
     const myEntriesVY = data.entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
     const orgEntriesVY = orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
-    const base = dataService.calculateStats(myEntriesVY, currentUser.username, sevakMap);
-    base.streak = dataService.calculateStats(data.entries, currentUser.username, sevakMap).streak;
-    base.vRank = currentUser.role === UserRole.ORG_ADMIN ? 'Admin' : dataService.calculateRank(orgEntriesVY, currentUser.username);
+    // calculateStats(myEntriesVY, ...) already scopes .streak to this VY's
+    // entries (its own streak logic just walks consecutive-day runs from
+    // whatever's passed in) — no separate override needed here.
+    const base: any = dataService.calculateStats(myEntriesVY, currentUser.username, sevakMap);
+    base.vRank = currentUser.role === UserRole.ORG_ADMIN ? 'Captain' : dataService.calculateRank(orgEntriesVY, currentUser.username);
+
+    // Active Sevaks — who actually did a Vihar during the selected VY,
+    // instead of the org-wide "active in the last 30 days" snapshot, which
+    // stays pinned to today regardless of which VY is being viewed.
+    const activeUsernamesVY = new Set<string>();
+    orgEntriesVY.forEach(e => (e.sevaks || []).forEach(u => activeUsernamesVY.add(u)));
+    let activeMale = 0, activeFemale = 0;
+    activeUsernamesVY.forEach(u => {
+      const g = (sevakGenderMap[u] || '').toLowerCase();
+      if (g === 'female' || g === 'સ્ત્રી' || g === 'mahila') activeFemale++;
+      else activeMale++;
+    });
+    base.activeMale = activeMale;
+    base.activeFemale = activeFemale;
+    base.activeSevaks = activeMale + activeFemale;
+    base.activeUsernames = Array.from(activeUsernamesVY);
+
     return base;
-  }, [data.entries, orgEntriesAll, selectedVY.start.getTime(), selectedVY.end.getTime(), sevakMap, currentUser.username, currentUser.role]);
+  }, [data.entries, orgEntriesAll, selectedVY.start.getTime(), selectedVY.end.getTime(), sevakMap, sevakGenderMap, currentUser.username, currentUser.role]);
 
   const vyLeaderboard = useMemo(() => {
     const orgEntriesVY = orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
@@ -674,25 +704,28 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
   const yearlyViharCount = data.entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length;
 
-  // When browsing a past VY, anchor the rolling windows (week strip, recent
-  // activity) to the end of that VY instead of today, so they show that
-  // period's own data rather than an unrelated "right now".
-  const isViewingCurrentVY = selectedVYStartYear === currentVYStartYear;
-  const vyAnchorDate = isViewingCurrentVY ? new Date() : selectedVY.end;
-
+  // Always the real current week, regardless of which VY is selected for
+  // the other KPIs — "Consistency" answers "have I kept it up this actual
+  // week", not "this week within whatever period I'm browsing".
   const weekDayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   const startOfWeek = (() => {
-    const d = new Date(vyAnchorDate);
+    const d = new Date();
     const day = (d.getDay() + 6) % 7; // 0 = Monday
     d.setDate(d.getDate() - day);
     d.setHours(0, 0, 0, 0);
     return d;
   })();
+  // data.entries is already correctly scoped per role (a Sevak's own
+  // entries, or — for an Admin — the whole org's), so this is a Sevak's own
+  // consistency or the org's own, without any extra branching here. Count
+  // (not just presence) drives the color tier: 1 Vihar that day = orange,
+  // 2 = yellow, 3+ = green.
   const weeklyConsistency = weekDayLabels.map((label, i) => {
     const dayDate = new Date(startOfWeek);
     dayDate.setDate(startOfWeek.getDate() + i);
     const dayKey = toLocalDateKey(dayDate);
-    return { label, done: data.entries.some(e => e.vihar_date === dayKey) };
+    const count = data.entries.filter(e => e.vihar_date === dayKey).length;
+    return { label, count };
   });
 
   const recentActivity = [...data.entries]
@@ -1170,22 +1203,24 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               <p className="mt-1 text-xs font-semibold text-[#C05A57]">Sadhu / Sadhvi</p>
             </div>
 
-            {/* 4. Co-Sevak */}
-            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#F1EAFB', animationDelay: '120ms' }}>
-              <div className="flex items-start justify-between gap-2">
-                {isLoading ? <SkeletonLoader /> : (
-                  currentUser.role === UserRole.ORG_ADMIN ? (
-                    <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{displayStats.totalOrgSevaks}</p>
-                  ) : displayStats.vSynergy && displayStats.vSynergy !== "N/A" ? (
-                    <p className="text-[15px] font-extrabold text-[#241C17] leading-tight truncate">{displayStats.vSynergy.split(',')[0]}</p>
-                  ) : (
-                    <p className="text-[15px] font-semibold text-[#8A6A57]/70 italic">Find a partner</p>
-                  )
-                )}
-                <Handshake size={21} style={{ color: '#9A85C9' }} className="shrink-0" />
+            {/* 4. Co-Sevak — a Sevak's own most-frequent partner; not meaningful
+                for an Admin (who already sees Total Sevaks elsewhere), so
+                hidden there instead of showing a redundant sevak count. */}
+            {currentUser.role !== UserRole.ORG_ADMIN && (
+              <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#F1EAFB', animationDelay: '120ms' }}>
+                <div className="flex items-start justify-between gap-2">
+                  {isLoading ? <SkeletonLoader /> : (
+                    displayStats.vSynergy && displayStats.vSynergy !== "N/A" ? (
+                      <p className="text-[15px] font-extrabold text-[#241C17] leading-tight truncate">{displayStats.vSynergy.split(',')[0]}</p>
+                    ) : (
+                      <p className="text-[15px] font-semibold text-[#8A6A57]/70 italic">Find a partner</p>
+                    )
+                  )}
+                  <Handshake size={21} style={{ color: '#9A85C9' }} className="shrink-0" />
+                </div>
+                <p className="mt-1 text-xs font-semibold text-[#6B4FAE]">Co-Sevak</p>
               </div>
-              <p className="mt-1 text-xs font-semibold text-[#6B4FAE]">Co-Sevak</p>
-            </div>
+            )}
           </div>
 
           {/* Secondary stats — Rank / Streak / Total Sevaks / Active Sevaks (kept from existing dashboard, not in the pilot mock but not removed) */}
@@ -1196,6 +1231,9 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex items-baseline gap-1">
                       <span className="text-[22px] font-extrabold text-[#241C17] leading-none">#{displayStats.vRank}</span>
+                      {typeof displayStats.vRank === 'number' && displayStats.totalOrgSevaks > 0 && (
+                        <span className="text-xs font-bold text-[#8A6A57]">/ {displayStats.totalOrgSevaks}</span>
+                      )}
                     </div>
                   )}
                   <Medal size={21} style={{ color: '#C9A227' }} className="shrink-0" />
@@ -1253,9 +1291,10 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                   <div
                     className="w-full aspect-square rounded-full vseva-stagger-in"
                     style={{
-                      background: d.done ? '#DE6B38' : '#F2EEE8',
+                      background: d.count >= 3 ? '#3FA34D' : d.count === 2 ? '#E8B923' : d.count === 1 ? '#DE6B38' : '#F2EEE8',
                       animationDelay: `${i * 40}ms`,
                     }}
+                    title={d.count > 0 ? `${d.count} Vihar${d.count === 1 ? '' : 's'}` : undefined}
                   />
                 </div>
               ))}
@@ -1266,8 +1305,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           <div className="bg-white rounded-[22px] p-5 flex flex-col gap-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
             <div className="flex items-center justify-between">
               <p className="m-0 text-sm font-bold text-[#241C17]">Recent Activity</p>
-              {navigateToNotifications && (
-                <button onClick={navigateToNotifications} className="text-[12.5px] font-bold text-saffron-600 hover:text-saffron-700">
+              {navigateToEntries && (
+                <button onClick={navigateToEntries} className="text-[12.5px] font-bold text-saffron-600 hover:text-saffron-700">
                   View all Vihars
                 </button>
               )}

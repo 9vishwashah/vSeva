@@ -7,6 +7,7 @@ import Avatar from './Avatar';
 import AvatarCropModal from './AvatarCropModal';
 import { useToast } from '../context/ToastContext';
 import { getViharYearBounds } from '../services/viharYear';
+import SosButton from './SosButton';
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -15,6 +16,7 @@ interface ProfileSectionProps {
     orgDetails: Organization | null;
     onProfileUpdated?: () => Promise<void>;
     onLogout?: () => void;
+    onOpenSos?: (sosId: string) => void;
 }
 
 const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
@@ -22,12 +24,11 @@ const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 const fieldLabelClass = "text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider block mb-1.5";
 const fieldInputClass = "w-full py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm";
 
-const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onProfileUpdated, onLogout }) => {
+const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onProfileUpdated, onLogout, onOpenSos }) => {
     const orgName = orgDetails?.name || user.organization_id;
     const currentVY = getViharYearBounds();
     const { showToast } = useToast();
     const [showIdCard, setShowIdCard] = useState(false);
-    const [isActive, setIsActive] = useState(true);
     const [yearlyGoal, setYearlyGoal] = useState(25);
     const [isSaving, setIsSaving] = useState(false);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatar_url ?? null);
@@ -105,22 +106,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
         setCaptainName(user.full_name);
         setViceCaptainName(orgDetails?.vice_captain_name || '');
     }, [user.full_name, orgDetails?.vice_captain_name]);
-
-    useEffect(() => {
-        const load = async () => {
-            try {
-                const allEntries = await dataService.getEntries(user.organization_id);
-                const myEntries = allEntries.filter(e => (e.sevaks || []).includes(user.username));
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                const recentCount = myEntries.filter(e => new Date(e.vihar_date) >= thirtyDaysAgo).length;
-                setIsActive(recentCount >= 1);
-            } catch (e) {
-                console.warn('Could not compute active status', e);
-            }
-        };
-        load();
-    }, [user]);
 
     const handleSave = async () => {
         if (editForm.emergency_number && editForm.emergency_number.replace(/\D/g, '').length !== 10) {
@@ -244,11 +229,14 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
     return (
         <div className="max-w-xl mx-auto space-y-5 pb-10">
             {/* Top bar */}
-            <div className="flex items-center gap-3">
-                <button onClick={() => window.history.back()} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-                    <ChevronLeft size={16} className="text-[#241C17]" />
-                </button>
-                <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17]">Profile & Settings</h1>
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                    <button onClick={() => window.history.back()} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
+                        <ChevronLeft size={16} className="text-[#241C17]" />
+                    </button>
+                    <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] truncate">Profile & Settings</h1>
+                </div>
+                {onOpenSos && <SosButton currentUser={user} onOpenDetail={onOpenSos} />}
             </div>
 
             {/* Avatar card */}
@@ -278,12 +266,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 </div>
                 <div className="text-center mt-1">
                     <p className="m-0 text-lg font-extrabold text-[#241C17]">{user.full_name}</p>
-                    <div className="flex items-center justify-center gap-2 mt-1">
-                        <p className="m-0 text-xs font-semibold text-[#8A6A57] uppercase tracking-wide">{user.role}</p>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
-                            {isActive ? 'Active' : 'Inactive'}
-                        </span>
-                    </div>
+                    <p className="m-0 text-xs font-semibold text-[#8A6A57] uppercase tracking-wide mt-1">{user.role === UserRole.ORG_ADMIN ? 'Captain' : 'Sevak'}</p>
                 </div>
             </div>
 

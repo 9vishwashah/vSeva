@@ -323,6 +323,9 @@ export interface ChannelPost {
   id: string;
   organization_id: string;
   author_user_id: string;
+  author_name: string;
+  author_avatar_url?: string | null;
+  author_role?: string | null;
   message: string;
   created_at: string;
 }
@@ -331,4 +334,30 @@ export interface ChannelSettings {
   organization_id: string;
   posting_permission: ChannelPostingPermission;
   updated_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// SOS
+// ---------------------------------------------------------------------------
+
+export type SosStatus = 'active' | 'acknowledged' | 'resolved' | 'cancelled';
+
+export interface SosAlert {
+  id: string;
+  org_id: string;
+  triggered_by: string;
+  status: SosStatus;
+  created_at: string;
+  acknowledged_at?: string | null;
+  acknowledged_by?: string | null;
+  resolved_at?: string | null;
+  resolved_by?: string | null;
+  cancelled_at?: string | null;
+  cancelled_by?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_accuracy?: number | null;
+  location_source?: string | null;
+  vihar_entry_id?: number | null;
+  note?: string | null;
 }

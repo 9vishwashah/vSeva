@@ -32,8 +32,10 @@ const OrgRow: React.FC<{ org: ChannelOrgSummary; trailing: React.ReactNode; onCl
 
 const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) => {
   const { showToast } = useToast();
+  const isAdmin = currentUser.role === UserRole.ORG_ADMIN;
   const [following, setFollowing] = useState<ChannelOrgSummary[]>([]);
   const [results, setResults] = useState<ChannelOrgSummary[]>([]);
+  const [myOrgName, setMyOrgName] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -41,18 +43,25 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
 
   const loadFollowing = useCallback(async () => {
     try {
-      const data = await channelService.getFollowing();
+      const [data, myProfile] = await Promise.all([
+        channelService.getFollowing(),
+        channelService.getOrgProfile(currentUser.organization_id),
+      ]);
       setFollowing(data);
+      setMyOrgName(myProfile?.name ?? null);
     } catch (e) {
       console.error('Failed to load followed Channels', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser.organization_id]);
 
   useEffect(() => { loadFollowing(); }, [loadFollowing]);
 
   useEffect(() => {
+    // Discover (and the org search behind it) is a Captain-only action —
+    // only Captains can follow a new org, so a Sevak has nothing to do here.
+    if (!isAdmin) return;
     const handle = setTimeout(async () => {
       setSearching(true);
       try {
@@ -65,7 +74,7 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
       }
     }, 300);
     return () => clearTimeout(handle);
-  }, [query]);
+  }, [query, isAdmin]);
 
   const toggleFollow = async (org: ChannelOrgSummary) => {
     const alreadyFollowing = followingIds.has(org.id);
@@ -87,35 +96,42 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
       <div>
         <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2">
           <MessageSquare size={20} className="text-saffron-600" />
-          Channel
+          VChat
         </h1>
         <p className="text-xs text-[#8A6A57]">Updates from Vihar organizations</p>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-        <input
-          type="text"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder="Search organizations..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-200"
-        />
-      </div>
+      {isAdmin && (
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search organizations..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-200"
+          />
+        </div>
+      )}
 
       {!query && (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => onOpenOrganization(currentUser.organization_id)}
-          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onOpenOrganization(currentUser.organization_id); }}
-          className="w-full flex items-center justify-between gap-3 px-4 py-3.5 bg-saffron-50 rounded-2xl border border-saffron-100 cursor-pointer hover:border-saffron-300 transition-colors"
-        >
-          <div>
-            <p className="text-sm font-bold text-[#241C17]">Your Channel</p>
-            <p className="text-xs text-[#8A6A57]">Post updates and view your organization's Channel</p>
+        <div className="space-y-2.5">
+          <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] px-1">My VChat</h2>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => onOpenOrganization(currentUser.organization_id)}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onOpenOrganization(currentUser.organization_id); }}
+            className="w-full flex items-center justify-between gap-3 px-4 py-3.5 bg-saffron-50 rounded-2xl border border-saffron-100 cursor-pointer hover:border-saffron-300 transition-colors"
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[#241C17] truncate">{myOrgName || 'Your Organization'}</p>
+              <p className="text-xs text-[#8A6A57]">My Vihar Group Chat</p>
+            </div>
+            <span className="shrink-0 flex items-center gap-1 text-xs font-bold text-saffron-600">
+              Open <ChevronRight size={16} />
+            </span>
           </div>
-          <ChevronRight size={16} className="text-saffron-400 shrink-0" />
         </div>
       )}
 
@@ -139,6 +155,7 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
         </div>
       )}
 
+      {isAdmin && (
       <div className="space-y-2.5">
         <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] px-1">Discover</h2>
         {searching ? (
@@ -175,6 +192,7 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
           })
         )}
       </div>
+      )}
     </div>
   );
 };

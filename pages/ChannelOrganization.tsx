@@ -3,7 +3,10 @@ import { UserProfile, UserRole, ChannelOrgProfile, ChannelRecentVihar, ChannelPo
 import { channelService } from '../services/channelService';
 import { useToast } from '../context/ToastContext';
 import Modal from '../components/Modal';
+import Avatar from '../components/Avatar';
 import { ChevronLeft, Loader2, Send, Trash2, Settings } from 'lucide-react';
+
+const roleLabel = (role?: string | null): string => (role === UserRole.ORG_ADMIN ? 'Captain / Organization Head' : 'Vihar Sevak');
 
 interface ChannelOrganizationProps {
   currentUser: UserProfile;
@@ -42,23 +45,30 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
   const [loadingMore, setLoadingMore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [postingPermission, setPostingPermission] = useState<ChannelPostingPermission>('captain_only');
+  const [profilePost, setProfilePost] = useState<ChannelPost | null>(null);
   const seenPostIds = useRef(new Set<string>());
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const skipAutoScrollRef = useRef(false);
 
+  // `posts` is kept oldest-first (ascending) so it renders top-to-bottom
+  // like a normal chat, with new messages appended at the end — not the
+  // reverse-chronological feed order used elsewhere in the app.
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [profileData, viharsData, postsData, followingOrgs, permission] = await Promise.all([
+      const [profileData, viharsData, postsDataDesc, followingOrgs, permission] = await Promise.all([
         channelService.getOrgProfile(organizationId),
         channelService.getRecentVihars(organizationId, 5),
         channelService.getPosts(organizationId),
         isOwnOrg ? Promise.resolve([]) : channelService.isFollowing(organizationId).then(v => (v ? [organizationId] : [])),
         channelService.getSettings(organizationId),
       ]);
+      const postsData = postsDataDesc.slice().reverse();
       setProfile(profileData);
       setRecentVihars(viharsData);
       setPosts(postsData);
       seenPostIds.current = new Set(postsData.map(p => p.id));
-      setHasMore(postsData.length >= 30);
+      setHasMore(postsDataDesc.length >= 30);
       setIsFollowing(isOwnOrg || followingOrgs.length > 0);
       setPostingPermission(permission);
       setCanPost(
@@ -66,7 +76,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         (currentUser.role === UserRole.ORG_ADMIN || permission === 'all_members')
       );
     } catch (e: any) {
-      showToast(e?.message || 'Failed to load Channel', 'error');
+      showToast(e?.message || 'Failed to load VChat', 'error');
     } finally {
       setLoading(false);
     }
@@ -74,12 +84,27 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
 
   useEffect(() => { load(); }, [load]);
 
+  // Scroll to the newest message on first load and whenever one is appended
+  // — but not right after "Load earlier" prepends older ones above. Sets
+  // scrollTop directly on the messages container itself (not
+  // scrollIntoView, which walks every scrollable ancestor — including the
+  // whole page's own <main> scroller — and was dragging the entire page
+  // down every time a message arrived instead of just this one box).
+  useEffect(() => {
+    if (skipAutoScrollRef.current) {
+      skipAutoScrollRef.current = false;
+      return;
+    }
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [posts.length]);
+
   // Realtime: only while this screen is open, only for this one organization.
   useEffect(() => {
     const unsubscribe = channelService.subscribeToOrgPosts(organizationId, (post) => {
       if (seenPostIds.current.has(post.id)) return; // dedupe vs. optimistic insert
       seenPostIds.current.add(post.id);
-      setPosts(prev => [post, ...prev]);
+      setPosts(prev => [...prev, post]);
     });
     return unsubscribe;
   }, [organizationId]);
@@ -88,10 +113,18 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
     if (posts.length === 0 || loadingMore) return;
     setLoadingMore(true);
     try {
-      const older = await channelService.getPosts(organizationId, posts[posts.length - 1].created_at);
+      const older = await channelService.getPosts(organizationId, posts[0].created_at);
       older.forEach(p => seenPostIds.current.add(p.id));
-      setPosts(prev => [...prev, ...older]);
+      skipAutoScrollRef.current = true;
+      const el = messagesContainerRef.current;
+      const prevScrollHeight = el?.scrollHeight ?? 0;
+      setPosts(prev => [...older.slice().reverse(), ...prev]);
       setHasMore(older.length >= 30);
+      // Keep the user's visual position instead of jumping to the top once
+      // the older messages are prepended above what they were looking at.
+      requestAnimationFrame(() => {
+        if (el) el.scrollTop = el.scrollHeight - prevScrollHeight;
+      });
     } catch (e) {
       console.error('Failed to load earlier Channel messages', e);
     } finally {
@@ -138,15 +171,27 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
       id: optimisticId,
       organization_id: organizationId,
       author_user_id: currentUser.id,
+      author_name: currentUser.full_name,
+      author_avatar_url: currentUser.avatar_url,
+      author_role: currentUser.role,
       message,
       created_at: new Date().toISOString(),
     };
-    setPosts(prev => [optimisticPost, ...prev]);
+    setPosts(prev => [...prev, optimisticPost]);
     setDraft('');
     try {
-      const saved = await channelService.sendPost(organizationId, currentUser.id, message);
+      const saved = await channelService.sendPost(organizationId, currentUser.id, currentUser.full_name, message, currentUser.avatar_url, currentUser.role);
       seenPostIds.current.add(saved.id);
-      setPosts(prev => prev.map(p => (p.id === optimisticId ? saved : p)));
+      setPosts(prev => {
+        // The realtime broadcast for this same post can arrive before this
+        // insert's own response does — if so it's already in the list under
+        // its real id, so just drop the optimistic placeholder instead of
+        // also swapping it in (that would double it).
+        if (prev.some(p => p.id === saved.id)) {
+          return prev.filter(p => p.id !== optimisticId);
+        }
+        return prev.map(p => (p.id === optimisticId ? saved : p));
+      });
     } catch (e: any) {
       setPosts(prev => prev.filter(p => p.id !== optimisticId));
       setDraft(message);
@@ -185,7 +230,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
     return (
       <div className="max-w-3xl mx-auto py-16 text-center">
         <p className="text-sm text-[#8A6A57]">Organization not found.</p>
-        <button onClick={onBack} className="mt-3 text-sm font-bold text-saffron-600">Back to Channel</button>
+        <button onClick={onBack} className="mt-3 text-sm font-bold text-saffron-600">Back to VChat</button>
       </div>
     );
   }
@@ -198,7 +243,9 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-extrabold text-[#241C17] truncate">{profile.name}</h1>
-          {(profile.town || profile.city) && (
+          {isOwnOrg ? (
+            <p className="text-xs font-bold text-saffron-600">My Vihar Group Chat</p>
+          ) : (profile.town || profile.city) && (
             <p className="text-xs text-[#8A6A57]">{[profile.town, profile.city].filter(Boolean).join(', ')}</p>
           )}
         </div>
@@ -223,6 +270,87 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         )}
       </div>
 
+      {/* Chat first — the primary reason to be on this screen — then Recent
+          Vihars below it, not competing for the initial scroll position. */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 flex flex-col h-[65dvh]">
+        <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3 shrink-0">VChat</h2>
+
+        {/* Only this box scrolls as messages grow — not the whole page.
+            overscroll-contain stops the scroll gesture from "chaining" up to
+            the page once you hit the top/bottom of this list, which is what
+            made the whole page drag along with it. */}
+        <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          {posts.length === 0 ? (
+            <p className="text-sm text-[#8A6A57] py-4">No messages yet.</p>
+          ) : (
+            <>
+              {hasMore && (
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="w-full text-center text-xs font-bold text-saffron-600 py-2 shrink-0"
+                >
+                  {loadingMore ? 'Loading...' : 'Load earlier'}
+                </button>
+              )}
+              <div className="space-y-3">
+                {posts.map(post => {
+                  const isMine = post.author_user_id === currentUser.id;
+                  return (
+                    <div key={post.id} className={`flex gap-2 ${isMine ? 'flex-row-reverse' : ''}`}>
+                      <button type="button" onClick={() => setProfilePost(post)} className="shrink-0 hover:opacity-80 transition-opacity">
+                        <Avatar name={post.author_name} url={post.author_avatar_url} size={26} />
+                      </button>
+                      <div className={`max-w-[78%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                        <div className={`flex items-center gap-2 ${isMine ? 'flex-row-reverse' : ''}`}>
+                          <button type="button" onClick={() => setProfilePost(post)} className="text-xs font-extrabold uppercase tracking-wide text-saffron-600 hover:opacity-80 transition-opacity truncate">
+                            {isMine ? 'You' : post.author_name}
+                          </button>
+                          <p className="text-[10px] text-[#8A6A57] shrink-0">{formatRelativeTime(post.created_at)}</p>
+                          {isMine && !post.id.startsWith('optimistic-') && (
+                            <button onClick={() => handleDelete(post.id)} className="text-gray-300 hover:text-red-500 shrink-0">
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                        <div
+                          className={`mt-1 px-3.5 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
+                            isMine ? 'bg-saffron-100 text-[#241C17] rounded-tr-sm' : 'bg-[#F7F4F0] text-[#241C17] rounded-tl-sm'
+                          }`}
+                        >
+                          {post.message}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+
+        {canPost && (
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 shrink-0">
+            <input
+              type="text"
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
+              maxLength={4000}
+              placeholder="Write a message..."
+              className="flex-1 px-3.5 py-2.5 rounded-full bg-[#F9FAFB] border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-200"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!draft.trim() || sending}
+              className="w-10 h-10 rounded-full bg-saffron-600 hover:bg-saffron-700 disabled:opacity-50 text-white flex items-center justify-center shrink-0"
+            >
+              <Send size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+
       {recentVihars.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
           <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3">Recent Vihars</h2>
@@ -242,67 +370,10 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-        <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3">Channel</h2>
-
-        {canPost && (
-          <div className="flex items-center gap-2 mb-4">
-            <input
-              type="text"
-              value={draft}
-              onChange={e => setDraft(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
-              maxLength={4000}
-              placeholder="Write a message..."
-              className="flex-1 px-3.5 py-2.5 rounded-full bg-[#F9FAFB] border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-200"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!draft.trim() || sending}
-              className="w-10 h-10 rounded-full bg-saffron-600 hover:bg-saffron-700 disabled:opacity-50 text-white flex items-center justify-center shrink-0"
-            >
-              <Send size={16} />
-            </button>
-          </div>
-        )}
-
-        {posts.length === 0 ? (
-          <p className="text-sm text-[#8A6A57] py-4">No Channel updates yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {posts.map(post => (
-              <div key={post.id} className="border-b border-gray-50 last:border-0 pb-4 last:pb-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-xs font-extrabold uppercase tracking-wide text-saffron-600">{profile.name}</p>
-                    <p className="text-[10px] text-[#8A6A57]">{formatRelativeTime(post.created_at)}</p>
-                  </div>
-                  {post.author_user_id === currentUser.id && !post.id.startsWith('optimistic-') && (
-                    <button onClick={() => handleDelete(post.id)} className="text-gray-300 hover:text-red-500 shrink-0">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-                <p className="text-sm text-[#241C17] mt-1.5 whitespace-pre-wrap break-words">{post.message}</p>
-              </div>
-            ))}
-            {hasMore && (
-              <button
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="w-full text-center text-xs font-bold text-saffron-600 py-2"
-              >
-                {loadingMore ? 'Loading...' : 'Load earlier'}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
       <Modal open={confirmUnfollow} onClose={() => setConfirmUnfollow(false)} maxWidth="max-w-sm">
         <div className="p-6">
           <h3 className="text-base font-bold text-[#241C17]">Unfollow {profile.name}?</h3>
-          <p className="text-sm text-[#8A6A57] mt-1.5">Your organization will no longer receive their Channel updates.</p>
+          <p className="text-sm text-[#8A6A57] mt-1.5">Your organization will no longer receive their VChat updates.</p>
           <div className="flex gap-3 mt-5">
             <button onClick={() => setConfirmUnfollow(false)} className="flex-1 py-2.5 rounded-xl bg-gray-100 text-sm font-bold text-[#241C17]">Cancel</button>
             <button onClick={handleUnfollow} disabled={followBusy} className="flex-1 py-2.5 rounded-xl bg-red-500 text-sm font-bold text-white disabled:opacity-50">Unfollow</button>
@@ -312,7 +383,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
 
       <Modal open={showSettings} onClose={() => setShowSettings(false)} maxWidth="max-w-sm">
         <div className="p-6">
-          <h3 className="text-base font-bold text-[#241C17]">Channel Settings</h3>
+          <h3 className="text-base font-bold text-[#241C17]">VChat Settings</h3>
           <p className="text-sm text-[#8A6A57] mt-1">Who can send messages?</p>
           <div className="mt-4 space-y-2">
             {(['captain_only', 'all_members'] as ChannelPostingPermission[]).map(option => (
@@ -332,6 +403,27 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
           </div>
           <button onClick={() => setShowSettings(false)} className="w-full mt-5 py-2.5 rounded-xl bg-saffron-600 text-sm font-bold text-white">Done</button>
         </div>
+      </Modal>
+
+      {/* Mini sender profile — "who sent this", nothing more. Every sender in
+          this list belongs to this same organization (posting is scoped to
+          organizationId), so org name/city come straight from `profile`
+          already loaded above rather than a further query. */}
+      <Modal open={!!profilePost} onClose={() => setProfilePost(null)} maxWidth="max-w-xs">
+        {profilePost && (
+          <div className="p-6 flex flex-col items-center text-center">
+            <Avatar name={profilePost.author_name} url={profilePost.author_avatar_url} size={64} />
+            <p className="mt-3 text-base font-extrabold text-[#241C17]">{profilePost.author_name}</p>
+            <p className="text-xs font-bold text-saffron-600 mt-0.5">{roleLabel(profilePost.author_role)}</p>
+            <div className="w-full mt-4 pt-4 border-t border-gray-100 space-y-1">
+              <p className="text-sm font-semibold text-[#241C17]">{profile.name}</p>
+              {(profile.town || profile.city) && (
+                <p className="text-xs text-[#8A6A57]">{[profile.town, profile.city].filter(Boolean).join(', ')}</p>
+              )}
+            </div>
+            <button onClick={() => setProfilePost(null)} className="w-full mt-5 py-2.5 rounded-xl bg-gray-100 text-sm font-bold text-[#241C17]">Close</button>
+          </div>
+        )}
       </Modal>
     </div>
   );

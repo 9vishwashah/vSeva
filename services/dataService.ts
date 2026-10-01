@@ -212,8 +212,8 @@ export const dataService = {
     return data || [];
   },
 
-  async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string; state: string }>> {
-    const map: Record<string, { full_name: string; mobile: string; town: string; state: string }> = {};
+  async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string; state: string; yearly_goal?: number }>> {
+    const map: Record<string, { full_name: string; mobile: string; town: string; state: string; yearly_goal?: number }> = {};
     if (!orgIds || orgIds.length === 0) return map;
 
     try {
@@ -229,7 +229,8 @@ export const dataService = {
             full_name: p.full_name,
             mobile: p.mobile,
             town: p.town || '',
-            state: p.state || ''
+            state: p.state || '',
+            yearly_goal: typeof p.yearly_goal === 'number' ? p.yearly_goal : undefined
           };
         });
       } else {
@@ -322,6 +323,22 @@ export const dataService = {
       console.warn("Failed to fetch org roster via serverless");
     }
     return [];
+  },
+
+  // Same data as getOrgRoster (username/full_name/gender), via a plain
+  // Postgres RPC instead of the Netlify function — used specifically where
+  // that data feeds a leaderboard/participation split that would otherwise
+  // silently render "empty" (rather than visibly error) if the serverless
+  // fetch ever failed for infra reasons (deployment, env vars, CORS on
+  // native). Throws on failure instead of swallowing it, so callers surface
+  // a real error rather than a quietly-wrong empty leaderboard.
+  async getOrgRosterForStats(orgId: string, includeInactive: boolean = false): Promise<{ username: string; full_name: string; gender: string | null }[]> {
+    const { data, error } = await supabase.rpc('get_org_roster_for_stats', {
+      p_organization_id: orgId,
+      p_include_inactive: includeInactive,
+    });
+    if (error) throw error;
+    return (data || []) as { username: string; full_name: string; gender: string | null }[];
   },
 
   async createSevak(
@@ -780,6 +797,22 @@ export const dataService = {
 
     if (error) throw error;
     return data as ViharEntry[];
+  },
+
+  // Org-wide (vihar_date, distance_km, sevaks) only — for rank/leaderboard
+  // computation. getEntries() above is RLS-limited for a Sevak caller to
+  // just their own participation rows (sevak_can_read_own_entries), which
+  // silently breaks any client-side ranking built on top of it — every
+  // Sevak's "whole org" would really just be themselves. This goes through
+  // a narrow SECURITY DEFINER RPC scoped to the caller's own org instead.
+  async getOrgEntriesForRanking(orgId: string): Promise<ViharEntry[]> {
+    const { data, error } = await supabase.rpc('get_org_entries_for_ranking', {
+      p_organization_id: orgId,
+      p_from: null,
+      p_to: null,
+    });
+    if (error) throw error;
+    return (data || []) as ViharEntry[];
   },
 
   async getSevakEntries(username: string): Promise<ViharEntry[]> {
