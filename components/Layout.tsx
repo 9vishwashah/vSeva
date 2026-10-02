@@ -3,6 +3,7 @@ import { UserRole } from '../types';
 import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck, WifiOff, Compass, MessageSquare } from 'lucide-react';
 
 import NotificationBell from './NotificationBell';
+import LanguageSwitcher from './LanguageSwitcher';
 import Avatar from './Avatar';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
@@ -221,7 +222,10 @@ const Layout: React.FC<LayoutProps> = ({
                 </div>
               )}
             </button>
-            <NotificationBell userId={userId} onViewAll={() => setCurrentPage('notifications')} />
+            <div className={`flex items-center gap-1.5 ${sidebarCollapsed ? 'flex-col' : ''}`}>
+              {!sidebarCollapsed && <LanguageSwitcher compact />}
+              <NotificationBell userId={userId} onViewAll={() => setCurrentPage('notifications')} />
+            </div>
           </div>
           <button
             onClick={onLogout}
@@ -254,7 +258,8 @@ const Layout: React.FC<LayoutProps> = ({
             <img src={vSevaLogo} alt="vSeva" className="h-8 w-8 object-contain drop-shadow-sm shrink-0" />
             <h1 className="text-lg font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher compact />
             <NotificationBell userId={userId} onViewAll={() => setCurrentPage('notifications')} />
           </div>
         </header>

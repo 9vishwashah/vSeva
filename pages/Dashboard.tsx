@@ -13,7 +13,6 @@ import vsgLogo from '../assets/vsg.jpg';
 import { useToast } from '../context/ToastContext';
 import { useViharYear } from '../context/ViharYearContext';
 import { useLanguage } from '../context/LanguageContext';
-import LanguageSwitcher from '../components/LanguageSwitcher';
 import { supabase } from '../services/supabase';
 import { getViharYearForDate, isDateInViharYear } from '../services/viharYear';
 import { toLocalDateKey } from '../services/dateUtils';
@@ -1022,9 +1021,6 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
 
       {/* Header - plain greeting bar (Tangerine redesign: gradient moved to Sankalp card below) */}
-      <div className="flex justify-end">
-        <LanguageSwitcher />
-      </div>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <Avatar name={currentUser.full_name} url={currentUser.avatar_url} size={56} className="text-base" />
