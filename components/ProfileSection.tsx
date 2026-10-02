@@ -161,12 +161,40 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
         }
     };
 
-    // Push notification permission — the browser is the source of truth; the app can
-    // only ask once. If it comes back 'denied', no in-app button can undo that.
+    // Push notification permission. Native (Android/Capacitor) and web are
+    // genuinely different permission models — this used to check only the
+    // browser's window.Notification API, which doesn't exist in the Capacitor
+    // WebView, so every native install permanently saw "this browser doesn't
+    // support push notifications" even though OneSignal's native plugin (see
+    // services/oneSignalService.ts) was working correctly the whole time.
+    const isNativePlatform = (): boolean => {
+        const capacitor = (globalThis as any).Capacitor;
+        return !!capacitor && typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform();
+    };
+
     const [pushPermission, setPushPermission] = useState<'checking' | 'granted' | 'denied' | 'default' | 'unsupported'>('checking');
     const [pushBusy, setPushBusy] = useState(false);
 
-    const readPushPermission = () => {
+    const readPushPermission = async () => {
+        if (isNativePlatform()) {
+            try {
+                const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
+                const hasPermission = await OneSignal.Notifications.hasPermission();
+                if (hasPermission) {
+                    setPushPermission('granted');
+                    return;
+                }
+                // Android only re-prompts if it hasn't asked yet (or the user
+                // hasn't permanently denied it) — that's the closest native
+                // equivalent to the browser's 'default' vs 'denied' split.
+                const canAskAgain = await OneSignal.Notifications.canRequestPermission();
+                setPushPermission(canAskAgain ? 'default' : 'denied');
+            } catch (e) {
+                console.error('Failed to read native push permission', e);
+                setPushPermission('unsupported');
+            }
+            return;
+        }
         if (typeof Notification === 'undefined') {
             setPushPermission('unsupported');
             return;
@@ -176,6 +204,17 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
     useEffect(() => {
         readPushPermission();
+        if (isNativePlatform()) {
+            // Re-check when the app resumes, in case the user changed the
+            // permission from Android's own system Settings and came back.
+            let listenerHandle: { remove: () => void } | undefined;
+            let cancelled = false;
+            import('@capacitor/app').then(({ App: CapacitorApp }) => {
+                if (cancelled) return;
+                CapacitorApp.addListener('resume', () => readPushPermission()).then(h => { listenerHandle = h; });
+            });
+            return () => { cancelled = true; listenerHandle?.remove(); };
+        }
         // Re-check on focus in case the user changed the site permission from
         // outside the app (e.g. Chrome's own site settings) and came back.
         const onFocus = () => readPushPermission();
@@ -187,6 +226,23 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
         if (pushBusy) return;
         setPushBusy(true);
         try {
+            if (isNativePlatform()) {
+                const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
+                // true = fall back to Android's system settings screen if the
+                // user already denied it once and the OS won't re-prompt.
+                const granted = await OneSignal.Notifications.requestPermission(true);
+                if (granted && user.username) {
+                    await OneSignal.login(user.username);
+                }
+                await readPushPermission();
+                if (granted) {
+                    showToast('Notifications enabled on this device!', 'success');
+                } else {
+                    showToast('Notification permission was not granted.', 'info');
+                }
+                return;
+            }
+
             // @ts-ignore
             window.OneSignalDeferred = window.OneSignalDeferred || [];
             await new Promise<void>((resolve) => {
@@ -207,7 +263,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
             // Give the browser a moment to settle the permission change before re-reading it.
             await new Promise(r => setTimeout(r, 400));
-            readPushPermission();
+            await readPushPermission();
 
             if (Notification.permission === 'granted') {
                 showToast('Notifications enabled on this device!', 'success');
@@ -479,7 +535,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
                 <p className="m-0 mb-4 text-sm font-bold text-[#241C17]">App Settings</p>
 
-                {pushPermission === 'denied' ? (
+                {pushPermission === 'denied' && !isNativePlatform() ? (
+                    // Web only — once a browser blocks a site's notification permission,
+                    // no in-app button can undo that, unlike native (see below).
                     <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
                         <AlertTriangle size={18} className="text-red-500 mt-0.5 shrink-0" />
                         <div>
@@ -493,7 +551,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     </div>
                 ) : pushPermission === 'unsupported' ? (
                     <div className="p-4 rounded-2xl text-xs text-[#8A6A57]" style={{ background: '#F7F4F0' }}>
-                        This browser doesn't support push notifications.
+                        Push notifications aren't available on this device.
                     </div>
                 ) : (
                     <div className="flex items-center justify-between p-4 rounded-2xl gap-3" style={{ background: '#F7F4F0' }}>
