@@ -219,6 +219,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         <div className="text-center text-xs text-gray-400 mt-4">
           <p>vSeva by VJAS</p>
+          <p className="mt-1">
+            <a href="https://vseva.vjas.in/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Privacy Policy</a>
+            <span className="mx-1.5">·</span>
+            <a href="https://vseva.vjas.in/delete-account" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Delete account</a>
+          </p>
         </div>
       </div>
 

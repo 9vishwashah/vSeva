@@ -34,6 +34,8 @@ const DirectoryRouter = React.lazy(() => import('./pages/DirectoryRouter'));
 const Channel = React.lazy(() => import('./pages/Channel'));
 const ChannelOrganization = React.lazy(() => import('./pages/ChannelOrganization'));
 const SosDetail = React.lazy(() => import('./pages/SosDetail'));
+const PrivacyPolicy = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.PrivacyPolicy })));
+const DeleteAccount = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.DeleteAccount })));
 
 
 // Suppress XAxis/YAxis defaultProps warning from Recharts in React 18+
@@ -261,6 +263,16 @@ const App: React.FC = () => {
     return (
       <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]"><div className="animate-pulse text-saffron-600 font-bold">Loading Directory...</div></div>}>
         <DirectoryRouter />
+      </React.Suspense>
+    );
+  }
+
+  // Public legal pages (Google Play requires a reachable privacy-policy URL
+  // and a web account-deletion URL) — no login, checked before the auth gate.
+  if (normalizedPath === '/privacy' || normalizedPath === '/delete-account') {
+    return (
+      <React.Suspense fallback={<div className="min-h-screen bg-[#FDFBF7]" />}>
+        {normalizedPath === '/privacy' ? <PrivacyPolicy /> : <DeleteAccount />}
       </React.Suspense>
     );
   }

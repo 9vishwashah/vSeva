@@ -42,4 +42,12 @@
          runtime before any notification (including OneSignal push) is shown.
          requestPermission() is already called from services/oneSignalService.ts. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Foreground-only location. The app's geolocation calls (SOS best-effort
+         position in services/sosService.ts, nearby-temple search) run in the
+         Capacitor WebView, and Capacitor's WebChromeClient can only request
+         the Android runtime permission for geolocation if it is declared here —
+         without these two lines every native geolocation request was silently
+         denied. No background-location permission is requested or needed. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 </manifest>
