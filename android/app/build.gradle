@@ -1,8 +1,32 @@
 apply plugin: 'com.android.application'
 
+// Release signing credentials live in keystore.properties (gitignored, local-
+// only — see android/.gitignore) alongside the .jks it points at. Neither is
+// committed: losing both means losing the ability to publish updates to an
+// already-published app, so they're backed up outside git, not protected by
+// it. A checkout without this file (e.g. a fresh clone, or CI without the
+// secret configured) still builds `release` — it's just unsigned, same as
+// before this was wired up — rather than failing the build.
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+def hasSigningConfig = keystorePropertiesFile.exists()
+if (hasSigningConfig) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "in.vjas.vseva"
     compileSdk = rootProject.ext.compileSdkVersion
+    if (hasSigningConfig) {
+        signingConfigs {
+            release {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     defaultConfig {
         applicationId "in.vjas.vseva"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -30,6 +54,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasSigningConfig) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
