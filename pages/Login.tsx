@@ -4,6 +4,8 @@ import { dataService } from '../services/dataService';
 import { UserProfile } from '../types';
 import { LogIn, Loader2, Instagram, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 
 interface LoginProps {
@@ -18,6 +20,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const { showToast } = useToast();
+  const { t } = useLanguage();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +120,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center px-4 pt-24 pb-24 relative">
+      <div className="absolute top-6 right-4 md:right-8 z-50">
+        <LanguageSwitcher />
+      </div>
       <div className="absolute top-6 left-4 md:left-8 flex gap-3 z-50">
         <button
           onClick={() => {
@@ -148,13 +154,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             </div>
           </div>
           <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent mb-2">vSeva</h1>
-          <p className="text-gray-500">Sign in to your account</p>
+          <p className="text-gray-500">{t('login.subtitle')}</p>
           <p className="text-sm text-saffron-600 mt-2 font-medium">Please enter the username and password given by your Captain.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('login.username')}</label>
             <input
               type="text"
               required
@@ -165,7 +171,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('login.password')}</label>
             <input
               type="password"
               required
@@ -180,7 +186,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 onClick={() => setIsForgotPassword(true)}
                 className="text-xs text-saffron-600 hover:underline"
               >
-                Forgot Password?
+                {t('login.forgotPassword')}
               </button>
             </div>
           </div>
@@ -190,7 +196,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             disabled={loading}
             className="w-full bg-saffron-600 hover:bg-saffron-700 text-white py-3 rounded-lg font-medium transition-colors flex justify-center items-center"
           >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : "Sign In"}
+            {loading ? <Loader2 className="animate-spin" size={20} /> : t('login.signIn')}
           </button>
 
           {errorMsg && (
@@ -201,13 +207,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </form>
 
         <div className="border-t pt-4 text-center space-y-2">
-          <p className="text-sm text-gray-600">Want to use for Vihar Seva Group?</p>
+          <p className="text-sm text-gray-600">{t('login.noAccount')}</p>
           <button
             type="button"
             onClick={() => setIsRegistering(true)}
             className="text-saffron-600 font-medium hover:underline text-sm"
           >
-            Create Captain Account
+            {t('login.registerOrg')}
           </button>
         </div>
 

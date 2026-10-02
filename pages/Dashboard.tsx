@@ -12,6 +12,8 @@ import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import vsgLogo from '../assets/vsg.jpg';
 import { useToast } from '../context/ToastContext';
 import { useViharYear } from '../context/ViharYearContext';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import { supabase } from '../services/supabase';
 import { getViharYearForDate, isDateInViharYear } from '../services/viharYear';
 import { toLocalDateKey } from '../services/dateUtils';
@@ -47,6 +49,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, navigateToNotifications, navigateToEntries, onAddVihar, orgDetails: orgDetailsProp }) => {
   const { showToast } = useToast();
+  const { t, n } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
   const [sevakMap, setSevakMap] = useState<Record<string, string>>({}); // Add this state
@@ -743,9 +746,9 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const diffDays = Math.round((today.getTime() - d.getTime()) / 86400000);
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays > 1 && diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays === 0) return t('dashboard.today');
+    if (diffDays === 1) return t('dashboard.yesterday');
+    if (diffDays > 1 && diffDays < 7) return `${n(diffDays)} ${t('dashboard.daysAgo')}`;
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   };
 
@@ -770,16 +773,16 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         <div className="flex justify-center mb-4 text-orange-500">
           <AlertCircle size={48} className="drop-shadow-sm" />
         </div>
-        <h3 className="text-xl font-bold text-center text-gray-900 mb-2">Kindly Complete Your Profile</h3>
+        <h3 className="text-xl font-bold text-center text-gray-900 mb-2">{t('dashboard.completeProfileTitle')}</h3>
         <p className="text-sm text-center text-gray-600 mb-6 leading-relaxed">
-          Updating your Blood Group, Emergency Number, and Address ensures we can assist you promptly during an incident. It is also required to generate your complete Vihar Sevak Card.
+          {t('dashboard.completeProfileBody')}
         </p>
         <div className="flex gap-3">
           <button
             onClick={() => setShowProfileModal(false)}
             className="flex-1 py-2.5 text-orange-700 font-semibold bg-orange-50 hover:bg-orange-100 rounded-xl transition-colors border border-orange-100"
           >
-            Later
+            {t('dashboard.later')}
           </button>
           <button
             onClick={() => {
@@ -788,7 +791,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             }}
             className="flex-1 py-2.5 bg-gradient-to-r from-orange-600 to-saffron-600 hover:from-orange-700 hover:to-saffron-700 text-white font-bold rounded-xl shadow-lg shadow-orange-200 transition-all active:scale-95"
           >
-            Complete Now
+            {t('dashboard.completeNow')}
           </button>
         </div>
       </Modal>
@@ -894,7 +897,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       {/* Active Sevaks Modal */}
       <Modal open={showActiveSevaksModal} onClose={() => setShowActiveSevaksModal(false)} maxWidth="max-w-md" className="relative border-t-4 border-orange-500">
         <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
-          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Activity size={20} className="text-orange-500" /> Active Sevaks</h3>
+          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Activity size={20} className="text-orange-500" /> {t('dashboard.activeSevaksModalTitle')}</h3>
           <button onClick={() => setShowActiveSevaksModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100">
             <X size={20} />
           </button>
@@ -916,7 +919,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               })}
             </ul>
           ) : (
-            <div className="text-center text-gray-500 py-8">No active sevaks found.</div>
+            <div className="text-center text-gray-500 py-8">{t('dashboard.noActiveSevaks')}</div>
           )}
         </div>
       </Modal>
@@ -1019,6 +1022,9 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
 
       {/* Header - plain greeting bar (Tangerine redesign: gradient moved to Sankalp card below) */}
+      <div className="flex justify-end">
+        <LanguageSwitcher />
+      </div>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <Avatar name={currentUser.full_name} url={currentUser.avatar_url} size={56} className="text-base" />
@@ -1044,19 +1050,19 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full text-xs font-bold bg-[#241C17] text-white">
                     <Crown size={13} className="text-saffron-400 shrink-0" />
-                    <span className="truncate">Captain: {currentUser.full_name}</span>
+                    <span className="truncate">{t('dashboard.captain')}: {currentUser.full_name}</span>
                   </span>
                   {orgDetails?.vice_captain_name && (
                     <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full text-xs font-bold bg-[#F1EAFB] text-[#6B4FAE]">
                       <Shield size={13} className="shrink-0" />
-                      <span className="truncate">Vice Captain: {orgDetails.vice_captain_name}</span>
+                      <span className="truncate">{t('dashboard.viceCaptain')}: {orgDetails.vice_captain_name}</span>
                     </span>
                   )}
                 </div>
               </>
             ) : (
               <>
-                <p className="m-0 text-xs font-bold text-[#8A6A57]">Jai Jinendra,</p>
+                <p className="m-0 text-xs font-bold text-[#8A6A57]">{t('dashboard.jaiJinendra')}</p>
                 <h1 className="m-0 text-xl sm:text-2xl font-extrabold tracking-tight text-[#241C17] truncate">
                   {currentUser.full_name}
                 </h1>
@@ -1077,12 +1083,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                   <div className="mt-1.5 flex flex-col gap-0.5">
                     {captainName && (
                       <p className="m-0 text-[11px] font-semibold text-[#8A6A57]">
-                        Captain: <span className="text-[#241C17] font-bold">{captainName}</span>
+                        {t('dashboard.captain')}: <span className="text-[#241C17] font-bold">{captainName}</span>
                       </p>
                     )}
                     {orgDetails?.vice_captain_name && (
                       <p className="m-0 text-[11px] font-semibold text-[#8A6A57]">
-                        Vice Captain: <span className="text-[#241C17] font-bold">{orgDetails.vice_captain_name}</span>
+                        {t('dashboard.viceCaptain')}: <span className="text-[#241C17] font-bold">{orgDetails.vice_captain_name}</span>
                       </p>
                     )}
                   </div>
@@ -1100,7 +1106,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               className="flex-1 md:flex-none flex items-center justify-center gap-1.5 sm:gap-2 bg-saffron-600 hover:bg-saffron-700 text-white font-bold px-3 sm:px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 text-sm"
             >
               <MapPin size={18} />
-              <span className="truncate">Alert Vihar</span>
+              <span className="truncate">{t('dashboard.alertVihar')}</span>
             </button>
 
             <div className="relative flex-1 md:flex-none">
@@ -1109,7 +1115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                 className="w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-[#241C17] font-semibold px-3 sm:px-4 py-2.5 rounded-xl transition-all active:scale-95 text-sm shadow-sm"
               >
                 <Download size={18} />
-                <span className="truncate">Export</span>
+                <span className="truncate">{t('dashboard.export')}</span>
               </button>
             </div>
           </div>
@@ -1123,7 +1129,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             className="flex items-center justify-center gap-1.5 bg-saffron-600 hover:bg-saffron-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 text-sm w-full md:w-auto shrink-0"
           >
             <Plus size={18} />
-            <span>Add Vihar</span>
+            <span>{t('dashboard.addVihar')}</span>
           </button>
         )}
       </div>
@@ -1144,8 +1150,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             <AlertCircle size={22} />
           </div>
           <div>
-            <p className="m-0 font-extrabold text-base">No Vihar Since {daysSinceLastVihar} Days</p>
-            <p className="m-0 text-sm text-white/90 mt-0.5">Kindly Join In Seva</p>
+            <p className="m-0 font-extrabold text-base">No Vihar Since {n(daysSinceLastVihar)} Days</p>
+            <p className="m-0 text-sm text-white/90 mt-0.5">{t('dashboard.kindlyJoinSeva')}</p>
           </div>
         </div>
       )}
@@ -1159,7 +1165,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       <div className="max-w-4xl space-y-5">
         <div className="flex items-center justify-between gap-2 flex-wrap px-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="m-0 text-sm font-bold text-[#241C17]">{currentUser.role === UserRole.ORG_ADMIN ? 'Org Stats' : 'Your Stats'}</p>
+            <p className="m-0 text-sm font-bold text-[#241C17]">{currentUser.role === UserRole.ORG_ADMIN ? t('dashboard.orgStats') : t('dashboard.yourStats')}</p>
             <span className="text-[10px] font-extrabold bg-saffron-100 text-saffron-700 px-2 py-0.5 rounded-full">{selectedVY.label}</span>
           </div>
           <ViharYearSelector
@@ -1174,33 +1180,33 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#FFF0E5', animationDelay: '0ms' }}>
               <div className="flex items-start justify-between">
                 {isLoading ? <SkeletonLoader /> : (
-                  <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{displayStats.totalKm}<span className="text-[13px] font-bold text-[#8A6A57]"> km</span></p>
+                  <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalKm)}<span className="text-[13px] font-bold text-[#8A6A57]"> km</span></p>
                 )}
                 <Footprints size={21} style={{ color: '#DE8A5A' }} className="shrink-0" />
               </div>
-              <p className="mt-1 text-xs font-semibold text-[#B5602C]">Total KM</p>
+              <p className="mt-1 text-xs font-semibold text-[#B5602C]">{t('dashboard.totalKm')}</p>
             </div>
 
             {/* 2. Total Vihars */}
             <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#E9F4FD', animationDelay: '40ms' }}>
               <div className="flex items-start justify-between">
                 {isLoading ? <SkeletonLoader /> : (
-                  <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{displayStats.totalVihars}</p>
+                  <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalVihars)}</p>
                 )}
                 <MapPin size={21} style={{ color: '#5B9BC7' }} className="shrink-0" />
               </div>
-              <p className="mt-1 text-xs font-semibold text-[#2E7EB0]">Vihars</p>
+              <p className="mt-1 text-xs font-semibold text-[#2E7EB0]">{t('dashboard.vihars')}</p>
             </div>
 
             {/* 3. Sadhu / Sadhvi (combined) */}
             <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#FCEAEB', animationDelay: '80ms' }}>
               <div className="flex items-start justify-between">
                 {isLoading ? <SkeletonLoader /> : (
-                  <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{displayStats.totalSadhu}<span className="text-sm text-[#D9A6A5]"> / </span>{displayStats.totalSadhvi}</p>
+                  <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalSadhu)}<span className="text-sm text-[#D9A6A5]"> / </span>{n(displayStats.totalSadhvi)}</p>
                 )}
                 <Users size={21} style={{ color: '#D68C89' }} className="shrink-0" />
               </div>
-              <p className="mt-1 text-xs font-semibold text-[#C05A57]">Sadhu / Sadhvi</p>
+              <p className="mt-1 text-xs font-semibold text-[#C05A57]">{t('dashboard.sadhuSadhvi')}</p>
             </div>
 
             {/* 4. Co-Sevak — a Sevak's own most-frequent partner; not meaningful
@@ -1213,12 +1219,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                     displayStats.vSynergy && displayStats.vSynergy !== "N/A" ? (
                       <p className="text-[15px] font-extrabold text-[#241C17] leading-tight truncate">{displayStats.vSynergy.split(',')[0]}</p>
                     ) : (
-                      <p className="text-[15px] font-semibold text-[#8A6A57]/70 italic">Find a partner</p>
+                      <p className="text-[15px] font-semibold text-[#8A6A57]/70 italic">{t('dashboard.findPartner')}</p>
                     )
                   )}
                   <Handshake size={21} style={{ color: '#9A85C9' }} className="shrink-0" />
                 </div>
-                <p className="mt-1 text-xs font-semibold text-[#6B4FAE]">Co-Sevak</p>
+                <p className="mt-1 text-xs font-semibold text-[#6B4FAE]">{t('dashboard.coSevak')}</p>
               </div>
             )}
           </div>
@@ -1230,15 +1236,15 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                 <div className="flex items-start justify-between">
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex items-baseline gap-1">
-                      <span className="text-[22px] font-extrabold text-[#241C17] leading-none">#{displayStats.vRank}</span>
+                      <span className="text-[22px] font-extrabold text-[#241C17] leading-none">#{n(displayStats.vRank)}</span>
                       {typeof displayStats.vRank === 'number' && displayStats.totalOrgSevaks > 0 && (
-                        <span className="text-xs font-bold text-[#8A6A57]">/ {displayStats.totalOrgSevaks}</span>
+                        <span className="text-xs font-bold text-[#8A6A57]">/ {n(displayStats.totalOrgSevaks)}</span>
                       )}
                     </div>
                   )}
                   <Medal size={21} style={{ color: '#C9A227' }} className="shrink-0" />
                 </div>
-                <p className="mt-1 text-xs font-semibold text-[#946800]">Rank in Org</p>
+                <p className="mt-1 text-xs font-semibold text-[#946800]">{t('dashboard.rankInOrg')}</p>
               </div>
             )}
 
@@ -1246,11 +1252,11 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#FFF0E5', animationDelay: '180ms' }}>
                 <div className="flex items-start justify-between">
                   {isLoading ? <SkeletonLoader /> : (
-                    <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{displayStats.streak}</span>
+                    <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.streak)}</span>
                   )}
                   <Flame size={21} style={{ color: '#DE6B38' }} className="shrink-0" />
                 </div>
-                <p className="mt-1 text-xs font-semibold text-[#B5602C]">Day Streak</p>
+                <p className="mt-1 text-xs font-semibold text-[#B5602C]">{t('dashboard.dayStreak')}</p>
               </div>
             )}
 
@@ -1258,13 +1264,13 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               <div className="flex items-start justify-between">
                 {isLoading ? <SkeletonLoader /> : (
                   <div className="flex items-center gap-2">
-                    <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{displayStats.totalOrgSevaks}</span>
-                    <span className="text-[10px] font-bold text-[#1F8A63]/70">{displayStats.totalMale || 0}M / {displayStats.totalFemale || 0}F</span>
+                    <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalOrgSevaks)}</span>
+                    <span className="text-[10px] font-bold text-[#1F8A63]/70">{n(displayStats.totalMale || 0)}M / {n(displayStats.totalFemale || 0)}F</span>
                   </div>
                 )}
                 <Users size={21} style={{ color: '#4EA37E' }} className="shrink-0" />
               </div>
-              <p className="mt-1 text-xs font-semibold text-[#1F8A63]">Total Sevaks</p>
+              <p className="mt-1 text-xs font-semibold text-[#1F8A63]">{t('dashboard.totalSevaks')}</p>
             </div>
 
             <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#E3F6F5', animationDelay: '240ms' }}>
@@ -1272,18 +1278,18 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Activity size={21} style={{ color: '#2F9CA6' }} className="shrink-0" />
-                    <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{displayStats.activeSevaks}</span>
+                    <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.activeSevaks)}</span>
                   </div>
-                  <button onClick={() => setShowActiveSevaksModal(true)} className="text-[9px] font-bold px-2.5 py-1 bg-white/70 text-[#1B8A94] rounded-lg hover:bg-white transition-colors active:scale-95 tracking-wider">VIEW</button>
+                  <button onClick={() => setShowActiveSevaksModal(true)} className="text-[9px] font-bold px-2.5 py-1 bg-white/70 text-[#1B8A94] rounded-lg hover:bg-white transition-colors active:scale-95 tracking-wider">{t('dashboard.view')}</button>
                 </div>
               )}
-              <p className="mt-1 text-xs font-semibold text-[#1B8A94]" title=">= 1 Vihar in last 30 days">Active Sevaks</p>
+              <p className="mt-1 text-xs font-semibold text-[#1B8A94]" title=">= 1 Vihar in last 30 days">{t('dashboard.activeSevaks')}</p>
             </div>
           </div>
 
           {/* Consistency — this week */}
           <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-            <p className="m-0 mb-3.5 text-sm font-bold text-[#241C17]">Consistency · This week</p>
+            <p className="m-0 mb-3.5 text-sm font-bold text-[#241C17]">{t('dashboard.consistencyThisWeek')}</p>
             <div className="grid grid-cols-7 gap-2 text-center">
               {weeklyConsistency.map((d, i) => (
                 <div key={d.label}>
@@ -1304,15 +1310,15 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           {/* Recent Activity */}
           <div className="bg-white rounded-[22px] p-5 flex flex-col gap-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
             <div className="flex items-center justify-between">
-              <p className="m-0 text-sm font-bold text-[#241C17]">Recent Activity</p>
+              <p className="m-0 text-sm font-bold text-[#241C17]">{t('dashboard.recentActivity')}</p>
               {navigateToEntries && (
                 <button onClick={navigateToEntries} className="text-[12.5px] font-bold text-saffron-600 hover:text-saffron-700">
-                  View all Vihars
+                  {t('dashboard.viewAllVihars')}
                 </button>
               )}
             </div>
             {recentActivity.length === 0 ? (
-              <p className="text-sm text-gray-400">No Vihars logged yet.</p>
+              <p className="text-sm text-gray-400">{t('dashboard.noVisharsLogged')}</p>
             ) : (
               recentActivity.map((entry, i) => (
                 <div key={entry.id} className="flex items-center gap-3 vseva-stagger-in" style={{ animationDelay: `${i * 40}ms` }}>
@@ -1322,10 +1328,10 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                   <div className="flex-1 min-w-0">
                     <p className="m-0 text-[13.5px] font-bold text-[#241C17] truncate">{entry.vihar_from} → {entry.vihar_to}</p>
                     <p className="mt-0.5 text-xs text-gray-500 capitalize">
-                      {formatRelativeDate(entry.vihar_date)} · {entry.vihar_type} · {(entry.sevaks || []).length} Sevak{(entry.sevaks || []).length === 1 ? '' : 's'}
+                      {formatRelativeDate(entry.vihar_date)} · {entry.vihar_type} · {n((entry.sevaks || []).length)} {(entry.sevaks || []).length === 1 ? t('dashboard.sevak') : t('dashboard.sevaks')}
                     </p>
                   </div>
-                  <p className="m-0 text-sm font-extrabold text-saffron-600 shrink-0">{(entry.distance_km ?? entry.haversine_km ?? 0).toFixed(1)} km</p>
+                  <p className="m-0 text-sm font-extrabold text-saffron-600 shrink-0">{n((entry.distance_km ?? entry.haversine_km ?? 0).toFixed(1))} km</p>
                 </div>
               ))
             )}

@@ -6,6 +6,7 @@ import NotificationBell from './NotificationBell';
 import Avatar from './Avatar';
 import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useLanguage } from '../context/LanguageContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -23,6 +24,7 @@ const Layout: React.FC<LayoutProps> = ({
   children, role, userInitials, userName, avatarUrl, userId, onLogout, currentPage, setCurrentPage
 }) => {
   const isOnline = useOnlineStatus();
+  const { t } = useLanguage();
   const [moreOpen, setMoreOpen] = React.useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(() => {
     try {
@@ -48,34 +50,34 @@ const Layout: React.FC<LayoutProps> = ({
   // primary pill items + a "More" sheet, per the Bottom Nav redesign.
   const primaryItems = role === UserRole.ORG_ADMIN
     ? [
-      { page: 'dashboard', icon: <BarChart2 size={21} />, label: 'Stats' },
-      { page: 'view-entries', icon: <Table2 size={21} />, label: 'Entries' },
-      { page: 'new-entry', icon: <FilePlus size={23} />, label: 'Add' },
+      { page: 'dashboard', icon: <BarChart2 size={21} />, label: t('nav.statistics') },
+      { page: 'view-entries', icon: <Table2 size={21} />, label: t('nav.viewEntries') },
+      { page: 'new-entry', icon: <FilePlus size={23} />, label: t('nav.newEntry') },
     ]
     : [
       // 'Home' shows the Dashboard/stats page (was wrongly wired to Profile & Settings —
       // the avatar button below is the only path to Profile & Settings now).
-      { page: 'analytics', icon: <Home size={21} />, label: 'Home' },
-      { page: 'my-vihars', icon: <Footprints size={21} />, label: 'My Vihars' },
+      { page: 'analytics', icon: <Home size={21} />, label: t('nav.home') },
+      { page: 'my-vihars', icon: <Footprints size={21} />, label: t('nav.myVihars') },
     ];
 
   const moreItems = role === UserRole.ORG_ADMIN
     ? [
-      { page: 'statistics', icon: <BarChart2 size={18} />, label: 'Statistics' },
-      { page: 'pending-approvals', icon: <ClipboardCheck size={18} />, label: 'Pending Approvals' },
-      { page: 'manage-routes', icon: <Map size={18} />, label: 'Manage Routes' },
-      { page: 'add-sevak', icon: <UserPlus size={18} />, label: 'Add Sevaks' },
-      { page: 'channel', icon: <MessageSquare size={18} />, label: 'VChat' },
-      { page: 'contacts', icon: <PhoneCall size={18} />, label: 'Contacts' },
-      { page: 'reports', icon: <ShieldAlert size={18} />, label: 'Reports' },
+      { page: 'statistics', icon: <BarChart2 size={18} />, label: t('nav.statistics') },
+      { page: 'pending-approvals', icon: <ClipboardCheck size={18} />, label: t('nav.pendingApprovals') },
+      { page: 'manage-routes', icon: <Map size={18} />, label: t('nav.manageRoutes') },
+      { page: 'add-sevak', icon: <UserPlus size={18} />, label: t('nav.addSevaks') },
+      { page: 'channel', icon: <MessageSquare size={18} />, label: t('nav.vchat') },
+      { page: 'contacts', icon: <PhoneCall size={18} />, label: t('nav.contacts') },
+      { page: 'reports', icon: <ShieldAlert size={18} />, label: t('nav.reports') },
     ]
     : [
-      { page: 'new-entry', icon: <FilePlus size={18} />, label: 'Add Vihar' },
-      { page: 'statistics', icon: <BarChart2 size={18} />, label: 'Group Analytics' },
-      { page: 'channel', icon: <MessageSquare size={18} />, label: 'VChat' },
-      { page: 'contacts', icon: <PhoneCall size={18} />, label: 'Contacts' },
-      { page: 'notifications', icon: <Bell size={18} />, label: 'Notifications' },
-      { page: 'reports', icon: <ShieldAlert size={18} />, label: 'Reports' },
+      { page: 'new-entry', icon: <FilePlus size={18} />, label: t('nav.addVihar') },
+      { page: 'statistics', icon: <BarChart2 size={18} />, label: t('nav.groupAnalytics') },
+      { page: 'channel', icon: <MessageSquare size={18} />, label: t('nav.vchat') },
+      { page: 'contacts', icon: <PhoneCall size={18} />, label: t('nav.contacts') },
+      { page: 'notifications', icon: <Bell size={18} />, label: t('nav.notifications') },
+      { page: 'reports', icon: <ShieldAlert size={18} />, label: t('nav.reports') },
     ];
 
   const moreActive = moreItems.some(i => i.page === currentPage);
@@ -125,7 +127,7 @@ const Layout: React.FC<LayoutProps> = ({
         <div className="fixed top-2 inset-x-0 z-[60] flex justify-center px-4 pointer-events-none">
           <div className="pointer-events-auto flex items-center gap-2 bg-amber-600 text-white text-xs sm:text-sm font-bold px-4 py-2 rounded-full shadow-lg vseva-modal-backdrop">
             <WifiOff size={15} className="shrink-0" />
-            <span>You're offline — connect to the internet to continue</span>
+            <span>{t('nav.offline')}</span>
           </div>
         </div>
       )}
@@ -135,7 +137,7 @@ const Layout: React.FC<LayoutProps> = ({
         {/* Collapse/expand toggle */}
         <button
           onClick={toggleSidebar}
-          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={sidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
           className="absolute -right-3 top-8 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-saffron-600 hover:border-saffron-200 transition-colors z-10"
         >
           {sidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -156,49 +158,49 @@ const Layout: React.FC<LayoutProps> = ({
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {role === UserRole.ORG_ADMIN && (
             <>
-              <NavItem page="dashboard" icon={BarChart2} label="Dashboard" />
-              <NavItem page="statistics" icon={BarChart2} label="Statistics" />
-              <NavItem page="view-entries" icon={Table2} label="View Entries" />
-              <NavItem page="pending-approvals" icon={ClipboardCheck} label="Pending Approvals" />
-              <NavItem page="manage-routes" icon={Map} label="Manage Routes" />
-              <NavItem page="new-entry" icon={FilePlus} label="New Entry" />
-              <NavItem page="add-sevak" icon={UserPlus} label="Add Sevaks" />
-              <NavItem page="channel" icon={MessageSquare} label="VChat" />
-              <NavItem page="notifications" icon={Bell} label="Notifications" />
-              <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
-              <NavItem page="reports" icon={ShieldAlert} label="Reports" />
+              <NavItem page="dashboard" icon={BarChart2} label={t('nav.dashboard')} />
+              <NavItem page="statistics" icon={BarChart2} label={t('nav.statistics')} />
+              <NavItem page="view-entries" icon={Table2} label={t('nav.viewEntries')} />
+              <NavItem page="pending-approvals" icon={ClipboardCheck} label={t('nav.pendingApprovals')} />
+              <NavItem page="manage-routes" icon={Map} label={t('nav.manageRoutes')} />
+              <NavItem page="new-entry" icon={FilePlus} label={t('nav.newEntry')} />
+              <NavItem page="add-sevak" icon={UserPlus} label={t('nav.addSevaks')} />
+              <NavItem page="channel" icon={MessageSquare} label={t('nav.vchat')} />
+              <NavItem page="notifications" icon={Bell} label={t('nav.notifications')} />
+              <NavItem page="contacts" icon={PhoneCall} label={t('nav.contacts')} />
+              <NavItem page="reports" icon={ShieldAlert} label={t('nav.reports')} />
               <a
                 href="/directory"
                 target="_blank"
                 rel="noopener noreferrer"
-                title={sidebarCollapsed ? 'Community Directory' : undefined}
+                title={sidebarCollapsed ? t('nav.communityDirectory') : undefined}
                 className={`flex items-center w-full py-2 px-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'}`}
               >
                 <Compass size={17} className="shrink-0" />
-                {!sidebarCollapsed && <span>Community Directory</span>}
+                {!sidebarCollapsed && <span>{t('nav.communityDirectory')}</span>}
               </a>
             </>
           )}
 
           {role === UserRole.SEVAK && (
             <>
-              <NavItem page="analytics" icon={BarChart2} label="My Dashboard" />
-              <NavItem page="statistics" icon={BarChart2} label="Group Analytics" />
-              <NavItem page="my-vihars" icon={Footprints} label="My Vihars" />
-              <NavItem page="new-entry" icon={FilePlus} label="Add Vihar" />
-              <NavItem page="channel" icon={MessageSquare} label="VChat" />
-              <NavItem page="notifications" icon={Bell} label="Notifications" />
-              <NavItem page="contacts" icon={PhoneCall} label="Contacts" />
-              <NavItem page="reports" icon={ShieldAlert} label="Reports" />
+              <NavItem page="analytics" icon={BarChart2} label={t('nav.myDashboard')} />
+              <NavItem page="statistics" icon={BarChart2} label={t('nav.groupAnalytics')} />
+              <NavItem page="my-vihars" icon={Footprints} label={t('nav.myVihars')} />
+              <NavItem page="new-entry" icon={FilePlus} label={t('nav.addVihar')} />
+              <NavItem page="channel" icon={MessageSquare} label={t('nav.vchat')} />
+              <NavItem page="notifications" icon={Bell} label={t('nav.notifications')} />
+              <NavItem page="contacts" icon={PhoneCall} label={t('nav.contacts')} />
+              <NavItem page="reports" icon={ShieldAlert} label={t('nav.reports')} />
               <a
                 href="/directory"
                 target="_blank"
                 rel="noopener noreferrer"
-                title={sidebarCollapsed ? 'Community Directory' : undefined}
+                title={sidebarCollapsed ? t('nav.communityDirectory') : undefined}
                 className={`flex items-center w-full py-2 px-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'}`}
               >
                 <Compass size={17} className="shrink-0" />
-                {!sidebarCollapsed && <span>Community Directory</span>}
+                {!sidebarCollapsed && <span>{t('nav.communityDirectory')}</span>}
               </a>
             </>
           )}
@@ -208,14 +210,14 @@ const Layout: React.FC<LayoutProps> = ({
           <div className={`flex items-center mb-2.5 px-1 ${sidebarCollapsed ? 'flex-col gap-2' : 'justify-between'}`}>
             <button
               onClick={() => setCurrentPage('profile')}
-              title="My Profile"
+              title={t('nav.myProfile')}
               className={`flex items-center rounded-lg transition-colors -ml-1 px-1 py-1 ${currentPage === 'profile' ? 'bg-saffron-50' : 'hover:bg-gray-50'} ${sidebarCollapsed ? 'flex-col gap-1' : ''}`}
             >
               <Avatar name={userName || userInitials} url={avatarUrl} size={28} className="text-xs" />
               {!sidebarCollapsed && (
                 <div className="ml-2.5 text-left">
-                  <p className={`text-xs font-medium leading-tight ${currentPage === 'profile' ? 'text-saffron-700' : 'text-gray-700'}`}>Account</p>
-                  <p className="text-[11px] text-gray-400 capitalize leading-tight">{role === UserRole.ORG_ADMIN ? 'Captain' : 'Sevak'}</p>
+                  <p className={`text-xs font-medium leading-tight ${currentPage === 'profile' ? 'text-saffron-700' : 'text-gray-700'}`}>{t('nav.account')}</p>
+                  <p className="text-[11px] text-gray-400 capitalize leading-tight">{role === UserRole.ORG_ADMIN ? t('nav.captain') : t('nav.sevak')}</p>
                 </div>
               )}
             </button>
@@ -223,11 +225,11 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
           <button
             onClick={onLogout}
-            title={sidebarCollapsed ? 'Sign Out' : undefined}
+            title={sidebarCollapsed ? t('nav.signOut') : undefined}
             className={`flex items-center text-gray-500 hover:text-red-500 w-full px-2 py-1.5 text-sm rounded-lg hover:bg-gray-50 transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2'}`}
           >
             <LogOut size={16} className="shrink-0" />
-            {!sidebarCollapsed && <span>Sign Out</span>}
+            {!sidebarCollapsed && <span>{t('nav.signOut')}</span>}
           </button>
           {/* Creator Credit - Desktop */}
           {!sidebarCollapsed && (
@@ -316,7 +318,7 @@ const Layout: React.FC<LayoutProps> = ({
                 style={moreActive ? { background: 'linear-gradient(150deg,#FF9947,#DE6B38)' } : undefined}
               >
                 <MoreHorizontal size={21} style={{ color: moreActive ? '#241C17' : '#B8A798' }} />
-                {moreActive && <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: '#241C17' }}>More</span>}
+                {moreActive && <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: '#241C17' }}>{t('nav.more')}</span>}
               </div>
             </button>
 
@@ -363,7 +365,7 @@ const Layout: React.FC<LayoutProps> = ({
                   className="w-full flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] text-[#241C17] hover:bg-gray-50"
                 >
                   <span className="text-[#8A6A57]"><Compass size={18} /></span>
-                  <span className="text-sm font-bold">Community Directory</span>
+                  <span className="text-sm font-bold">{t('nav.communityDirectory')}</span>
                 </a>
               </div>
             </div>
