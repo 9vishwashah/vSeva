@@ -14,7 +14,7 @@ No real accounts, passwords, or personal data belong in this file.
 | Upload-key SHA-256 | `4A:20:7A:53:C3:AA:F0:C0:A4:E8:92:1F:1B:3C:FB:8B:7D:9A:DF:79:75:65:5C:E0:6C:DB:18:B7:6B:20:19:E2` |
 | Privacy policy URL | `https://vseva.vjas.in/privacy` |
 | Account-deletion URL | `https://vseva.vjas.in/delete-account` |
-| Support contact | WhatsApp +91 95945 03214 — **Play Console also requires a developer email; add one to the policy page too** |
+| Support contact | 9vishwashah@gmail.com (shown in the policy) · WhatsApp +91 95945 03214. Use the same email as the Play Console developer email |
 
 **Account type matters for the timeline.** Personal developer accounts created after
 Nov 2023 must run a *closed test with at least 12 opted-in testers for 14 continuous
@@ -154,10 +154,10 @@ Also: deleting the *Captain who created a group* cascades and deletes the group
 (`organizations.created_by ON DELETE CASCADE`) — that is why Captain deletions are manual.
 Uploaded avatar files are not removed automatically; the deletion page promises removal "on request".
 
-**B. Sevak default password = their mobile number** (`createSevak` sets it), and the public
+**B. Sevak default password = their mobile number — ACCEPTED by the owner as a deliberate design** (the login screen now says so: "Password (Sevaks: your mobile number)"). The risk is unchanged: `createSevak` sets it, and the public
 QR page displays that same mobile number and name. Login IDs are derived from the name. Anyone
 who scans an ID card can derive the login and the default password of any Sevak who never
-changed it. Recommended: remove the mobile number from the public QR page and force a
+changed it. Still recommended later: remove the mobile number from the public QR page, or force a
 password change on first login.
 
 **C. Reviewer access.** Create a dedicated demo organisation with one demo Captain and one demo

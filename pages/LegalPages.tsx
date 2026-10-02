@@ -8,6 +8,7 @@ import { ChevronLeft } from 'lucide-react';
 
 const LAST_UPDATED = '2 October 2026';
 const CONTACT_WHATSAPP = 'https://wa.me/919594503214';
+const CONTACT_EMAIL = '9vishwashah@gmail.com';
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="mb-8">
@@ -138,7 +139,8 @@ export const PrivacyPolicy: React.FC = () => (
 
     <Section title="Contact">
       <p>
-        Questions or requests about your data: message us on{' '}
+        Questions or requests about your data: email{' '}
+        <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> or message us on{' '}
         <a className="text-saffron-600 underline" href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp (+91 95945 03214)</a>.
       </p>
     </Section>
@@ -153,7 +155,7 @@ export const DeleteAccount: React.FC = () => {
         <p>You can ask for your account and personal data to be deleted at any time, in either of these ways:</p>
         <Bullets items={[
           <><strong>Sevaks:</strong> ask your Captain to delete you from the <em>Add Sevaks</em> screen. This deletes your login and profile.</>,
-          <><strong>Anyone (Sevaks, Captains, Directory contributors):</strong> send us a request on WhatsApp with your name, your username or login ID, and your group name. We will confirm it is you and complete the deletion within 30 days.</>,
+          <><strong>Anyone (Sevaks, Captains, Directory contributors):</strong> send us a request by email or WhatsApp with your name, your username or login ID, and your group name. We will confirm it is you and complete the deletion within 30 days.</>,
         ]} />
         <a
           href={requestLink}
@@ -163,6 +165,7 @@ export const DeleteAccount: React.FC = () => {
         >
           Request deletion on WhatsApp
         </a>
+        <p className="pt-1">Or email <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}?subject=vSeva%20account%20deletion%20request`}>{CONTACT_EMAIL}</a>.</p>
         <p className="pt-2">Captains: deleting a Captain account affects the whole group, so we will contact you first to transfer or close the group.</p>
       </Section>
 
