@@ -454,6 +454,17 @@ export const dataService = {
     return true;
   },
 
+  // Captain resets a Sevak of their own group to the default password (the Sevak's mobile number).
+  async resetSevakPassword(userId: string): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error('Admin session not found. Please login again.');
+    // Never retried — see updateSevakDetails.
+    await callFn('reset-sevak-password', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: { user_id: userId },
+    });
+  },
+
   async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string; emergencyNumber?: string; address?: string; gender?: string }) {
     const { data: { session } } = await supabase.auth.getSession();
 

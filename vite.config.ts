@@ -53,7 +53,7 @@ export default defineConfig(({ mode }) => {
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
             // Authenticated Super Admin functions (see netlify/functions/_shared/adminAuth.js)
-            const authedFn = req.url && /^\/\.netlify\/functions\/(super-admin|approve-org|get-org-admins|sevak-login-lookup)(\?|$)/.exec(req.url);
+            const authedFn = req.url && /^\/\.netlify\/functions\/(super-admin|approve-org|get-org-admins|sevak-login-lookup|reset-sevak-password)(\?|$)/.exec(req.url);
             if (authedFn) {
               try {
                 const { handler } = await import(`./netlify/functions/${authedFn[1]}.js`);

@@ -2,13 +2,34 @@ import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UserProfile } from '../types';
-import { LogIn, Loader2, Instagram, ArrowLeft } from 'lucide-react';
+import { Loader2, Instagram, ArrowLeft, MapPin, User, Lock, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import LanguageDropdown from '../components/LanguageDropdown';
 import { brandAccessError } from '../services/brandAccess';
 import { callFn } from '../services/apiBase';
 import { BRAND } from '@brand';
+
+// Shared look of the sign-in / sign-up / forgot-password screens: one modal card centred in the
+// viewport. Content taller than the screen scrolls INSIDE the card, so the page itself never scrolls.
+const authInputClass =
+  'h-12 w-full rounded-xl border border-gray-200 bg-gray-50/60 text-[15px] text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-saffron-400 focus:bg-white focus:ring-4 focus:ring-saffron-100';
+
+const AuthShell: React.FC<{ children: React.ReactNode; maxWidth?: string; topLeft?: React.ReactNode }> = ({ children, maxWidth = 'max-w-[26rem]', topLeft }) => (
+  <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-gradient-to-br from-saffron-50 via-white to-orange-50">
+    <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-saffron-200/40 blur-3xl" />
+    <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -right-32 h-[28rem] w-[28rem] rounded-full bg-orange-200/40 blur-3xl" />
+    <div className="relative z-10 flex h-14 shrink-0 items-center justify-between gap-2 px-3 sm:px-6">
+      <div className="min-w-0">{topLeft}</div>
+      <LanguageDropdown />
+    </div>
+    <main className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-3 pb-4 sm:px-4">
+      <div className={`w-full ${maxWidth} max-h-full overflow-y-auto rounded-3xl bg-white/90 p-6 shadow-[0_24px_60px_-18px_rgba(222,107,56,0.4)] ring-1 ring-black/5 backdrop-blur sm:p-8 [@media(max-height:700px)]:p-5`}>
+        {children}
+      </div>
+    </main>
+  </div>
+);
 
 interface LoginProps {
   onLoginSuccess: (profile: UserProfile) => void;
@@ -29,6 +50,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   // /login?register=1 (used by the brand landing pages) opens the Captain registration form directly.
   const [isRegistering, setIsRegistering] = useState(() => new URLSearchParams(window.location.search).get('register') === '1');
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { showToast } = useToast();
   const { t } = useLanguage();
 
@@ -130,154 +152,155 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  const topLinks = (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => {
+          if (window.matchMedia('(display-mode: standalone)').matches) {
+            window.open(window.location.origin, '_blank');
+          } else {
+            window.location.href = '/';
+          }
+        }}
+        className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white/90 text-saffron-700 text-xs sm:text-sm font-bold shadow-sm ring-1 ring-saffron-100 hover:bg-saffron-50 transition-colors"
+      >
+        <ArrowLeft size={15} /> <span>View More</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => { window.location.href = '/nearby-derasar'; }}
+        className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white/90 text-saffron-700 text-xs sm:text-sm font-bold shadow-sm ring-1 ring-saffron-100 hover:bg-saffron-50 transition-colors"
+      >
+        <MapPin size={15} /> <span>Find Derasar</span>
+      </button>
+    </div>
+  );
+
   if (isRegistering) {
     return (
-      <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-          {/* Lazy load to avoid circular dependency if any, though regular import is fine */}
-          <React.Suspense fallback={<Loader2 className="animate-spin" />}>
-            <RegisterAdminView onBack={() => setIsRegistering(false)} onSuccess={() => setIsRegistering(false)} />
-          </React.Suspense>
-        </div>
-      </div>
+      <AuthShell maxWidth="max-w-2xl">
+        <React.Suspense fallback={<div className="flex justify-center py-16"><Loader2 className="animate-spin text-saffron-600" /></div>}>
+          <RegisterAdminView onBack={() => setIsRegistering(false)} onSuccess={() => setIsRegistering(false)} />
+        </React.Suspense>
+      </AuthShell>
     );
   }
 
   if (isForgotPassword) {
     return (
-      <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-          <React.Suspense fallback={<Loader2 className="animate-spin" />}>
-            <ForgotPasswordView onBack={() => setIsForgotPassword(false)} />
-          </React.Suspense>
-        </div>
-      </div>
+      <AuthShell>
+        <React.Suspense fallback={<div className="flex justify-center py-16"><Loader2 className="animate-spin text-saffron-600" /></div>}>
+          <ForgotPasswordView onBack={() => setIsForgotPassword(false)} />
+        </React.Suspense>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-saffron-50 flex flex-col justify-center items-center px-4 pt-24 pb-24 relative">
-      <div className="absolute top-6 right-4 md:right-8 z-50">
-        <LanguageSwitcher />
-      </div>
-      <div className="absolute top-6 left-4 md:left-8 flex gap-3 z-50">
-        <button
-          onClick={() => {
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-              window.open(window.location.origin, '_blank');
-            } else {
-              window.location.href = '/';
-            }
-          }}
-          className="flex items-center gap-2 text-saffron-600 hover:text-white hover:bg-saffron-600 font-bold transition-all bg-white/100 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-saffron-200 hover:-translate-y-0.5 group text-sm"
-        >
-          <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
-          <span>View More</span>
-        </button>
-        <button
-          onClick={() => window.location.href = '/nearby-derasar'}
-          className="flex items-center gap-2 text-saffron-600 hover:text-white hover:bg-saffron-600 font-bold transition-all bg-white/100 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-saffron-200 hover:-translate-y-0.5 group text-sm"
-        >
-          <i className="fas fa-map-marker-alt"></i>
-          <span>Find Derasar</span>
-        </button>
-      </div>
-
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6 z-10">
-        <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className={`animate-fade-in-up ${BRAND.logoPadded ? 'bg-saffron-50' : 'bg-white'} rounded-2xl shadow-sm border border-saffron-100 overflow-hidden flex items-center justify-center p-0`}>
-              <img src={BRAND.logo} alt={BRAND.name} className={`h-28 w-28 md:h-36 md:w-36 object-contain ${BRAND.logoPadded ? 'scale-[1.5]' : ''}`} />
-            </div>
-          </div>
-          <h1 className={`${BRAND.name.length > 10 ? 'text-3xl' : 'text-4xl'} font-serif font-bold leading-tight bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent mb-2`}>{BRAND.name}</h1>
-          <p className="text-gray-500">{t('login.subtitle')}</p>
-          <p className="text-sm text-saffron-600 mt-2 font-medium">Please enter the username and password given by your Captain.</p>
+    <AuthShell topLeft={topLinks}>
+      <div className="flex flex-col items-center text-center">
+        <div className="h-16 w-16 [@media(max-height:700px)]:h-12 [@media(max-height:700px)]:w-12 rounded-2xl bg-white shadow-md ring-1 ring-saffron-100 flex items-center justify-center overflow-hidden">
+          <img src={BRAND.logo} alt={BRAND.name} className={`h-full w-full object-contain ${BRAND.logoPadded ? 'scale-[1.45]' : 'p-1'}`} />
         </div>
+        <h1 className={`mt-3 font-serif font-bold leading-tight text-gray-900 ${BRAND.name.length > 10 ? 'text-xl sm:text-2xl' : 'text-3xl'}`}>{BRAND.name}</h1>
+        <p className="mt-1 text-sm text-gray-500">{t('login.subtitle')}</p>
+        <p className="mt-3 [@media(max-height:700px)]:hidden rounded-lg bg-saffron-50 px-3 py-1.5 text-xs font-medium text-saffron-700">
+          Please enter the username and password given by your Captain.
+        </p>
+      </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('login.username')}</label>
+      <form onSubmit={handleLogin} className="mt-5 space-y-3.5">
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-gray-600">{t('login.username')}</span>
+          <span className="relative block">
+            <User size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               required
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+              autoComplete="username"
+              className={authInputClass + ' pl-11 pr-3'}
               placeholder={BRAND.examples.username}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+          </span>
+        </label>
+
+        <div>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <label htmlFor="login-password" className="text-xs font-semibold text-gray-600">{t('login.password')}</label>
+            <button type="button" onClick={() => setIsForgotPassword(true)} className="shrink-0 text-xs font-semibold text-saffron-600 hover:underline">
+              {t('login.forgotPassword')}
+            </button>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('login.password')}</label>
+          <span className="relative block">
+            <Lock size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              type="password"
+              id="login-password"
+              type={showPassword ? 'text' : 'password'}
               required
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
+              autoComplete="current-password"
+              className={authInputClass + ' pl-11 pr-11'}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <div className="flex justify-end mt-1">
-              <button
-                type="button"
-                onClick={() => setIsForgotPassword(true)}
-                className="text-xs text-saffron-600 hover:underline"
-              >
-                {t('login.forgotPassword')}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </span>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-saffron-500 to-saffron-600 text-base font-semibold text-white shadow-lg shadow-saffron-300/50 transition hover:brightness-105 active:scale-[0.99] disabled:opacity-70"
+        >
+          {loading ? <Loader2 className="animate-spin" size={20} /> : t('login.signIn')}
+        </button>
+
+        {errorMsg && (
+          <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-sm text-red-600">
+            {errorMsg}
           </div>
+        )}
+      </form>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-saffron-600 hover:bg-saffron-700 text-white py-3 rounded-lg font-medium transition-colors flex justify-center items-center"
-          >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : t('login.signIn')}
-          </button>
-
-          {errorMsg && (
-            <div className="p-3 mt-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg animate-fade-in-up">
-              {errorMsg}
-            </div>
-          )}
-        </form>
-
-        <div className="border-t pt-4 text-center space-y-2">
-          <p className="text-sm text-gray-600">{t('login.noAccount')}</p>
-          <button
-            type="button"
-            onClick={() => setIsRegistering(true)}
-            className="text-saffron-600 font-medium hover:underline text-sm"
-          >
-            {t(BRAND.registerLabelKey)}
-          </button>
-        </div>
-
-        <div className="text-center text-xs text-gray-400 mt-4">
-          <p>{BRAND.byline}</p>
-          <p className="mt-1">
-            <a href={`${BRAND.siteUrl}/privacy`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Privacy Policy</a>
-            <span className="mx-1.5">·</span>
-            <a href={`${BRAND.siteUrl}/delete-account`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Delete account</a>
-          </p>
-        </div>
+      <div className="mt-4 flex items-center gap-3 text-xs text-gray-400">
+        <span className="h-px flex-1 bg-gray-200" />
+        <span className="text-center">{t('login.noAccount')}</span>
+        <span className="h-px flex-1 bg-gray-200" />
       </div>
-
-      {/* Instagram fixed popup */}
-      {BRAND.instagram && <a
-        href={BRAND.instagram.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-xl border border-slate-200 flex items-center gap-3 w-max z-50 hover:-translate-y-1 hover:shadow-2xl transition-all cursor-pointer group"
+      <button
+        type="button"
+        onClick={() => setIsRegistering(true)}
+        className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-saffron-200 bg-white text-sm font-semibold text-saffron-700 transition hover:bg-saffron-50"
       >
-        <Instagram size={20} className="text-pink-600 group-hover:scale-110 transition-transform" />
-        <span className="text-sm font-medium text-slate-700">Follow us on</span>
-        <span className="text-sm font-bold bg-gradient-to-tr from-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-          Instagram
-        </span>
-      </a>}
-    </div>
+        <UserPlus size={17} /> {t(BRAND.registerLabelKey)}
+      </button>
+
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-gray-400">
+        <span>{BRAND.byline}</span>
+        <span aria-hidden="true">·</span>
+        <a href={`${BRAND.siteUrl}/privacy`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Privacy Policy</a>
+        <span aria-hidden="true">·</span>
+        <a href={`${BRAND.siteUrl}/delete-account`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Delete account</a>
+        {BRAND.instagram && (
+          <>
+            <span aria-hidden="true">·</span>
+            <a href={BRAND.instagram.url} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="inline-flex items-center text-gray-400 hover:text-pink-600">
+              <Instagram size={14} />
+            </a>
+          </>
+        )}
+      </div>
+    </AuthShell>
   );
 };
 

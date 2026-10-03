@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { BRAND } from '@brand';
 import { UserProfile, Organization, ContactNumber, ViharEntry } from '../types';
 import { dataService } from '../services/dataService';
-import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft, Footprints } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft, Footprints, KeyRound } from 'lucide-react';
 import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
 import CircularProgressBar from '../components/CircularProgressBar';
@@ -203,6 +203,20 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       address: sevak.address || '',
       gender: sevak.gender || 'Male'
     });
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedSevak) return;
+    if (!window.confirm(`Reset ${selectedSevak.full_name}'s password to their mobile number (${selectedSevak.mobile || 'not saved'})?`)) return;
+    setSavingId(selectedSevak.id);
+    try {
+      await dataService.resetSevakPassword(selectedSevak.id);
+      showToast(`${selectedSevak.full_name}'s password is now their mobile number.`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Could not reset the password', 'error');
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -798,6 +812,9 @@ Kindly do Vihar and continue your Seva.`;
                 <>
                   <button onClick={() => handleDelete(selectedSevak.id, selectedSevak.full_name)} className="px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 flex-1">
                     <Trash2 size={18} /> <span className="text-sm font-semibold pt-0.5">Delete</span>
+                  </button>
+                  <button onClick={handleResetPassword} disabled={savingId === selectedSevak.id} className="px-4 py-2.5 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 disabled:opacity-60">
+                    <KeyRound size={18} /> <span className="text-sm font-semibold pt-0.5">Reset password</span>
                   </button>
                   <button onClick={() => setShowIdCard(true)} className="px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 flex-1">
                     <Printer size={18} /> <span className="text-sm font-semibold pt-0.5">ID Card</span>

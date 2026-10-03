@@ -125,7 +125,7 @@ Kindly review and Approve.`;
         const waLink = `https://wa.me/${BRAND.contact.whatsapp}?text=${encodeURIComponent(waMessage)}`;
 
         return (
-            <div className="text-center space-y-6 animate-in fade-in zoom-in duration-300 py-8 px-4">
+            <div className="text-center space-y-5 animate-in fade-in zoom-in duration-300 py-4">
                 <div className="w-20 h-20 bg-saffron-100 text-saffron-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-saffron-100">
                     <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -167,181 +167,64 @@ Kindly review and Approve.`;
         );
     }
 
+    const inputCls = 'h-11 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-3.5 text-[15px] text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-saffron-400 focus:bg-white focus:ring-4 focus:ring-saffron-100';
+    const field = (label: React.ReactNode, input: React.ReactNode, wide = false) => (
+        <label className={`block ${wide ? 'sm:col-span-2' : ''}`}>
+            <span className="mb-1 block text-xs font-semibold text-gray-600">{label}</span>
+            {input}
+        </label>
+    );
+
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-3 mb-4">
-                <button onClick={onBack} className="text-gray-500 hover:text-saffron-600 transition-colors">
+        <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="mb-4 flex items-center gap-3">
+                <button type="button" onClick={onBack} aria-label="Back" className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-saffron-600">
                     <ArrowLeft size={20} />
                 </button>
-                <img src={BRAND.logo} alt={BRAND.name} className="h-8 w-8 object-contain" />
-                <h2 className="text-2xl font-serif font-bold text-gray-800">Create Captain Account</h2>
+                <img src={BRAND.logo} alt={BRAND.name} className="h-9 w-9 shrink-0 object-contain" />
+                <div className="min-w-0">
+                    <h2 className="text-xl font-serif font-bold leading-tight text-gray-900 sm:text-2xl">Create Captain Account</h2>
+                    <p className="text-xs text-gray-500">Your request is reviewed by our team before the account is created.</p>
+                </div>
             </div>
 
-            <form onSubmit={handleRegister} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Captain Name</label>
-                        <input
-                            name="captainName"
-                            type="text"
-                            required
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="Vijay Mehta"
-                            value={formData.captainName}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Vice Captain Name (Optional)</label>
-                        <input
-                            name="viceCaptainName"
-                            type="text"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder=""
-                            value={formData.viceCaptainName}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="col-span-2 sm:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Captain Mobile Number</label>
-                        <input
-                            name="mobile"
-                            type="tel"
-                            required
-                            pattern="[0-9]{10}"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder={BRAND.examples.mobile}
-                            value={formData.mobile}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="col-span-2 sm:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Captain Email ID</label>
-                        <input
-                            name="email"
-                            type="email"
-                            required
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="youremail@gmail.com"
-                            value={formData.email}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
-                        <input
-                            name="address"
-                            type="text"
-                            required
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="Full Address"
-                            value={formData.address}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="col-span-2 sm:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                        <input
-                            name="city"
-                            type="text"
-                            required
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none bg-gray-50"
-                            placeholder="City"
-                            value={formData.city}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="col-span-2 sm:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Town / Area</label>
-                        <input
-                            name="town"
-                            type="text"
-                            required
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="Town/Area Name"
-                            value={formData.town}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="col-span-2 sm:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center justify-between">
-                            Pin Code
-                            {pinLoading && <Loader2 size={12} className="animate-spin text-saffron-600" />}
-                        </label>
-                        <input
-                            name="pincode"
-                            type="text"
-                            required
-                            maxLength={6}
-                            className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none ${pinLoading ? 'animate-pulse' : ''}`}
-                            placeholder="6 Digit PIN"
-                            value={formData.pincode}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="col-span-2 sm:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                        <input
-                            name="state"
-                            type="text"
-                            required
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="Maharashtra"
-                            value={formData.state}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    {BRAND.registration.askSanghName && (
-                    <div className="col-span-2 sm:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Sangh Name</label>
-                        <input
-                            name="sanghName"
-                            type="text"
-                            required
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="Sangh Name"
-                            value={formData.sanghName}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    )}
-
-                    {BRAND.registration.askGroupName && (
-                    <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Vihar Group Name <span className="text-gray-500 font-normal">(Optional, default: "Vihar Seva Group")</span>
-                        </label>
-                        <input
-                            name="viharGroupName"
-                            type="text"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="Vihar Seva Group"
-                            value={formData.viharGroupName}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    )}
-
+            <form onSubmit={handleRegister}>
+                <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+                    {field('Captain Name',
+                        <input name="captainName" type="text" required className={inputCls} placeholder="Vijay Mehta" value={formData.captainName} onChange={handleChange} />)}
+                    {field('Vice Captain Name (Optional)',
+                        <input name="viceCaptainName" type="text" className={inputCls} value={formData.viceCaptainName} onChange={handleChange} />)}
+                    {field('Captain Mobile Number',
+                        <input name="mobile" type="tel" inputMode="numeric" required pattern="[0-9]{10}" className={inputCls} placeholder={BRAND.examples.mobile} value={formData.mobile} onChange={handleChange} />)}
+                    {field('Captain Email ID',
+                        <input name="email" type="email" required className={inputCls} placeholder="youremail@gmail.com" value={formData.email} onChange={handleChange} />)}
+                    {field('Full Address',
+                        <input name="address" type="text" required className={inputCls} placeholder="Full Address" value={formData.address} onChange={handleChange} />, true)}
+                    {field(
+                        <span className="flex items-center justify-between">Pin Code {pinLoading && <Loader2 size={12} className="animate-spin text-saffron-600" />}</span>,
+                        <input name="pincode" type="text" inputMode="numeric" required maxLength={6} className={`${inputCls} ${pinLoading ? 'animate-pulse' : ''}`} placeholder="6 Digit PIN" value={formData.pincode} onChange={handleChange} />)}
+                    {field('State',
+                        <input name="state" type="text" required className={inputCls} placeholder="Maharashtra" value={formData.state} onChange={handleChange} />)}
+                    {field('City',
+                        <input name="city" type="text" required className={inputCls} placeholder="City" value={formData.city} onChange={handleChange} />)}
+                    {field('Town / Area',
+                        <input name="town" type="text" required className={inputCls} placeholder="Town/Area Name" value={formData.town} onChange={handleChange} />)}
+                    {BRAND.registration.askSanghName && field('Sangh Name',
+                        <input name="sanghName" type="text" required className={inputCls} placeholder="Sangh Name" value={formData.sanghName} onChange={handleChange} />)}
+                    {BRAND.registration.askGroupName && field(
+                        <>Vihar Group Name <span className="font-normal text-gray-400">(optional)</span></>,
+                        <input name="viharGroupName" type="text" className={inputCls} placeholder="Vihar Seva Group" value={formData.viharGroupName} onChange={handleChange} />)}
                 </div>
 
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-saffron-600 hover:bg-saffron-700 text-white py-3 rounded-lg font-medium transition-colors flex justify-center items-center mt-4"
+                    className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-saffron-500 to-saffron-600 text-base font-semibold text-white shadow-lg shadow-saffron-300/50 transition hover:brightness-105 active:scale-[0.99] disabled:opacity-70"
                 >
-                    {loading ? <Loader2 className="animate-spin" size={20} /> : "Create Captain Account"}
+                    {loading ? <Loader2 className="animate-spin" size={20} /> : 'Create Captain Account'}
                 </button>
-            </form >
-        </div >
+            </form>
+        </div>
     );
 };
 
