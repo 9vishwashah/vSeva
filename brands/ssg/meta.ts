@@ -3,8 +3,8 @@ import type { BrandMeta, Env } from '../types';
 // Shraman Seva Group (SSG). Deployment-specific values come from the SSG Netlify
 // site's environment so a number or domain change never needs a code change:
 //   VITE_SITE_URL         https://<ssg domain>      (needed for link previews / canonical)
-//   VITE_CONTACT_WHATSAPP digits with country code  (falls back to the platform operator's)
-//   VITE_CONTACT_EMAIL    support email             (falls back to the platform operator's)
+//   VITE_CONTACT_WHATSAPP digits with country code  (falls back to 919824112292)
+//   VITE_CONTACT_EMAIL    support email             (falls back to 919824112292)
 //   VITE_INSTAGRAM_URL    optional
 export const getMeta = (env: Env): BrandMeta => {
   const siteUrl = (env.VITE_SITE_URL || '').replace(/\/+$/, '');
@@ -23,6 +23,7 @@ export const getMeta = (env: Env): BrandMeta => {
     cardCredit: null,
     designer: null,
     legalFooter: 'Shraman Seva Group',
+    registerLabelKey: 'login.createCaptain',
     usernameHint: 'username or admin@example.com',
     examples: { username: 'e.g. Ramesh Shah', mobile: '9876543210' },
     description,
@@ -37,7 +38,7 @@ export const getMeta = (env: Env): BrandMeta => {
     defaultLang: 'gu',
 
     contact: {
-      whatsapp: (env.VITE_CONTACT_WHATSAPP || '919594503214').replace(/\D/g, ''),
+      whatsapp: (env.VITE_CONTACT_WHATSAPP || '919824112292').replace(/\D/g, ''),
       email: env.VITE_CONTACT_EMAIL || '9vishwashah@gmail.com',
       demoContact: env.VITE_DEMO_CONTACT || 'the Shraman Seva Group team',
     },
@@ -49,7 +50,9 @@ export const getMeta = (env: Env): BrandMeta => {
     keywords: 'Shraman Seva Group, શ્રમણ સેવા ગ્રુપ, Jain Vihar, Vihar Seva, Jain Sevak, Vihar Tracking',
     ogTitle: 'Shraman Seva Group | શ્રમણ સેવા ગ્રુપ',
     ogDescription: description,
-    iconPath: '/ssg-logo-full.png',
+    // Tab icon and iOS Home Screen icon use the sun-and-muni emblem: the full logo's text is unreadable at icon size.
+    iconPath: '/pwa-192x192.png',
+    appleTouchIconPath: '/apple-touch-icon.png',
     ogImagePath: '/ssg-og.png',
     ogImageSize: [1200, 630],
     schemaLogoPath: '/ssg-logo-full.png',

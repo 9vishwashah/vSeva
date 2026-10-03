@@ -21,7 +21,8 @@ so the page title, link previews, installed-app name and in-app text can't disag
 ```bash
 npm run dev:ssg        # SSG dev server (vite --mode ssg, reads .env.ssg)
 npm run build:ssg      # SSG production build into dist/
-npm run check:brand    # fails if the SSG build in dist/ still contains any vSeva / VJAS identity
+VITE_SITE_URL=https://<ssg host> npm run check:brand   # fails if the SSG build in dist/ still contains any vSeva / VJAS identity
+                       # (the SSG host itself, e.g. ssg.vjas.in, is allowed to contain the platform domain)
 npm run build          # vSeva — unchanged
 ```
 
@@ -37,7 +38,7 @@ Environment variables on that site:
 |---|---|
 | `VITE_BRAND` | `ssg` — **required** (the build and the edge function both read it) |
 | `VITE_SITE_URL` | the SSG site's origin, e.g. `https://ssg.example.org` — canonical, link previews, sitemap, CORS |
-| `VITE_CONTACT_WHATSAPP` | digits with country code — landing button, registration & deletion requests. *Falls back to the vSeva operator's number if unset* |
+| `VITE_CONTACT_WHATSAPP` | digits with country code — landing button, registration & deletion requests. *Falls back to 919824112292 if unset* |
 | `VITE_CONTACT_EMAIL` | support email shown in the privacy policy. *Falls back to the vSeva operator's email* |
 | `VITE_INSTAGRAM_URL` | optional; the Instagram buttons are hidden when unset |
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | same as the vSeva site |
@@ -80,6 +81,13 @@ OneSignal app by the user's organisation brand. On the **vSeva** site add:
 `ONESIGNAL_APP_ID_SSG`, `ONESIGNAL_API_KEY_SSG`, `SITE_URL_SSG`
 
 Without them SSG users fall back to the vSeva OneSignal app and will not receive pushes.
+
+## Install as app (PWA)
+
+Both landing pages show the install banner. Android/desktop Chrome use the browser's install prompt; iPhone/iPad (including iPadOS, which reports a Mac user agent)
+get a step-by-step "Add to Home Screen" guide, with a copy-link helper when the page is open in a non-Safari browser. The installed app
+starts at `/`: signed-out users land on the login screen (the marketing landing page is skipped in standalone mode), signed-in users on their dashboard.
+The icon, name and splash colours come from the brand (`manifest.webmanifest`, apple-touch-icon, `apple-mobile-web-app-title`).
 
 ## Not done / decisions for the owner
 

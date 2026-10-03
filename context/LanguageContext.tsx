@@ -9,7 +9,7 @@ interface LanguageContextValue {
   // Looks up `key` in the active language's dictionary, falling back to
   // English (then the key itself) so a missing translation never renders
   // blank.
-  t: (key: string) => string;
+  t: (key: string, vars?: Record<string, string>) => string;
   // Formats a number/string of digits in the active language's native
   // script (Devanagari for Hindi, Gujarati digits for Gujarati); English
   // passes the value through unchanged.
@@ -45,8 +45,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const t = useCallback((key: string) => {
-    return translations[lang][key] ?? translations.en[key] ?? key;
+  const t = useCallback((key: string, vars?: Record<string, string>) => {
+    const text = translations[lang][key] ?? translations.en[key] ?? key;
+    // {name}-style placeholders, e.g. t('install.bannerTitle', { name: BRAND.name })
+    return vars ? text.replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m) : text;
   }, [lang]);
 
   const n = useCallback((value: number | string) => toLocaleDigits(value, lang), [lang]);

@@ -57,7 +57,8 @@ const App: React.FC = () => {
     const capacitor = (globalThis as any).Capacitor;
     return !!capacitor && typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform();
   })();
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || isNativeApp;
+  // iOS Home-Screen apps report `navigator.standalone`; other browsers use the display-mode query.
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true || isNativeApp;
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);

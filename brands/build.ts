@@ -48,6 +48,8 @@ export function renderHtml(html: string, m: BrandMeta): string {
     REL_ME: m.instagram ? `<link rel="me" href="${m.instagram.url}" />` : '',
     JSONLD: JSON.stringify(jsonLd, null, 2).replace(/\n/g, '\n    '),
     ICON: m.iconPath,
+    APPLE_ICON: m.appleTouchIconPath,
+    SHORT_NAME: esc(m.shortName),
     FONTS_HREF: m.fontsHref.replace(/&/g, '&amp;'),
   };
 

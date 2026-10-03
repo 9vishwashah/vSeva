@@ -22,6 +22,8 @@ export interface BrandMeta {
   // "Designed by …" credit shown in app footers; null = no credit line.
   designer: { name: string; org: string } | null;
   legalFooter: string;   // credit line at the foot of the privacy / deletion pages
+  // Which translation key labels the "create an account" link on the login screen.
+  registerLabelKey: 'login.registerOrg' | 'login.createCaptain';
   usernameHint: string;  // placeholder on the forgot-password field
   examples: { username: string; mobile: string }; // placeholder text on Login / Register
   description: string;   // default meta description
@@ -53,6 +55,7 @@ export interface BrandMeta {
   ogTitle: string;
   ogDescription: string;
   iconPath: string;      // favicon / notification icon, served from public/
+  appleTouchIconPath: string; // iOS Home Screen icon, served from public/
   ogImagePath: string;   // link-preview image, served from public/
   ogImageSize: [number, number];
   schemaLogoPath: string; // logo named in the schema.org Organization block

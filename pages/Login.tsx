@@ -214,7 +214,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             onClick={() => setIsRegistering(true)}
             className="text-saffron-600 font-medium hover:underline text-sm"
           >
-            {t('login.registerOrg')}
+            {t(BRAND.registerLabelKey)}
           </button>
         </div>
 

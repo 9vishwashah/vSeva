@@ -24,7 +24,12 @@ const ALLOWED = [
   /\bvseva:/gi,                     // brand-id key in a lookup table
 ];
 
-const TEXT = /\.(html|js|mjs|css|json|xml|txt|webmanifest|svg|map)$/i;
+// The deployment's own address is allowed to contain the platform's domain (e.g. ssg.vjas.in).
+// Pass it the same way the build gets it: VITE_SITE_URL=https://ssg.vjas.in node scripts/check_brand_leak.mjs ...
+const siteHost = (process.env.VITE_SITE_URL || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
+if (siteHost) ALLOWED.push(new RegExp(siteHost.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'));
+
+const TEXT =/\.(html|js|mjs|css|json|xml|txt|webmanifest|svg|map)$/i;
 const findings = [];
 let scanned = 0;
 

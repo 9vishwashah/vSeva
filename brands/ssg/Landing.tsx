@@ -6,6 +6,8 @@ import {
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { useLanguage } from '../../context/LanguageContext';
 import guruPhoto from './assets/guru.webp';
+import { InstallPWA } from '../../components/InstallPWA';
+import Mascot from './Mascot';
 
 // Landing page for the Shraman Seva Group deployment. The look follows the
 // festival-site reference the client chose (sunburst sky, bunting, clouds, tall
@@ -33,9 +35,9 @@ const COPY: Record<Lang, {
 }> = {
   en: {
     nav: { home: 'Home', prerna: 'Inspiration', features: 'What we do', how: 'How it works', login: 'Login' },
-    heroTitle: 'Serve the Shramans. Record every Vihar.',
+    heroTitle: 'Shraman Seva Group',
     heroSub: 'The Shraman Seva Group platform to log Vihars, coordinate Sevaks and keep every Seva family connected — from one phone.',
-    ctaLogin: 'Login', ctaRegister: 'Register your group',
+    ctaLogin: 'Login', ctaRegister: 'Create Captain Account',
     prernaLabel: 'Prerna', prernaHeading: 'Our inspiration',
     prernaLines: ['શ્રદ્ધેય ગચ્છાધિપતિ ગુરુદેવ', 'પ.પૂ. આચાર્ય ભગવંત', 'શ્રીમદ્ વિજય યશોવર્મસૂરીશ્વરજી મહારાજા'],
     prernaPrayer: 'મને સેવા શ્રમણની મળજો રે…',
@@ -49,7 +51,7 @@ const COPY: Record<Lang, {
       { title: 'Find Derasar', desc: 'Locate Derasars and tirths near you instantly, with directions.' },
     ],
     howHeading: 'How it works', steps: [
-      { title: 'Register your group', desc: 'The Captain fills a short form with the group and sangh details.' },
+      { title: 'Register your group', desc: 'The Captain fills a short form with the group details.' },
       { title: 'We verify and approve', desc: 'The Shraman Seva Group team checks every request and sends the login on WhatsApp.' },
       { title: 'Add Sevaks, start logging', desc: 'Add your Sevaks and record Vihars. Captains approve entries.' },
     ],
@@ -59,9 +61,9 @@ const COPY: Record<Lang, {
   },
   gu: {
     nav: { home: 'હોમ', prerna: 'પ્રેરણા', features: 'અમે શું કરીએ', how: 'કેવી રીતે', login: 'લૉગિન' },
-    heroTitle: 'શ્રમણોની સેવા. દરેક વિહારની નોંધ.',
+    heroTitle: 'શ્રમણ સેવા ગ્રુપ',
     heroSub: 'શ્રમણ સેવા ગ્રુપનું પ્લેટફોર્મ — વિહારની નોંધ, સેવકોનું સંકલન અને દરેક સેવા પરિવારને એક જ ફોનથી જોડે રાખવા માટે.',
-    ctaLogin: 'લૉગિન', ctaRegister: 'તમારું ગ્રુપ નોંધાવો',
+    ctaLogin: 'લૉગિન', ctaRegister: 'કૅપ્ટન એકાઉન્ટ બનાવો',
     prernaLabel: 'પ્રેરણા', prernaHeading: 'અમારી પ્રેરણા',
     prernaLines: ['શ્રદ્ધેય ગચ્છાધિપતિ ગુરુદેવ', 'પ.પૂ. આચાર્ય ભગવંત', 'શ્રીમદ્ વિજય યશોવર્મસૂરીશ્વરજી મહારાજા'],
     prernaPrayer: 'મને સેવા શ્રમણની મળજો રે…',
@@ -75,7 +77,7 @@ const COPY: Record<Lang, {
       { title: 'નજીકનું દેરાસર', desc: 'તમારી નજીકના દેરાસર અને તીર્થ દિશા સાથે તરત શોધો.' },
     ],
     howHeading: 'કેવી રીતે કામ કરે છે', steps: [
-      { title: 'તમારું ગ્રુપ નોંધાવો', desc: 'કૅપ્ટન ગ્રુપ અને સંઘની વિગતો સાથે ટૂંકું ફૉર્મ ભરે છે.' },
+      { title: 'તમારું ગ્રુપ નોંધાવો', desc: 'કૅપ્ટન ગ્રુપની વિગતો સાથે ટૂંકું ફૉર્મ ભરે છે.' },
       { title: 'અમે ચકાસીને મંજૂરી આપીએ', desc: 'શ્રમણ સેવા ગ્રુપની ટીમ દરેક વિનંતી ચકાસે છે અને WhatsApp પર લૉગિન મોકલે છે.' },
       { title: 'સેવકો ઉમેરો, નોંધ શરૂ કરો', desc: 'સેવકો ઉમેરો અને વિહાર નોંધો. કૅપ્ટન એન્ટ્રીને મંજૂર કરે છે.' },
     ],
@@ -85,9 +87,9 @@ const COPY: Record<Lang, {
   },
   hi: {
     nav: { home: 'होम', prerna: 'प्रेरणा', features: 'हम क्या करते हैं', how: 'कैसे काम करता है', login: 'लॉगिन' },
-    heroTitle: 'श्रमणों की सेवा। हर विहार का रिकॉर्ड।',
+    heroTitle: 'श्रमण सेवा ग्रुप',
     heroSub: 'श्रमण सेवा ग्रुप का प्लेटफ़ॉर्म — विहार का रिकॉर्ड, सेवकों का समन्वय और हर सेवा परिवार को एक ही फ़ोन से जोड़े रखने के लिए।',
-    ctaLogin: 'लॉगिन', ctaRegister: 'अपना ग्रुप रजिस्टर करें',
+    ctaLogin: 'लॉगिन', ctaRegister: 'कैप्टन अकाउंट बनाएँ',
     prernaLabel: 'प्रेरणा', prernaHeading: 'हमारी प्रेरणा',
     prernaLines: ['શ્રદ્ધેય ગચ્છાધિપતિ ગુરુદેવ', 'પ.પૂ. આચાર્ય ભગવંત', 'શ્રીમદ્ વિજય યશોવર્મસૂરીશ્વરજી મહારાજા'],
     prernaPrayer: 'મને સેવા શ્રમણની મળજો રે…',
@@ -101,7 +103,7 @@ const COPY: Record<Lang, {
       { title: 'नज़दीकी देरासर', desc: 'अपने पास के देरासर और तीर्थ दिशा-निर्देश के साथ तुरंत खोजें।' },
     ],
     howHeading: 'कैसे काम करता है', steps: [
-      { title: 'अपना ग्रुप रजिस्टर करें', desc: 'कैप्टन ग्रुप और संघ की जानकारी के साथ छोटा फ़ॉर्म भरते हैं।' },
+      { title: 'अपना ग्रुप रजिस्टर करें', desc: 'कैप्टन ग्रुप की जानकारी के साथ छोटा फ़ॉर्म भरते हैं।' },
       { title: 'हम जाँचकर मंज़ूरी देते हैं', desc: 'श्रमण सेवा ग्रुप की टीम हर अनुरोध जाँचती है और WhatsApp पर लॉगिन भेजती है।' },
       { title: 'सेवक जोड़ें, रिकॉर्ड शुरू करें', desc: 'सेवकों को जोड़ें और विहार दर्ज करें। कैप्टन एंट्री मंज़ूर करते हैं।' },
     ],
@@ -110,6 +112,15 @@ const COPY: Record<Lang, {
     whatsappText: 'जय जिनेन्द्र! मुझे श्रमण सेवा ग्रुप के बारे में और जानना है।', whatsappLabel: 'WhatsApp पर बात करें',
   },
 };
+
+// The five colours of the Jain flag: red, yellow, white, green, black.
+const JAIN_FLAG = ['#FF0000', '#FFCF00', '#FFFFFF', '#009630', '#111111'];
+
+// Inspiration, exactly as supplied (same in every language).
+const PRERNA_NAME = [
+  'શ્રદ્ધેય ગચ્છાધિપતિ ગુરુદેવ',
+  'પ.પૂ. આચાર્ય ભગવંત શ્રીમદ્ વિજય યશોવર્મસૂરીશ્વરજી મહારાજા',
+];
 
 const FEATURE_STYLES = [
   { bg: MAROON, icon: Footprints },
@@ -123,7 +134,7 @@ const FEATURE_STYLES = [
 // Hanging string of pennants. Pennants sit on a quadratic curve between anchor
 // points so they follow the sag of the string.
 const Bunting: React.FC = () => {
-  const colors = [MAROON, SAFFRON, GOLD, TEAL, '#FFF6E5', NAVY];
+  const colors = JAIN_FLAG; // five-colour Jain flag, repeating along the whole string
   const segments = 6;
   const segW = 200;
   const pennants: { x: number; y: number; c: string; key: string }[] = [];
@@ -182,6 +193,8 @@ interface SsgLandingProps {
 
 const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
   const { lang } = useLanguage();
+  // The install banner is fixed to the bottom edge; keep the floating buttons above it until it is dismissed.
+  const [installDismissed, setInstallDismissed] = React.useState(false);
   const c = COPY[lang] ?? COPY.en;
   const waLink = `https://wa.me/${BRAND.contact.whatsapp}?text=${encodeURIComponent(c.whatsappText)}`;
   const goRegister = () => { window.location.href = '/login?register=1'; };
@@ -225,6 +238,8 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
         <Cloud className="w-24 md:w-36 left-[4%] top-40 md:top-48" />
         <Cloud className="w-20 md:w-28 right-[5%] top-72 md:top-64" />
 
+        <Mascot />
+
         <div className="relative max-w-3xl mx-auto px-4 pt-24 md:pt-28 text-center">
           <div className="mx-auto w-56 md:w-72 rounded-[2rem] bg-white p-2 shadow-[0_18px_40px_rgba(120,40,0,0.35)] ring-4 ring-white/60">
             <img src={BRAND.logoFull} alt={BRAND.name} className="w-full h-auto rounded-[1.5rem]" fetchpriority="high" decoding="async" />
@@ -260,6 +275,9 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
               </div>
             </div>
             <div className="text-center md:text-left">
+              <p className="ssg-display text-xl md:text-2xl font-extrabold text-[#7A1414] leading-snug">{PRERNA_NAME[0]}</p>
+              <p className="ssg-display mt-1 text-lg md:text-xl font-bold text-[#7A1414] leading-snug">{PRERNA_NAME[1]}</p>
+              <div className="my-5 h-px bg-gradient-to-r from-transparent via-[#9BB5C8] to-transparent md:from-[#9BB5C8]" />
               <p className="ssg-display text-3xl md:text-4xl font-extrabold text-[#E8730C] leading-snug">{c.prernaPrayer}</p>
               <div className="my-6 h-px bg-gradient-to-r from-transparent via-[#9BB5C8] to-transparent md:from-[#9BB5C8]" />
               <p className="text-base md:text-lg text-[#5C3A28] font-medium leading-relaxed">{c.prernaNote}</p>
@@ -328,7 +346,7 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-[#3B0F0F] text-white/85 py-10 pb-28 md:pb-12">
+      <footer className="bg-[#3B0F0F] text-white/85 py-10 pb-40 md:pb-32">
         <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center md:items-start justify-between gap-6 text-center md:text-left">
           <div className="flex items-center gap-3">
             <img src={BRAND.logo} alt="" className="h-12 w-12 rounded-xl bg-white p-1 object-contain" loading="lazy" decoding="async" />
@@ -349,7 +367,7 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
       </footer>
 
       {/* sticky actions */}
-      <div className="fixed bottom-4 right-4 z-40 flex items-center gap-3">
+      <div className={`fixed right-4 z-40 flex items-center gap-3 ${installDismissed ? 'bottom-4' : 'bottom-24'}`}>
         <button type="button" onClick={onGetStarted} className="hidden sm:inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#FDBA21] text-[#4A1608] font-extrabold text-sm shadow-lg hover:bg-[#ffc94d] transition-colors">
           <LogIn size={16} /> {c.ctaLogin}
         </button>
@@ -357,6 +375,7 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
           <MessageCircle size={28} />
         </a>
       </div>
+      <InstallPWA onDismiss={() => setInstallDismissed(true)} />
     </div>
   );
 };
