@@ -27,6 +27,8 @@ interface RegistrationRequest {
     email: string;
     password?: string;
     status: 'pending' | 'approved' | 'rejected';
+    // Which platform the request came from (null/absent = the original vSeva)
+    brand?: string | null;
     created_at: string;
 }
 
@@ -47,6 +49,19 @@ interface OrgStat {
 }
 
 const SUPER_ADMIN_PIN = "2424";
+
+// Platform a request / group belongs to, so the owner can tell SSG applicants from general vSeva ones.
+const PLATFORM_LABELS: Record<string, string> = { vseva: 'vSeva', ssg: 'SSG · Shraman Seva Group' };
+const platformOf = (brand?: string | null) => brand || 'vseva';
+const platformLabel = (brand?: string | null) => PLATFORM_LABELS[platformOf(brand)] ?? platformOf(brand).toUpperCase();
+const PlatformBadge: React.FC<{ brand?: string | null }> = ({ brand }) => {
+    const isOther = platformOf(brand) !== 'vseva';
+    return (
+        <span className={`inline-block ml-2 align-middle px-2 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide border ${isOther ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+            {platformLabel(brand)}
+        </span>
+    );
+};
 
 interface SuperAdminDashboardProps {
     currentUser?: { id: string; full_name: string } | null;
@@ -206,6 +221,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
 
                 // Content
                 const tableData = [
+                    ["Platform", platformLabel(req.brand)],
                     ["Vihar Group Name", req.vihar_group_name],
                     ["Sangh Name", req.sangh_name],
                     ["Captain Name", req.captain_name],
@@ -263,7 +279,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
 
     const handleApprove = async (req: RegistrationRequest) => {
         try {
-            if (!window.confirm(`Approve ${req.vihar_group_name}? This will create the admin account immediately.`)) return;
+            if (!window.confirm(`Approve ${req.vihar_group_name}${platformOf(req.brand) !== 'vseva' ? ` (${platformLabel(req.brand)})` : ''}? This will create the admin account immediately.`)) return;
 
             showToast("Creating organization and admin...", "info");
 
@@ -519,6 +535,7 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                                 </td>
                                                 <td className="p-5 font-bold text-gray-900">
                                                     {req.vihar_group_name}
+                                                    {scope?.all && <PlatformBadge brand={req.brand} />}
                                                 </td>
                                                 <td className="p-5 text-sm text-gray-800 font-medium">
                                                     {req.captain_name}
@@ -643,6 +660,7 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                                 </td>
                                                 <td className="p-5 font-bold text-gray-900">
                                                     {stat.org_name}
+                                                    {scope?.all && <PlatformBadge brand={stat.brand} />}
                                                 </td>
                                                 <td className="p-5 text-sm text-gray-700 font-medium">
                                                     {admin?.full_name || '-'}

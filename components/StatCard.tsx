@@ -3,7 +3,6 @@ import { StatSummary } from '../types';
 import { Share2, MapPin, Users, Handshake, Medal, Trophy, Sparkles, Instagram, Download, Footprints } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { BRAND } from '@brand';
-import vsgLogo from '../assets/vsg.jpg';
 import Avatar from './Avatar';
 
 interface StatCardProps {

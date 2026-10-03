@@ -61,11 +61,13 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
         }
     };
 
-    // Brands that don't ask for a group name name the group after its Captain, so groups stay distinguishable.
+    // Brands that don't ask for a group name use "<Brand>, <Town>" (e.g. "Shraman Seva Group, Vashi").
+    // The app shows an organisation as "<name>, <city>", so exports and headers read
+    // "Shraman Seva Group, Vashi, Navi Mumbai".
     const resolveGroupName = () =>
         BRAND.registration.askGroupName
             ? (formData.viharGroupName.trim() === '' ? 'Vihar Seva Group' : formData.viharGroupName.trim())
-            : `${formData.captainName.trim()}'s Vihar Seva Group`;
+            : [BRAND.name, formData.town.trim()].filter(Boolean).join(', ');
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();

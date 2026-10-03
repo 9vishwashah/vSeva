@@ -8,4 +8,5 @@ export const BRAND: Brand = {
   logo,
   logoFull,
   logoPadded: false,
+  partnerLogo: null,
 };

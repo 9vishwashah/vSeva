@@ -63,6 +63,13 @@ await sharp(bg)
   .png({ compressionLevel: 9, palette: true, quality: 90 })
   .toFile(path.join(pub, 'ssg-og.png'));
 
+// Developer credit logo (footer of the landing page): trim the cream margin, keep it small.
+await sharp(src('VJAS.jpeg'))
+  .trim({ background: '#FBFBF7', threshold: 18 })
+  .resize({ width: 360, withoutEnlargement: true })
+  .webp({ quality: 88 })
+  .toFile(path.join(assets, 'developer-logo.webp'));
+
 for (const dir of [assets, pub]) {
   for (const f of fs.readdirSync(dir)) {
     console.log(path.relative(root, path.join(dir, f)), (fs.statSync(path.join(dir, f)).size / 1024).toFixed(0) + 'KB');

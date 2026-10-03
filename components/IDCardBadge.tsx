@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { UserProfile } from '../types';
 import { BRAND } from '@brand';
-import vsgLogo from '../assets/vsg.jpg';
 import { Download, Printer } from 'lucide-react';
 
 interface IDCardBadgeProps {
@@ -59,11 +58,13 @@ const IDCardBadge: React.FC<IDCardBadgeProps> = ({ user, orgName }) => {
         className="print-card bg-white rounded-[16px] shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative flex flex-col items-center shrink-0 border-4 border-black overflow-hidden"
         style={{ width: '280px', height: '460px' }}
       >
-        {/* Banner with VSG Logo top left */}
+        {/* Banner with the partner logo top left (vSeva only; other brands have none) */}
         <div className="w-full bg-gradient-to-br from-saffron-400 to-saffron-600 h-28 flex flex-col justify-start items-start relative shrink-0 p-4 shadow-inner border-b-2 border-black">
+            {BRAND.partnerLogo && (
             <div className="w-14 h-14 bg-white rounded-lg p-1 shadow-sm border border-gray-100 flex items-center justify-center">
-                <img src={vsgLogo} alt="VSG" className="w-full h-full object-contain rounded" />
+                <img src={BRAND.partnerLogo} alt="VSG" className="w-full h-full object-contain rounded" />
             </div>
+            )}
             
             {/* Center overlapping vSeva logo */}
             <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 w-20 h-20 bg-white rounded-full p-2 shadow-lg border-[3px] border-black flex items-center justify-center">

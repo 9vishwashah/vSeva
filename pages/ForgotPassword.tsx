@@ -20,34 +20,44 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
         setSuccessMessage(null);
 
         try {
-            if (emailOrUsername.endsWith('@vsevak') || emailOrUsername.endsWith('@vsevak.in') || emailOrUsername.endsWith('@vjas.in')) {
-                // Sevak Flow: Request via RPC
-                const { data, error } = await supabase.rpc('request_sevak_reset', {
-                    username_input: emailOrUsername
-                });
+            const input = emailOrUsername.trim();
+            const lower = input.toLowerCase();
+            // A Sevak types their username (e.g. "rameshshah"); older accounts are stored with an
+            // internal "@vsevak" / "@vsevak.in" tail. Anything else containing "@" is a Captain's email.
+            const hasSevakTail = /@vsevak(\.in)?$/.test(lower);
+            const isCaptainEmail = lower.includes('@') && !hasSevakTail;
 
-                if (error) throw error;
-
-                // rpc returns { success: boolean, message?: string }
-                if (data && data.success === false) {
-                    throw new Error(data.message || 'Sevak not found');
+            if (!isCaptainEmail) {
+                // Sevak Flow: notify the Captain(s) of the Sevak's group via RPC. The stored username
+                // may or may not carry the internal tail, so try each form until one matches.
+                const bare = lower.replace(/@vsevak(\.in)?$/, '').replace(/[^a-z0-9]/g, '');
+                const candidates = Array.from(new Set([bare, `${bare}@vsevak.in`, `${bare}@vsevak`, input]));
+                let found = false;
+                for (const candidate of candidates) {
+                    const { data, error } = await supabase.rpc('request_sevak_reset', { username_input: candidate });
+                    if (error) throw error;
+                    // rpc returns { success: boolean, message?: string }
+                    if (!data || data.success !== false) { found = true; break; }
+                }
+                if (!found) {
+                    throw new Error('No Sevak account found with that username. Check the spelling, or ask your Captain.');
                 }
 
-                setSuccessMessage(`We have notified your Captain to reset the password for ${emailOrUsername}.`);
+                setSuccessMessage(`We have notified your Captain. Your Captain will reset your password for you — remember it is your mobile number, so tell them if your number has changed.`);
             } else {
                 // Captain Flow: Standard Supabase Reset
                 // Validate it's an email
-                if (!emailOrUsername.includes('@')) {
+                if (!input.includes("@")) {
                     throw new Error("Please enter a valid email address for Captain accounts.");
                 }
 
-                const { error } = await supabase.auth.resetPasswordForEmail(emailOrUsername, {
+                const { error } = await supabase.auth.resetPasswordForEmail(input, {
                     redirectTo: `${window.location.origin}/update-password`, // pages/UpdatePassword.tsx
                 });
 
                 if (error) throw error;
 
-                setSuccessMessage(`Password reset link has been sent to ${emailOrUsername}. Please check your inbox.`);
+                setSuccessMessage(`Password reset link has been sent to ${input}. Please check your inbox.`);
             }
 
         } catch (err: any) {
@@ -95,7 +105,8 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
             </div>
 
             <p className="text-gray-600 text-sm">
-                Enter your Username (for Sevaks) or Email (for Admins).
+                <strong>Sevaks:</strong> enter your username — your Captain is notified and resets your password (it is your mobile number, so mention it if your number has changed).<br />
+                <strong>Captains:</strong> enter your email to get a reset link.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">

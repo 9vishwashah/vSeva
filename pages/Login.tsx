@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { brandAccessError } from '../services/brandAccess';
+import { callFn } from '../services/apiBase';
 import { BRAND } from '@brand';
 
 interface LoginProps {
@@ -65,6 +66,26 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           break;
         }
         authError = result.error;
+      }
+
+      // Sevaks may type just the start of their name ("alpesh" for "Alpesh Shah"): if the full-name
+      // attempts failed and the password looks like a mobile number, ask the server which Sevak has that
+      // name prefix AND that mobile number, then sign in with the normal password check.
+      if (!authData?.user && !safeInput.includes('@') && normalizedUsername.length >= 3 && password.replace(/\D/g, '').length >= 10) {
+        try {
+          const lookup = await callFn<{ emails?: string[]; ambiguous?: boolean }>('sevak-login-lookup', {
+            body: { name: normalizedUsername, mobile: password },
+            retry: true,
+          });
+          if (lookup?.ambiguous) throw new Error('More than one Sevak matches that name and number. Please type your full name.');
+          for (const candidate of lookup?.emails ?? []) {
+            const result = await supabase.auth.signInWithPassword({ email: candidate, password });
+            if (!result.error && result.data.user) { authData = result.data; break; }
+          }
+        } catch (lookupErr: any) {
+          if (lookupErr?.message?.startsWith('More than one')) throw lookupErr;
+          // lookup unavailable: fall through to the normal "invalid credentials" error
+        }
       }
 
       if (!authData?.user) throw authError ?? new Error('Invalid credentials.');

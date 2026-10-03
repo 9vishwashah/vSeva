@@ -5,12 +5,16 @@ import { LANGUAGES } from '../i18n/translations';
 
 interface LanguageDropdownProps {
   className?: string;
+  // Open the menu above the button (for controls at the bottom of a screen/sidebar).
+  placement?: 'bottom' | 'top';
+  // Stretch the button to the width of its container.
+  block?: boolean;
 }
 
 // Space-saving language picker for tight headers: a single button showing the current
 // language, opening a small menu of the others. Same state as LanguageSwitcher
 // (LanguageContext), so the choice persists and applies app-wide.
-const LanguageDropdown: React.FC<LanguageDropdownProps> = ({ className = '' }) => {
+const LanguageDropdown: React.FC<LanguageDropdownProps> = ({ className = '', placement = 'bottom', block = false }) => {
   const { lang, setLang, t } = useLanguage();
   const [open, setOpen] = React.useState(false);
   const root = React.useRef<HTMLDivElement>(null);
@@ -33,17 +37,17 @@ const LanguageDropdown: React.FC<LanguageDropdownProps> = ({ className = '' }) =
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={t('nav.language')}
-        className="inline-flex items-center gap-1.5 h-9 pl-2.5 pr-2 rounded-full bg-[#F7F4F0] text-[#241C17] text-xs font-bold hover:bg-[#EFE9E2] transition-colors"
+        className={`flex items-center gap-1.5 h-9 pl-2.5 pr-2 rounded-full bg-[#F7F4F0] text-[#241C17] text-xs font-bold hover:bg-[#EFE9E2] transition-colors ${block ? 'w-full' : 'inline-flex'}`}
       >
         <Languages size={15} className="text-[#8A6A57] shrink-0" />
-        <span className="whitespace-nowrap">{current.nativeLabel}</span>
-        <ChevronDown size={14} className={`text-[#8A6A57] transition-transform ${open ? 'rotate-180' : ''}`} />
+        <span className={`whitespace-nowrap ${block ? 'flex-1 text-left' : ''}`}>{current.nativeLabel}</span>
+        <ChevronDown size={14} className={`text-[#8A6A57] transition-transform ${open !== (placement === 'top') ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
         <ul
           role="listbox"
-          className="absolute right-0 top-full mt-2 min-w-[9.5rem] rounded-2xl bg-white border border-orange-100 shadow-xl py-1.5 z-50 overflow-hidden"
+          className={`absolute ${block ? 'left-0 right-0' : 'right-0 min-w-[9.5rem]'} ${placement === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'} rounded-2xl bg-white border border-orange-100 shadow-xl py-1.5 z-50 overflow-hidden`}
         >
           {LANGUAGES.map((l) => (
             <li key={l.code} role="option" aria-selected={l.code === lang}>

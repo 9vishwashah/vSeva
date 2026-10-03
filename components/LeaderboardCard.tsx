@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Trophy, Medal, Download } from 'lucide-react';
 import { BRAND } from '@brand';
-import vsgLogo from '../assets/vsg.jpg';
 import { toLocalDateKey } from '../services/dateUtils';
 import { deliverPdf } from '../services/pdfDelivery';
 
@@ -61,7 +60,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
             const pageWidth = doc.internal.pageSize.getWidth();
 
             doc.addImage(BRAND.logo, 'PNG', 14, 10, 15, 15);
-            doc.addImage(vsgLogo, 'JPEG', pageWidth - 14 - 15, 10, 15, 15);
+            if (BRAND.partnerLogo) doc.addImage(BRAND.partnerLogo, 'JPEG', pageWidth - 14 - 15, 10, 15, 15);
 
             // Title/subtitle — org identity first, same as the main Vihar export.
             doc.setFont('helvetica', 'normal');

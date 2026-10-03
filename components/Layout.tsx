@@ -4,6 +4,7 @@ import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, P
 
 import NotificationBell from './NotificationBell';
 import LanguageSwitcher from './LanguageSwitcher';
+import LanguageDropdown from './LanguageDropdown';
 import Avatar from './Avatar';
 import { BRAND } from '@brand';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
@@ -224,11 +225,10 @@ const Layout: React.FC<LayoutProps> = ({
                 </div>
               )}
             </button>
-            <div className={`flex items-center gap-1.5 ${sidebarCollapsed ? 'flex-col' : ''}`}>
-              {!sidebarCollapsed && <LanguageSwitcher compact />}
-              <NotificationBell userId={userId} onViewAll={() => setCurrentPage('notifications')} />
-            </div>
+            <NotificationBell userId={userId} onViewAll={() => setCurrentPage('notifications')} />
           </div>
+          {/* Language: one compact dropdown instead of three pills squeezed beside the account name */}
+          {!sidebarCollapsed && <LanguageDropdown placement="top" block className="mb-2.5" />}
           <button
             onClick={onLogout}
             title={sidebarCollapsed ? t('nav.signOut') : undefined}

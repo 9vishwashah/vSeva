@@ -22,6 +22,7 @@ const ALLOWED = [
   /@vjas\.in/gi,                    // internal: Forgot-password routes this domain to the Sevak flow
   /(["'`])vseva\1/gi,               // quoted brand id ("vseva") in code, never displayed
   /\bvseva:/gi,                     // brand-id key in a lookup table
+  /alt:"VJAS"/g,                    // alt text of the developer-credit logo in the SSG footer (requested)
 ];
 
 // The deployment's own address is allowed to contain the platform's domain (e.g. ssg.vjas.in).

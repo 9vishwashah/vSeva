@@ -75,6 +75,8 @@ export interface Brand extends BrandMeta {
   // The vSeva artwork has transparent padding that the UI compensates for with a
   // CSS scale; brands with tightly cropped art set this false.
   logoPadded: boolean;
+  // Second logo drawn top-right on exported PDFs (null = none).
+  partnerLogo: string | null;
 }
 
 export type Env = Record<string, string | undefined>;

@@ -9,7 +9,6 @@ import Modal from '../components/Modal';
 import StatusScreen from '../components/StatusScreen';
 import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X, Plus, Handshake, Medal, Crown, Shield, Flame, Calendar, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { BRAND } from '@brand';
-import vsgLogo from '../assets/vsg.jpg';
 import { useToast } from '../context/ToastContext';
 import { useViharYear } from '../context/ViharYearContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -390,7 +389,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
       doc.addImage(BRAND.logo, 'PNG', 14, 10, 15, 15);
       const pageWidth = doc.internal.pageSize.getWidth();
-      doc.addImage(vsgLogo, 'JPEG', pageWidth - 14 - 15, 10, 15, 15);
+      if (BRAND.partnerLogo) doc.addImage(BRAND.partnerLogo, 'JPEG', pageWidth - 14 - 15, 10, 15, 15);
 
       // Title & Credits
       doc.setFont('helvetica', 'normal');

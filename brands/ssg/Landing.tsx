@@ -1,11 +1,13 @@
 import React from 'react';
 import { BRAND } from '@brand';
 import {
-  ArrowRight, Footprints, Landmark, LogIn, Megaphone, MessageCircle, ShieldAlert, UserPlus, Users, FileText,
+  ArrowRight, Footprints, Landmark, LogIn, Megaphone, ShieldAlert, UserPlus, Users, FileText,
 } from 'lucide-react';
 import LanguageDropdown from '../../components/LanguageDropdown';
+import WhatsAppIcon from '../../components/WhatsAppIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import guruPhoto from './assets/guru.webp';
+import developerLogo from './assets/developer-logo.webp';
 import { InstallPWA } from '../../components/InstallPWA';
 import Mascot from './Mascot';
 
@@ -121,6 +123,13 @@ const PRERNA_NAME = [
   'શ્રદ્ધેય ગચ્છાધિપતિ ગુરુદેવ',
   'પ.પૂ. આચાર્ય ભગવંત શ્રીમદ્ વિજય યશોવર્મસૂરીશ્વરજી મહારાજા',
 ];
+
+// Developer credit in the footer (next to the copyright line).
+const DEVELOPER = {
+  name: 'Vishwa Alpesh Shah',
+  whatsapp: '919594503214',
+  whatsappText: 'Jai Jinendra! I saw the Shraman Seva Group platform and would like to get in touch.',
+};
 
 const FEATURE_STYLES = [
   { bg: MAROON, icon: Footprints },
@@ -363,7 +372,25 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
             {BRAND.instagram && <a href={BRAND.instagram.url} target="_blank" rel="noopener noreferrer" className="hover:text-[#FDBA21]">{BRAND.instagram.handle}</a>}
           </nav>
         </div>
-        <p className="mt-8 text-center text-xs text-white/50">© {new Date().getFullYear()} {BRAND.name}</p>
+        <div className="mt-8 pt-5 border-t border-white/10 max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-x-5 gap-y-3 text-xs text-white/60">
+          <p>© {new Date().getFullYear()} {BRAND.name}</p>
+          <span className="hidden sm:inline text-white/20" aria-hidden="true">|</span>
+          <div className="flex items-center gap-2.5">
+            <span>Developed by <strong className="font-semibold text-white/80">{DEVELOPER.name}</strong></span>
+            <span className="inline-flex items-center bg-white rounded-lg px-2 py-1">
+              <img src={developerLogo} alt="VJAS" className="h-6 w-auto" loading="lazy" decoding="async" />
+            </span>
+            <a
+              href={`https://wa.me/${DEVELOPER.whatsapp}?text=${encodeURIComponent(DEVELOPER.whatsappText)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`WhatsApp ${DEVELOPER.name}`}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#25D366] text-white hover:scale-105 transition-transform"
+            >
+              <WhatsAppIcon size={18} />
+            </a>
+          </div>
+        </div>
       </footer>
 
       {/* sticky actions */}
@@ -372,7 +399,7 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
           <LogIn size={16} /> {c.ctaLogin}
         </button>
         <a href={waLink} target="_blank" rel="noopener noreferrer" aria-label={c.whatsappLabel} className="w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-xl hover:scale-105 transition-transform">
-          <MessageCircle size={28} />
+          <WhatsAppIcon size={32} />
         </a>
       </div>
       <InstallPWA onDismiss={() => setInstallDismissed(true)} />
