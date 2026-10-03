@@ -24,6 +24,8 @@ export interface BrandMeta {
   legalFooter: string;   // credit line at the foot of the privacy / deletion pages
   // Which translation key labels the "create an account" link on the login screen.
   registerLabelKey: 'login.registerOrg' | 'login.createCaptain';
+  // Captain registration form: which optional group fields to ask for.
+  registration: { askSanghName: boolean; askGroupName: boolean };
   usernameHint: string;  // placeholder on the forgot-password field
   examples: { username: string; mobile: string }; // placeholder text on Login / Register
   description: string;   // default meta description

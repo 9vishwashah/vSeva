@@ -6,6 +6,7 @@ import { LogIn, Loader2, Instagram, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { brandAccessError } from '../services/brandAccess';
 import { BRAND } from '@brand';
 
 interface LoginProps {
@@ -16,7 +17,14 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // A session restored from an earlier visit may have been refused (see App.tsx) — say why.
+  const [errorMsg, setErrorMsg] = useState<string | null>(() => {
+    try {
+      const msg = sessionStorage.getItem('brandBlock');
+      if (msg) sessionStorage.removeItem('brandBlock');
+      return msg;
+    } catch { return null; }
+  });
   // /login?register=1 (used by the brand landing pages) opens the Captain registration form directly.
   const [isRegistering, setIsRegistering] = useState(() => new URLSearchParams(window.location.search).get('register') === '1');
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -70,6 +78,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
       if (!profile.is_active) {
         throw new Error("Account is inactive.");
+      }
+
+      // This site only admits its own platform's accounts (see services/brandAccess.ts)
+      const blocked = await brandAccessError(profile.organization_id);
+      if (blocked) {
+        await supabase.auth.signOut();
+        throw new Error(blocked);
       }
 
       // Track last login time (fire-and-forget, don't block login on failure)

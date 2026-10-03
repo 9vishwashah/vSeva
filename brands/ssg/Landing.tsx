@@ -3,7 +3,7 @@ import { BRAND } from '@brand';
 import {
   ArrowRight, Footprints, Landmark, LogIn, Megaphone, MessageCircle, ShieldAlert, UserPlus, Users, FileText,
 } from 'lucide-react';
-import LanguageSwitcher from '../../components/LanguageSwitcher';
+import LanguageDropdown from '../../components/LanguageDropdown';
 import { useLanguage } from '../../context/LanguageContext';
 import guruPhoto from './assets/guru.webp';
 import { InstallPWA } from '../../components/InstallPWA';
@@ -203,8 +203,8 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
     <div className="ssg-landing min-h-screen bg-[#FFF6E5] text-[#3B1A0B] font-sans overflow-x-hidden">
       {/* NAV */}
       <header className="fixed top-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-b border-orange-100">
-        <div className="max-w-6xl mx-auto px-4 h-14 md:h-16 flex items-center gap-3">
-          <a href="#home" className="flex items-center gap-2 shrink-0 min-w-0">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 md:h-16 flex items-center gap-2 sm:gap-3">
+          <a href="#home" className="flex items-center gap-2 min-w-0">
             <img src={BRAND.logo} alt="" className="h-9 w-9 object-contain" />
             <span className="ssg-display font-extrabold text-[#7A1414] text-base md:text-lg leading-tight truncate">
               {lang === 'en' ? BRAND.name : 'શ્રમણ સેવા ગ્રુપ'}
@@ -216,10 +216,10 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
             <a href="#features" className="hover:text-[#E8730C]">{c.nav.features}</a>
             <a href="#how" className="hover:text-[#E8730C]">{c.nav.how}</a>
           </nav>
-          <div className="ml-auto flex items-center gap-2">
-            <LanguageSwitcher compact />
-            <button type="button" onClick={onGetStarted} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#9E1B1B] text-white text-xs md:text-sm font-extrabold hover:bg-[#B52424] transition-colors">
-              <LogIn size={15} /> {c.nav.login}
+          <div className="ml-auto flex items-center gap-2 shrink-0">
+            <LanguageDropdown />
+            <button type="button" onClick={onGetStarted} aria-label={c.nav.login} className="inline-flex items-center justify-center gap-1.5 h-9 px-3 min-[400px]:px-4 rounded-full bg-[#9E1B1B] text-white text-xs md:text-sm font-extrabold hover:bg-[#B52424] transition-colors">
+              <LogIn size={15} /> <span className="hidden min-[400px]:inline">{c.nav.login}</span>
             </button>
           </div>
         </div>

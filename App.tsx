@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './services/supabase';
 import { UserRole, UserProfile, ViharEntry, Organization } from './types';
 import { dataService } from './services/dataService';
+import { brandAccessError } from './services/brandAccess';
 import { clearAll as clearRequestCache } from './services/requestCache';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -294,7 +295,17 @@ const App: React.FC = () => {
         });
         const { data: { session } } = await Promise.race([supabase.auth.getSession(), sessionTimeout]);
         if (session?.user) {
-          const profile = await dataService.getProfile(session.user.id);
+          let profile = await dataService.getProfile(session.user.id);
+          if (profile) {
+            // A session from another platform (e.g. a vSeva account opened on the SSG site) is not admitted.
+            const blocked = await brandAccessError(profile.organization_id);
+            if (blocked) {
+              try { sessionStorage.setItem('brandBlock', blocked); } catch { /* optional */ }
+              await supabase.auth.signOut();
+              clearRequestCache();
+              profile = null;
+            }
+          }
           if (profile) {
             setUser(profile);
             // Fetched separately (not on the login-critical path) — see

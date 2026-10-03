@@ -61,11 +61,17 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
         }
     };
 
+    // Brands that don't ask for a group name name the group after its Captain, so groups stay distinguishable.
+    const resolveGroupName = () =>
+        BRAND.registration.askGroupName
+            ? (formData.viharGroupName.trim() === '' ? 'Vihar Seva Group' : formData.viharGroupName.trim())
+            : `${formData.captainName.trim()}'s Vihar Seva Group`;
+
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        const finalViharGroupName = formData.viharGroupName.trim() === '' ? 'Vihar Seva Group' : formData.viharGroupName.trim();
+        const finalViharGroupName = resolveGroupName();
 
         try {
             // Updated Flow: Submit Request to 'registration_requests' table
@@ -103,7 +109,7 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
 
     if (isSuccess) {
         const uniqueId = `REQ-${Date.now().toString().slice(-4)}`;
-        const finalViharGroupName = formData.viharGroupName.trim() === '' ? 'Vihar Seva Group' : formData.viharGroupName.trim();
+        const finalViharGroupName = resolveGroupName();
         const waMessage =
 `I have submitted a ${BRAND.name} Captain account request.
 
@@ -292,6 +298,7 @@ Kindly review and Approve.`;
                         />
                     </div>
 
+                    {BRAND.registration.askSanghName && (
                     <div className="col-span-2 sm:col-span-1">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Sangh Name</label>
                         <input
@@ -304,7 +311,9 @@ Kindly review and Approve.`;
                             onChange={handleChange}
                         />
                     </div>
+                    )}
 
+                    {BRAND.registration.askGroupName && (
                     <div className="col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Vihar Group Name <span className="text-gray-500 font-normal">(Optional, default: "Vihar Seva Group")</span>
@@ -318,6 +327,7 @@ Kindly review and Approve.`;
                             onChange={handleChange}
                         />
                     </div>
+                    )}
 
                 </div>
 

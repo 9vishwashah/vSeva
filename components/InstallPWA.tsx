@@ -102,6 +102,8 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss }) => {
                     )}
                 </div>
             )}
+            {/* Narrow phones: keep the banner to a compact two-line title */}
+            <style>{'.pwa-title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}@media (max-width:399px){.pwa-sub{display:none}}'}</style>
             {/* ── Sticky Footer Banner ── */}
             <div
                 style={{
@@ -131,10 +133,10 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss }) => {
                         style={{ height: '34px', width: '34px', objectFit: 'contain', flexShrink: 0, borderRadius: '8px', background: BRAND.logoPadded ? undefined : '#fff', transform: BRAND.logoPadded ? 'scale(1.5)' : undefined }}
                     />
                     <div style={{ minWidth: 0 }}>
-                        <p style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: 0, lineHeight: 1.2 }}>
+                        <p className="pwa-title" style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: 0, lineHeight: 1.2 }}>
                             {t('install.bannerTitle', { name: BRAND.name })}
                         </p>
-                        <p style={{ color: '#94a3b8', fontSize: '11px', margin: 0, lineHeight: 1.3, marginTop: '1px' }}>
+                        <p className="pwa-sub" style={{ color: '#94a3b8', fontSize: '11px', margin: 0, lineHeight: 1.3, marginTop: '1px' }}>
                             {isIOS ? t('install.bannerSubIOS') : t('install.bannerSub')}
                         </p>
                     </div>

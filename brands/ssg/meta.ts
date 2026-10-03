@@ -24,6 +24,7 @@ export const getMeta = (env: Env): BrandMeta => {
     designer: null,
     legalFooter: 'Shraman Seva Group',
     registerLabelKey: 'login.createCaptain',
+    registration: { askSanghName: false, askGroupName: false },
     usernameHint: 'username or admin@example.com',
     examples: { username: 'e.g. Ramesh Shah', mobile: '9876543210' },
     description,

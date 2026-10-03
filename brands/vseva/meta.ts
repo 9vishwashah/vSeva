@@ -15,6 +15,7 @@ export const getMeta = (_env: Env): BrandMeta => ({
   designer: { name: 'Vishwa Alpesh Shah', org: 'VJAS' },
   legalFooter: 'vSeva by VJAS · Designed by Vishwa Alpesh Shah',
   registerLabelKey: 'login.registerOrg',
+  registration: { askSanghName: true, askGroupName: true },
   usernameHint: 'name@vsevak or admin@example.com',
   examples: { username: 'e.g. Vishwa Shah', mobile: '9594503214' },
   description: 'Your Steps. Your Seva. Your Legacy. Digitizing Jain Vihar Seva activities.',
