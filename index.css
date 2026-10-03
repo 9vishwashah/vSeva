@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Display face for the SSG landing page (Gujarati-capable, bold/condensed feel).
+   Harmless when the font isn't loaded — falls through to the body face. */
+.ssg-display {
+  font-family: 'Anek Gujarati', 'Noto Sans Gujarati', 'Manrope', sans-serif;
+  font-stretch: 85%;
+}

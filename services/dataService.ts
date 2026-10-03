@@ -3,6 +3,16 @@ import { callFn } from './apiBase';
 import { getCached, invalidate, clearAll } from './requestCache';
 import { UserProfile, ViharEntry, AreaRoute, UserRole, StatSummary, Organization, ContactNumber, IncidentReport } from '../types';
 
+// Super Admin calls are server-authorised and brand-scoped (netlify/functions/super-admin.js).
+async function superAdminCall<T = any>(action: string, extra: Record<string, unknown> = {}, retry = false): Promise<T> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error('Please sign in again.');
+  return callFn<T>('super-admin', {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    body: { action, ...extra },
+    retry,
+  });
+}
 
 export const dataService = {
 
@@ -205,15 +215,28 @@ export const dataService = {
     }, 30_000);
   },
 
-  async getOrgActivityStats(): Promise<{ org_id: string; org_name: string; city: string; created_at: string; total_sevaks: number; total_entries: number; last_updated: string | null }[]> {
-    return getCached('orgActivityStats', async () => {
-      const { data, error } = await supabase.rpc('get_org_activity_stats');
+  // --- Super Admin ---
 
-      if (error) {
+  async getSuperAdminScope(): Promise<{ email: string; all: boolean; brands: string[] }> {
+    return superAdminCall('whoami', {}, true);
+  },
+
+  async getPendingRegistrationRequests(): Promise<any[]> {
+    return superAdminCall<any[]>('pending', {}, true);
+  },
+
+  async rejectRegistrationRequest(id: string): Promise<void> {
+    await superAdminCall('reject', { id });
+  },
+
+  async getOrgActivityStats(): Promise<{ org_id: string; org_name: string; city: string; created_at: string; total_sevaks: number; total_entries: number; last_updated: string | null; brand?: string }[]> {
+    return getCached('orgActivityStats', async () => {
+      try {
+        return (await superAdminCall<any[]>('stats', {}, true)) || [];
+      } catch (error) {
         console.error("Error fetching org activity stats:", error);
-        return [];
+        throw error;
       }
-      return data || [];
     }, 30_000);
   },
 
@@ -223,7 +246,10 @@ export const dataService = {
 
     const cacheKey = `orgAdmins:${[...orgIds].sort().join(',')}`;
     try {
-      const data = await getCached(cacheKey, () => callFn<any[]>('get-org-admins', { body: { orgIds }, retry: true }), 30_000);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Please sign in again.');
+      const headers = { Authorization: `Bearer ${session.access_token}` };
+      const data = await getCached(cacheKey, () => callFn<any[]>('get-org-admins', { headers, body: { orgIds }, retry: true }), 30_000);
       (data || []).forEach((p: any) => {
         map[p.organization_id] = {
           full_name: p.full_name,
@@ -536,35 +562,17 @@ export const dataService = {
     return true;
   },
 
-  async approveOrgAdmin(request: {
-    id: string;
-    org_name: string;
-    city: string;
-    full_name: string;
-    email: string;
-    mobile: string;
-    town?: string;
-    password?: string;
-  }) {
+  // The server builds the org + Captain from the stored request (and checks the
+  // caller's brand scope), so only the request id is sent.
+  async approveOrgAdmin(requestId: string) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) throw new Error("Admin session required");
-
-    const passwordToUse = request.password || request.mobile;
 
     // Call Secure Netlify Function. Never retried — would create a second org/admin.
     try {
       await callFn('approve-org', {
         headers: { Authorization: `Bearer ${session.access_token}` },
-        body: {
-          requestId: request.id,
-          orgName: request.org_name,
-          city: request.city,
-          fullName: request.full_name,
-          email: request.email,
-          mobile: request.mobile,
-          town: request.town,
-          password: passwordToUse
-        },
+        body: { requestId },
       });
     } catch (e: any) {
       throw new Error(e?.message || "Failed to approve organization");

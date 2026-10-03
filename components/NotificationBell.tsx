@@ -91,7 +91,7 @@ const NotificationBell: React.FC<{ userId?: string; onViewAll?: () => void }> = 
   }, []);
 
   // Same Escape-closes-on-Android-back wiring Modal.tsx uses — this dropdown
-  // predates Modal and never picked up the `.vseva-modal-backdrop` marker
+  // predates Modal and never picked up the `.app-modal-backdrop` marker
   // App.tsx's hardware back-button handler looks for, so Back fell straight
   // through to "nothing open, exit app" while this was open on Android.
   useEffect(() => {
@@ -138,7 +138,7 @@ const NotificationBell: React.FC<{ userId?: string; onViewAll?: () => void }> = 
       </button>
 
       {isOpen && (
-        <div className="vseva-modal-backdrop fixed inset-x-4 top-20 bottom-auto md:absolute md:inset-auto md:left-full md:bottom-[-10px] md:ml-6 w-auto md:w-96 max-h-[80vh] md:max-h-[600px] bg-white rounded-xl shadow-2xl overflow-hidden z-[100] border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="app-modal-backdrop fixed inset-x-4 top-20 bottom-auto md:absolute md:inset-auto md:left-full md:bottom-[-10px] md:ml-6 w-auto md:w-96 max-h-[80vh] md:max-h-[600px] bg-white rounded-xl shadow-2xl overflow-hidden z-[100] border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-200">
 
           <div className="px-4 py-3 border-b bg-gray-50 flex justify-between items-center sticky top-0 bg-gray-50 z-10">
             <div>

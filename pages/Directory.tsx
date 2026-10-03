@@ -13,7 +13,7 @@ import ShareButton from '../components/directory/ShareButton';
 import StatusScreen from '../components/StatusScreen';
 import Skeleton from '../components/Skeleton';
 import { getListingTags } from '../components/directory/listingTags';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 
 type CategoryFilterKey = 'all' | 'vihar_group' | 'temple' | 'upashray' | 'bhojanshala' | 'library';
 
@@ -40,9 +40,9 @@ const Directory: React.FC<DirectoryProps> = ({ onNavigate }) => {
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
 
   useEffect(() => {
-    document.title = 'VSeva Community Directory — Jain Vihar Groups, Temples & More';
+    document.title = `${BRAND.directoryName} — Jain Vihar Groups, Temples & More`;
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute('content', 'Discover Jain Vihar Groups, Temples, Upashrays, Bhojanshalas and Libraries near you — a community-maintained directory by vSeva.');
+    if (meta) meta.setAttribute('content', `Discover Jain Vihar Groups, Temples, Upashrays, Bhojanshalas and Libraries near you — a community-maintained directory by ${BRAND.name}.`);
   }, []);
 
   const load = async () => {
@@ -89,9 +89,9 @@ const Directory: React.FC<DirectoryProps> = ({ onNavigate }) => {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center gap-2 mb-3">
-            <img src={vSevaLogo} alt="vSeva" className="h-8 w-8 object-contain" />
+            <img src={BRAND.logo} alt={BRAND.name} className="h-8 w-8 object-contain" />
             <div>
-              <h1 className="text-lg font-serif font-bold text-[#241C17] leading-tight">VSeva Directory</h1>
+              <h1 className="text-lg font-serif font-bold text-[#241C17] leading-tight">{BRAND.shortName} Directory</h1>
               <p className="text-[11px] text-gray-400">Discover Jain Vihar Groups &amp; Community Places</p>
             </div>
           </div>
@@ -134,7 +134,7 @@ const Directory: React.FC<DirectoryProps> = ({ onNavigate }) => {
             >
               <Plus size={16} /> Add a Listing
             </button>
-            <ShareButton url={addListingUrl} title="Add Your Derasar / Vihar Group to VSeva Directory" text="Help keep our community directory up to date" className="[&>button]:bg-white/20 [&>button]:text-white [&>button:hover]:bg-white/30" />
+            <ShareButton url={addListingUrl} title={`Add Your Derasar / Vihar Group to ${BRAND.shortName} Directory`} text="Help keep our community directory up to date" className="[&>button]:bg-white/20 [&>button]:text-white [&>button:hover]:bg-white/30" />
           </div>
         </div>
 

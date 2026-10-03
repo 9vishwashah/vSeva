@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { dataService } from '../services/dataService';
 import { Loader2, ShieldCheck, AlertCircle, MapPin, Phone, Activity, User, Building2, Map } from 'lucide-react';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 
 const PublicSevakProfile: React.FC = () => {
   const [profile, setProfile] = useState<any>(null);
@@ -89,7 +89,7 @@ const PublicSevakProfile: React.FC = () => {
                  <ShieldCheck className="text-white drop-shadow-sm" size={36} />
              </div>
              <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">Identity Confirmed</h1>
-             <p className="text-orange-50 font-bold tracking-widest uppercase text-xs mt-2 border-t border-white/20 pt-2">Official vSeva Volunteer</p>
+             <p className="text-orange-50 font-bold tracking-widest uppercase text-xs mt-2 border-t border-white/20 pt-2">Official {BRAND.name} Volunteer</p>
           </div>
         </div>
 
@@ -193,7 +193,7 @@ const PublicSevakProfile: React.FC = () => {
         </div>
 
         <div className="bg-orange-50 px-6 py-4 flex justify-center items-center gap-3">
-            <img src={vSevaLogo} alt="vSeva" className="h-5 w-auto opacity-60 grayscale brightness-75 mix-blend-multiply" />
+            <img src={BRAND.logo} alt={BRAND.name} className="h-5 w-auto opacity-60 grayscale brightness-75 mix-blend-multiply" />
             <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">Secured Platform</p>
         </div>
       </div>

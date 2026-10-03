@@ -21,6 +21,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@brand": [
+        "./brands/vseva/index.ts"
+      ],
+      "@brand/*": [
+        "./brands/vseva/*"
       ]
     },
     "allowImportingTsExtensions": true,

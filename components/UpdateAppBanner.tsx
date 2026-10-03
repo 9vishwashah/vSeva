@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { BRAND } from '@brand';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { RefreshCw, X } from 'lucide-react';
 
@@ -79,7 +80,7 @@ export const UpdateAppBanner: React.FC = () => {
           <div>
             <h4 className="font-bold text-gray-900 text-sm">App Update Available</h4>
             <p className="text-xs text-gray-500 mt-0.5 leading-tight">
-              A new version of vSeva is available! Update now to get the latest features.
+              A new version of {BRAND.name} is available! Update now to get the latest features.
             </p>
           </div>
         </div>

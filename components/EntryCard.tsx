@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { BRAND } from '@brand';
 import { ViharEntry } from '../types';
 import { MessageCircle, Download, Trash2, Pencil } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
@@ -194,7 +195,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                     normal on-screen card. */}
                 {isSharing && (
                     <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center opacity-70">
-                        <div className="text-[10px] font-bold text-saffron-600 uppercase tracking-widest">vSeva App</div>
+                        <div className="text-[10px] font-bold text-saffron-600 uppercase tracking-widest">{BRAND.name} App</div>
                         <div className="text-[8px] text-gray-400">Track. Serve. Inspire.</div>
                     </div>
                 )}

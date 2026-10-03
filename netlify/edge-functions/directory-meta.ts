@@ -55,8 +55,13 @@ export default async (request: Request, context: any) => {
       listing.bhojanshala && 'Bhojanshala',
       listing.library && 'Library',
     ].filter(Boolean).join(', ') || 'Community listing';
-    const title = `${listing.name}${location ? ` — ${location}` : ''} | VSeva Directory`;
-    const description = `${tags}${location ? ` in ${location}` : ''} — part of the VSeva Community Directory.`;
+    // The Directory is shared by every brand; only the name in the preview text differs.
+    const brandId = Deno.env.get('VITE_BRAND') || 'vseva';
+    const names = brandId === 'ssg'
+      ? { short: 'SSG', full: 'Shraman Seva Group' }
+      : { short: 'VSeva', full: 'VSeva' };
+    const title = `${listing.name}${location ? ` — ${location}` : ''} | ${names.short} Directory`;
+    const description = `${tags}${location ? ` in ${location}` : ''} — part of the ${names.full} Community Directory.`;
     const image = Array.isArray(listing.photos) && listing.photos[0]?.url ? listing.photos[0].url : undefined;
     const pageUrl = request.url;
 

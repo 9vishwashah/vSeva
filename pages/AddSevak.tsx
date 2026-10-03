@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { BRAND } from '@brand';
 import { UserProfile, Organization, ContactNumber, ViharEntry } from '../types';
 import { dataService } from '../services/dataService';
 import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft, Footprints } from 'lucide-react';
@@ -310,7 +311,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     const orgCity = orgDetails?.city || 'our city';
     const message = `Pranam ${sevak.full_name}
 
-You have been successfully added to vSeva under the organization
+You have been successfully added to ${BRAND.name} under the organization
 ${orgName}, ${orgCity}
 
 You can now view your Vihar summary and share your contribution.
@@ -322,18 +323,18 @@ Password: ${sevak.mobile}
 All Vihar entries are managed by ${currentUser.full_name}.
 
 
-Login to vSeva:
-https://vseva.vjas.in
+Login to ${BRAND.name}:
+${BRAND.siteUrl || window.location.origin}
 
-Install vSeva App.
+Install ${BRAND.name} App.
+${BRAND.instagram ? `
+Follow ${BRAND.name} for updates:
+${BRAND.instagram.url}
+` : ''}
+"${BRAND.slogan}"
 
-Follow vSeva for updates:
-https://instagram.com/the.vseva
-
-"Every Step Counts"
-
-vSeva
-by VJAS`;
+${BRAND.name}${BRAND.cardCredit ? `
+${BRAND.cardCredit}` : ''}`;
 
     return encodeURIComponent(message);
   };

@@ -6,7 +6,7 @@ import { LogIn, Loader2, Instagram, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 
 interface LoginProps {
   onLoginSuccess: (profile: UserProfile) => void;
@@ -17,7 +17,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isRegistering, setIsRegistering] = useState(false);
+  // /login?register=1 (used by the brand landing pages) opens the Captain registration form directly.
+  const [isRegistering, setIsRegistering] = useState(() => new URLSearchParams(window.location.search).get('register') === '1');
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const { showToast } = useToast();
   const { t } = useLanguage();
@@ -149,11 +150,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6 z-10">
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <div className="animate-fade-in-up bg-saffron-50 rounded-2xl shadow-sm border border-saffron-100 overflow-hidden flex items-center justify-center p-0">
-              <img src={vSevaLogo} alt="vSeva" className="h-28 w-28 md:h-36 md:w-36 object-contain scale-[1.5]" />
+            <div className={`animate-fade-in-up ${BRAND.logoPadded ? 'bg-saffron-50' : 'bg-white'} rounded-2xl shadow-sm border border-saffron-100 overflow-hidden flex items-center justify-center p-0`}>
+              <img src={BRAND.logo} alt={BRAND.name} className={`h-28 w-28 md:h-36 md:w-36 object-contain ${BRAND.logoPadded ? 'scale-[1.5]' : ''}`} />
             </div>
           </div>
-          <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent mb-2">vSeva</h1>
+          <h1 className={`${BRAND.name.length > 10 ? 'text-3xl' : 'text-4xl'} font-serif font-bold leading-tight bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent mb-2`}>{BRAND.name}</h1>
           <p className="text-gray-500">{t('login.subtitle')}</p>
           <p className="text-sm text-saffron-600 mt-2 font-medium">Please enter the username and password given by your Captain.</p>
         </div>
@@ -165,7 +166,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               type="text"
               required
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-              placeholder="e.g. Vishwa Shah"
+              placeholder={BRAND.examples.username}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -218,18 +219,18 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </div>
 
         <div className="text-center text-xs text-gray-400 mt-4">
-          <p>vSeva by VJAS</p>
+          <p>{BRAND.byline}</p>
           <p className="mt-1">
-            <a href="https://vseva.vjas.in/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Privacy Policy</a>
+            <a href={`${BRAND.siteUrl}/privacy`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Privacy Policy</a>
             <span className="mx-1.5">·</span>
-            <a href="https://vseva.vjas.in/delete-account" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Delete account</a>
+            <a href={`${BRAND.siteUrl}/delete-account`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Delete account</a>
           </p>
         </div>
       </div>
 
       {/* Instagram fixed popup */}
-      <a
-        href="https://www.instagram.com/the.vseva/"
+      {BRAND.instagram && <a
+        href={BRAND.instagram.url}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-xl border border-slate-200 flex items-center gap-3 w-max z-50 hover:-translate-y-1 hover:shadow-2xl transition-all cursor-pointer group"
@@ -239,7 +240,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         <span className="text-sm font-bold bg-gradient-to-tr from-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
           Instagram
         </span>
-      </a>
+      </a>}
     </div>
   );
 };

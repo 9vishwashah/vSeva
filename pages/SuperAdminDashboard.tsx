@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { 
     Check, X, MessageCircle, RefreshCw, Loader2,
@@ -8,7 +7,7 @@ import {
     Download, FileText
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 import StatusScreen from '../components/StatusScreen';
 import SuperAdminDirectoryPanel from '../components/directory/SuperAdminDirectoryPanel';
 import { deliverPdf } from '../services/pdfDelivery';
@@ -65,16 +64,17 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
     const [pinEntry, setPinEntry] = useState('');
     const [isPinVerified, setIsPinVerified] = useState(false);
     const [pinError, setPinError] = useState(false);
+    // What this signed-in account may see, decided by the server (never by the client).
+    const [scope, setScope] = useState<{ email: string; all: boolean; brands: string[] } | null>(null);
+    const [accessError, setAccessError] = useState<string | null>(null);
     const { showToast } = useToast();
 
     const fetchRequests = async () => {
         setLoading(true);
         setRequestsError(null);
         try {
-            // Using RPC to bypass RLS for Super Admin dashboard
-            const { data, error } = await supabase.rpc('get_pending_registration_requests');
-
-            if (error) throw error;
+            // Server-authorised and brand-scoped (netlify/functions/super-admin.js)
+            const data = await dataService.getPendingRegistrationRequests();
             setRequests(data || []);
         } catch (err: any) {
             console.error(err);
@@ -112,9 +112,20 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
     };
 
     useEffect(() => {
-        if (isPinVerified) {
-            handleRefresh();
-        }
+        if (!isPinVerified) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const s = await dataService.getSuperAdminScope();
+                if (cancelled) return;
+                setScope(s);
+                setAccessError(null);
+                handleRefresh();
+            } catch (err: any) {
+                if (!cancelled) setAccessError(err?.message || 'Could not verify Super Admin access.');
+            }
+        })();
+        return () => { cancelled = true; };
     }, [isPinVerified]);
 
     const handlePinSubmit = (e: React.FormEvent) => {
@@ -169,7 +180,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
         doc.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
         
         const img = new Image();
-        img.src = vSevaLogo;
+        img.src = BRAND.logo;
 
         img.onload = async () => {
             requests.forEach((req, index) => {
@@ -182,7 +193,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(22);
                 doc.setTextColor(230, 110, 0); // Saffron
-                doc.text("vSeva Registration Request", 40, 20);
+                doc.text(`${BRAND.name} Registration Request`, 40, 20);
                 
                 doc.setFontSize(10);
                 doc.setTextColor(100);
@@ -233,14 +244,14 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
                 const finalY = (doc as any).lastAutoTable.finalY + 20;
                 doc.setFontSize(10);
                 doc.setFont("helvetica", "italic");
-                doc.text("Verified by vSeva Central Control System", 105, finalY, { align: "center" });
+                doc.text(`Verified by ${BRAND.name} Central Control System`, 105, finalY, { align: "center" });
                 
                 // Add page info
                 doc.setFontSize(8);
                 doc.text(`Page ${index + 1} of ${requests.length}`, 195, 285, { align: "right" });
             });
 
-            await deliverPdf(doc, `vSeva_Pending_Requests_${new Date().toLocaleDateString()}.pdf`);
+            await deliverPdf(doc, `${BRAND.shortName}_Pending_Requests_${new Date().toLocaleDateString()}.pdf`);
             showToast("Combined PDF Downloaded", "success");
         };
 
@@ -256,31 +267,22 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
 
             showToast("Creating organization and admin...", "info");
 
-            await dataService.approveOrgAdmin({
-                id: req.id,
-                org_name: req.vihar_group_name,
-                city: req.city,
-                town: req.town,
-                full_name: req.captain_name,
-                email: req.email,
-                mobile: req.mobile,
-                password: req.password
-            });
+            await dataService.approveOrgAdmin(req.id);
 
             showToast("Organization Approved & Created!", "success");
 
             const message =
 `Pranam ${req.captain_name} 🙏
-Your vSeva Captain account has been approved ✅
+Your ${BRAND.name} Captain account has been approved ✅
 
-Install App ~ https://vseva.vjas.in/
+Install App ~ ${BRAND.siteUrl || window.location.origin}/
 
 Username: ${req.email}
 Password: ${req.mobile}
 
-For Demo & Guide : Alpesh Shah (9324503214)
+For Demo & Guide : ${BRAND.contact.demoContact}${BRAND.instagram ? `
 
-Connect on Instagram https://www.instagram.com/the.vseva/`;
+Connect on Instagram ${BRAND.instagram.url}` : ''}`;
             const waLink = `https://wa.me/91${req.mobile}?text=${encodeURIComponent(message)}`;
             window.open(waLink, '_blank');
 
@@ -301,12 +303,7 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
 
     const updateStatus = async (id: string, status: 'approved' | 'rejected') => {
         try {
-            const { error } = await supabase
-                .from('registration_requests')
-                .update({ status })
-                .eq('id', id);
-
-            if (error) throw error;
+            await dataService.rejectRegistrationRequest(id);
 
             showToast(`Request marked as ${status}`, "success");
             setRequests(prev => prev.filter(r => r.id !== id));
@@ -320,6 +317,18 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
     const totalSevaks = orgStats.reduce((acc, curr) => acc + curr.total_sevaks, 0);
     const totalEntries = orgStats.reduce((acc, curr) => acc + curr.total_entries, 0);
     const pendingRequests = requests.length;
+
+    // Serial badges (VS1, VS2… / SSG1…) are numbered within each brand so adding a group
+    // to one brand never renumbers another brand's groups.
+    const ID_PREFIX: Record<string, string> = { vseva: 'VS', ssg: 'SSG' };
+    const sortedStats = [...orgStats].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const serialById = new Map<string, string>();
+    const serialCounters: Record<string, number> = {};
+    sortedStats.forEach(s => {
+        const b = s.brand || 'vseva';
+        serialCounters[b] = (serialCounters[b] || 0) + 1;
+        serialById.set(s.org_id, `${ID_PREFIX[b] ?? b.toUpperCase()}${serialCounters[b]}`);
+    });
 
     if (!isPinVerified) {
         return (
@@ -361,6 +370,19 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
         );
     }
 
+    if (accessError) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+                <div className="max-w-md w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+                    <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4"><Lock size={26} /></div>
+                    <h1 className="text-xl font-bold text-gray-900 mb-2">Access not available</h1>
+                    <p className="text-sm text-gray-600 mb-6">{accessError}</p>
+                    <a href="/" className="inline-block px-5 py-2.5 rounded-xl bg-saffron-600 text-white text-sm font-bold">Back to home</a>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-8 lg:p-12">
             <div className="max-w-7xl mx-auto space-y-10">
@@ -371,9 +393,12 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                             <div className="p-2 bg-saffron-600 rounded-lg text-white shadow-lg shadow-saffron-200">
                                 <ShieldCheck size={24} />
                             </div>
-                            <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900">vSeva Central Control</h1>
+                            <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900">{BRAND.name} Central Control</h1>
                         </div>
-                        <p className="text-gray-500">Global monitoring and organization lifecycle management</p>
+                        <p className="text-gray-500">
+                            {scope && !scope.all ? 'Monitoring and onboarding for your groups' : 'Global monitoring and organization lifecycle management'}
+                            {scope && <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-saffron-50 text-saffron-700 text-xs font-bold border border-saffron-100 align-middle">{scope.all ? 'All brands' : scope.brands.map(b => b.toUpperCase()).join(', ')}</span>}
+                        </p>
                     </div>
                     <div className="flex items-center gap-3 w-full md:w-auto">
                         <button
@@ -606,15 +631,14 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {orgStats.length > 0 ? [...orgStats]
-                                        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-                                        .map((stat, index) => {
+                                    {orgStats.length > 0 ? sortedStats
+                                        .map((stat) => {
                                         const admin = orgAdmins[stat.org_id];
                                         return (
                                             <tr key={stat.org_id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="p-5">
                                                     <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-black tracking-wide bg-saffron-600 text-white shadow-sm shadow-saffron-200 select-all">
-                                                        VS{index + 1}
+                                                        {serialById.get(stat.org_id)}
                                                     </span>
                                                 </td>
                                                 <td className="p-5 font-bold text-gray-900">
@@ -667,7 +691,7 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                                                                     '',
                                                                     'In case of any difficulty, please feel free to get in touch or use the link below for assistance:',
                                                                     '',
-                                                                    '\uD83D\uDD17 https://vseva.vjas.in',
+                                                                    `\uD83D\uDD17 ${BRAND.siteUrl || window.location.origin}`,
                                                                 ].join('\n');
                                                                 const encodedMsg = encodeURIComponent(message);
                                                                 const phone = `91${admin.mobile}`;
@@ -709,7 +733,7 @@ Connect on Instagram https://www.instagram.com/the.vseva/`;
                 </div>
 
                 {/* Public Community Directory — pending listings/edits review */}
-                <SuperAdminDirectoryPanel currentUser={currentUser} />
+                {scope?.all && BRAND.showsDirectoryAdmin && <SuperAdminDirectoryPanel currentUser={currentUser} />}
 
             </div>
         </div>

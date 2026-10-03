@@ -4,7 +4,7 @@ export default {
     './index.html',
     './App.tsx',
     './index.tsx',
-    './{components,pages,context,hooks,services}/**/*.{ts,tsx}',
+    './{components,pages,context,hooks,services,brands}/**/*.{ts,tsx}',
   ],
   theme: {
     extend: {
@@ -29,6 +29,15 @@ export default {
       fontFamily: {
         sans: ['Manrope', 'sans-serif'],
         serif: ['Playfair Display', 'serif'],
+      },
+      // Used by brands/ssg/Landing.tsx (rotating sunburst, drifting clouds)
+      keyframes: {
+        'ssg-spin': { to: { transform: 'translate(-50%, -50%) rotate(360deg)' }, from: { transform: 'translate(-50%, -50%) rotate(0deg)' } },
+        'ssg-float': { '0%, 100%': { transform: 'translateX(0)' }, '50%': { transform: 'translateX(14px)' } },
+      },
+      animation: {
+        'ssg-rays': 'ssg-spin 180s linear infinite',
+        'ssg-float': 'ssg-float 9s ease-in-out infinite',
       },
     },
   },

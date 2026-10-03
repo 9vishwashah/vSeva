@@ -20,7 +20,7 @@ export async function handler(event, context) {
     return { 
         statusCode: 200, 
         headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: "active", message: "vSeva Push Notification Webhook Service is running successfully. This endpoint accepts POST requests from Supabase." })
+        body: JSON.stringify({ status: "active", message: "Push Notification Webhook Service is running successfully. This endpoint accepts POST requests from Supabase." })
     };
   }
 
@@ -45,7 +45,7 @@ export async function handler(event, context) {
     console.log(`Resolving username for user: ${notification.user_id}`);
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('username')
+      .select('username, organization_id')
       .eq('id', notification.user_id)
       .single();
 
@@ -57,10 +57,33 @@ export async function handler(event, context) {
     const targetUsername = profile.username;
     console.log(`Targeting OneSignal user: ${targetUsername}`);
 
+    // White-label brands each have their own OneSignal app (web push is tied to a site's
+    // origin). The DB webhook points at one function, so pick the app by the user's
+    // organisation brand: ONESIGNAL_APP_ID_<BRAND> / ONESIGNAL_API_KEY_<BRAND> / SITE_URL_<BRAND>.
+    // vSeva organisations (brand NULL) and any brand without its own variables use the defaults.
+    let brandKey = null;
+    if (profile.organization_id) {
+      const { data: org, error: orgError } = await supabase
+        .from('organizations')
+        .select('brand')
+        .eq('id', profile.organization_id)
+        .maybeSingle();
+      // orgError is expected (and ignored) until the brand column exists.
+      if (!orgError && org?.brand) brandKey = String(org.brand).toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+    }
+    const brandAppId = brandKey && process.env[`ONESIGNAL_APP_ID_${brandKey}`];
+    const brandApiKey = brandKey && process.env[`ONESIGNAL_API_KEY_${brandKey}`];
+    if (brandKey && !(brandAppId && brandApiKey)) {
+      console.warn(`No OneSignal credentials configured for brand ${brandKey}; falling back to the default app.`);
+    }
+    const oneSignalAppId = (brandAppId && brandApiKey) ? brandAppId : process.env.ONESIGNAL_APP_ID;
+    const oneSignalApiKey = (brandAppId && brandApiKey) ? brandApiKey : process.env.ONESIGNAL_API_KEY;
+    const webUrl = (brandKey && process.env[`SITE_URL_${brandKey}`]) || 'https://vseva.vjas.in';
+
     const isSos = notification.type === 'sos';
 
     const requestBody = {
-      app_id: process.env.ONESIGNAL_APP_ID,
+      app_id: oneSignalAppId,
       include_external_user_ids: [targetUsername],
       headings: { en: notification.title },
       contents: { en: notification.message },
@@ -77,7 +100,7 @@ export async function handler(event, context) {
       // external navigation, so the existing native
       // OneSignal.Notifications 'click' listener (services/oneSignalService.ts,
       // wired in App.tsx) does the in-app routing instead.
-      web_url: 'https://vseva.vjas.in' // Open app on click (web only)
+      web_url: webUrl // Open app on click (web only)
     };
 
     if (isSos) {
@@ -103,7 +126,7 @@ export async function handler(event, context) {
     const oneSignalResponse = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${process.env.ONESIGNAL_API_KEY}`,
+        'Authorization': `Basic ${oneSignalApiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(requestBody)

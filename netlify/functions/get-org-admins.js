@@ -1,56 +1,54 @@
-import { createClient } from '@supabase/supabase-js';
 import { withCors } from './_shared/cors.js';
+import { requireAdmin, errorResponse, HttpError, scopeQuery } from './_shared/adminAuth.js';
 
+// Captain contact details for the organisations listed on the Super Admin
+// dashboard. Authenticated and brand-scoped: ids outside the caller's brand are
+// silently dropped, so a brand admin can't look up another brand's Captains.
 async function rawHandler(event) {
     try {
         if (event.httpMethod !== 'POST') {
-             return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
-        }
-        
-        const { orgIds } = JSON.parse(event.body);
-
-        if (!orgIds || !Array.isArray(orgIds)) {
-            return { statusCode: 400, body: JSON.stringify({ error: 'orgIds array is required' }) };
+            return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
         }
 
-        const supabaseAdmin = createClient(
-            (process.env.SUPABASE_URL && process.env.SUPABASE_URL.includes('.supabase.co') ? process.env.SUPABASE_URL : process.env.VITE_SUPABASE_URL),
-            process.env.SUPABASE_SERVICE_ROLE_KEY
+        const { orgIds } = JSON.parse(event.body || '{}');
+        if (!orgIds || !Array.isArray(orgIds)) throw new HttpError(400, 'orgIds array is required');
+
+        const { sb, scope } = await requireAdmin(event);
+
+        const { data: orgs, error: orgsError } = await scopeQuery(
+            sb.from('organizations').select('id').in('id', orgIds),
+            scope
         );
+        if (orgsError) throw orgsError;
+        const allowedIds = (orgs || []).map((o) => o.id);
+        if (allowedIds.length === 0) return { statusCode: 200, body: JSON.stringify([]) };
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await sb
             .from('profiles')
             .select('organization_id, full_name, mobile, town, username, yearly_goal')
-            .in('organization_id', orgIds)
+            .in('organization_id', allowedIds)
             .eq('role', 'admin');
-
         if (error) throw error;
-        
-        // Fetch state from registration_requests using the admin's email (stored as username)
-        const emails = data.map(p => p.username).filter(Boolean);
+
+        // State lives on the registration request (matched by the Captain's email, stored as username).
+        const emails = data.map((p) => p.username).filter(Boolean);
         const statesMap = {};
         if (emails.length > 0) {
-            const { data: reqs, error: reqsError } = await supabaseAdmin
+            const { data: reqs, error: reqsError } = await sb
                 .from('registration_requests')
                 .select('email, state')
                 .in('email', emails);
-            
             if (!reqsError && reqs) {
-                reqs.forEach(r => {
+                reqs.forEach((r) => {
                     if (r.state) statesMap[r.email] = r.state;
                 });
             }
         }
 
-        const enrichedData = data.map(p => ({
-            ...p,
-            state: statesMap[p.username] || null
-        }));
-
+        const enrichedData = data.map((p) => ({ ...p, state: statesMap[p.username] || null }));
         return { statusCode: 200, body: JSON.stringify(enrichedData) };
     } catch (err) {
-        console.error(err);
-        return { statusCode: 500, body: JSON.stringify({ error: err.message || 'Internal Server Error' }) };
+        return errorResponse(err);
     }
 }
 

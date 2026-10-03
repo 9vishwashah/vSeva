@@ -5,7 +5,7 @@ import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, P
 import NotificationBell from './NotificationBell';
 import LanguageSwitcher from './LanguageSwitcher';
 import Avatar from './Avatar';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -126,7 +126,7 @@ const Layout: React.FC<LayoutProps> = ({
           own fetch has failed yet. Auto-hides the moment 'online' fires. */}
       {!isOnline && (
         <div className="fixed top-2 inset-x-0 z-[60] flex justify-center px-4 pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-2 bg-amber-600 text-white text-xs sm:text-sm font-bold px-4 py-2 rounded-full shadow-lg vseva-modal-backdrop">
+          <div className="pointer-events-auto flex items-center gap-2 bg-amber-600 text-white text-xs sm:text-sm font-bold px-4 py-2 rounded-full shadow-lg app-modal-backdrop">
             <WifiOff size={15} className="shrink-0" />
             <span>{t('nav.offline')}</span>
           </div>
@@ -146,11 +146,13 @@ const Layout: React.FC<LayoutProps> = ({
 
         <div className={`p-4 border-b border-gray-100 ${sidebarCollapsed ? 'px-3' : ''}`}>
           <div className={`flex items-center gap-2.5 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <img src={vSevaLogo} alt="vSeva" className="h-9 w-9 object-contain drop-shadow-sm shrink-0" />
+            <img src={BRAND.logo} alt={BRAND.name} className="h-9 w-9 object-contain drop-shadow-sm shrink-0" />
             {!sidebarCollapsed && (
               <div>
-                <h1 className="text-lg leading-tight font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
-                <p className="text-[9px] text-gray-400 uppercase tracking-wide">by VJAS</p>
+                <h1 className="text-lg leading-tight font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">{BRAND.shortName}</h1>
+                {(BRAND.cardCredit ?? (BRAND.shortName !== BRAND.name ? BRAND.name : null)) && (
+                  <p className="text-[9px] text-gray-400 uppercase tracking-wide">{BRAND.cardCredit ?? BRAND.name}</p>
+                )}
               </div>
             )}
           </div>
@@ -236,11 +238,11 @@ const Layout: React.FC<LayoutProps> = ({
             {!sidebarCollapsed && <span>{t('nav.signOut')}</span>}
           </button>
           {/* Creator Credit - Desktop */}
-          {!sidebarCollapsed && (
+          {!sidebarCollapsed && BRAND.designer && (
             <p className="text-center text-[8px] text-gray-300 mt-2 leading-tight select-none">
               Designed by{' '}
-              <span className="font-semibold text-gray-400">Vishwa Alpesh Shah</span>
-              {' '}(VJAS)
+              <span className="font-semibold text-gray-400">{BRAND.designer.name}</span>
+              {' '}({BRAND.designer.org})
             </p>
           )}
         </div>
@@ -255,8 +257,8 @@ const Layout: React.FC<LayoutProps> = ({
           style={{ height: '56px', transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)' }}
         >
           <div className="flex items-center gap-2">
-            <img src={vSevaLogo} alt="vSeva" className="h-8 w-8 object-contain drop-shadow-sm shrink-0" />
-            <h1 className="text-lg font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">vSeva</h1>
+            <img src={BRAND.logo} alt={BRAND.name} className="h-8 w-8 object-contain drop-shadow-sm shrink-0" />
+            <h1 className="text-lg font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">{BRAND.shortName}</h1>
           </div>
           <div className="flex items-center gap-2">
             <LanguageSwitcher compact />
@@ -277,11 +279,11 @@ const Layout: React.FC<LayoutProps> = ({
         </main>
 
         {/* Creator Credit - Mobile (above nav pill) */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 flex justify-center" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 83px)' }}>
+        {BRAND.designer && <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 flex justify-center" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 83px)' }}>
           <p className="text-[8px] text-gray-400/60 select-none tracking-wide">
-            Designed by <span className="font-medium">Vishwa Alpesh Shah</span> (VJAS)
+            Designed by <span className="font-medium">{BRAND.designer.name}</span> ({BRAND.designer.org})
           </p>
-        </div>
+        </div>}
 
         {/* Mobile Bottom Nav — expanding pill + More sheet + avatar */}
         <nav

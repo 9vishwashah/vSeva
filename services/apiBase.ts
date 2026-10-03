@@ -1,3 +1,5 @@
+import { BRAND } from '@brand';
+
 // Resolves a Netlify Function path: relative on web (unchanged today), absolute
 // against the production host when running inside the native Capacitor app,
 // where there is no same-origin Netlify deployment to resolve a relative path
@@ -8,7 +10,7 @@ const isNativePlatform = (): boolean => {
   return !!capacitor && typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform();
 };
 
-const NATIVE_API_ORIGIN = 'https://vseva.vjas.in';
+const NATIVE_API_ORIGIN = BRAND.siteUrl;
 
 export const fnUrl = (path: string): string => {
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;

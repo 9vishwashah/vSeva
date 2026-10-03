@@ -6,10 +6,12 @@
 // are ever sent by any client call site (auth uses a Bearer token in the
 // Authorization header), so Access-Control-Allow-Credentials is never needed
 // and Allow-Origin is safe to echo back for an allow-listed origin only.
+// A branded deployment (e.g. the SSG site) adds its own origin through VITE_SITE_URL.
 const ALLOWED_ORIGINS = new Set([
   'https://vseva.vjas.in',
   'https://localhost',
-]);
+  (process.env.VITE_SITE_URL || '').replace(/\/+$/, ''),
+].filter(Boolean));
 
 const ALLOWED_METHODS = 'GET, POST, OPTIONS';
 const ALLOWED_HEADERS = 'Content-Type, Authorization';

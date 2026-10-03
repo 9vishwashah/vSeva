@@ -2,10 +2,27 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { getMeta as getVsevaMeta } from './brands/vseva/meta';
+import { getMeta as getSsgMeta } from './brands/ssg/meta';
+import { renderHtml, prepareBrandPublicDir } from './brands/build';
+
+const BRAND_META = { vseva: getVsevaMeta, ssg: getSsgMeta } as const;
 
 export default defineConfig(({ mode }) => {
   const _env = loadEnv(mode, '.', '');
+
+  // One build = one brand (white-label). VITE_BRAND picks brands/<id>/ — see brands/types.ts.
+  const brandId = (_env.VITE_BRAND || 'vseva') as keyof typeof BRAND_META;
+  if (!(brandId in BRAND_META)) {
+    throw new Error(`Unknown VITE_BRAND "${_env.VITE_BRAND}". Expected one of: ${Object.keys(BRAND_META).join(', ')}`);
+  }
+  const brand = BRAND_META[brandId](_env);
+  if (brand.id !== 'vseva' && !brand.siteUrl) {
+    console.warn(`[brand:${brand.id}] VITE_SITE_URL is not set — canonical, og:image and sitemap are omitted. Set it in the site's environment.`);
+  }
+
   return {
+    publicDir: prepareBrandPublicDir(__dirname, brand),
     server: {
       port: 3000,
       host: '0.0.0.0',
@@ -35,6 +52,34 @@ export default defineConfig(({ mode }) => {
         name: 'local-api-mock',
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
+            // Authenticated Super Admin functions (see netlify/functions/_shared/adminAuth.js)
+            const authedFn = req.url && /^\/\.netlify\/functions\/(super-admin|approve-org|get-org-admins)(\?|$)/.exec(req.url);
+            if (authedFn) {
+              try {
+                const { handler } = await import(`./netlify/functions/${authedFn[1]}.js`);
+
+                let body = '';
+                req.on('data', chunk => { body += chunk.toString(); });
+                await new Promise(resolve => req.on('end', resolve));
+
+                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
+                process.env.SUPABASE_SERVICE_ROLE_KEY = _env.SUPABASE_SERVICE_ROLE_KEY || '';
+                for (const k of Object.keys(_env)) {
+                  if (k === 'SUPER_ADMIN_EMAILS' || k.startsWith('BRAND_ADMIN_EMAILS_')) process.env[k] = _env[k];
+                }
+
+                const result = await handler({ httpMethod: req.method, body, headers: req.headers }, {});
+
+                res.statusCode = result.statusCode || 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result.body);
+              } catch (e: any) {
+                console.error(`Local mock error ${authedFn[1]}:`, e);
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
+              }
+              return;
+            }
             if (req.url && req.url.startsWith('/.netlify/functions/nearby')) {
               try {
                 const { handler } = await import('./netlify/functions/nearby.js');
@@ -334,6 +379,10 @@ export default defineConfig(({ mode }) => {
           });
         }
       },
+      {
+        name: 'brand-html',
+        transformIndexHtml: { order: 'pre', handler: (html: string) => renderHtml(html, brand) },
+      },
       react(),
       VitePWA({
         strategies: 'injectManifest',
@@ -347,13 +396,13 @@ export default defineConfig(({ mode }) => {
           enabled: false,
           type: 'module',
         },
-        includeAssets: ['vseva-logo.png', 'pwa-192x192.png', 'apple-touch-icon.png', 'mask-icon.svg'],
+        includeAssets: brand.includeAssets,
         manifest: {
-          name: 'vSeva - Vihar Tracking SaaS',
-          short_name: 'vSeva',
-          description: 'Vihar Tracking and Management System',
-          theme_color: '#EA580C',
-          background_color: '#FDFBF7',
+          name: brand.id === 'vseva' ? 'vSeva - Vihar Tracking SaaS' : brand.name,
+          short_name: brand.shortName,
+          description: brand.id === 'vseva' ? 'Vihar Tracking and Management System' : brand.description,
+          theme_color: brand.themeColor,
+          background_color: brand.backgroundColor,
           display: 'standalone',
           start_url: '/',
           icons: [
@@ -380,9 +429,12 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
+      alias: [
+        // Per-brand module (BRAND config, Landing page) — see brands/types.ts
+        { find: /^@brand$/, replacement: path.resolve(__dirname, 'brands', brandId, 'index.ts') },
+        { find: /^@brand\//, replacement: path.resolve(__dirname, 'brands', brandId) + '/' },
+        { find: '@', replacement: path.resolve(__dirname, '.') },
+      ],
     },
   };
 });

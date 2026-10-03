@@ -13,7 +13,7 @@ import Modal from '../components/Modal';
 import DirectoryListingForm from '../components/directory/DirectoryListingForm';
 import StatusScreen from '../components/StatusScreen';
 import { getListingTags } from '../components/directory/listingTags';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 
 interface DirectoryListingDetailProps {
   slug: string;
@@ -55,7 +55,7 @@ const DirectoryListingDetail: React.FC<DirectoryListingDetailProps> = ({ slug, o
 
   useEffect(() => {
     if (!listing) return;
-    const title = `${listing.name} — ${[listing.area, listing.city].filter(Boolean).join(', ')} | VSeva Directory`;
+    const title = `${listing.name} — ${[listing.area, listing.city].filter(Boolean).join(', ')} | ${BRAND.shortName} Directory`;
     document.title = title;
     const tagLabels = getListingTags(listing).map((t) => t.label).join(', ') || 'Community listing';
     const description = `${tagLabels} in ${listing.city || 'your area'}.${listing.vihar_group_name ? ` Vihar Group: ${listing.vihar_group_name}.` : ''}${listing.routes.length ? ` Vihar routes: ${listing.routes.map(r => `${r.from} to ${r.to}`).join(', ')}.` : ''}`;
@@ -113,7 +113,7 @@ const DirectoryListingDetail: React.FC<DirectoryListingDetailProps> = ({ slug, o
           <button onClick={() => onNavigate('/directory')} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-800">
             <ChevronLeft size={18} /> Directory
           </button>
-          <img src={vSevaLogo} alt="vSeva" className="h-7 w-7 object-contain opacity-80" />
+          <img src={BRAND.logo} alt={BRAND.name} className="h-7 w-7 object-contain opacity-80" />
         </div>
       </header>
 
@@ -138,7 +138,7 @@ const DirectoryListingDetail: React.FC<DirectoryListingDetailProps> = ({ slug, o
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-start justify-between gap-2 mb-2">
             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
-              <CheckCircle2 size={12} /> VERIFIED BY VSEVA
+              <CheckCircle2 size={12} /> VERIFIED BY {BRAND.shortName.toUpperCase()}
             </span>
             <ShareButton url={shareUrl} title={listing.name} text={[listing.area, listing.city].filter(Boolean).join(', ')} />
           </div>

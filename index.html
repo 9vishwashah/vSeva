@@ -4,65 +4,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>vSeva - Every Step Counts</title>
-  <meta name="theme-color" content="#EA580C">
-  <meta name="description" content="Your Steps. Your Seva. Your Legacy. Digitizing Jain Vihar Seva activities.">
-  <meta name="keywords" content="vSeva, Jain Vihar, Vihar Seva, Jainism, Vihar Tracking, VJAS, Digitize Vihar, Jain Monk Tracking">
-  <link rel="canonical" href="https://vseva.vjas.in/" />
+  <title>{{HTML_TITLE}}</title>
+  <meta name="theme-color" content="{{THEME_COLOR}}">
+  <meta name="description" content="{{DESCRIPTION}}">
+  <meta name="keywords" content="{{KEYWORDS}}">
+  {{CANONICAL_LINK}}
 
   <!-- Open Graph / Social -->
-  <meta property="og:site_name" content="vSeva" />
-  <meta property="og:title" content="vSeva - Digitizing Jain Vihar Seva" />
+  <meta property="og:site_name" content="{{NAME}}" />
+  <meta property="og:title" content="{{OG_TITLE}}" />
   <meta property="og:description"
-    content="Your Steps. Your Seva. Your Legacy. A modern platform to record and manage Jain Vihar Seva activities." />
-  <meta property="og:image" content="https://vseva.vjas.in/vseva-logo-full.png" />
-  <meta property="og:image:width" content="512" />
-  <meta property="og:image:height" content="512" />
-  <meta property="og:url" content="https://vseva.vjas.in/" />
+    content="{{OG_DESCRIPTION}}" />
+  {{OG_IMAGE_TAGS}}
+  {{OG_URL_TAG}}
   <meta property="og:type" content="website" />
-  <meta name="google-site-verification" content="uEEgQxlfmHsWCwjOR64dWKVt9mQteVzbpbdcr2Y3izc" />
+  {{GOOGLE_VERIFICATION}}
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="vSeva - Digitizing Jain Vihar Seva" />
+  <meta name="twitter:title" content="{{OG_TITLE}}" />
   <meta name="twitter:description"
-    content="Your Steps. Your Seva. Your Legacy. A modern platform to record and manage Jain Vihar Seva activities." />
-  <meta name="twitter:image" content="https://vseva.vjas.in/vseva-logo-full.png" />
-  <link rel="me" href="https://www.instagram.com/the.vseva/" />
+    content="{{OG_DESCRIPTION}}" />
+  {{TWITTER_IMAGE_TAG}}
+  {{REL_ME}}
 
   <!-- Organization Schema -->
   <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "vSeva",
-      "alternateName": "vSeva - VJAS",
-      "description": "A digital platform to track and manage Jain Vihar Seva activities across India.",
-      "url": "https://vseva.vjas.in/",
-      "logo": "https://vseva.vjas.in/vseva-og-preview.png",
-      "sameAs": [
-        "https://www.instagram.com/the.vseva/"
-      ],
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "contactType": "customer support",
-        "url": "https://vseva.vjas.in/#contact"
-      }
-    }
+    {{JSONLD}}
   </script>
 
   <!-- Icons -->
-  <link rel="icon" type="image/png" href="/vseva-logo-full.png?v=2">
-  <link rel="icon" type="image/png" sizes="192x192" href="/vseva-logo-full.png?v=2">
-  <link rel="icon" type="image/png" sizes="512x512" href="/vseva-logo-full.png?v=2">
-  <link rel="shortcut icon" href="/vseva-logo-full.png?v=2">
-  <link rel="apple-touch-icon" href="/vseva-logo-full.png?v=2">
-  <link rel="mask-icon" href="/vseva-logo-full.png?v=2" color="#EA580C">
+  <link rel="icon" type="image/png" href="{{ICON}}?v=2">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ICON}}?v=2">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ICON}}?v=2">
+  <link rel="shortcut icon" href="{{ICON}}?v=2">
+  <link rel="apple-touch-icon" href="{{ICON}}?v=2">
+  <link rel="mask-icon" href="{{ICON}}?v=2" color="{{THEME_COLOR}}">
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@600;700&display=swap"
+    href="{{FONTS_HREF}}"
     rel="stylesheet">
   <!-- Font Awesome removed — replaced with inline SVGs to save ~80KB per load -->
   <!-- Tailwind theme.extend now lives in tailwind.config.js (build-time compiled) -->
@@ -70,32 +52,32 @@
     /* Minimal entrance-animation shim: the Play CDN loads no plugins, so classes
        like animate-in/fade-in/zoom-in are otherwise inert. Scoped to new redesign
        elements only — pre-existing animate-in usage elsewhere is unaffected. */
-    @keyframes vseva-stagger-in {
+    @keyframes app-stagger-in {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .vseva-stagger-in {
+    .app-stagger-in {
       opacity: 0;
-      animation: vseva-stagger-in 300ms ease-out forwards;
+      animation: app-stagger-in 300ms ease-out forwards;
     }
 
-    /* Same reason as vseva-stagger-in above: animate-in/fade-in/zoom-in are
+    /* Same reason as app-stagger-in above: animate-in/fade-in/zoom-in are
        inert without the tailwindcss-animate plugin, which the Play CDN never
        loads. Every modal (see components/Modal.tsx) uses these two instead,
        so pop-ups actually transition in rather than appearing instantly. */
-    @keyframes vseva-modal-backdrop-in {
+    @keyframes app-modal-backdrop-in {
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    @keyframes vseva-modal-card-in {
+    @keyframes app-modal-card-in {
       from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
     }
-    .vseva-modal-backdrop {
-      animation: vseva-modal-backdrop-in 180ms ease-out both;
+    .app-modal-backdrop {
+      animation: app-modal-backdrop-in 180ms ease-out both;
     }
-    .vseva-modal-card {
-      animation: vseva-modal-card-in 200ms ease-out both;
+    .app-modal-card {
+      animation: app-modal-card-in 200ms ease-out both;
     }
   </style>
 

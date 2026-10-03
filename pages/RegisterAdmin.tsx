@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 
 interface RegisterAdminProps {
     onBack: () => void;
@@ -83,7 +83,9 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                     state: formData.state,
                     vihar_group_name: finalViharGroupName,
                     sangh_name: formData.sanghName,
-                    password: formData.mobile // Setting Mobile Number as Password per requirement
+                    password: formData.mobile, // Setting Mobile Number as Password per requirement
+                    // Only branded deployments tag the request (vSeva rows keep brand NULL).
+                    ...(BRAND.dbBrand ? { brand: BRAND.dbBrand } : {})
                 });
 
             if (error) throw error;
@@ -103,7 +105,7 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
         const uniqueId = `REQ-${Date.now().toString().slice(-4)}`;
         const finalViharGroupName = formData.viharGroupName.trim() === '' ? 'Vihar Seva Group' : formData.viharGroupName.trim();
         const waMessage =
-`I have submitted a vSeva Captain account request.
+`I have submitted a ${BRAND.name} Captain account request.
 
 Captain: ${formData.captainName}
 Mobile: ${formData.mobile}
@@ -112,7 +114,7 @@ City: ${formData.city}
 State: ${formData.state}
 
 Kindly review and Approve.`;
-        const waLink = `https://wa.me/919594503214?text=${encodeURIComponent(waMessage)}`;
+        const waLink = `https://wa.me/${BRAND.contact.whatsapp}?text=${encodeURIComponent(waMessage)}`;
 
         return (
             <div className="text-center space-y-6 animate-in fade-in zoom-in duration-300 py-8 px-4">
@@ -163,7 +165,7 @@ Kindly review and Approve.`;
                 <button onClick={onBack} className="text-gray-500 hover:text-saffron-600 transition-colors">
                     <ArrowLeft size={20} />
                 </button>
-                <img src={vSevaLogo} alt="vSeva" className="h-8 w-8 object-contain" />
+                <img src={BRAND.logo} alt={BRAND.name} className="h-8 w-8 object-contain" />
                 <h2 className="text-2xl font-serif font-bold text-gray-800">Create Captain Account</h2>
             </div>
 
@@ -202,7 +204,7 @@ Kindly review and Approve.`;
                             required
                             pattern="[0-9]{10}"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                            placeholder="9594503214"
+                            placeholder={BRAND.examples.mobile}
                             value={formData.mobile}
                             onChange={handleChange}
                         />

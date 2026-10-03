@@ -1,4 +1,5 @@
 import React, { useState, Suspense } from 'react';
+import { BRAND } from '@brand';
 import { MapPin, Loader2, CheckCircle2, AlertTriangle, Image as ImageIcon, X } from 'lucide-react';
 import { DirectoryCardFields, DirectoryListing, DirectoryTrustee, DirectoryMemberContact, DirectoryRoute, DirectoryPhoto } from '../../types';
 import { directoryService } from '../../services/directoryService';
@@ -252,7 +253,7 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
         </h3>
         <p className="text-sm text-gray-500 mb-6">
           {mode === 'add'
-            ? 'Your listing has been submitted for review. Once approved by the VSeva team, it will appear in the public directory.'
+            ? `Your listing has been submitted for review. Once approved by the ${BRAND.name} team, it will appear in the public directory.`
             : mode === 'admin-edit'
               ? 'The public listing has been updated.'
               : 'Your change has been submitted for review. The public listing will update once approved.'}

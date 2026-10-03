@@ -65,7 +65,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({ url, title, text, size = 'md'
         <>
           <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
           <div
-            className="absolute right-0 top-full mt-2 z-20 bg-white rounded-xl shadow-lg border border-gray-100 p-1.5 w-44 vseva-modal-card"
+            className="absolute right-0 top-full mt-2 z-20 bg-white rounded-xl shadow-lg border border-gray-100 p-1.5 w-44 app-modal-card"
             onClick={(e) => e.stopPropagation()}
           >
             <button

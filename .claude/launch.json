@@ -4,8 +4,23 @@
     {
       "name": "vseva-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "ssg-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:ssg",
+        "--",
+        "--port",
+        "3100"
+      ],
+      "port": 3100
     }
   ]
 }

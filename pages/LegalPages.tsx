@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
+import { BRAND } from '@brand';
 
 // Public, no-login pages required for Google Play (a privacy-policy URL and a
 // web account-deletion URL). Statements here are derived from what the app
@@ -7,8 +8,12 @@ import { ChevronLeft } from 'lucide-react';
 // this file in the same change.
 
 const LAST_UPDATED = '2 October 2026';
-const CONTACT_WHATSAPP = 'https://wa.me/919594503214';
-const CONTACT_EMAIL = '9vishwashah@gmail.com';
+const CONTACT_WHATSAPP = `https://wa.me/${BRAND.contact.whatsapp}`;
+const CONTACT_EMAIL = BRAND.contact.email;
+// 919594503214 -> +91 95945 03214
+const WHATSAPP_DISPLAY = BRAND.contact.whatsapp.length === 12
+  ? `+${BRAND.contact.whatsapp.slice(0, 2)} ${BRAND.contact.whatsapp.slice(2, 7)} ${BRAND.contact.whatsapp.slice(7)}`
+  : `+${BRAND.contact.whatsapp}`;
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="mb-8">
@@ -27,28 +32,28 @@ const Shell: React.FC<{ title: string; children: React.ReactNode }> = ({ title, 
   <div className="min-h-screen bg-[#FDFBF7]">
     <header className="border-b border-orange-100 bg-white">
       <div className="max-w-2xl mx-auto px-5 py-4 flex items-center gap-3">
-        <a href="/" className="w-9 h-9 rounded-full bg-[#FDFBF7] border border-orange-100 flex items-center justify-center" aria-label="Back to vSeva">
+        <a href="/" className="w-9 h-9 rounded-full bg-[#FDFBF7] border border-orange-100 flex items-center justify-center" aria-label={`Back to ${BRAND.name}`}>
           <ChevronLeft size={16} className="text-[#241C17]" />
         </a>
-        <span className="font-extrabold text-saffron-600 text-lg">vSeva</span>
+        <span className="font-extrabold text-saffron-600 text-lg">{BRAND.shortName}</span>
       </div>
     </header>
     <main className="max-w-2xl mx-auto px-5 py-8">
       <h1 className="text-2xl font-extrabold text-[#241C17] mb-1">{title}</h1>
       <p className="text-xs text-[#8A6A57] mb-8">Last updated: {LAST_UPDATED}</p>
       {children}
-      <p className="text-xs text-[#8A6A57] mt-10 pt-6 border-t border-orange-100">vSeva by VJAS · Designed by Vishwa Alpesh Shah</p>
+      <p className="text-xs text-[#8A6A57] mt-10 pt-6 border-t border-orange-100">{BRAND.legalFooter}</p>
     </main>
   </div>
 );
 
 export const PrivacyPolicy: React.FC = () => (
   <Shell title="Privacy Policy">
-    <Section title="About vSeva">
+    <Section title={`About ${BRAND.name}`}>
       <p>
-        vSeva is a platform that helps Jain Vihar Seva groups record Vihar journeys, coordinate Sevaks, track distance and
-        participation, and keep volunteers safe. It is built and operated by Vishwa Alpesh Shah (VJAS) and is available as a website
-        (vseva.vjas.in) and an Android app. This policy explains what information vSeva handles, why, and the choices you have.
+        {BRAND.name} is a platform that helps Jain Vihar Seva groups record Vihar journeys, coordinate Sevaks, track distance and
+        participation, and keep volunteers safe. It is built and operated by {BRAND.operator} and is available as a website
+        ({BRAND.host || 'online'}){BRAND.id === 'vseva' ? ' and an Android app' : ''}. This policy explains what information {BRAND.name} handles, why, and the choices you have.
       </p>
       <p>
         Accounts work in two ways: a Captain registers a group, and the Captain then creates accounts for that group's Sevaks. Sevaks
@@ -63,12 +68,12 @@ export const PrivacyPolicy: React.FC = () => (
         <><strong>Seva activity</strong> — Vihar entries (date, route, distance, participants, notes), approval status, statistics, yearly goals, and incident reports you file.</>,
         <><strong>Messages</strong> — posts you publish in Channel to your organisation or its followers.</>,
         <><strong>SOS alerts</strong> — when you trigger SOS: the time, an optional note, and your device's precise location if you have allowed location access.</>,
-        <><strong>Location</strong> — approximate or precise location, only at the moment you use SOS or "Find nearby Derasar". vSeva does not track your location in the background.</>,
+        <><strong>Location</strong> — approximate or precise location, only at the moment you use SOS or "Find nearby Derasar". {BRAND.name} does not track your location in the background.</>,
         <><strong>Notification and device data</strong> — a push-notification token / subscription ID, your last-login time, and standard technical data (such as IP address and browser or app version) handled by our hosting and notification providers.</>,
         <><strong>Directory contributions</strong> — details and photos of temples or places submitted to the public Directory, plus the contributor's name and optional mobile number.</>,
       ]} />
       <p>
-        vSeva does not use advertising IDs, advertising networks, or analytics/tracking SDKs. It does not access your contacts, SMS,
+        {BRAND.name} does not use advertising IDs, advertising networks, or analytics/tracking SDKs. It does not access your contacts, SMS,
         microphone, or files beyond the photos you choose to upload.
       </p>
     </Section>
@@ -103,7 +108,7 @@ export const PrivacyPolicy: React.FC = () => (
         'OpenFreeMap / OpenStreetMap — map tiles, and place-name lookup for map links; they receive your IP address and requested map area.',
         'Google Fonts — web fonts; receives your IP address.',
       ]} />
-      <p>These providers handle data only to provide their service to vSeva.</p>
+      <p>These providers handle data only to provide their service to {BRAND.name}.</p>
     </Section>
 
     <Section title="How long we keep it">
@@ -130,7 +135,7 @@ export const PrivacyPolicy: React.FC = () => (
     </Section>
 
     <Section title="Children">
-      <p>vSeva is intended for adults (18 and over) and is not directed at children.</p>
+      <p>{BRAND.name} is intended for adults (18 and over) and is not directed at children.</p>
     </Section>
 
     <Section title="Changes to this policy">
@@ -141,16 +146,16 @@ export const PrivacyPolicy: React.FC = () => (
       <p>
         Questions or requests about your data: email{' '}
         <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> or message us on{' '}
-        <a className="text-saffron-600 underline" href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp (+91 95945 03214)</a>.
+        <a className="text-saffron-600 underline" href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp ({WHATSAPP_DISPLAY})</a>.
       </p>
     </Section>
   </Shell>
 );
 
 export const DeleteAccount: React.FC = () => {
-  const requestLink = `${CONTACT_WHATSAPP}?text=${encodeURIComponent('Hello vSeva team, I would like to request deletion of my vSeva account.\n\nName: \nUsername / login ID: \nGroup (Vihar Seva Group): ')}`;
+  const requestLink = `${CONTACT_WHATSAPP}?text=${encodeURIComponent(`Hello ${BRAND.name} team, I would like to request deletion of my ${BRAND.name} account.\n\nName: \nUsername / login ID: \nGroup (Vihar Seva Group): `)}`;
   return (
-    <Shell title="Delete your vSeva account">
+    <Shell title={`Delete your ${BRAND.name} account`}>
       <Section title="How to request deletion">
         <p>You can ask for your account and personal data to be deleted at any time, in either of these ways:</p>
         <Bullets items={[
@@ -165,7 +170,7 @@ export const DeleteAccount: React.FC = () => {
         >
           Request deletion on WhatsApp
         </a>
-        <p className="pt-1">Or email <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}?subject=vSeva%20account%20deletion%20request`}>{CONTACT_EMAIL}</a>.</p>
+        <p className="pt-1">Or email <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`${BRAND.name} account deletion request`)}`}>{CONTACT_EMAIL}</a>.</p>
         <p className="pt-2">Captains: deleting a Captain account affects the whole group, so we will contact you first to transfer or close the group.</p>
       </Section>
 
@@ -186,7 +191,7 @@ export const DeleteAccount: React.FC = () => {
       </Section>
 
       <p className="text-sm text-[#4A3F38]">
-        See the full <a className="text-saffron-600 underline" href="/privacy">Privacy Policy</a> for details on what vSeva collects.
+        See the full <a className="text-saffron-600 underline" href="/privacy">Privacy Policy</a> for details on what {BRAND.name} collects.
       </p>
     </Shell>
   );

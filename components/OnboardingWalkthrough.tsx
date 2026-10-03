@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BRAND } from '@brand';
 import { UserRole } from '../types';
 
 // WhatsApp inline SVG (replaces Font Awesome dependency for this component)
@@ -27,7 +28,7 @@ const CAPTAIN_STEPS: Step[] = [
     title: 'Add Your Sevaks First',
     description: 'Go to the "Add Sevaks" tab to create accounts for each volunteer. After adding, tap the',
     highlight: 'WhatsApp button',
-    tip: 'This sends the sevak their login credentials directly on WhatsApp so they can log in to vSeva.',
+    tip: `This sends the sevak their login credentials directly on WhatsApp so they can log in to ${BRAND.name}.`,
   },
   {
     emoji: '🗺️',
@@ -49,8 +50,8 @@ const CAPTAIN_STEPS: Step[] = [
 const SEVAK_STEPS: Step[] = [
   {
     emoji: '🙏',
-    title: 'Welcome to vSeva!',
-    description: 'Your Captain has added you to the team. vSeva helps you track and celebrate your Vihar Seva contributions.',
+    title: `Welcome to ${BRAND.name}!`,
+    description: `Your Captain has added you to the team. ${BRAND.name} helps you track and celebrate your Vihar Seva contributions.`,
   },
   {
     emoji: '📱',

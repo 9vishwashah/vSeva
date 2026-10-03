@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, MapPin, X, Navigation, Phone, Search, Map, Star, ArrowRight, Footprints, Download, Share2, Plus } from 'lucide-react';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { callFn } from '../services/apiBase';
@@ -78,8 +78,8 @@ const NearbyDerasar: React.FC = () => {
     const rawPath = window.location.pathname;
     const path = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
 
-    let title = 'Nearby Jain Derasar / Tirths | Find Temples Near You – vSeva';
-    let description = 'Find Jain Derasar near your current location instantly. Discover nearby temples, get directions, and plan your visit easily with vSeva.';
+    let title = `Nearby Jain Derasar / Tirths | Find Temples Near You – ${BRAND.name}`;
+    let description = `Find Jain Derasar near your current location instantly. Discover nearby temples, get directions, and plan your visit easily with ${BRAND.name}.`;
     let keywords = 'Jain Derasar near me, Jain Temple near me, Jain Tirth finder';
     let h1Prefix = 'Find';
     let h1Highlight = 'Jain Derasar / Tirths';
@@ -87,36 +87,36 @@ const NearbyDerasar: React.FC = () => {
     
     // Simple dynamic routing logic for SEO pages
     if (path === '/jain-temple-navi-mumbai') {
-      title = 'Jain Temples in Navi Mumbai | Find Derasar Near You - vSeva';
+      title = `Jain Temples in Navi Mumbai | Find Derasar Near You - ${BRAND.name}`;
       description = 'Easily locate Jain Temples and Derasars across Navi Mumbai with live GPS tracking and directions.';
       keywords = 'Jain Temple Navi Mumbai, Derasar in Navi Mumbai, Jain Tirth Navi Mumbai';
       h1Prefix = 'Find';
       h1Highlight = 'Jain Temples';
       h1Suffix = 'in Navi Mumbai';
     } else if (path === '/jain-temple-mumbai') {
-      title = 'Jain Temples in Mumbai | GPS Derasar Locator - vSeva';
+      title = `Jain Temples in Mumbai | GPS Derasar Locator - ${BRAND.name}`;
       description = 'Find Jain Derasars in Mumbai. Get exact directions, contact details, and distance for all Jain Temples across Mumbai.';
       keywords = 'Jain Temple Mumbai, Derasar Mumbai, Jain Mandir in Mumbai';
       h1Prefix = 'Discover';
       h1Highlight = 'Jain Temples';
       h1Suffix = 'in Mumbai';
     } else if (path === '/jain-temple-gujarat') {
-      title = 'Jain Temples in Gujarat | Find Tirths & Derasars - vSeva';
-      description = 'Planning a Tirth Yatra? Find Jain Temples across Gujarat easily with vSeva GPS Derasar Locator.';
+      title = `Jain Temples in Gujarat | Find Tirths & Derasars - ${BRAND.name}`;
+      description = `Planning a Tirth Yatra? Find Jain Temples across Gujarat easily with ${BRAND.name} GPS Derasar Locator.`;
       keywords = 'Jain Temple Gujarat, Derasar in Gujarat, Gujarat Jain Tirth';
       h1Prefix = 'Locate';
       h1Highlight = 'Jain Temples';
       h1Suffix = 'in Gujarat';
     } else if (path === '/derasar-near-me') {
-      title = 'Jain Derasar Near Me | GPS Temple Locator - vSeva';
+      title = `Jain Derasar Near Me | GPS Temple Locator - ${BRAND.name}`;
       description = 'Instantly find the closest Jain Derasar near your current location. Get live GPS directions and distance instantly.';
       keywords = 'Derasar near me, Jain Mandir near me, Jain Temple near me';
       h1Prefix = 'Closest';
       h1Highlight = 'Jain Derasar';
       h1Suffix = 'Near Me';
     } else if (path === '/jain-temple-india') {
-      title = 'Jain Temples in India | vSeva Derasar Locator';
-      description = 'Locate thousands of Jain Temples and Tirths across India. Navigate easily with vSeva GPS locator.';
+      title = `Jain Temples in India | ${BRAND.name} Derasar Locator`;
+      description = `Locate thousands of Jain Temples and Tirths across India. Navigate easily with ${BRAND.name} GPS locator.`;
       keywords = 'Jain Temples India, Jain Tirth in India, India Jain Mandir';
       h1Prefix = 'Explore';
       h1Highlight = 'Jain Temples';
@@ -139,8 +139,8 @@ const NearbyDerasar: React.FC = () => {
     setMeta('keywords', keywords);
     setMeta('og:title', title, true);
     setMeta('og:description', description, true);
-    setMeta('og:image', 'https://vseva.vjas.in/derasar-preview.png', true);
-    setMeta('og:url', `https://vseva.vjas.in${path}`, true);
+    setMeta('og:image', `${BRAND.siteUrl}${BRAND.ogImagePath}`, true);
+    setMeta('og:url', `${BRAND.siteUrl || window.location.origin}${path}`, true);
     setMeta('og:type', 'website', true);
 
     // Dynamic FAQ Data
@@ -153,7 +153,7 @@ const NearbyDerasar: React.FC = () => {
           "name": `How to find a ${h1Highlight.toLowerCase()} near me?`,
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": `You can use the vSeva GPS locator to instantly find ${h1Highlight.toLowerCase()} near your current location with one-tap directions.`
+            "text": `You can use the ${BRAND.name} GPS locator to instantly find ${h1Highlight.toLowerCase()} near your current location with one-tap directions.`
           }
         },
         {
@@ -161,7 +161,7 @@ const NearbyDerasar: React.FC = () => {
           "name": `Can I get directions to ${h1Highlight.toLowerCase()}?`,
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": `Yes, vSeva integrates with Google Maps to provide accurate, live directions to any nearby Jain Derasar.`
+            "text": `Yes, ${BRAND.name} integrates with Google Maps to provide accurate, live directions to any nearby Jain Derasar.`
           }
         }
       ]
@@ -187,12 +187,12 @@ const NearbyDerasar: React.FC = () => {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": title,
-      "url": `https://vseva.vjas.in${path}`,
+      "url": `${BRAND.siteUrl || window.location.origin}${path}`,
       "applicationCategory": "TravelApplication",
       "description": description,
       "creator": {
         "@type": "Organization",
-        "name": "vSeva"
+        "name": BRAND.name
       }
     });
   }, []);
@@ -251,7 +251,7 @@ const NearbyDerasar: React.FC = () => {
 
   const shareWhatsApp = (temple: Place) => {
     const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${temple.lat},${temple.lng}`;
-    const message = `🙏 Jai Jinendra\n\nHere are nearby Derasar locations:\n📍 ${temple.name} - ${mapsLink}\n\nFind yours here:\nhttps://vseva.vjas.in/nearby-derasar`;
+    const message = `🙏 Jai Jinendra\n\nHere are nearby Derasar locations:\n📍 ${temple.name} - ${mapsLink}\n\nFind yours here:\n${BRAND.siteUrl || window.location.origin}/nearby-derasar`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -266,12 +266,12 @@ const NearbyDerasar: React.FC = () => {
         style={{ background: 'rgba(253,251,247,0.95)', backdropFilter: 'blur(12px)' }}
       >
         <a href="/" className="flex items-center gap-2 group">
-          <img src={vSevaLogo} alt="vSeva" className="h-9 w-9 object-contain drop-shadow-sm scale-[1.6] origin-left ml-2" />
+          <img src={BRAND.logo} alt={BRAND.name} className={`h-9 w-9 object-contain drop-shadow-sm ${BRAND.logoPadded ? 'scale-[1.6]' : ''} origin-left ml-2`} />
           <span
             className="text-xl font-bold"
             style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
           >
-            vSeva
+            {BRAND.shortName}
           </span>
         </a>
         <div className="flex items-center gap-3">
@@ -280,7 +280,7 @@ const NearbyDerasar: React.FC = () => {
             className="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-full shadow-md transition-all hover:scale-105 active:scale-95"
             style={{ background: 'linear-gradient(135deg,#ea580c,#f97316)' }}
           >
-            About vSeva <ArrowRight size={14} />
+            About {BRAND.name} <ArrowRight size={14} />
           </a>
         </div>
       </header>
@@ -309,9 +309,9 @@ const NearbyDerasar: React.FC = () => {
           >
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
             <div className="flex items-center gap-3 mb-5">
-              <img src={vSevaLogo} alt="vSeva Finder" className="h-11 w-11 rounded-xl object-contain scale-[1.3]" />
+              <img src={BRAND.logo} alt={BRAND.finderName} className={`h-11 w-11 rounded-xl object-contain ${BRAND.logoPadded ? 'scale-[1.3]' : ''}`} />
               <div>
-                <h3 className="font-bold text-gray-900 text-base">Install vSeva Finder on iPhone</h3>
+                <h3 className="font-bold text-gray-900 text-base">Install {BRAND.finderName} on iPhone</h3>
                 <p className="text-xs text-gray-500">3 quick steps to add to Home Screen</p>
               </div>
             </div>
@@ -351,7 +351,7 @@ const NearbyDerasar: React.FC = () => {
             className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-5 border"
             style={{ color: '#ea580c', borderColor: '#fed7aa', background: '#fff7ed' }}
           >
-            <MapPin size={13} /> Initiative by vSeva
+            <MapPin size={13} /> Initiative by {BRAND.name}
           </div>
 
           <h1 className="text-[22px] sm:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-3">
@@ -414,15 +414,15 @@ const NearbyDerasar: React.FC = () => {
               )}
             </button>
 
-            <a
-              href="https://www.instagram.com/the.vseva/"
+            {BRAND.instagram && <a
+              href={BRAND.instagram.url}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center w-14 h-auto rounded-2xl bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 text-white shadow-xl transition-all hover:scale-105 active:scale-95 shrink-0"
               aria-label="Follow us on Instagram"
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6" aria-label="Instagram"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-            </a>
+            </a>}
           </div>
 
           {/* Install App — secondary CTA, hidden when already running as PWA */}
@@ -438,7 +438,7 @@ const NearbyDerasar: React.FC = () => {
               }}
             >
               <Download size={15} />
-              Install vSeva Finder App
+              Install {BRAND.finderName} App
             </button>
           )}
         </div>
@@ -628,7 +628,7 @@ const NearbyDerasar: React.FC = () => {
             {[
               { icon: <MapPin size={20} />, title: 'GPS Powered', desc: 'Uses your live location to find the closest temples instantly.' },
               { icon: <Navigation size={20} />, title: 'One-Tap Directions', desc: 'Get Google Maps directions to any Derasar with one tap.' },
-              { icon: <Footprints size={20} />, title: 'Initiative by Vseva', desc: 'Powered by vSeva — the Jain Vihar Seva tracking platform.' },
+              { icon: <Footprints size={20} />, title: `Initiative by ${BRAND.name}`, desc: `Powered by ${BRAND.name} — the Jain Vihar Seva tracking platform.` },
             ].map((card, i) => (
               <div
                 key={i}
@@ -660,13 +660,13 @@ const NearbyDerasar: React.FC = () => {
           <div className="flex flex-col items-center md:items-start flex-1">
              <div className="flex items-center gap-3 mb-4">
                 <div className="bg-white p-2 rounded-xl shadow-md">
-                   <img src={vSevaLogo} alt="vSeva Logo" className="w-7 h-7 object-contain scale-[1.4]" />
+                   <img src={BRAND.logo} alt={BRAND.name} className={`w-7 h-7 object-contain ${BRAND.logoPadded ? 'scale-[1.4]' : ''}`} />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Planning Vihar?</h2>
              </div>
              
              <p className="text-sm sm:text-base text-orange-100 mb-5 max-w-md font-medium leading-relaxed">
-               vSeva is the ultimate platform for tracking, organizing, and coordinating Jain Vihar Seva efficiently.
+               {BRAND.name} is the ultimate platform for tracking, organizing, and coordinating Jain Vihar Seva efficiently.
              </p>
              
              <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-2">
@@ -701,7 +701,7 @@ const NearbyDerasar: React.FC = () => {
         <div className="space-y-4">
           <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
             <h3 className="font-bold text-gray-800 mb-2">How to find a Jain temple near me?</h3>
-            <p className="text-gray-600 text-sm">Use vSeva's Derasar Locator to instantly locate nearby Jain Derasars and Tirths using your device's GPS. Simply tap 'Find Derasar' to see a list of temples sorted by distance.</p>
+            <p className="text-gray-600 text-sm">Use {BRAND.name}'s Derasar Locator to instantly locate nearby Jain Derasars and Tirths using your device's GPS. Simply tap 'Find Derasar' to see a list of temples sorted by distance.</p>
           </div>
           <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
             <h3 className="font-bold text-gray-800 mb-2">
@@ -719,10 +719,10 @@ const NearbyDerasar: React.FC = () => {
               {(() => {
                 const rawPath = window.location.pathname;
                 const path = rawPath.endsWith('/') && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
-                if (path === '/jain-temple-navi-mumbai') return 'Yes, vSeva helps you find Jain Mandir in Navi Mumbai and nearby areas up to a 100km radius.';
-                if (path === '/jain-temple-mumbai') return 'Yes, vSeva helps you find Jain Mandir in Mumbai and nearby areas up to a 100km radius.';
-                if (path === '/jain-temple-gujarat') return 'Yes, vSeva helps you find Jain Mandir across Gujarat and nearby areas up to a 100km radius.';
-                if (path === '/jain-temple-india') return 'Yes, vSeva helps you find Jain Mandir across India up to a 100km radius from your location.';
+                if (path === '/jain-temple-navi-mumbai') return `Yes, ${BRAND.name} helps you find Jain Mandir in Navi Mumbai and nearby areas up to a 100km radius.`;
+                if (path === '/jain-temple-mumbai') return `Yes, ${BRAND.name} helps you find Jain Mandir in Mumbai and nearby areas up to a 100km radius.`;
+                if (path === '/jain-temple-gujarat') return `Yes, ${BRAND.name} helps you find Jain Mandir across Gujarat and nearby areas up to a 100km radius.`;
+                if (path === '/jain-temple-india') return `Yes, ${BRAND.name} helps you find Jain Mandir across India up to a 100km radius from your location.`;
                 return 'Yes, simply click the Directions button to open Google Maps for accurate live navigation to the Derasar.';
               })()}
             </p>
@@ -734,14 +734,14 @@ const NearbyDerasar: React.FC = () => {
       <footer className="border-t border-gray-100 py-8 px-4 text-center mt-auto bg-white/50">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-5">
           <div className="flex items-center gap-2">
-            <img src={vSevaLogo} alt="vSeva" className="h-6 w-6 object-contain grayscale opacity-60 scale-[1.3]" />
-            <span className="font-bold text-gray-400">vSeva</span>
+            <img src={BRAND.logo} alt={BRAND.name} className={`h-6 w-6 object-contain grayscale opacity-60 ${BRAND.logoPadded ? 'scale-[1.3]' : ''}`} />
+            <span className="font-bold text-gray-400">{BRAND.shortName}</span>
           </div>
           
           <div className="hidden sm:block w-px h-8 bg-gray-200"></div>
 
           <a
-            href="https://wa.me/919594503214?text=Jai%20Jinendra!%20I%20have%20an%20inquiry%20regarding%20vSeva."
+            href={`https://wa.me/${BRAND.contact.whatsapp}?text=${encodeURIComponent(`Jai Jinendra! I have an inquiry regarding ${BRAND.name}.`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2 bg-green-50 text-green-700 rounded-full text-xs font-bold transition-all hover:bg-green-100 hover:scale-105 border border-green-200 shadow-sm"
@@ -750,11 +750,13 @@ const NearbyDerasar: React.FC = () => {
           </a>
         </div>
         
-        <p className="text-xs text-gray-400">
-          Designed by <span className="font-semibold text-gray-500">Vishwa Alpesh Shah</span> (VJAS)
-        </p>
+        {BRAND.designer && (
+          <p className="text-xs text-gray-400">
+            Designed by <span className="font-semibold text-gray-500">{BRAND.designer.name}</span> ({BRAND.designer.org})
+          </p>
+        )}
         <p className="text-[10px] text-gray-300 mt-1">
-          © {new Date().getFullYear()} vSeva · All rights reserved
+          © {new Date().getFullYear()} {BRAND.name} · All rights reserved
         </p>
       </footer>
     </div>

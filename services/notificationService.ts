@@ -1,3 +1,5 @@
+import { BRAND } from '@brand';
+
 export const notificationService = {
     // Check if browser supports notifications
     isSupported: () => 'Notification' in window,
@@ -16,7 +18,7 @@ export const notificationService = {
 
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-            notificationService.showLocalNotification("Notifications Enabled", "You will now receive updates from vSeva.");
+            notificationService.showLocalNotification("Notifications Enabled", `You will now receive updates from ${BRAND.name}.`);
             // Wait for service worker and subscribe
             await notificationService.subscribeToPush();
         }
@@ -108,7 +110,7 @@ export const notificationService = {
                 navigator.serviceWorker.ready.then(registration => {
                     registration.showNotification(title, {
                         body,
-                        icon: '/vseva-logo.png',
+                        icon: BRAND.iconPath,
                         vibrate: [200, 100, 200]
                     } as any);
                 });

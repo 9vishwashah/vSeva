@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 import { Lang, translations } from '../i18n/translations';
 import { toLocaleDigits } from '../i18n/digits';
+import { BRAND } from '@brand';
 
 interface LanguageContextValue {
   lang: Lang;
@@ -27,7 +28,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch {
       // ignore — defaults to English
     }
-    return 'en';
+    // First visit: the brand's own language (e.g. Gujarati for SSG).
+    return BRAND.defaultLang;
   });
 
   const setLang = useCallback((next: Lang) => {

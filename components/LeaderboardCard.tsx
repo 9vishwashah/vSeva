@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Trophy, Medal, Download } from 'lucide-react';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 import vsgLogo from '../assets/vsg.jpg';
 import { toLocalDateKey } from '../services/dateUtils';
 import { deliverPdf } from '../services/pdfDelivery';
@@ -60,7 +60,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
 
             const pageWidth = doc.internal.pageSize.getWidth();
 
-            doc.addImage(vSevaLogo, 'PNG', 14, 10, 15, 15);
+            doc.addImage(BRAND.logo, 'PNG', 14, 10, 15, 15);
             doc.addImage(vsgLogo, 'JPEG', pageWidth - 14 - 15, 10, 15, 15);
 
             // Title/subtitle — org identity first, same as the main Vihar export.
@@ -72,7 +72,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
 
             doc.setFontSize(10);
             doc.setTextColor(150);
-            doc.text('vSeva by VJAS', 35, 24);
+            doc.text(BRAND.byline, 35, 24);
 
             // Top-centered report-type badge — Sevak/Sevika, derived from this
             // card's own title so no extra prop is needed for it.
@@ -123,7 +123,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
                 const wmY = (pageH - wmSize) / 2;
                 (doc as any).saveGraphicsState();
                 (doc as any).setGState(new (doc as any).GState({ opacity: 0.12 }));
-                doc.addImage(vSevaLogo, 'PNG', wmX, wmY, wmSize, wmSize);
+                doc.addImage(BRAND.logo, 'PNG', wmX, wmY, wmSize, wmSize);
                 (doc as any).restoreGraphicsState();
             };
 
@@ -182,7 +182,7 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
             <div className={`p-4 border-b border-gray-100 flex items-center gap-2 ${bgClass}`}>
                 <div className={colorClass}>{icon}</div>
                 <h3 className="font-bold text-gray-800 flex-1">{title}</h3>
-                <img src={vSevaLogo} alt="vSeva" className="h-8 w-8 object-contain opacity-80 mr-1" />
+                <img src={BRAND.logo} alt={BRAND.name} className="h-8 w-8 object-contain opacity-80 mr-1" />
                 <button
                     onClick={handleDownload}
                     disabled={busy || !!loading || items.length === 0}

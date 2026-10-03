@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download, X, Share, Plus } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 
 export const InstallPWA: React.FC = () => {
     const { install, isAndroidInstallable, isIOS } = usePWAInstall();
@@ -76,13 +76,13 @@ export const InstallPWA: React.FC = () => {
                 {/* Left: Logo + text */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
                     <img
-                        src={vSevaLogo}
-                        alt="vSeva"
-                        style={{ height: '34px', width: '34px', objectFit: 'contain', flexShrink: 0, borderRadius: '8px', transform: 'scale(1.5)' }}
+                        src={BRAND.logo}
+                        alt={BRAND.name}
+                        style={{ height: '34px', width: '34px', objectFit: 'contain', flexShrink: 0, borderRadius: '8px', transform: BRAND.logoPadded ? 'scale(1.5)' : undefined }}
                     />
                     <div style={{ minWidth: 0 }}>
                         <p style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: 0, lineHeight: 1.2 }}>
-                            Install vSeva App
+                            Install {BRAND.name} App
                         </p>
                         <p style={{ color: '#94a3b8', fontSize: '11px', margin: 0, lineHeight: 1.3, marginTop: '1px' }}>
                             {isIOS
@@ -171,9 +171,9 @@ export const InstallPWA: React.FC = () => {
                         <div style={{ width: '40px', height: '4px', background: '#e2e8f0', borderRadius: '2px', margin: '0 auto 20px' }} />
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                            <img src={vSevaLogo} alt="vSeva" style={{ height: '44px', width: '44px', objectFit: 'contain', borderRadius: '10px', transform: 'scale(1.4)' }} />
+                            <img src={BRAND.logo} alt={BRAND.name} style={{ height: '44px', width: '44px', objectFit: 'contain', borderRadius: '10px', transform: BRAND.logoPadded ? 'scale(1.4)' : undefined }} />
                             <div>
-                                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#1e293b' }}>Install vSeva on iPhone</h3>
+                                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#1e293b' }}>Install {BRAND.name} on iPhone</h3>
                                 <p style={{ margin: 0, fontSize: '13px', color: '#64748b', marginTop: '2px' }}>3 quick steps to add to Home Screen</p>
                             </div>
                         </div>

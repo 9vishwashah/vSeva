@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import DirectoryListingForm from '../components/directory/DirectoryListingForm';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 
 interface AddDirectoryListingProps {
   onNavigate: (path: string) => void;
@@ -9,7 +9,7 @@ interface AddDirectoryListingProps {
 
 const AddDirectoryListing: React.FC<AddDirectoryListingProps> = ({ onNavigate }) => {
   useEffect(() => {
-    document.title = 'Add a Listing — VSeva Community Directory';
+    document.title = `Add a Listing — ${BRAND.directoryName}`;
   }, []);
 
   return (
@@ -19,7 +19,7 @@ const AddDirectoryListing: React.FC<AddDirectoryListingProps> = ({ onNavigate })
           <button onClick={() => onNavigate('/directory')} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-800">
             <ChevronLeft size={18} /> Directory
           </button>
-          <img src={vSevaLogo} alt="vSeva" className="h-7 w-7 object-contain opacity-80" />
+          <img src={BRAND.logo} alt={BRAND.name} className="h-7 w-7 object-contain opacity-80" />
         </div>
       </header>
 

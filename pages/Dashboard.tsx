@@ -8,7 +8,7 @@ import ViharYearSelector from '../components/ViharYearSelector';
 import Modal from '../components/Modal';
 import StatusScreen from '../components/StatusScreen';
 import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X, Plus, Handshake, Medal, Crown, Shield, Flame, Calendar, SlidersHorizontal, Loader2 } from 'lucide-react';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 import vsgLogo from '../assets/vsg.jpg';
 import { useToast } from '../context/ToastContext';
 import { useViharYear } from '../context/ViharYearContext';
@@ -382,13 +382,13 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       // Safe bet: load image to dataURL first.
 
       const img = new Image();
-      img.src = vSevaLogo;
+      img.src = BRAND.logo;
 
       // We need to wait for image load if we weren't sure, but it's likely cached/loaded. 
       // Better approach: simple addImage with the imported path often works in modern bundlers if it's a data URI or valid URL.
-      // Let's rely on doc.addImage(vSevaLogo, ...)
+      // Let's rely on doc.addImage(BRAND.logo, ...)
 
-      doc.addImage(vSevaLogo, 'PNG', 14, 10, 15, 15);
+      doc.addImage(BRAND.logo, 'PNG', 14, 10, 15, 15);
       const pageWidth = doc.internal.pageSize.getWidth();
       doc.addImage(vsgLogo, 'JPEG', pageWidth - 14 - 15, 10, 15, 15);
 
@@ -404,7 +404,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
       doc.setFontSize(10);
       doc.setTextColor(150); // grey
-      doc.text("vSeva by VJAS", 35, 24);
+      doc.text(BRAND.byline, 35, 24);
 
       // Top-centered report-type badge — only when a gender filter narrowed the report.
       let headerBottomY = 30;
@@ -456,7 +456,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         const wmY = (pageH - wmSize) / 2;
         (doc as any).saveGraphicsState();
         (doc as any).setGState(new (doc as any).GState({ opacity: 0.12 }));
-        doc.addImage(vSevaLogo, 'PNG', wmX, wmY, wmSize, wmSize);
+        doc.addImage(BRAND.logo, 'PNG', wmX, wmY, wmSize, wmSize);
         (doc as any).restoreGraphicsState();
       };
 
@@ -599,7 +599,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         didDrawPage: () => drawWatermark(),
       });
 
-      await deliverPdf(doc, `vSeva_Report_${toLocalDateKey(new Date())}.pdf`);
+      await deliverPdf(doc, `${BRAND.shortName}_Report_${toLocalDateKey(new Date())}.pdf`);
       showToast("PDF Report downloaded successfully", 'success');
       setShowExportModal(false);
     } catch (error) {
@@ -646,7 +646,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       const wb = XLSX.utils.book_new();
       const sheetName = exportGender === 'male' ? 'Sevak Report' : exportGender === 'female' ? 'Sevika Report' : 'Vihar Entries';
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      XLSX.writeFile(wb, `vSeva_Report_${toLocalDateKey(new Date())}.xlsx`);
+      XLSX.writeFile(wb, `${BRAND.shortName}_Report_${toLocalDateKey(new Date())}.xlsx`);
 
       showToast("Excel Export downloaded successfully", 'success');
       setShowExportModal(false);
@@ -1173,7 +1173,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         {/* Quick Stats Grid — primary tiles (Tangerine redesign, flat tints) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* 1. Total Km */}
-            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#FFF0E5', animationDelay: '0ms' }}>
+            <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#FFF0E5', animationDelay: '0ms' }}>
               <div className="flex items-start justify-between">
                 {isLoading ? <SkeletonLoader /> : (
                   <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalKm)}<span className="text-[13px] font-bold text-[#8A6A57]"> km</span></p>
@@ -1184,7 +1184,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             </div>
 
             {/* 2. Total Vihars */}
-            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#E9F4FD', animationDelay: '40ms' }}>
+            <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#E9F4FD', animationDelay: '40ms' }}>
               <div className="flex items-start justify-between">
                 {isLoading ? <SkeletonLoader /> : (
                   <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalVihars)}</p>
@@ -1195,7 +1195,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             </div>
 
             {/* 3. Sadhu / Sadhvi (combined) */}
-            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#FCEAEB', animationDelay: '80ms' }}>
+            <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#FCEAEB', animationDelay: '80ms' }}>
               <div className="flex items-start justify-between">
                 {isLoading ? <SkeletonLoader /> : (
                   <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalSadhu)}<span className="text-sm text-[#D9A6A5]"> / </span>{n(displayStats.totalSadhvi)}</p>
@@ -1209,7 +1209,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                 for an Admin (who already sees Total Sevaks elsewhere), so
                 hidden there instead of showing a redundant sevak count. */}
             {currentUser.role !== UserRole.ORG_ADMIN && (
-              <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#F1EAFB', animationDelay: '120ms' }}>
+              <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#F1EAFB', animationDelay: '120ms' }}>
                 <div className="flex items-start justify-between gap-2">
                   {isLoading ? <SkeletonLoader /> : (
                     displayStats.vSynergy && displayStats.vSynergy !== "N/A" ? (
@@ -1228,7 +1228,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           {/* Secondary stats — Rank / Streak / Total Sevaks / Active Sevaks (kept from existing dashboard, not in the pilot mock but not removed) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {currentUser.role !== UserRole.ORG_ADMIN && (
-              <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#FFF6E0', animationDelay: '160ms' }}>
+              <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#FFF6E0', animationDelay: '160ms' }}>
                 <div className="flex items-start justify-between">
                   {isLoading ? <SkeletonLoader /> : (
                     <div className="flex items-baseline gap-1">
@@ -1245,7 +1245,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             )}
 
             {currentUser.role !== UserRole.ORG_ADMIN && (
-              <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#FFF0E5', animationDelay: '180ms' }}>
+              <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#FFF0E5', animationDelay: '180ms' }}>
                 <div className="flex items-start justify-between">
                   {isLoading ? <SkeletonLoader /> : (
                     <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.streak)}</span>
@@ -1256,7 +1256,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               </div>
             )}
 
-            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#E6F7F0', animationDelay: '200ms' }}>
+            <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#E6F7F0', animationDelay: '200ms' }}>
               <div className="flex items-start justify-between">
                 {isLoading ? <SkeletonLoader /> : (
                   <div className="flex items-center gap-2">
@@ -1269,7 +1269,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               <p className="mt-1 text-xs font-semibold text-[#1F8A63]">{t('dashboard.totalSevaks')}</p>
             </div>
 
-            <div className="rounded-[18px] p-4 vseva-stagger-in" style={{ background: '#E3F6F5', animationDelay: '240ms' }}>
+            <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#E3F6F5', animationDelay: '240ms' }}>
               {isLoading ? <SkeletonLoader /> : (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
@@ -1291,7 +1291,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                 <div key={d.label}>
                   <p className="m-0 mb-1.5 text-[10px] font-bold text-gray-400">{d.label}</p>
                   <div
-                    className="w-full aspect-square rounded-full vseva-stagger-in"
+                    className="w-full aspect-square rounded-full app-stagger-in"
                     style={{
                       background: d.count >= 3 ? '#3FA34D' : d.count === 2 ? '#E8B923' : d.count === 1 ? '#DE6B38' : '#F2EEE8',
                       animationDelay: `${i * 40}ms`,
@@ -1317,7 +1317,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               <p className="text-sm text-gray-400">{t('dashboard.noVisharsLogged')}</p>
             ) : (
               recentActivity.map((entry, i) => (
-                <div key={entry.id} className="flex items-center gap-3 vseva-stagger-in" style={{ animationDelay: `${i * 40}ms` }}>
+                <div key={entry.id} className="flex items-center gap-3 app-stagger-in" style={{ animationDelay: `${i * 40}ms` }}>
                   <div className="shrink-0 w-[38px] h-[38px] rounded-full bg-[#EAF6E6] flex items-center justify-center">
                     <Footprints size={17} className="text-[#5A9A45]" />
                   </div>

@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { StatSummary } from '../types';
 import { Share2, MapPin, Users, Handshake, Medal, Trophy, Sparkles, Instagram, Download, Footprints } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 import vsgLogo from '../assets/vsg.jpg';
 import Avatar from './Avatar';
 
@@ -80,7 +80,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
       offscreen = null;
 
       const dataUrl = canvas.toDataURL("image/png", 1.0);
-      const fileName = `vSeva_Card_${userName.replace(/\s+/g, '_')}.png`;
+      const fileName = `${BRAND.shortName}_Card_${userName.replace(/\s+/g, '_')}.png`;
 
       // Handle Download
       if (platform === 'download') {
@@ -101,8 +101,8 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: isAdmin ? 'Your Vihar Group Summary' : 'My vSeva Impact',
-          text: `Check out my Seva contribution on ${orgName}! #vSeva`
+          title: isAdmin ? 'Your Vihar Group Summary' : `My ${BRAND.shortName} Impact`,
+          text: `Check out my Seva contribution on ${orgName}! #${BRAND.shortName.replace(/\s+/g, '')}`
         });
       } else {
         // Fallback Logic
@@ -184,7 +184,7 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
               <div className="relative mb-3">
                 {isAdmin ? (
                   <div className="w-[88px] h-[88px] rounded-full flex items-center justify-center shadow-lg border-2 border-white bg-white z-20 relative" style={{padding: '6px'}}>
-                     <img src={vSevaLogo} alt="vSeva Logo" className="w-full h-full object-contain" />
+                     <img src={BRAND.logo} alt={BRAND.name} className="w-full h-full object-contain" />
                   </div>
                 ) : avatarUrl ? (
                   <div className="w-20 h-20 rounded-full shadow-lg border-2 bg-white border-saffron-100 relative z-20 overflow-hidden">
@@ -378,15 +378,15 @@ const StatCard: React.FC<StatCardProps> = ({ stats, userName, orgName, orgCity, 
               {/* Footer row: logo left, text center */}
               <div className="flex items-center justify-between px-1 pb-1">
                 {/* Bottom-Left vSeva Logo - inside card bounds */}
-                <img src={vSevaLogo} alt="vSeva Logo" className="h-[60px] w-[60px] object-contain drop-shadow-sm opacity-90 flex-shrink-0" />
+                <img src={BRAND.logo} alt={BRAND.name} className="h-[60px] w-[60px] object-contain drop-shadow-sm opacity-90 flex-shrink-0" />
 
                 <div className="flex flex-col items-center flex-1">
                   <div className="flex items-center gap-2">
                     <Footprints size={14} className={isAdmin ? 'text-saffron-600' : 'text-saffron-500'} />
-                    <span className="text-sm font-bold tracking-[0.15em] text-gray-800">vSeva</span>
+                    <span className="text-sm font-bold tracking-[0.15em] text-gray-800">{BRAND.shortName}</span>
                     <Footprints size={14} className={isAdmin ? 'text-saffron-600' : 'text-saffron-500'} />
                   </div>
-                  <p className="text-[10px] font-medium mt-0.5 text-gray-500">by VJAS</p>
+                  {BRAND.cardCredit && <p className="text-[10px] font-medium mt-0.5 text-gray-500">{BRAND.cardCredit}</p>}
                 </div>
 
                 {/* Spacer to balance logo on left */}

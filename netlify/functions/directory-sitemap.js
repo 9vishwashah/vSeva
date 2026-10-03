@@ -21,7 +21,8 @@ export const handler = async () => {
 
         if (error) throw error;
 
-        const siteUrl = 'https://vseva.vjas.in';
+        // Each branded deployment lists its own origin (VITE_SITE_URL); vSeva is the default.
+        const siteUrl = (process.env.VITE_SITE_URL || 'https://vseva.vjas.in').replace(/\/+$/, '');
         const urls = (data || []).map((l) => `
   <url>
     <loc>${siteUrl}/directory/${l.slug}</loc>

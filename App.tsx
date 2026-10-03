@@ -5,11 +5,11 @@ import { dataService } from './services/dataService';
 import { clearAll as clearRequestCache } from './services/requestCache';
 import Layout from './components/Layout';
 import Login from './pages/Login';
-import LandingPage from './pages/LandingPage';
+import Landing from '@brand/Landing';
+import { BRAND } from '@brand';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import UpdateAppBanner from './components/UpdateAppBanner';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationClick } from './services/oneSignalService';
-import vSevaLogo from './assets/vseva-logo-removebg-preview.png';
 import StatusScreen from './components/StatusScreen';
 import { ViharYearProvider } from './context/ViharYearContext';
 
@@ -148,9 +148,9 @@ const App: React.FC = () => {
           return;
         }
         // 2. An open Modal (every pop-up in the app shares this component and
-        // only renders .vseva-modal-backdrop while open) already closes on
+        // only renders .app-modal-backdrop while open) already closes on
         // Escape — reuse that instead of duplicating each page's close logic.
-        if (document.querySelector('.vseva-modal-backdrop')) {
+        if (document.querySelector('.app-modal-backdrop')) {
           document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
           return;
         }
@@ -381,15 +381,15 @@ const App: React.FC = () => {
   // While loading, show a white splash screen with the logo
   if (loading) return (
     <div style={{ position: 'fixed', inset: 0, background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-      <img src={vSevaLogo} alt="vSeva" style={{ width: 96, height: 96, objectFit: 'contain', animation: 'vseva-splash-logo-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both' }} />
-      <div style={{ marginTop: 20, width: 36, height: 36, borderRadius: '50%', border: '3px solid #f97316', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite, vseva-splash-fade-in 300ms ease-out 350ms both' }} />
+      <img src={BRAND.logo} alt={BRAND.name} style={{ width: 96, height: 96, objectFit: 'contain', animation: 'app-splash-logo-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both' }} />
+      <div style={{ marginTop: 20, width: 36, height: 36, borderRadius: '50%', border: '3px solid #f97316', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite, app-splash-fade-in 300ms ease-out 350ms both' }} />
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes vseva-splash-logo-in {
+        @keyframes app-splash-logo-in {
           from { opacity: 0; transform: scale(0.85); }
           to { opacity: 1; transform: scale(1); }
         }
-        @keyframes vseva-splash-fade-in {
+        @keyframes app-splash-fade-in {
           from { opacity: 0; }
           to { opacity: 1; }
         }
@@ -425,7 +425,7 @@ const App: React.FC = () => {
 
   if (!user) {
     if (showLanding) {
-      return <LandingPage onGetStarted={() => { window.location.href = '/login'; }} />;
+      return <Landing onGetStarted={() => { window.location.href = '/login'; }} />;
     }
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }

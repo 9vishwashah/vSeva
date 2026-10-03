@@ -17,8 +17,8 @@ interface ModalProps {
 // 1. animate-in/fade-in/zoom-in are Tailwind's animate plugin classes, which
 //    the Play CDN (index.html) never loads — they were completely inert, so
 //    every modal using them popped in instantly with zero transition. The
-//    vseva-modal-backdrop/vseva-modal-card classes below are real keyframe
-//    animations defined in index.html, mirroring the existing vseva-stagger-in
+//    app-modal-backdrop/app-modal-card classes below are real keyframe
+//    animations defined in index.html, mirroring the existing app-stagger-in
 //    shim already used elsewhere for the same reason.
 // 2. The app's whole page scrolls inside <main> (see Layout.tsx), not
 //    document.body/html — those never scroll here. Locking <main>'s overflow
@@ -55,11 +55,11 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, maxWidth = 'max-
 
     return (
         <div
-            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 vseva-modal-backdrop"
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 app-modal-backdrop"
             onClick={closeOnBackdrop ? onClose : undefined}
         >
             <div
-                className={`bg-white rounded-[22px] shadow-2xl w-full ${maxWidth} overflow-hidden vseva-modal-card flex flex-col max-h-[90vh] ${className}`}
+                className={`bg-white rounded-[22px] shadow-2xl w-full ${maxWidth} overflow-hidden app-modal-card flex flex-col max-h-[90vh] ${className}`}
                 onClick={e => e.stopPropagation()}
             >
                 {children}

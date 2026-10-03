@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "dev:ssg": "vite --mode ssg",
+    "build:ssg": "vite build --mode ssg",
+    "check:brand": "node scripts/check_brand_leak.mjs dist ssg",
     "preview": "vite preview"
   },
   "dependencies": {

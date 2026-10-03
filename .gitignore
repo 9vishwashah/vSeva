@@ -65,3 +65,6 @@ deno.lock
 # OS
 .DS_Store
 Thumbs.db
+
+# Brand build verification output
+.brand-check

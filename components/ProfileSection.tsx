@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { BRAND } from '@brand';
 import { UserProfile, UserRole, Organization } from '../types';
 import { dataService } from '../services/dataService';
 import { Printer, ArrowLeft, ChevronLeft, Check, Loader2, Bell, BellOff, AlertTriangle, RefreshCw, CreditCard, LogOut, Camera } from 'lucide-react';
@@ -268,7 +269,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             if (Notification.permission === 'granted') {
                 showToast('Notifications enabled on this device!', 'success');
             } else if (Notification.permission === 'denied') {
-                showToast('Notifications are blocked for vSeva in your browser settings.', 'error');
+                showToast(`Notifications are blocked for ${BRAND.name} in your browser settings.`, 'error');
             } else {
                 showToast('Notification setup was not completed.', 'info');
             }
@@ -543,7 +544,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                         <div>
                             <p className="font-medium text-red-900 text-sm">Notifications are blocked in your browser</p>
                             <p className="text-xs text-red-700 mt-1 leading-relaxed">
-                                Your browser is blocking notifications for vSeva, so nothing inside the app can turn them back on.
+                                Your browser is blocking notifications for {BRAND.name}, so nothing inside the app can turn them back on.
                                 In Chrome: tap the <strong>lock / info icon</strong> next to the address bar → <strong>Permissions</strong> (or Site settings) →
                                 set <strong>Notifications</strong> to <strong>Allow</strong> → then reload the app.
                             </p>

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { UserProfile } from '../types';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 import vsgLogo from '../assets/vsg.jpg';
 import { Download, Printer } from 'lucide-react';
 
@@ -12,7 +12,7 @@ interface IDCardBadgeProps {
 
 const IDCardBadge: React.FC<IDCardBadgeProps> = ({ user, orgName }) => {
   const baseUrl = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') 
-    ? 'https://vseva.vjas.in'
+    ? (BRAND.siteUrl || window.location.origin)
     : window.location.origin;
   const publicUrl = `${baseUrl}/verify/${encodeURIComponent(user.username)}`;
   const cardRef = useRef<HTMLDivElement>(null);
@@ -40,7 +40,7 @@ const IDCardBadge: React.FC<IDCardBadgeProps> = ({ user, orgName }) => {
       const image = canvas.toDataURL("image/png", 1.0);
       const link = document.createElement("a");
       link.href = image;
-      link.download = `vSeva_ID_${user.full_name.replace(/\s+/g, '_')}.png`;
+      link.download = `${BRAND.shortName}_ID_${user.full_name.replace(/\s+/g, '_')}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -67,7 +67,7 @@ const IDCardBadge: React.FC<IDCardBadgeProps> = ({ user, orgName }) => {
             
             {/* Center overlapping vSeva logo */}
             <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 w-20 h-20 bg-white rounded-full p-2 shadow-lg border-[3px] border-black flex items-center justify-center">
-                <img src={vSevaLogo} alt="vSeva" className="w-full h-full object-contain drop-shadow-sm" />
+                <img src={BRAND.logo} alt={BRAND.name} className="w-full h-full object-contain drop-shadow-sm" />
             </div>
         </div>
         

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import vSevaLogo from '../assets/vseva-logo-removebg-preview.png';
+import { BRAND } from '@brand';
 
 interface ForgotPasswordProps {
     onBack: () => void;
@@ -90,7 +90,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
                 <button onClick={onBack} className="text-gray-500 hover:text-saffron-600 transition-colors">
                     <ArrowLeft size={20} />
                 </button>
-                <img src={vSevaLogo} alt="vSeva" className="h-8 w-8 object-contain" />
+                <img src={BRAND.logo} alt={BRAND.name} className="h-8 w-8 object-contain" />
                 <h2 className="text-2xl font-serif font-bold text-gray-800">Forgot Password</h2>
             </div>
 
@@ -105,7 +105,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
                         type="text"
                         required
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none"
-                        placeholder="name@vsevak or admin@example.com"
+                        placeholder={BRAND.usernameHint}
                         value={emailOrUsername}
                         onChange={(e) => setEmailOrUsername(e.target.value)}
                     />
