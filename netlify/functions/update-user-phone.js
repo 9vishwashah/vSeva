@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { withCors } from './_shared/cors.js';
+import { grantPasswordChange } from './_shared/passwordGrant.js';
 
 async function rawHandler(event) {
   try {
@@ -37,7 +38,7 @@ async function rawHandler(event) {
 
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('role')
+      .select('role, organization_id')
       .eq('id', user.id)
       .single();
 
@@ -56,6 +57,31 @@ async function rawHandler(event) {
         body: JSON.stringify({ error: 'Missing user_id or new_mobile' }),
       };
     }
+
+    // Only a Sevak of the caller's own organisation: before this check any Captain could reset
+    // any account's password (including another group's Captain) to a number of their choosing.
+    const { data: target } = await supabaseAdmin
+      .from('profiles')
+      .select('role, organization_id')
+      .eq('id', user_id)
+      .single();
+
+    if (!target || target.organization_id !== profile.organization_id) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'You can only update Sevaks of your own group' }),
+      };
+    }
+    if (target.role !== 'sevak') {
+      // A Captain's password is their own (Profile > Change password) — never overwritten by a phone edit.
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: 'Password unchanged for Captain accounts' }),
+      };
+    }
+
+    // Sevak password = mobile number (by design). Record the grant the database guard looks for.
+    await grantPasswordChange(supabaseAdmin, user_id);
 
     // Update the user's password in auth
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(

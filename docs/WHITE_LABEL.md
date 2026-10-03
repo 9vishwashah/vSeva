@@ -82,6 +82,17 @@ OneSignal app by the user's organisation brand. On the **vSeva** site add:
 
 Without them SSG users fall back to the vSeva OneSignal app and will not receive pushes.
 
+## Passwords
+
+* Captains choose their own password (Profile > Change password, or the reset email -> /update-password). Until they do it is their mobile number.
+* Sevak passwords are their mobile number and are changed only by their Captain (editing the Sevak's number runs
+  update-user-phone, now limited to Sevaks of the caller's own group).
+* Database guard so a Sevak cannot change their own password: apply
+  `scripts/sevak_password_guard_1_observe.sql` first (blocks nothing, records what happens), check
+  `select * from public.password_change_log` — Sevak sign-ins must add **no** rows — then apply
+  `..._2_enforce.sql`. `node scripts/test_sevak_password_guard.mjs <sevak> <password>` checks it from outside.
+  Deploy the updated update-user-phone function before stage 2. Rollback: `..._rollback.sql`.
+
 ## Install as app (PWA)
 
 Both landing pages show the install banner. Android/desktop Chrome use the browser's install prompt; iPhone/iPad (including iPadOS, which reports a Mac user agent)

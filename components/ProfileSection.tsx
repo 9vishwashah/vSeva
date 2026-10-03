@@ -9,6 +9,7 @@ import AvatarCropModal from './AvatarCropModal';
 import { useToast } from '../context/ToastContext';
 import { getViharYearBounds } from '../services/viharYear';
 import SosButton from './SosButton';
+import ChangePasswordCard from './ChangePasswordCard';
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -585,6 +586,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     </div>
                 )}
             </div>
+
+            {/* Captains choose their own password (Sevaks' passwords are managed by their Captain) */}
+            {user.role === UserRole.ORG_ADMIN && <ChangePasswordCard />}
 
             {/* Sign Out */}
             {onLogout && (

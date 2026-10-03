@@ -36,6 +36,7 @@ const Channel = React.lazy(() => import('./pages/Channel'));
 const ChannelOrganization = React.lazy(() => import('./pages/ChannelOrganization'));
 const SosDetail = React.lazy(() => import('./pages/SosDetail'));
 const PrivacyPolicy = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.PrivacyPolicy })));
+const UpdatePassword = React.lazy(() => import('./pages/UpdatePassword'));
 const DeleteAccount = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.DeleteAccount })));
 
 
@@ -275,6 +276,15 @@ const App: React.FC = () => {
     return (
       <React.Suspense fallback={<div className="min-h-screen bg-[#FDFBF7]" />}>
         {normalizedPath === '/privacy' ? <PrivacyPolicy /> : <DeleteAccount />}
+      </React.Suspense>
+    );
+  }
+
+  // Landing page of the Captain "reset password" email — works from the temporary session in the link.
+  if (normalizedPath === '/update-password') {
+    return (
+      <React.Suspense fallback={<div className="min-h-screen bg-saffron-50" />}>
+        <UpdatePassword />
       </React.Suspense>
     );
   }
