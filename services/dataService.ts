@@ -22,7 +22,7 @@ export const dataService = {
     return getCached(`profile:${userId}`, async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at')
+        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at')
         .eq('id', userId)
         .single();
 
@@ -177,7 +177,7 @@ export const dataService = {
     return getCached(`orgSevaks:${orgId}`, async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, avatar_url')
+        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at, avatar_url')
         .eq('organization_id', orgId)
         .eq('role', 'sevak')
         .eq('is_active', true);
@@ -188,7 +188,7 @@ export const dataService = {
       // original select rather than breaking the whole Organization Members list.
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at')
+        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at, created_at')
         .eq('organization_id', orgId)
         .eq('role', 'sevak')
         .eq('is_active', true);

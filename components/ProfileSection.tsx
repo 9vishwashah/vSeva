@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BRAND } from '@brand';
 import { UserProfile, UserRole, Organization } from '../types';
 import { dataService } from '../services/dataService';
-import { Printer, ArrowLeft, ChevronLeft, Check, Loader2, Bell, BellOff, AlertTriangle, RefreshCw, CreditCard, LogOut, Camera } from 'lucide-react';
+import { Printer, ArrowLeft, ChevronLeft, Check, Loader2, Bell, BellOff, AlertTriangle, RefreshCw, CreditCard, LogOut, Camera, BadgeCheck, CalendarDays } from 'lucide-react';
 import IDCardBadge from './IDCardBadge';
 import Avatar from './Avatar';
 import AvatarCropModal from './AvatarCropModal';
@@ -12,6 +12,7 @@ import SosButton from './SosButton';
 import ChangePasswordCard from './ChangePasswordCard';
 import SankalpSettingsCard from './SankalpSettingsCard';
 import { OCCUPATIONS } from '../services/occupations';
+import { getAccountBadge } from '../services/specialAccounts';
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -293,6 +294,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
     const isSevak = user.role === UserRole.SEVAK;
 
+    const accountBadge = getAccountBadge(user.username);
+    const joinedLabel = user.created_at && !isNaN(new Date(user.created_at).getTime())
+        ? new Date(user.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        : null;
+
     return (
         <div className="max-w-xl mx-auto space-y-5 pb-10">
             {/* Top bar */}
@@ -307,8 +313,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             </div>
 
             {/* Avatar card */}
-            <div className="bg-white rounded-[22px] py-7 px-5 flex flex-col items-center gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-                <div className="relative w-[88px] h-[88px]">
+            <div className="bg-white rounded-[22px] py-5 px-5 flex items-center gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+                <div className="relative w-[88px] h-[88px] shrink-0">
                     <Avatar name={user.full_name} url={avatarUrl} size={88} variant="gradient" className="text-[28px]" />
                     {uploadingAvatar && (
                         <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
@@ -331,11 +337,27 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                         onChange={handleAvatarFileChange}
                     />
                 </div>
-                <div className="text-center mt-1">
-                    <p className="m-0 text-lg font-extrabold text-[#241C17]">{user.full_name}</p>
-                    <p className="m-0 text-xs font-semibold text-[#8A6A57] uppercase tracking-wide mt-1">{user.role === UserRole.ORG_ADMIN ? 'Captain' : 'Sevak'}</p>
+                <div className="min-w-0 flex-1">
+                    <p className="m-0 flex items-center gap-1.5 text-lg font-extrabold text-[#241C17]">
+                        <span className="truncate">{user.full_name}</span>
+                        {accountBadge && <BadgeCheck size={20} className="shrink-0 fill-[#1D9BF0] text-white" aria-label="Verified" />}
+                    </p>
+                    <p className="m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-[#8A6A57] uppercase tracking-wide">
+                        <span>{user.role === UserRole.ORG_ADMIN ? 'Captain' : 'Sevak'}</span>
+                        {accountBadge && (
+                            <span className="rounded-full bg-[#E8F4FD] px-2 py-0.5 text-[10px] font-extrabold normal-case tracking-normal text-[#1D7FC4]">{accountBadge.title}</span>
+                        )}
+                    </p>
+                    {joinedLabel && (
+                        <p className="m-0 mt-1.5 flex items-center gap-1.5 text-xs font-medium text-[#8A6A57]">
+                            <CalendarDays size={13} className="shrink-0" /> Joined {joinedLabel}
+                        </p>
+                    )}
                 </div>
             </div>
+
+            {/* Sankalp: a Sevak's own target / the Captain's Group Sankalp + "Sevaks can edit" switch */}
+            <SankalpSettingsCard user={user} />
 
             {/* Profile Incomplete nudge */}
             {isSevak && (!user.blood_group || !user.emergency_number || !user.address) && (
@@ -618,9 +640,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     </div>
                 )}
             </div>
-
-            {/* Sankalp: a Sevak's own target / the Captain's Group Sankalp + "Sevaks can edit" switch */}
-            <SankalpSettingsCard user={user} />
 
             {/* Captains choose their own password (Sevaks' passwords are managed by their Captain) */}
             {user.role === UserRole.ORG_ADMIN && <ChangePasswordCard />}

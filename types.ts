@@ -30,6 +30,7 @@ export interface UserProfile {
   address?: string;
   is_active: boolean;
   last_login_at?: string; // ISO timestamp, updated on each login
+  created_at?: string; // ISO timestamp the profile (Sevak/Captain) was added — shown as "Joined"
   yearly_goal?: number; // Sankalp: target number of Vihars this calendar year
   avatar_url?: string | null;
 }

@@ -6,6 +6,8 @@ interface SankalpRingProps {
   goal: number | null | undefined;
   /** Card title, e.g. "My Sankalp" or "Group Sankalp". */
   title?: string;
+  /** Colour: saffron for a Sevak's own Sankalp, purple for the Group Sankalp. */
+  tone?: 'saffron' | 'purple';
   /** e.g. "VY 2026-27" — the Vihar Year this count is scoped to. */
   periodLabel?: string;
 }
@@ -16,7 +18,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 // Dashboard hero card: gradient "Yearly Sankalp" progress ring.
 // Ring fills from empty to the real count/goal ratio once on mount.
-const SankalpRing: React.FC<SankalpRingProps> = ({ count, goal, title = 'Yearly Sankalp', periodLabel }) => {
+const SankalpRing: React.FC<SankalpRingProps> = ({ count, goal, title = 'Yearly Sankalp', tone = 'saffron', periodLabel }) => {
   const hasGoal = typeof goal === 'number' && goal > 0;
   const safeGoal = hasGoal ? (goal as number) : 0;
   const percent = hasGoal ? Math.max(0, Math.min(1, count / safeGoal)) : 0;
@@ -36,8 +38,11 @@ const SankalpRing: React.FC<SankalpRingProps> = ({ count, goal, title = 'Yearly 
 
   return (
     <div
-      style={{ background: 'linear-gradient(150deg,#FF9947 0%,#DE6B38 100%)' }}
-      className="rounded-[18px] px-5 py-3.5 flex items-center gap-3.5 shadow-[0_8px_20px_-10px_rgba(222,107,56,0.55)]"
+      style={{
+        background: tone === 'purple' ? 'linear-gradient(150deg,#9B7BF5 0%,#6D3FD1 100%)' : 'linear-gradient(150deg,#FF9947 0%,#DE6B38 100%)',
+        boxShadow: tone === 'purple' ? '0 8px 20px -10px rgba(109,63,209,0.55)' : '0 8px 20px -10px rgba(222,107,56,0.55)',
+      }}
+      className="rounded-[18px] px-5 py-3.5 flex items-center gap-3.5"
     >
       <div className="shrink-0 relative" style={{ width: SIZE, height: SIZE }}>
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ transform: 'rotate(-90deg)' }}>

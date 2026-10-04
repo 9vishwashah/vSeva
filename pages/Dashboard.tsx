@@ -1162,6 +1162,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         count={yearlyViharCount}
         goal={currentUser.role === UserRole.ORG_ADMIN ? orgSankalp?.target : mySankalp}
         title={currentUser.role === UserRole.ORG_ADMIN ? 'Group Sankalp' : 'My Sankalp'}
+        tone={currentUser.role === UserRole.ORG_ADMIN ? 'purple' : 'saffron'}
         periodLabel={selectedVY.label}
       />
 

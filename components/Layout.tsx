@@ -65,7 +65,7 @@ const Layout: React.FC<LayoutProps> = ({
 
   const moreItems = role === UserRole.ORG_ADMIN
     ? [
-      { page: 'statistics', icon: <BarChart2 size={18} />, label: t('nav.groupAnalytics'), tone: 'purple' },
+      { page: 'statistics', icon: <BarChart2 size={18} />, label: t('nav.groupAnalytics') },
       { page: 'pending-approvals', icon: <ClipboardCheck size={18} />, label: t('nav.pendingApprovals') },
       { page: 'manage-routes', icon: <Map size={18} />, label: t('nav.manageRoutes') },
       { page: 'add-sevak', icon: <UserPlus size={18} />, label: t('nav.addSevaks') },
@@ -163,7 +163,7 @@ const Layout: React.FC<LayoutProps> = ({
           {role === UserRole.ORG_ADMIN && (
             <>
               <NavItem page="dashboard" icon={BarChart2} label={t('nav.dashboard')} />
-              <NavItem page="statistics" icon={BarChart2} label={t('nav.groupAnalytics')} tone="purple" />
+              <NavItem page="statistics" icon={BarChart2} label={t('nav.groupAnalytics')} />
               <NavItem page="view-entries" icon={Table2} label={t('nav.viewEntries')} />
               <NavItem page="pending-approvals" icon={ClipboardCheck} label={t('nav.pendingApprovals')} />
               <NavItem page="manage-routes" icon={Map} label={t('nav.manageRoutes')} />
