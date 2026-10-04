@@ -63,7 +63,7 @@ export const PrivacyPolicy: React.FC = () => (
 
     <Section title="Information we collect">
       <Bullets items={[
-        <><strong>Account and profile details</strong> — full name, username (login ID), password (stored only in hashed form by our authentication provider; we cannot read it), mobile number, gender, age, blood group, emergency contact number, address, and an optional profile photo. Some of these are entered by your Captain, some by you.</>,
+        <><strong>Account and profile details</strong> — full name, username (login ID), password (stored only in hashed form by our authentication provider; we cannot read it), mobile number, gender, age, blood group, family emergency contact (name and number), occupation, address, and an optional profile photo. Some of these are entered by your Captain, some by you.</>,
         <><strong>Group registration details</strong> — group and sangh name, Captain and Vice-Captain names, address, city, PIN code, mobile number and email, supplied when a group asks to join.</>,
         <><strong>Seva activity</strong> — Vihar entries (date, route, distance, participants, notes), approval status, statistics, yearly goals, and incident reports you file.</>,
         <><strong>Messages</strong> — posts you publish in Channel to your organisation or its followers.</>,
@@ -176,7 +176,7 @@ export const DeleteAccount: React.FC = () => {
 
       <Section title="What gets deleted">
         <Bullets items={[
-          'Your login, and your profile: name, mobile number, gender, age, blood group, emergency contact, address.',
+          'Your login, and your profile: name, mobile number, gender, age, blood group, family emergency contact, occupation, address.',
           'Your profile photo, on request.',
           'Your push-notification registration and notifications.',
           'Your emergency ID card page stops working.',

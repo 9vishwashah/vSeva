@@ -1,7 +1,9 @@
+import ResetSevakPasswordModal from '../components/ResetSevakPasswordModal';
 import React, { useState, useEffect, useMemo } from 'react';
 import { BRAND } from '@brand';
 import { UserProfile, Organization, ContactNumber, ViharEntry } from '../types';
 import { dataService } from '../services/dataService';
+import { OCCUPATIONS } from '../services/occupations';
 import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft, Footprints, KeyRound } from 'lucide-react';
 import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
@@ -82,12 +84,13 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [editMobile, setEditMobile] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<{ id: string, name: string } | null>(null);
 
   const [selectedSevak, setSelectedSevak] = useState<UserProfile | null>(null);
-  const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string; emergencyNumber: string; address: string; gender: string }>({ mobile: '', age: '', bloodGroup: '', emergencyNumber: '', address: '', gender: 'Male' });
+  const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string; emergencyNumber: string; emergencyContactName: string; occupation: string; occupationDetails: string; address: string; gender: string }>({ mobile: '', age: '', bloodGroup: '', emergencyNumber: '', emergencyContactName: '', occupation: '', occupationDetails: '', address: '', gender: 'Male' });
   const [showIdCard, setShowIdCard] = useState(false);
 
   // Search State
@@ -200,29 +203,22 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       age: sevak.age?.toString() || '',
       bloodGroup: sevak.blood_group || 'O+',
       emergencyNumber: sevak.emergency_number || '',
+      emergencyContactName: sevak.emergency_contact_name || '',
+      occupation: sevak.occupation || '',
+      occupationDetails: sevak.occupation_details || '',
       address: sevak.address || '',
       gender: sevak.gender || 'Male'
     });
-  };
-
-  const handleResetPassword = async () => {
-    if (!selectedSevak) return;
-    if (!window.confirm(`Reset ${selectedSevak.full_name}'s password to their mobile number (${selectedSevak.mobile || 'not saved'})?`)) return;
-    setSavingId(selectedSevak.id);
-    try {
-      await dataService.resetSevakPassword(selectedSevak.id);
-      showToast(`${selectedSevak.full_name}'s password is now their mobile number.`, 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Could not reset the password', 'error');
-    } finally {
-      setSavingId(null);
-    }
   };
 
   const handleSaveProfile = async () => {
     if (!selectedSevak) return;
     if (editForm.mobile.length !== 10) {
       showToast("Mobile number must be exactly 10 digits", "error");
+      return;
+    }
+    if (editForm.occupation === 'Other' && !editForm.occupationDetails.trim()) {
+      showToast('Please specify the occupation', 'error');
       return;
     }
     setSavingId(selectedSevak.id);
@@ -236,11 +232,14 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         age: isNaN(newAge as number) ? undefined : newAge,
         bloodGroup: editForm.bloodGroup,
         emergencyNumber: editForm.emergencyNumber,
+        emergencyContactName: editForm.emergencyNumber ? editForm.emergencyContactName : '',
+        occupation: editForm.occupation,
+        occupationDetails: editForm.occupation ? editForm.occupationDetails : '',
         address: editForm.address,
         gender: editForm.gender
       });
       // update local
-      const updated = { ...selectedSevak, mobile: editForm.mobile, age: newAge, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, address: editForm.address, gender: editForm.gender };
+      const updated = { ...selectedSevak, mobile: editForm.mobile, age: newAge, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, emergency_contact_name: editForm.emergencyNumber ? editForm.emergencyContactName.trim() || null : null, occupation: editForm.occupation || null, occupation_details: editForm.occupation ? editForm.occupationDetails.trim() || null : null, address: editForm.address, gender: editForm.gender };
       setSevaks(prev => prev.map(s => s.id === selectedSevak.id ? updated : s));
       setSelectedSevak(updated);
       showToast(`Profile updated successfully!`, 'success');
@@ -759,18 +758,42 @@ Kindly do Vihar and continue your Seva.`;
 
                 <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Emergency Number</label>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Family Emergency Number</label>
                     {editingId === selectedSevak.id ? (
                       <input 
                         type="text" 
                         maxLength={15}
                         value={editForm.emergencyNumber}
                         onChange={e => setEditForm({...editForm, emergencyNumber: e.target.value})}
-                        placeholder="Emergency Contact"
+                        placeholder="Family emergency number"
                         className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm text-gray-800"
                       />
                     ) : (
                       <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800 font-mono">{selectedSevak.emergency_number || '-'}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Family Emergency Contact Name</label>
+                    {editingId === selectedSevak.id ? (
+                      <input type="text" maxLength={80} value={editForm.emergencyContactName} onChange={e => setEditForm({...editForm, emergencyContactName: e.target.value})} placeholder="Whose number? e.g. Father, Spouse" className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm text-gray-800" />
+                    ) : (
+                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800">{selectedSevak.emergency_contact_name || '-'}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Occupation / Profession</label>
+                    {editingId === selectedSevak.id ? (
+                      <div className="space-y-2">
+                        <select value={editForm.occupation} onChange={e => setEditForm({...editForm, occupation: e.target.value, occupationDetails: e.target.value ? editForm.occupationDetails : ''})} className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm text-gray-800">
+                          <option value="">Select occupation</option>
+                          {OCCUPATIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                        {editForm.occupation && (
+                          <input type="text" maxLength={120} value={editForm.occupationDetails} onChange={e => setEditForm({...editForm, occupationDetails: e.target.value})} placeholder={editForm.occupation === 'Other' ? 'Specify occupation' : 'Occupation details (optional)'} className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm text-gray-800" />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800">{selectedSevak.occupation ? (selectedSevak.occupation_details ? `${selectedSevak.occupation} · ${selectedSevak.occupation_details}` : selectedSevak.occupation) : '-'}</div>
                     )}
                   </div>
                   <div>
@@ -813,7 +836,7 @@ Kindly do Vihar and continue your Seva.`;
                   <button onClick={() => handleDelete(selectedSevak.id, selectedSevak.full_name)} className="px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 flex-1">
                     <Trash2 size={18} /> <span className="text-sm font-semibold pt-0.5">Delete</span>
                   </button>
-                  <button onClick={handleResetPassword} disabled={savingId === selectedSevak.id} className="px-4 py-2.5 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 disabled:opacity-60">
+                  <button onClick={() => setShowResetPassword(true)} className="px-4 py-2.5 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 disabled:opacity-60">
                     <KeyRound size={18} /> <span className="text-sm font-semibold pt-0.5">Reset password</span>
                   </button>
                   <button onClick={() => setShowIdCard(true)} className="px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 flex-1">
@@ -828,6 +851,23 @@ Kindly do Vihar and continue your Seva.`;
           </>
         )}
       </Modal>
+
+      {/* Reset password: the Captain sets the Sevak's new mobile number (= their password) */}
+      <ResetSevakPasswordModal
+        open={showResetPassword && !!selectedSevak}
+        sevakId={selectedSevak?.id ?? null}
+        sevakName={selectedSevak?.full_name ?? ''}
+        onClose={() => setShowResetPassword(false)}
+        onDone={(newMobile) => {
+          if (selectedSevak) {
+            const updated = { ...selectedSevak, mobile: newMobile };
+            setSevaks(prev => prev.map(s => s.id === selectedSevak.id ? updated : s));
+            setSelectedSevak(updated);
+          }
+          setShowResetPassword(false);
+          showToast('Password reset. Please tell the Sevak to sign in with the new number.', 'success');
+        }}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal open={!!showDeleteModal} onClose={() => setShowDeleteModal(null)} maxWidth="max-w-md">

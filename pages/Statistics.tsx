@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { UserProfile, ViharEntry, UserRole, Organization } from '../types';
 import { dataService } from '../services/dataService';
 import SankalpRing from '../components/SankalpRing';
+import { useOrgSankalp } from '../services/sankalpService';
 import { isDateInViharYear } from '../services/viharYear';
 import { useViharYear } from '../context/ViharYearContext';
 import { toLocalDateKey } from '../services/dateUtils';
@@ -23,7 +24,6 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
   const [orgEntriesAll, setOrgEntriesAll] = useState<ViharEntry[]>([]);
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
   const [genderMap, setGenderMap] = useState<Record<string, string>>({});
-  const [yearlyGoal, setYearlyGoal] = useState(25);
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
   const [captainName, setCaptainName] = useState<string>('');
   const [streakLeaderboard, setStreakLeaderboard] = useState<{ username: string; name: string; streak: number }[]>([]);
@@ -31,6 +31,8 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
   const isAdmin = currentUser.role === UserRole.ORG_ADMIN;
 
   const { selectedVY, selectedVYStartYear, currentVYStartYear } = useViharYear();
+  // The Group Sankalp the Captain set for the selected Vihar Year (everyone in the group sees the same card).
+  const orgSankalp = useOrgSankalp(currentUser.organization_id, selectedVY.startYear);
 
   const load = async () => {
       setLoading(true);
@@ -75,12 +77,10 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
         if (isAdmin) {
           setCaptainName(currentUser.full_name);
           setStreakLeaderboard(dataService.getStreakLeaderboard(allOrgEntries, nm));
-          dataService.getYearlyGoal(currentUser.id).then(setYearlyGoal);
         } else {
           dataService.getOrgAdmins([currentUser.organization_id]).then(map => {
             const admin = map[currentUser.organization_id];
             if (admin?.full_name) setCaptainName(admin.full_name);
-            if (typeof admin?.yearly_goal === 'number') setYearlyGoal(admin.yearly_goal);
           });
         }
       } catch (e) {
@@ -236,7 +236,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
       {/* Sankalp */}
       {/* The Vihar Group's own Sankalp — org-wide progress against the
           Captain's org-wide goal, not just whoever's looking at the page. */}
-      <SankalpRing count={orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length} goal={yearlyGoal} periodLabel={selectedVY.label} />
+      <SankalpRing count={orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length} goal={orgSankalp?.target} title="Group Sankalp" periodLabel={selectedVY.label} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Weekly trend */}

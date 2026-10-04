@@ -142,7 +142,7 @@ const PublicSevakProfile: React.FC = () => {
                           <Activity size={22} />
                       </div>
                       <div>
-                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Emergency Contact</p>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Family Emergency Contact{profile.emergency_contact_name ? ` · ${profile.emergency_contact_name}` : ''}</p>
                           <p className="text-gray-900 font-medium font-mono text-lg tracking-tight mt-0.5">
                               {profile.emergency_number || <span className="text-gray-400 text-sm italic font-sans font-medium hover:text-gray-500">Not Provided</span>}
                           </p>

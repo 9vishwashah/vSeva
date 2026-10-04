@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Check, X } from 'lucide-react';
+import Portal from './Portal';
 
 interface AvatarCropModalProps {
     file: File;
@@ -108,7 +109,8 @@ const AvatarCropModal: React.FC<AvatarCropModalProps> = ({ file, onCancel, onCon
     };
 
     return (
-        <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4">
+        <Portal>
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-[22px] p-5 w-full max-w-sm flex flex-col items-center gap-4 shadow-2xl">
                 <p className="text-sm font-extrabold text-[#241C17] self-start">Adjust Photo</p>
 
@@ -176,6 +178,7 @@ const AvatarCropModal: React.FC<AvatarCropModalProps> = ({ file, onCancel, onCon
                 </div>
             </div>
         </div>
+        </Portal>
     );
 };
 

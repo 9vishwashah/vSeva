@@ -65,7 +65,7 @@ const Layout: React.FC<LayoutProps> = ({
 
   const moreItems = role === UserRole.ORG_ADMIN
     ? [
-      { page: 'statistics', icon: <BarChart2 size={18} />, label: t('nav.statistics') },
+      { page: 'statistics', icon: <BarChart2 size={18} />, label: t('nav.groupAnalytics'), tone: 'purple' },
       { page: 'pending-approvals', icon: <ClipboardCheck size={18} />, label: t('nav.pendingApprovals') },
       { page: 'manage-routes', icon: <Map size={18} />, label: t('nav.manageRoutes') },
       { page: 'add-sevak', icon: <UserPlus size={18} />, label: t('nav.addSevaks') },
@@ -84,16 +84,16 @@ const Layout: React.FC<LayoutProps> = ({
 
   const moreActive = moreItems.some(i => i.page === currentPage);
 
-  const NavItem = ({ page, icon: Icon, label }: { page: string, icon: any, label: string }) => (
+  const NavItem = ({ page, icon: Icon, label, tone }: { page: string, icon: any, label: string, tone?: 'purple' }) => (
     <button
       onClick={() => setCurrentPage(page)}
       title={sidebarCollapsed ? label : undefined}
       className={`flex items-center w-full py-2 px-2.5 rounded-lg text-sm transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'} ${currentPage === page
-        ? 'bg-saffron-100 text-saffron-700 font-medium'
-        : 'text-gray-600 hover:bg-gray-50'
+        ? (tone === 'purple' ? 'bg-purple-100 text-purple-700 font-medium' : 'bg-saffron-100 text-saffron-700 font-medium')
+        : (tone === 'purple' ? 'text-purple-700 hover:bg-purple-50' : 'text-gray-600 hover:bg-gray-50')
         }`}
     >
-      <Icon size={17} className="shrink-0" />
+      <Icon size={17} className={`shrink-0 ${tone === 'purple' ? 'text-purple-600' : ''}`} />
       {!sidebarCollapsed && <span>{label}</span>}
     </button>
   );
@@ -163,7 +163,7 @@ const Layout: React.FC<LayoutProps> = ({
           {role === UserRole.ORG_ADMIN && (
             <>
               <NavItem page="dashboard" icon={BarChart2} label={t('nav.dashboard')} />
-              <NavItem page="statistics" icon={BarChart2} label={t('nav.statistics')} />
+              <NavItem page="statistics" icon={BarChart2} label={t('nav.groupAnalytics')} tone="purple" />
               <NavItem page="view-entries" icon={Table2} label={t('nav.viewEntries')} />
               <NavItem page="pending-approvals" icon={ClipboardCheck} label={t('nav.pendingApprovals')} />
               <NavItem page="manage-routes" icon={Map} label={t('nav.manageRoutes')} />
@@ -357,9 +357,9 @@ const Layout: React.FC<LayoutProps> = ({
                     <button
                       key={item.page}
                       onClick={() => { setCurrentPage(item.page); setMoreOpen(false); }}
-                      className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] ${active ? 'bg-saffron-50 text-saffron-700' : 'text-[#241C17] hover:bg-gray-50'}`}
+                      className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] ${active ? ((item as any).tone === 'purple' ? 'bg-purple-50 text-purple-700' : 'bg-saffron-50 text-saffron-700') : 'text-[#241C17] hover:bg-gray-50'}`}
                     >
-                      <span className={active ? 'text-saffron-600' : 'text-[#8A6A57]'}>{item.icon}</span>
+                      <span className={(item as any).tone === 'purple' ? 'text-purple-600' : active ? 'text-saffron-600' : 'text-[#8A6A57]'}>{item.icon}</span>
                       <span className="text-sm font-bold">{item.label}</span>
                     </button>
                   );

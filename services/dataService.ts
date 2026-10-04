@@ -22,7 +22,7 @@ export const dataService = {
     return getCached(`profile:${userId}`, async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at')
+        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at')
         .eq('id', userId)
         .single();
 
@@ -110,7 +110,7 @@ export const dataService = {
       // 2. Fallback if RPC isn't deployed yet (works if logged in, but fails for public scans due to RLS)
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, organization_id, is_active, blood_group, mobile, emergency_number, address, gender, role')
+        .select('full_name, organization_id, is_active, blood_group, mobile, emergency_number, emergency_contact_name, address, gender, role')
         .eq('username', username)
         .single();
 
@@ -177,7 +177,7 @@ export const dataService = {
     return getCached(`orgSevaks:${orgId}`, async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at, avatar_url')
+        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, avatar_url')
         .eq('organization_id', orgId)
         .eq('role', 'sevak')
         .eq('is_active', true);
@@ -454,18 +454,7 @@ export const dataService = {
     return true;
   },
 
-  // Captain resets a Sevak of their own group to the default password (the Sevak's mobile number).
-  async resetSevakPassword(userId: string): Promise<void> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) throw new Error('Admin session not found. Please login again.');
-    // Never retried — see updateSevakDetails.
-    await callFn('reset-sevak-password', {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-      body: { user_id: userId },
-    });
-  },
-
-  async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string; emergencyNumber?: string; address?: string; gender?: string }) {
+  async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string; emergencyNumber?: string; emergencyContactName?: string; address?: string; gender?: string; occupation?: string; occupationDetails?: string }) {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
@@ -493,7 +482,10 @@ export const dataService = {
       p_blood_group: updates.bloodGroup !== undefined ? updates.bloodGroup : null,
       p_emergency_number: updates.emergencyNumber !== undefined ? updates.emergencyNumber : null,
       p_address: updates.address !== undefined ? updates.address : null,
-      p_gender: updates.gender !== undefined ? updates.gender : null
+      p_gender: updates.gender !== undefined ? updates.gender : null,
+      p_emergency_contact_name: updates.emergencyContactName !== undefined ? updates.emergencyContactName : null,
+      p_occupation: updates.occupation !== undefined ? updates.occupation : null,
+      p_occupation_details: updates.occupationDetails !== undefined ? updates.occupationDetails : null
     });
 
     if (rpcError) {
@@ -510,6 +502,9 @@ export const dataService = {
         if (updates.emergencyNumber !== undefined) directUpdates.emergency_number = updates.emergencyNumber;
         if (updates.address !== undefined)         directUpdates.address          = updates.address;
         if (updates.gender !== undefined)          directUpdates.gender           = updates.gender;
+        if (updates.emergencyContactName !== undefined) directUpdates.emergency_contact_name = updates.emergencyContactName || null;
+        if (updates.occupation !== undefined)      directUpdates.occupation       = updates.occupation || null;
+        if (updates.occupationDetails !== undefined) directUpdates.occupation_details = updates.occupationDetails || null;
 
         const { error: directError } = await supabase
           .from('profiles')
@@ -532,7 +527,7 @@ export const dataService = {
     return true;
   },
 
-  async updateOwnProfile(updates: { age?: number; bloodGroup?: string; emergencyNumber?: string; address?: string; yearlyGoal?: number }) {
+  async updateOwnProfile(updates: { age?: number; bloodGroup?: string; emergencyNumber?: string; emergencyContactName?: string; address?: string; occupation?: string; occupationDetails?: string; yearlyGoal?: number }) {
     const { data: { session } } = await supabase.auth.getSession();
     const selfId = session?.user?.id;
 
@@ -564,6 +559,10 @@ export const dataService = {
       p_blood_group:      updates.bloodGroup      ?? '',
       p_emergency_number: updates.emergencyNumber ?? '',
       p_address:          updates.address         ?? '',
+      // new fields: undefined/null = leave as is, '' = clear
+      p_emergency_contact_name: updates.emergencyContactName ?? null,
+      p_occupation:             updates.occupation ?? null,
+      p_occupation_details:     updates.occupationDetails ?? null,
     });
     if (error) {
       console.error('updateOwnProfile RPC error:', error);

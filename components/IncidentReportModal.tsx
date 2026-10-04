@@ -5,6 +5,7 @@ import { UserProfile, IncidentReport } from '../types';
 import { dataService } from '../services/dataService';
 import { useToast } from '../context/ToastContext';
 import { toLocalDateKey } from '../services/dateUtils';
+import Portal from './Portal';
 
 interface IncidentReportModalProps {
     isOpen: boolean;
@@ -120,6 +121,7 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
     if (!isOpen) return null;
 
     return (
+        <Portal>
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
                 {/* Header */}
@@ -344,6 +346,7 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                 </form>
             </div>
         </div>
+        </Portal>
     );
 };
 

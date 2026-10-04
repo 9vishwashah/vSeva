@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Landing from '@brand/Landing';
 import { BRAND } from '@brand';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
+import SankalpGate from './components/SankalpGate';
 import UpdateAppBanner from './components/UpdateAppBanner';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationClick } from './services/oneSignalService';
 import StatusScreen from './components/StatusScreen';
@@ -469,6 +470,7 @@ const App: React.FC = () => {
           onDone={() => markOnboardingDone(user.role)}
         />
       )}
+      {user && !showOnboarding && <SankalpGate key={user.id} user={user} />}
       <ViharYearProvider>
       <Layout
         role={user.role}

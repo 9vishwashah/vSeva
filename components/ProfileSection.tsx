@@ -10,6 +10,8 @@ import { useToast } from '../context/ToastContext';
 import { getViharYearBounds } from '../services/viharYear';
 import SosButton from './SosButton';
 import ChangePasswordCard from './ChangePasswordCard';
+import SankalpSettingsCard from './SankalpSettingsCard';
+import { OCCUPATIONS } from '../services/occupations';
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -31,7 +33,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
     const currentVY = getViharYearBounds();
     const { showToast } = useToast();
     const [showIdCard, setShowIdCard] = useState(false);
-    const [yearlyGoal, setYearlyGoal] = useState(25);
     const [isSaving, setIsSaving] = useState(false);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatar_url ?? null);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -39,7 +40,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        dataService.getYearlyGoal(user.id).then(setYearlyGoal);
         dataService.getAvatarUrl(user.id).then(url => { if (url) setAvatarUrl(url); });
     }, [user.id]);
 
@@ -84,8 +84,10 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
         age: user.age !== undefined && user.age !== null ? String(user.age) : '',
         blood_group: user.blood_group || '',
         emergency_number: user.emergency_number || '',
+        emergency_contact_name: user.emergency_contact_name || '',
+        occupation: user.occupation || '',
+        occupation_details: user.occupation_details || '',
         address: user.address || '',
-        yearly_goal: String(yearlyGoal),
     });
 
     useEffect(() => {
@@ -93,10 +95,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             age: user.age !== undefined && user.age !== null ? String(user.age) : '',
             blood_group: user.blood_group || '',
             emergency_number: user.emergency_number || '',
+            emergency_contact_name: user.emergency_contact_name || '',
+            occupation: user.occupation || '',
+            occupation_details: user.occupation_details || '',
             address: user.address || '',
-            yearly_goal: String(yearlyGoal),
         });
-    }, [user, yearlyGoal]);
+    }, [user]);
 
     // Captain (ORG_ADMIN) fields — this profile represents the org's leadership,
     // not a personal sevak, so it edits captain/vice-captain names instead of
@@ -111,17 +115,20 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
     const handleSave = async () => {
         if (editForm.emergency_number && editForm.emergency_number.replace(/\D/g, '').length !== 10) {
-            showToast('Emergency number must be 10 digits', 'error');
+            showToast('Family emergency number must be 10 digits', 'error');
+            return;
+        }
+        if (editForm.emergency_number && !editForm.emergency_contact_name.trim()) {
+            showToast('Please enter whose number the family emergency number is', 'error');
+            return;
+        }
+        if (editForm.occupation === 'Other' && !editForm.occupation_details.trim()) {
+            showToast('Please specify your occupation', 'error');
             return;
         }
         const ageNum = editForm.age ? parseInt(editForm.age, 10) : undefined;
         if (editForm.age && (isNaN(ageNum!) || ageNum! < 1 || ageNum! > 120)) {
             showToast('Please enter a valid age (1–120)', 'error');
-            return;
-        }
-        const yearlyGoalNum = editForm.yearly_goal ? parseInt(editForm.yearly_goal, 10) : undefined;
-        if (editForm.yearly_goal && (isNaN(yearlyGoalNum!) || yearlyGoalNum! < 1 || yearlyGoalNum! > 365)) {
-            showToast('Please enter a valid yearly Vihar goal (1–365)', 'error');
             return;
         }
         setIsSaving(true);
@@ -130,10 +137,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 age: ageNum,
                 bloodGroup: editForm.blood_group,
                 emergencyNumber: editForm.emergency_number,
+                // the name belongs to the number: clearing the number clears the name too
+                emergencyContactName: editForm.emergency_number ? editForm.emergency_contact_name.trim() : '',
                 address: editForm.address,
-                yearlyGoal: yearlyGoalNum,
+                occupation: editForm.occupation,
+                occupationDetails: editForm.occupation ? editForm.occupation_details.trim() : '',
             });
-            if (yearlyGoalNum !== undefined) setYearlyGoal(yearlyGoalNum);
             showToast('Profile updated successfully!', 'success');
             if (onProfileUpdated) await onProfileUpdated();
         } catch (err: any) {
@@ -336,7 +345,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     </div>
                     <div>
                         <p className="text-sm font-bold text-blue-900 mb-0.5">Please Complete Your Profile</p>
-                        <p className="text-xs text-blue-800 leading-relaxed">Filling in your Blood Group, Emergency Number, and Address ensures we can assist you promptly during an incident, and is required for your Vihar Sevak Card.</p>
+                        <p className="text-xs text-blue-800 leading-relaxed">Filling in your Blood Group, Family Emergency Number, and Address ensures we can assist you promptly during an incident, and is required for your Vihar Sevak Card.</p>
                     </div>
                 </div>
             )}
@@ -386,23 +395,20 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                             />
                         </div>
 
-                        {/* Yearly Sankalp Goal */}
+                        {/* Family Emergency Number + whose number it is */}
                         <div>
-                            <label className={fieldLabelClass}>Yearly Sankalp Goal</label>
+                            <label className={fieldLabelClass}>Family Emergency Contact Name</label>
                             <input
-                                type="number"
-                                min={1}
-                                max={365}
-                                value={editForm.yearly_goal}
-                                onChange={e => setEditForm({ ...editForm, yearly_goal: e.target.value })}
-                                placeholder="e.g. 25"
+                                type="text"
+                                maxLength={80}
+                                value={editForm.emergency_contact_name}
+                                onChange={e => setEditForm({ ...editForm, emergency_contact_name: e.target.value })}
+                                placeholder="Whose number? e.g. Father, Spouse, Brother"
                                 className={fieldInputClass}
                             />
                         </div>
-
-                        {/* Emergency Number */}
                         <div>
-                            <label className={fieldLabelClass}>Emergency Number</label>
+                            <label className={fieldLabelClass}>Family Emergency Number</label>
                             <input
                                 type="tel"
                                 maxLength={10}
@@ -412,6 +418,32 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                                 className={fieldInputClass}
                             />
                         </div>
+
+                        {/* Occupation / Profession (recommended) */}
+                        <div>
+                            <label className={fieldLabelClass}>Occupation / Profession <span className="ml-1 rounded-full bg-saffron-50 px-1.5 py-0.5 text-[9px] font-extrabold normal-case tracking-normal text-saffron-700">Recommended</span></label>
+                            <select
+                                value={editForm.occupation}
+                                onChange={e => setEditForm({ ...editForm, occupation: e.target.value, occupation_details: e.target.value ? editForm.occupation_details : '' })}
+                                className={fieldInputClass}
+                            >
+                                <option value="">Select occupation</option>
+                                {OCCUPATIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                        </div>
+                        {editForm.occupation && (
+                            <div>
+                                <label className={fieldLabelClass}>{editForm.occupation === 'Other' ? 'Specify Occupation' : 'Occupation Details (optional)'}</label>
+                                <input
+                                    type="text"
+                                    maxLength={120}
+                                    value={editForm.occupation_details}
+                                    onChange={e => setEditForm({ ...editForm, occupation_details: e.target.value })}
+                                    placeholder={editForm.occupation === 'Other' ? 'Enter occupation' : 'e.g. Textile trader, Software engineer'}
+                                    className={fieldInputClass}
+                                />
+                            </div>
+                        )}
 
                         {/* Address */}
                         <div className="sm:col-span-2">
@@ -586,6 +618,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     </div>
                 )}
             </div>
+
+            {/* Sankalp: a Sevak's own target / the Captain's Group Sankalp + "Sevaks can edit" switch */}
+            <SankalpSettingsCard user={user} />
 
             {/* Captains choose their own password (Sevaks' passwords are managed by their Captain) */}
             {user.role === UserRole.ORG_ADMIN && <ChangePasswordCard />}

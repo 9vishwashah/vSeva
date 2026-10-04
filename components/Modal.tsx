@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
     open: boolean;
@@ -53,7 +54,9 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, maxWidth = 'max-
 
     if (!open) return null;
 
-    return (
+    // Rendered into <body> (not inline): a position:fixed overlay nested inside a transformed/animated page
+    // wrapper is sized to that wrapper, not the viewport, which left a strip at the top un-dimmed.
+    return createPortal(
         <div
             className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 app-modal-backdrop"
             onClick={closeOnBackdrop ? onClose : undefined}
@@ -64,7 +67,8 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, maxWidth = 'max-
             >
                 {children}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -3,7 +3,8 @@ import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UpcomingVihar, UserProfile, UserNotification } from '../types';
 import ViharAlertCard from '../components/ViharAlertCard';
-import { Bell, MapPin, ChevronDown, Check, Users, KeyRound, Loader2 } from 'lucide-react';
+import { Bell, MapPin, ChevronDown, Check, Users, KeyRound } from 'lucide-react';
+import ResetSevakPasswordModal from '../components/ResetSevakPasswordModal';
 import { useToast } from '../context/ToastContext';
 import Skeleton from '../components/Skeleton';
 import StatusScreen from '../components/StatusScreen';
@@ -41,7 +42,7 @@ const bucketByDay = (rows: UserNotification[]) => {
 // Nothing here ever disappears when a new alert is created — each is its own card.
 const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightViharId }) => {
   const { showToast } = useToast();
-  const [resettingId, setResettingId] = useState<string | null>(null);
+  const [resetTarget, setResetTarget] = useState<UserNotification | null>(null);
   const [resetDone, setResetDone] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
@@ -142,25 +143,8 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
     return () => clearTimeout(t);
   }, [highlightViharId, loading, past]);
 
-  // A Sevak asked for a password reset (Forgot password) — one tap sets it back to their mobile number.
-  const handleResetSevak = async (n: UserNotification) => {
-    const sevakId = n.payload?.sevak_id;
-    const name = n.payload?.sevak_name || 'this Sevak';
-    if (!sevakId) return;
-    if (!window.confirm(`Reset ${name}'s password to their mobile number?`)) return;
-    setResettingId(n.id);
-    try {
-      await dataService.resetSevakPassword(sevakId);
-      setResetDone(prev => new Set(prev).add(n.id));
-      showToast(`${name}'s password is now their mobile number. Please let them know.`, 'success');
-      markAsRead(n.id);
-    } catch (err: any) {
-      showToast(err?.message || 'Could not reset the password', 'error');
-    } finally {
-      setResettingId(null);
-    }
-  };
-
+  // A Sevak asked for a password reset (Forgot password): the Captain sets the Sevak's new mobile number
+  // (their password) in a small dialog.
   const NotificationRow: React.FC<{ n: UserNotification }> = ({ n }) => (
     <div className={`bg-white rounded-[18px] p-4 flex items-start gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${!n.is_read ? '' : 'opacity-80'}`}>
       <div className="shrink-0 w-[38px] h-[38px] rounded-xl flex items-center justify-center" style={{ background: '#FFF0E5' }}>
@@ -171,15 +155,14 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
         <p className="mt-0.5 text-[12.5px] text-[#8A6A57] whitespace-pre-wrap">{n.message}</p>
         {n.type === 'password_reset' && n.payload?.sevak_id && (
           resetDone.has(n.id) ? (
-            <p className="mt-2 text-[12px] font-bold text-green-700">Password reset to their mobile number</p>
+            <p className="mt-2 text-[12px] font-bold text-green-700">Password reset — new number set</p>
           ) : (
             <button
-              onClick={() => handleResetSevak(n)}
-              disabled={resettingId === n.id}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-saffron-600 px-3 py-1.5 text-[12px] font-bold text-white hover:bg-saffron-700 disabled:opacity-60"
+              onClick={() => setResetTarget(n)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-saffron-600 px-3 py-1.5 text-[12px] font-bold text-white hover:bg-saffron-700"
             >
-              {resettingId === n.id ? <Loader2 size={13} className="animate-spin" /> : <KeyRound size={13} />}
-              Reset to mobile number
+              <KeyRound size={13} />
+              Reset password
             </button>
           )
         )}
@@ -199,8 +182,26 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
     </div>
   );
 
+  const resetModal = (
+    <ResetSevakPasswordModal
+      open={!!resetTarget}
+      sevakId={resetTarget?.payload?.sevak_id ?? null}
+      sevakName={resetTarget?.payload?.sevak_name || 'this Sevak'}
+      onClose={() => setResetTarget(null)}
+      onDone={() => {
+        if (resetTarget) {
+          setResetDone(prev => new Set(prev).add(resetTarget.id));
+          markAsRead(resetTarget.id);
+        }
+        showToast('Password reset. Please tell the Sevak to sign in with the new number.', 'success');
+        setResetTarget(null);
+      }}
+    />
+  );
+
   return (
     <div className="max-w-xl mx-auto space-y-5 pb-10">
+      {resetModal}
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

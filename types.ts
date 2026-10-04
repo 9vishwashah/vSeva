@@ -24,6 +24,9 @@ export interface UserProfile {
   age?: number;
   blood_group?: string;
   emergency_number?: string;
+  emergency_contact_name?: string | null; // whose number the Family Emergency Number is
+  occupation?: string | null;
+  occupation_details?: string | null;
   address?: string;
   is_active: boolean;
   last_login_at?: string; // ISO timestamp, updated on each login

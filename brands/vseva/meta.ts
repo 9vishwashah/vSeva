@@ -14,7 +14,7 @@ export const getMeta = (_env: Env): BrandMeta => ({
   cardCredit: 'by VJAS',
   designer: { name: 'Vishwa Alpesh Shah', org: 'VJAS' },
   legalFooter: 'vSeva by VJAS · Designed by Vishwa Alpesh Shah',
-  registerLabelKey: 'login.registerOrg',
+  registerLabelKey: 'login.createCaptain',
   registration: { askSanghName: true, askGroupName: true },
   usernameHint: 'name@vsevak or admin@example.com',
   examples: { username: 'e.g. Vishwa Shah', mobile: '9594503214' },

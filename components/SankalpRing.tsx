@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 
 interface SankalpRingProps {
   count: number;
-  goal: number;
+  /** The target; null = not set for this Vihar Year, undefined = still loading. */
+  goal: number | null | undefined;
+  /** Card title, e.g. "My Sankalp" or "Group Sankalp". */
+  title?: string;
   /** e.g. "VY 2026-27" — the Vihar Year this count is scoped to. */
   periodLabel?: string;
 }
@@ -13,9 +16,10 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 // Dashboard hero card: gradient "Yearly Sankalp" progress ring.
 // Ring fills from empty to the real count/goal ratio once on mount.
-const SankalpRing: React.FC<SankalpRingProps> = ({ count, goal, periodLabel }) => {
-  const safeGoal = goal > 0 ? goal : 25;
-  const percent = Math.max(0, Math.min(1, count / safeGoal));
+const SankalpRing: React.FC<SankalpRingProps> = ({ count, goal, title = 'Yearly Sankalp', periodLabel }) => {
+  const hasGoal = typeof goal === 'number' && goal > 0;
+  const safeGoal = hasGoal ? (goal as number) : 0;
+  const percent = hasGoal ? Math.max(0, Math.min(1, count / safeGoal)) : 0;
   const remaining = Math.max(0, safeGoal - count);
 
   const [dashoffset, setDashoffset] = useState(CIRCUMFERENCE);
@@ -53,19 +57,21 @@ const SankalpRing: React.FC<SankalpRingProps> = ({ count, goal, periodLabel }) =
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-lg font-extrabold text-white leading-none">{count}</span>
-          <span className="text-[10px] font-semibold text-white/85">/ {safeGoal}</span>
+          <span className="text-[10px] font-semibold text-white/85">{hasGoal ? `/ ${safeGoal}` : '—'}</span>
         </div>
       </div>
       <div className="min-w-0">
         <p className="m-0 text-[11px] font-bold uppercase tracking-wider text-white/85 flex items-center gap-1.5 flex-wrap">
-          Yearly Sankalp
+          {title}
           {periodLabel && (
             <span className="text-[9px] font-extrabold normal-case tracking-normal bg-white/25 px-1.5 py-0.5 rounded-full">{periodLabel}</span>
           )}
         </p>
-        <p className="m-0 text-[14px] font-bold text-white">{Math.round(percent * 100)}% complete</p>
+        <p className="m-0 text-[14px] font-bold text-white">{hasGoal ? `${Math.round(percent * 100)}% complete` : (goal === undefined ? '\u00A0' : 'Sankalp not set yet')}</p>
         <p className="m-0 text-[12px] text-white/85 truncate">
-          {remaining > 0 ? `${remaining} Vihar${remaining === 1 ? '' : 's'} remaining this Vihar Year` : 'Goal reached — Jai Jinendra!'}
+          {!hasGoal
+            ? (goal === undefined ? '' : 'Set it in Profile & Settings')
+            : remaining > 0 ? `${remaining} Vihar${remaining === 1 ? '' : 's'} remaining this Vihar Year` : 'Goal reached — Jai Jinendra!'}
         </p>
       </div>
     </div>

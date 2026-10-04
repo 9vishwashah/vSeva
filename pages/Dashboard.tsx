@@ -4,6 +4,7 @@ import { dataService } from '../services/dataService';
 import UpcomingViharCard from '../components/UpcomingViharCard';
 import Avatar from '../components/Avatar';
 import SankalpRing from '../components/SankalpRing';
+import { useMySankalp, useOrgSankalp } from '../services/sankalpService';
 import ViharYearSelector from '../components/ViharYearSelector';
 import Modal from '../components/Modal';
 import StatusScreen from '../components/StatusScreen';
@@ -13,7 +14,7 @@ import { useToast } from '../context/ToastContext';
 import { useViharYear } from '../context/ViharYearContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../services/supabase';
-import { getViharYearForDate, isDateInViharYear } from '../services/viharYear';
+import { getViharYearBounds, getViharYearForDate, isDateInViharYear } from '../services/viharYear';
 import { toLocalDateKey } from '../services/dateUtils';
 import { deliverPdf } from '../services/pdfDelivery';
 
@@ -69,10 +70,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   });
 
   const [orgDetails, setOrgDetails] = useState<Organization | null>(orgDetailsProp ?? null);
-  const [yearlyGoal, setYearlyGoal] = useState(25);
   const [captainName, setCaptainName] = useState<string | null>(null);
   const [orgEntriesAll, setOrgEntriesAll] = useState<ViharEntry[]>([]);
   const { selectedVYStartYear, setSelectedVYStartYear, currentVYStartYear, selectedVY } = useViharYear();
+  // Sevak: their own Sankalp. Captain: the Group Sankalp (total Vihars the group targets).
+  const mySankalp = useMySankalp(currentUser.role === UserRole.ORG_ADMIN ? undefined : currentUser.id, selectedVY.startYear);
+  const orgSankalp = useOrgSankalp(currentUser.role === UserRole.ORG_ADMIN ? currentUser.organization_id : undefined, selectedVY.startYear);
 
   // Export configuration modal
   const [showExportModal, setShowExportModal] = useState(false);
@@ -88,10 +91,6 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   useEffect(() => {
     if (orgDetailsProp) setOrgDetails(orgDetailsProp);
   }, [orgDetailsProp]);
-
-  useEffect(() => {
-    dataService.getYearlyGoal(currentUser.id).then(setYearlyGoal);
-  }, [currentUser.id]);
 
   // A Sevak needs their Captain's name for the header below — fetched separately
   // (fast, independent of the heavier Promise.all further down) since an admin
@@ -735,9 +734,16 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
     .slice(0, 3);
 
   // data.entries is desc-sorted, so [0] is the most recent Vihar this Sevak joined.
-  const daysSinceLastVihar = currentUser.role === UserRole.SEVAK && data.entries.length > 0
-    ? Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(`${data.entries[0].vihar_date}T00:00:00`).getTime()) / 86400000)
-    : null;
+  // Counted from the later of that Vihar and the start of the current Vihar Year, and not at all before the
+  // Vihar Year has begun (Chaturmas, Jul 14 - Oct 13) — Vihar isn't happening then, so there is nothing to nudge about.
+  const daysSinceLastVihar = (() => {
+    if (currentUser.role !== UserRole.SEVAK || data.entries.length === 0) return null;
+    const todayMs = new Date().setHours(0, 0, 0, 0);
+    const vyStartMs = getViharYearBounds().start.getTime();
+    if (todayMs < vyStartMs) return null;
+    const sinceMs = Math.max(new Date(`${data.entries[0].vihar_date}T00:00:00`).getTime(), vyStartMs);
+    return Math.floor((todayMs - sinceMs) / 86400000);
+  })();
 
   const formatRelativeDate = (dateStr: string) => {
     const d = new Date(`${dateStr}T00:00:00`);
@@ -1152,7 +1158,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       )}
 
       {/* Yearly Sankalp — real progress vs. the goal set in Profile settings */}
-      <SankalpRing count={yearlyViharCount} goal={yearlyGoal} periodLabel={selectedVY.label} />
+      <SankalpRing
+        count={yearlyViharCount}
+        goal={currentUser.role === UserRole.ORG_ADMIN ? orgSankalp?.target : mySankalp}
+        title={currentUser.role === UserRole.ORG_ADMIN ? 'Group Sankalp' : 'My Sankalp'}
+        periodLabel={selectedVY.label}
+      />
 
       <UpcomingViharCard currentUser={currentUser} onViewAll={navigateToNotifications} />
 

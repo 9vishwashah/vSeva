@@ -3,6 +3,18 @@ import { withCors } from './_shared/cors.js';
 
 const TIERS = [15, 7, 5]; // checked highest-first so a sevak gets the strongest matching tier
 
+// Vihar Year (same rule as services/viharYear.ts): Oct 14 -> Jul 13. Jul 14 - Oct 13 is Chaturmas, when
+// Vihar does not happen, so no "No Vihar since N days" reminder makes sense then. Returns the start
+// (local midnight) of the Vihar Year that is running today, or null during Chaturmas.
+function currentViharYearStart(today) {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    const d = today.getDate();
+    if (m > 9 || (m === 9 && d >= 14)) return new Date(y, 9, 14);
+    if (m < 6 || (m === 6 && d <= 13)) return new Date(y - 1, 9, 14);
+    return null;
+}
+
 async function rawHandler(event) {
     try {
         if (event.httpMethod !== 'POST') {
@@ -55,6 +67,19 @@ async function rawHandler(event) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // Chaturmas / before the Vihar Year starts: nothing to remind about. Also quietly clear any unread
+        // reminder left over from earlier, so nobody keeps seeing "No Vihar Since 80 Days" in the off-season.
+        const vyStart = currentViharYearStart(today);
+        if (!vyStart) {
+            await supabaseAdmin
+                .from('notifications')
+                .update({ is_read: true })
+                .in('user_id', sevaks.map(s => s.id))
+                .eq('type', 'inactivity')
+                .eq('is_read', false);
+            return { statusCode: 200, body: JSON.stringify({ created: 0, reason: 'vihar-year-not-started' }) };
+        }
+
         // Figure out, in memory, which sevaks are due a nudge and at what tier —
         // no DB calls in this loop.
         const candidates = [];
@@ -62,7 +87,11 @@ async function rawHandler(event) {
             const lastDate = lastViharByUsername[sevak.username];
             if (!lastDate) continue; // never done a Vihar — not what this specific reminder is for
 
-            const daysSince = Math.floor((today.getTime() - new Date(`${lastDate}T00:00:00`).getTime()) / 86400000);
+            // Count from the later of the last Vihar and the start of this Vihar Year, so a Vihar from last year
+            // (or the Chaturmas gap) never makes someone look "inactive" for months on day one.
+            const lastVihar = new Date(`${lastDate}T00:00:00`);
+            const since = lastVihar > vyStart ? lastVihar : vyStart;
+            const daysSince = Math.floor((today.getTime() - since.getTime()) / 86400000);
             const tier = TIERS.find(t => daysSince >= t);
             if (!tier) continue;
 
