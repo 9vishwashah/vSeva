@@ -9,7 +9,6 @@ import { useLanguage } from '../../context/LanguageContext';
 import guruPhoto from './assets/guru.webp';
 import developerLogo from './assets/developer-logo.webp';
 import { InstallPWA } from '../../components/InstallPWA';
-import Mascot from './Mascot';
 
 // Landing page for the Shraman Seva Group deployment. The look follows the
 // festival-site reference the client chose (sunburst sky, bunting, clouds, tall
@@ -28,7 +27,7 @@ const NAVY = '#27466E';
 const COPY: Record<Lang, {
   nav: { home: string; prerna: string; features: string; how: string; login: string };
   heroTitle: string; heroSub: string; ctaLogin: string; ctaRegister: string;
-  prernaLabel: string; prernaHeading: string; prernaLines: string[]; prernaPrayer: string; prernaNote: string;
+  prernaLabel: string; prernaHeading: string; prernaPrayer: string; prernaNote: string;
   featuresHeading: string; features: { title: string; desc: string }[];
   howHeading: string; steps: { title: string; desc: string }[];
   joinHeading: string; joinSub: string;
@@ -41,7 +40,6 @@ const COPY: Record<Lang, {
     heroSub: 'The Shraman Seva Group platform to log Vihars, coordinate Sevaks and keep every Seva family connected — from one phone.',
     ctaLogin: 'Login', ctaRegister: 'Create Captain Account',
     prernaLabel: 'Prerna', prernaHeading: 'Our inspiration',
-    prernaLines: ['શ્રદ્ધેય ગચ્છાધિપતિ ગુરુદેવ', 'પ.પૂ. આચાર્ય ભગવંત', 'શ્રીમદ્ વિજય યશોવર્મસૂરીશ્વરજી મહારાજા'],
     prernaPrayer: 'મને સેવા શ્રમણની મળજો રે…',
     prernaNote: 'A family of Sevaks walking alongside Jain Shramans — now recording every Vihar with care.',
     featuresHeading: 'What you can do', features: [
@@ -67,7 +65,6 @@ const COPY: Record<Lang, {
     heroSub: 'શ્રમણ સેવા ગ્રુપનું પ્લેટફોર્મ — વિહારની નોંધ, સેવકોનું સંકલન અને દરેક સેવા પરિવારને એક જ ફોનથી જોડે રાખવા માટે.',
     ctaLogin: 'લૉગિન', ctaRegister: 'કૅપ્ટન એકાઉન્ટ બનાવો',
     prernaLabel: 'પ્રેરણા', prernaHeading: 'અમારી પ્રેરણા',
-    prernaLines: ['શ્રદ્ધેય ગચ્છાધિપતિ ગુરુદેવ', 'પ.પૂ. આચાર્ય ભગવંત', 'શ્રીમદ્ વિજય યશોવર્મસૂરીશ્વરજી મહારાજા'],
     prernaPrayer: 'મને સેવા શ્રમણની મળજો રે…',
     prernaNote: 'જૈન શ્રમણોની સાથે ચાલતા સેવકોનો પરિવાર — હવે દરેક વિહારની નોંધ સંભાળપૂર્વક.',
     featuresHeading: 'તમે શું કરી શકો', features: [
@@ -93,7 +90,6 @@ const COPY: Record<Lang, {
     heroSub: 'श्रमण सेवा ग्रुप का प्लेटफ़ॉर्म — विहार का रिकॉर्ड, सेवकों का समन्वय और हर सेवा परिवार को एक ही फ़ोन से जोड़े रखने के लिए।',
     ctaLogin: 'लॉगिन', ctaRegister: 'कैप्टन अकाउंट बनाएँ',
     prernaLabel: 'प्रेरणा', prernaHeading: 'हमारी प्रेरणा',
-    prernaLines: ['શ્રદ્ધેય ગચ્છાધિપતિ ગુરુદેવ', 'પ.પૂ. આચાર્ય ભગવંત', 'શ્રીમદ્ વિજય યશોવર્મસૂરીશ્વરજી મહારાજા'],
     prernaPrayer: 'મને સેવા શ્રમણની મળજો રે…',
     prernaNote: 'जैन श्रमणों के साथ चलने वाले सेवकों का परिवार — अब हर विहार का रिकॉर्ड सँभालकर।',
     featuresHeading: 'आप क्या कर सकते हैं', features: [
@@ -247,8 +243,6 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
         <Cloud className="w-24 md:w-36 left-[4%] top-40 md:top-48" />
         <Cloud className="w-20 md:w-28 right-[5%] top-72 md:top-64" />
 
-        <Mascot />
-
         <div className="relative max-w-3xl mx-auto px-4 pt-24 md:pt-28 text-center">
           <div className="mx-auto w-56 md:w-72 rounded-[2rem] bg-white p-2 shadow-[0_18px_40px_rgba(120,40,0,0.35)] ring-4 ring-white/60">
             <img src={BRAND.logoFull} alt={BRAND.name} className="w-full h-auto rounded-[1.5rem]" fetchpriority="high" decoding="async" />
@@ -275,12 +269,6 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
               <div className="absolute -inset-3 rounded-[2.5rem] bg-[#FDBA21] rotate-3" aria-hidden="true" />
               <div className="relative rounded-[2rem] overflow-hidden bg-[#F9A825] shadow-[0_18px_40px_rgba(120,40,0,0.3)] aspect-[3/4]">
                 <img src={guruPhoto} alt="" className="absolute inset-0 w-full h-full object-cover object-top" loading="lazy" decoding="async" />
-                <div className="absolute inset-x-0 bottom-0 pt-24 pb-5 px-5 bg-gradient-to-t from-[#5A0F0F] via-[#5A0F0F]/80 to-transparent text-center">
-                  <p className="ssg-display text-white/80 text-xs font-bold tracking-[0.2em] mb-1">{COPY.gu.prernaLabel}:</p>
-                  <p className="ssg-display text-[#FDBA21] text-lg md:text-xl font-extrabold leading-snug">{c.prernaLines[0]}</p>
-                  <p className="ssg-display text-white text-base md:text-lg font-bold leading-snug">{c.prernaLines[1]}</p>
-                  <p className="ssg-display text-white text-base md:text-lg font-bold leading-snug">{c.prernaLines[2]}</p>
-                </div>
               </div>
             </div>
             <div className="text-center md:text-left">
