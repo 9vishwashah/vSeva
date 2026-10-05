@@ -23,6 +23,7 @@ const PublicSevakProfile = React.lazy(() => import('./pages/PublicSevakProfile')
 const ManageRoutes = React.lazy(() => import('./pages/ManageRoutes'));
 const ViewEntries = React.lazy(() => import('./pages/ViewEntries'));
 const SuperAdminDashboard = React.lazy(() => import('./pages/SuperAdminDashboard'));
+const SuperAdminOrgDetail = React.lazy(() => import('./pages/SuperAdminOrgDetail'));
 const ProfileSection = React.lazy(() => import('./components/ProfileSection'));
 const Contacts = React.lazy(() => import('./pages/Contacts'));
 const AdminContacts = React.lazy(() => import('./pages/AdminContacts'));
@@ -36,6 +37,7 @@ const DirectoryRouter = React.lazy(() => import('./pages/DirectoryRouter'));
 const Channel = React.lazy(() => import('./pages/Channel'));
 const ChannelOrganization = React.lazy(() => import('./pages/ChannelOrganization'));
 const SosDetail = React.lazy(() => import('./pages/SosDetail'));
+const ContactUs = React.lazy(() => import('./pages/ContactUs'));
 const PrivacyPolicy = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.PrivacyPolicy })));
 const UpdatePassword = React.lazy(() => import('./pages/UpdatePassword'));
 const DeleteAccount = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.DeleteAccount })));
@@ -271,6 +273,15 @@ const App: React.FC = () => {
     );
   }
 
+  // Public contact page (linked from the login screen)
+  if (normalizedPath === '/contact') {
+    return (
+      <React.Suspense fallback={<div className="min-h-screen bg-[#FDFBF7]" />}>
+        <ContactUs />
+      </React.Suspense>
+    );
+  }
+
   // Public legal pages (Google Play requires a reachable privacy-policy URL
   // and a web account-deletion URL) — no login, checked before the auth gate.
   if (normalizedPath === '/privacy' || normalizedPath === '/delete-account') {
@@ -290,7 +301,9 @@ const App: React.FC = () => {
     );
   }
 
-  const isSuperAdmin = path === '/super-admin';
+  // /super-admin (dashboard) and /super-admin/org/<id> (one organisation's full details)
+  const superAdminOrgId = /^\/super-admin\/org\/([0-9a-f-]{36})$/.exec(normalizedPath)?.[1] ?? null;
+  const isSuperAdmin = path === '/super-admin' || !!superAdminOrgId;
 
   const checkSession = async () => {
       setLoading(true);
@@ -441,7 +454,7 @@ const App: React.FC = () => {
     }
     return (
       <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-saffron-600"></div></div>}>
-        <SuperAdminDashboard currentUser={user} />
+        {superAdminOrgId ? <SuperAdminOrgDetail orgId={superAdminOrgId} /> : <SuperAdminDashboard currentUser={user} />}
       </React.Suspense>
     );
   }

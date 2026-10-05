@@ -63,6 +63,14 @@ const formatLastVihar = (dateStr?: string): { label: string; color: string } => 
   return { label, color };
 };
 
+// One label + value cell of the Sevak Details grid. `wide` spans both columns.
+const DetailField: React.FC<{ label: string; wide?: boolean; children: React.ReactNode }> = ({ label, wide, children }) => (
+  <div className={wide ? 'col-span-2 min-w-0' : 'min-w-0'}>
+    <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">{label}</p>
+    {children}
+  </div>
+);
+
 const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
@@ -213,22 +221,16 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
 
   const handleSaveProfile = async () => {
     if (!selectedSevak) return;
-    if (editForm.mobile.length !== 10) {
-      showToast("Mobile number must be exactly 10 digits", "error");
-      return;
-    }
     if (editForm.occupation === 'Other' && !editForm.occupationDetails.trim()) {
       showToast('Please specify the occupation', 'error');
       return;
     }
     setSavingId(selectedSevak.id);
     
-    const mobileChanged = editForm.mobile !== selectedSevak.mobile;
     const newAge = editForm.age ? parseInt(editForm.age) : undefined;
     
     try {
       await dataService.updateSevakDetails(selectedSevak.id, {
-        mobile: mobileChanged ? editForm.mobile : undefined,
         age: isNaN(newAge as number) ? undefined : newAge,
         bloodGroup: editForm.bloodGroup,
         emergencyNumber: editForm.emergencyNumber,
@@ -239,7 +241,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         gender: editForm.gender
       });
       // update local
-      const updated = { ...selectedSevak, mobile: editForm.mobile, age: newAge, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, emergency_contact_name: editForm.emergencyNumber ? editForm.emergencyContactName.trim() || null : null, occupation: editForm.occupation || null, occupation_details: editForm.occupation ? editForm.occupationDetails.trim() || null : null, address: editForm.address, gender: editForm.gender };
+      const updated = { ...selectedSevak, age: newAge, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, emergency_contact_name: editForm.emergencyNumber ? editForm.emergencyContactName.trim() || null : null, occupation: editForm.occupation || null, occupation_details: editForm.occupation ? editForm.occupationDetails.trim() || null : null, address: editForm.address, gender: editForm.gender };
       setSevaks(prev => prev.map(s => s.id === selectedSevak.id ? updated : s));
       setSelectedSevak(updated);
       showToast(`Profile updated successfully!`, 'success');
@@ -267,12 +269,22 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     return map;
   }, [orgEntries, selectedVY.start.getTime(), selectedVY.end.getTime()]);
 
-  // Profile completion: counts blood_group, emergency_number, address, age
-  const getProfileCompletion = (sevak: UserProfile): number => {
-    const fields = [sevak.blood_group, sevak.emergency_number, sevak.address, sevak.age];
-    const filled = fields.filter(f => f !== null && f !== undefined && String(f).trim() !== '').length;
-    return Math.round((filled / fields.length) * 100);
+  // Profile completion: the fields a Sevak fills in from Profile & Settings. Occupation "Other" also needs
+  // its details; a family emergency number needs the name of whose number it is.
+  const getMissingProfileFields = (sevak: UserProfile): string[] => {
+    const has = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== '';
+    const missing: string[] = [];
+    if (!has(sevak.age)) missing.push('Age');
+    if (!has(sevak.blood_group)) missing.push('Blood group');
+    if (!has(sevak.emergency_number)) missing.push('Family emergency number');
+    if (!has(sevak.emergency_contact_name)) missing.push('Emergency contact name');
+    if (!has(sevak.occupation) || (sevak.occupation === 'Other' && !has(sevak.occupation_details))) missing.push('Occupation');
+    if (!has(sevak.address)) missing.push('Address');
+    return missing;
   };
+  const PROFILE_FIELD_COUNT = 6;
+  const getProfileCompletion = (sevak: UserProfile): number =>
+    Math.round(((PROFILE_FIELD_COUNT - getMissingProfileFields(sevak).length) / PROFILE_FIELD_COUNT) * 100);
 
 
 
@@ -376,7 +388,7 @@ Kindly do Vihar and continue your Seva.`;
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-5 md:space-y-4">
 
       <div>
         <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2">
@@ -388,7 +400,7 @@ Kindly do Vihar and continue your Seva.`;
 
       {/* Form Section - white card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-4 md:p-4 space-y-4">
 
           {error && (
             <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm flex items-center gap-2">
@@ -409,7 +421,8 @@ Kindly do Vihar and continue your Seva.`;
             </div>
           )}
 
-          <div className="space-y-4">
+          {/* Mobile: stacked. Desktop: one row — name, mobile, gender, create button */}
+          <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-[1.3fr_1.1fr_auto_auto] md:items-end md:gap-3">
             <div>
               <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Full Name</label>
               <input
@@ -436,7 +449,7 @@ Kindly do Vihar and continue your Seva.`;
                   setFormData({ ...formData, mobile: val });
                 }}
               />
-              <p className="text-xs text-gray-400 mt-1">Additional details (age, address, etc.) can be filled by the sevak on their profile.</p>
+              <p className="text-xs text-gray-400 mt-1 md:hidden">Additional details (age, address, etc.) can be filled by the sevak on their profile.</p>
             </div>
 
             <div>
@@ -445,7 +458,7 @@ Kindly do Vihar and continue your Seva.`;
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, gender: 'Male' })}
-                  className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${
+                  className={`flex-1 px-4 py-2 text-sm font-semibold rounded-md transition-all ${
                     formData.gender === 'Male'
                       ? 'bg-saffron-600 text-white shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
@@ -456,7 +469,7 @@ Kindly do Vihar and continue your Seva.`;
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, gender: 'Female' })}
-                  className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${
+                  className={`flex-1 px-4 py-2 text-sm font-semibold rounded-md transition-all ${
                     formData.gender === 'Female'
                       ? 'bg-saffron-600 text-white shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
@@ -466,16 +479,16 @@ Kindly do Vihar and continue your Seva.`;
                 </button>
               </div>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-saffron-600 hover:bg-saffron-700 text-white font-medium py-4 rounded-xl shadow-lg flex justify-center items-center space-x-2 transition-all mt-4"
-          >
-            {loading ? <Loader2 className="animate-spin" /> : <UserPlus size={20} />}
-            <span>{loading ? "Creating Profile..." : "Create Sevak Account"}</span>
-          </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full md:w-auto bg-saffron-600 hover:bg-saffron-700 text-white font-medium py-3.5 md:py-3 md:px-5 rounded-xl shadow-lg md:shadow-md flex justify-center items-center space-x-2 transition-all mt-4 md:mt-0 whitespace-nowrap"
+            >
+              {loading ? <Loader2 className="animate-spin" size={18} /> : <UserPlus size={18} />}
+              <span>{loading ? "Creating..." : "Create Sevak Account"}</span>
+            </button>
+          </div>
         </form>
       </div>
 
@@ -616,240 +629,178 @@ Kindly do Vihar and continue your Seva.`;
 
       {/* View More Details Modal */}
       <Modal open={!!selectedSevak} onClose={() => { setSelectedSevak(null); setEditingId(null); setShowIdCard(false); }} maxWidth="max-w-md">
-        {selectedSevak && (
+        {selectedSevak && (() => {
+          const editing = editingId === selectedSevak.id;
+          const missing = getMissingProfileFields(selectedSevak);
+          const modalPct = getProfileCompletion(selectedSevak);
+          const pctColor = modalPct === 100 ? { bg: '#dcfce7', text: '#16a34a' } : modalPct >= 50 ? { bg: '#fef3c7', text: '#d97706' } : { bg: '#fee2e2', text: '#dc2626' };
+          const joined = selectedSevak.created_at && !isNaN(new Date(selectedSevak.created_at).getTime())
+            ? new Date(selectedSevak.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+            : null;
+          const inp = 'w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:border-saffron-400 focus:ring-2 focus:ring-saffron-100 outline-none';
+          const close = () => { setSelectedSevak(null); setEditingId(null); setShowIdCard(false); };
+          return (
           <>
-            <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-white shrink-0">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Users size={20} className="text-saffron-600" />
+            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
+              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <Users size={18} className="text-saffron-600" />
                 Sevak Details
               </h3>
-              <button onClick={() => { setSelectedSevak(null); setEditingId(null); setShowIdCard(false); }} className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-200 transition-colors">
-                <X size={20} />
+              <button onClick={close} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors">
+                <X size={18} />
               </button>
             </div>
-            
-            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+
+            <div className="px-4 py-3 overflow-y-auto flex-1">
               {showIdCard ? (
-                 <div className="flex flex-col items-center justify-center py-4 min-h-[40vh]">
+                 <div className="flex flex-col items-center justify-center py-3 min-h-[40vh]">
                     <IDCardBadge user={selectedSevak} orgName={currentUser.organization_id} />
-                    <p className="text-xs text-gray-500 mt-6 text-center max-w-xs print:hidden">
+                    <p className="text-xs text-gray-500 mt-4 text-center max-w-xs print:hidden">
                         Print this badge. Scanning the QR code will verify the identity.
                     </p>
                  </div>
               ) : (
                 <>
-              <div className="text-center mb-6">
-                <div className="mx-auto mb-3 w-20 h-20">
-                  <Avatar name={selectedSevak.full_name} url={selectedSevak.avatar_url} size={80} variant="gradient" className="text-2xl" />
-                </div>
-                <h4 className="text-xl font-bold text-gray-900">{selectedSevak.full_name}</h4>
-                {(() => {
-                  const modalPct = getProfileCompletion(selectedSevak);
-                  const pctColor = modalPct === 100 ? { bg: '#dcfce7', text: '#16a34a' } : modalPct >= 50 ? { bg: '#fef3c7', text: '#d97706' } : { bg: '#fee2e2', text: '#dc2626' };
-                  return (
-                    <span
-                      className="inline-block mt-2 px-2.5 py-1 rounded-full text-[11px] font-bold"
-                      style={{ background: pctColor.bg, color: pctColor.text }}
-                    >
-                      Profile {modalPct}% Complete
-                    </span>
-                  );
-                })()}
-                {editingId === selectedSevak.id ? (
-                  <div className="flex bg-gray-100 p-1 rounded-lg w-fit mx-auto mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditForm({ ...editForm, gender: 'Male' })}
-                      className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                        editForm.gender === 'Male'
-                          ? 'bg-saffron-600 text-white shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      Male
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditForm({ ...editForm, gender: 'Female' })}
-                      className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                        editForm.gender === 'Female'
-                          ? 'bg-saffron-600 text-white shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      Female
-                    </button>
-                  </div>
-                ) : (
-                  <p className={`text-sm font-bold mt-1 ${selectedSevak.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>
-                    {selectedSevak.gender || 'Unknown Gender'}
-                  </p>
-                )}
-              </div>
-
-              {/* Detail fields */}
-              <div className="space-y-4 bg-gray-50 p-5 rounded-xl border border-gray-100">
-                {/* Username */}
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Username</label>
-                  <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm">
-                    <code className="text-sm font-mono text-gray-700 truncate">{selectedSevak.username}</code>
-                    <button onClick={() => handleCopy(selectedSevak.username, selectedSevak.id)} className="text-gray-400 hover:text-saffron-600 p-1 flex-shrink-0">
-                      {copiedId === selectedSevak.id ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Mobile */}
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Mobile Number</label>
-                  {editingId === selectedSevak.id ? (
-                    <input 
-                      type="tel" 
-                      maxLength={10} 
-                      value={editForm.mobile}
-                      onChange={e => setEditForm({...editForm, mobile: e.target.value.replace(/\D/g, '').slice(0, 10)})}
-                      className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none font-mono transition-shadow shadow-sm"
-                    />
-                  ) : (
-                    <div className="flex justify-between items-center text-sm font-medium bg-gray-50 p-2.5 rounded-lg border border-gray-100 shadow-inner">
-                      <span className="font-mono text-gray-800 font-semibold tracking-wide">{selectedSevak.mobile}</span>
+                  {/* Identity */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 shrink-0">
+                      <Avatar name={selectedSevak.full_name} url={selectedSevak.avatar_url} size={56} variant="gradient" className="text-xl" />
                     </div>
-                  )}
-                </div>
-
-                {/* Age & Blood Group */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Age</label>
-                    {editingId === selectedSevak.id ? (
-                      <input 
-                        type="number" 
-                        value={editForm.age}
-                        onChange={e => setEditForm({...editForm, age: e.target.value})}
-                        className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm"
-                      />
-                    ) : (
-                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800">{selectedSevak.age || '-'}</div>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Blood Group</label>
-                    {editingId === selectedSevak.id ? (
-                      <select 
-                        value={editForm.bloodGroup}
-                        onChange={e => setEditForm({...editForm, bloodGroup: e.target.value})}
-                        className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none bg-white font-semibold transition-shadow shadow-sm"
-                      >
-                         <option value="O+">O+</option>
-                         <option value="O-">O-</option>
-                         <option value="A+">A+</option>
-                         <option value="A-">A-</option>
-                         <option value="B+">B+</option>
-                         <option value="B-">B-</option>
-                         <option value="AB+">AB+</option>
-                         <option value="AB-">AB-</option>
-                      </select>
-                    ) : (
-                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800 font-semibold">{selectedSevak.blood_group || '-'}</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Family Emergency Number</label>
-                    {editingId === selectedSevak.id ? (
-                      <input 
-                        type="text" 
-                        maxLength={15}
-                        value={editForm.emergencyNumber}
-                        onChange={e => setEditForm({...editForm, emergencyNumber: e.target.value})}
-                        placeholder="Family emergency number"
-                        className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm text-gray-800"
-                      />
-                    ) : (
-                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800 font-mono">{selectedSevak.emergency_number || '-'}</div>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Family Emergency Contact Name</label>
-                    {editingId === selectedSevak.id ? (
-                      <input type="text" maxLength={80} value={editForm.emergencyContactName} onChange={e => setEditForm({...editForm, emergencyContactName: e.target.value})} placeholder="Whose number? e.g. Father, Spouse" className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm text-gray-800" />
-                    ) : (
-                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800">{selectedSevak.emergency_contact_name || '-'}</div>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Occupation / Profession</label>
-                    {editingId === selectedSevak.id ? (
-                      <div className="space-y-2">
-                        <select value={editForm.occupation} onChange={e => setEditForm({...editForm, occupation: e.target.value, occupationDetails: e.target.value ? editForm.occupationDetails : ''})} className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm text-gray-800">
-                          <option value="">Select occupation</option>
-                          {OCCUPATIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                        {editForm.occupation && (
-                          <input type="text" maxLength={120} value={editForm.occupationDetails} onChange={e => setEditForm({...editForm, occupationDetails: e.target.value})} placeholder={editForm.occupation === 'Other' ? 'Specify occupation' : 'Occupation details (optional)'} className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm text-gray-800" />
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-base font-bold text-gray-900 truncate">{selectedSevak.full_name}</h4>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                        {editing ? (
+                          <div className="flex bg-gray-100 p-0.5 rounded-lg">
+                            {['Male', 'Female'].map(g => (
+                              <button key={g} type="button" onClick={() => setEditForm({ ...editForm, gender: g })}
+                                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${editForm.gender === g ? 'bg-saffron-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>{g}</button>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className={`font-bold ${selectedSevak.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>{selectedSevak.gender || 'Unknown'}</span>
                         )}
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: pctColor.bg, color: pctColor.text }}>Profile {modalPct}%</span>
                       </div>
-                    ) : (
-                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800">{selectedSevak.occupation ? (selectedSevak.occupation_details ? `${selectedSevak.occupation} · ${selectedSevak.occupation_details}` : selectedSevak.occupation) : '-'}</div>
-                    )}
+                      {joined && <p className="mt-0.5 text-[11px] text-gray-400">Joined {joined}</p>}
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Address</label>
-                    {editingId === selectedSevak.id ? (
-                      <textarea
-                        value={editForm.address}
-                        onChange={e => setEditForm({...editForm, address: e.target.value})}
-                        placeholder="Full Address"
-                        className="w-full p-2.5 border-2 border-saffron-400 rounded-lg text-sm focus:ring-4 focus:ring-saffron-100 outline-none transition-shadow shadow-sm resize-none h-20 text-gray-800"
-                      />
-                    ) : (
-                      <div className="text-sm font-medium bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{selectedSevak.address || '-'}</div>
-                    )}
-                  </div>
-                </div>
+                  {!editing && missing.length > 0 && (
+                    <p className="mt-2 text-[11px] leading-snug text-amber-700 bg-amber-50 rounded-md px-2 py-1.5">Still to fill: {missing.join(', ')}</p>
+                  )}
 
-              </div>
-               </>
+                  {/* Details — compact two-column grid */}
+                  <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2.5">
+                    <DetailField label="Username">
+                      <div className="flex items-center justify-between gap-1">
+                        <code className="text-sm font-mono text-gray-800 truncate">{selectedSevak.username}</code>
+                        <button onClick={() => handleCopy(selectedSevak.username, selectedSevak.id)} className="text-gray-400 hover:text-saffron-600 p-0.5 shrink-0" title="Copy username">
+                          {copiedId === selectedSevak.id ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                    </DetailField>
+
+                    {/* Mobile is the Sevak's password: changed only through Reset password */}
+                    <DetailField label="Mobile Number">
+                      <span className="text-sm font-mono font-semibold text-gray-800">{selectedSevak.mobile}</span>
+                    </DetailField>
+
+                    <DetailField label="Age">
+                      {editing ? (
+                        <input type="number" min={1} max={120} value={editForm.age} onChange={e => setEditForm({ ...editForm, age: e.target.value })} className={inp} />
+                      ) : (
+                        <span className="text-sm font-semibold text-gray-900">{selectedSevak.age || '-'}</span>
+                      )}
+                    </DetailField>
+
+                    <DetailField label="Blood Group">
+                      {editing ? (
+                        <select value={editForm.bloodGroup} onChange={e => setEditForm({ ...editForm, bloodGroup: e.target.value })} className={inp}>
+                          {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
+                      ) : (
+                        <span className="text-sm font-semibold text-gray-900">{selectedSevak.blood_group || '-'}</span>
+                      )}
+                    </DetailField>
+
+                    <DetailField label="Family Emergency Number">
+                      {editing ? (
+                        <input type="tel" maxLength={10} value={editForm.emergencyNumber} onChange={e => setEditForm({ ...editForm, emergencyNumber: e.target.value.replace(/\D/g, '').slice(0, 10) })} placeholder="10-digit number" className={inp} />
+                      ) : (
+                        <span className="text-sm font-mono font-semibold text-gray-900">{selectedSevak.emergency_number || '-'}</span>
+                      )}
+                    </DetailField>
+
+                    <DetailField label="Emergency Contact Name">
+                      {editing ? (
+                        <input type="text" maxLength={80} value={editForm.emergencyContactName} onChange={e => setEditForm({ ...editForm, emergencyContactName: e.target.value })} placeholder="Whose number?" className={inp} />
+                      ) : (
+                        <span className="text-sm font-semibold text-gray-900 break-words">{selectedSevak.emergency_contact_name || '-'}</span>
+                      )}
+                    </DetailField>
+
+                    <DetailField label="Occupation / Profession" wide>
+                      {editing ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <select value={editForm.occupation} onChange={e => setEditForm({ ...editForm, occupation: e.target.value, occupationDetails: e.target.value ? editForm.occupationDetails : '' })} className={inp}>
+                            <option value="">Select occupation</option>
+                            {OCCUPATIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                          </select>
+                          {editForm.occupation && (
+                            <input type="text" maxLength={120} value={editForm.occupationDetails} onChange={e => setEditForm({ ...editForm, occupationDetails: e.target.value })} placeholder={editForm.occupation === 'Other' ? 'Specify occupation' : 'Details (optional)'} className={inp} />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm font-semibold text-gray-900 break-words">{selectedSevak.occupation ? (selectedSevak.occupation_details ? `${selectedSevak.occupation} · ${selectedSevak.occupation_details}` : selectedSevak.occupation) : '-'}</span>
+                      )}
+                    </DetailField>
+
+                    <DetailField label="Address" wide>
+                      {editing ? (
+                        <textarea value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} placeholder="Full address" rows={2} className={inp + ' resize-none'} />
+                      ) : (
+                        <span className="text-sm font-semibold text-gray-900 whitespace-pre-wrap break-words leading-snug">{selectedSevak.address || '-'}</span>
+                      )}
+                    </DetailField>
+                  </div>
+                </>
               )}
             </div>
-            
+
             {/* Modal Actions */}
-            <div className="p-4 border-t border-gray-200 bg-white flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+            <div className="px-3 py-2.5 border-t border-gray-100 bg-white flex items-center gap-2">
               {showIdCard ? (
-                  <button onClick={() => setShowIdCard(false)} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-semibold transition-colors flex justify-center items-center gap-2">
-                    <ArrowLeft size={18} /> Back to Details
+                  <button onClick={() => setShowIdCard(false)} className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-sm font-semibold transition-colors flex justify-center items-center gap-2">
+                    <ArrowLeft size={16} /> Back to Details
                   </button>
-              ) : editingId === selectedSevak.id ? (
+              ) : editing ? (
                 <>
-                  <button onClick={() => setEditingId(null)} className="px-4 py-2.5 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 transition-colors font-semibold text-sm flex-1">
+                  <button onClick={() => setEditingId(null)} className="flex-1 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm">
                     Cancel
                   </button>
-                  <button onClick={handleSaveProfile} disabled={savingId === selectedSevak.id} className="px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-sm flex-1 flex justify-center items-center gap-2 shadow-sm shadow-green-200">
-                    {savingId === selectedSevak.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Save changes
+                  <button onClick={handleSaveProfile} disabled={savingId === selectedSevak.id} className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm flex justify-center items-center gap-1.5 disabled:opacity-60">
+                    {savingId === selectedSevak.id ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Save
                   </button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => handleDelete(selectedSevak.id, selectedSevak.full_name)} className="px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 flex-1">
-                    <Trash2 size={18} /> <span className="text-sm font-semibold pt-0.5">Delete</span>
+                  <button onClick={() => handleDelete(selectedSevak.id, selectedSevak.full_name)} title="Delete Sevak" className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors shrink-0">
+                    <Trash2 size={16} />
                   </button>
-                  <button onClick={() => setShowResetPassword(true)} className="px-4 py-2.5 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 disabled:opacity-60">
-                    <KeyRound size={18} /> <span className="text-sm font-semibold pt-0.5">Reset password</span>
+                  <button onClick={() => setShowResetPassword(true)} className="flex-1 py-2 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg transition-colors flex items-center justify-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+                    <KeyRound size={15} /> Reset password
                   </button>
-                  <button onClick={() => setShowIdCard(true)} className="px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors border border-transparent flex items-center justify-center gap-2 flex-1">
-                    <Printer size={18} /> <span className="text-sm font-semibold pt-0.5">ID Card</span>
+                  <button onClick={() => setShowIdCard(true)} className="flex-1 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+                    <Printer size={15} /> ID Card
                   </button>
-                  <button onClick={() => startEdit(selectedSevak)} className="px-4 py-2.5 bg-saffron-600 hover:bg-saffron-700 text-white rounded-xl transition-all shadow-md shadow-saffron-200 hover:shadow-lg flex items-center justify-center gap-2 flex-1">
-                    <Edit2 size={18} /> <span className="text-sm font-semibold pt-0.5">Edit Profile</span>
+                  <button onClick={() => startEdit(selectedSevak)} className="flex-1 py-2 bg-saffron-600 hover:bg-saffron-700 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+                    <Edit2 size={15} /> Edit Profile
                   </button>
                 </>
               )}
             </div>
           </>
-        )}
+          );
+        })()}
       </Modal>
 
       {/* Reset password: the Captain sets the Sevak's new mobile number (= their password) */}

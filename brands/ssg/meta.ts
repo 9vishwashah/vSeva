@@ -43,6 +43,10 @@ export const getMeta = (env: Env): BrandMeta => {
       email: env.VITE_CONTACT_EMAIL || '9vishwashah@gmail.com',
       demoContact: env.VITE_DEMO_CONTACT || 'the Shraman Seva Group team',
     },
+    supportContacts: [
+      { role: 'For Guide & Demo', name: 'Shraman Seva Group', phone: (env.VITE_CONTACT_WHATSAPP || '919824112292').replace(/\D/g, '').slice(-10) },
+      { role: 'For Technical Support', name: 'Vishwa Shah', phone: '9594503214' },
+    ],
     instagram: instagramUrl ? { url: instagramUrl, handle: 'Instagram' } : null,
     operator: 'Shraman Seva Group',
     showsDirectoryAdmin: false,

@@ -153,6 +153,18 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
         }
     };
 
+    // Save stays grey until something actually differs from what is stored.
+    const hasChanges = user.role === UserRole.SEVAK
+        ? (editForm.age.trim() !== (user.age !== undefined && user.age !== null ? String(user.age) : '')
+            || editForm.blood_group !== (user.blood_group || '')
+            || editForm.emergency_number !== (user.emergency_number || '')
+            || editForm.emergency_contact_name.trim() !== (user.emergency_contact_name || '')
+            || editForm.occupation !== (user.occupation || '')
+            || editForm.occupation_details.trim() !== (user.occupation_details || '')
+            || editForm.address.trim() !== (user.address || '').trim())
+        : (captainName.trim() !== user.full_name.trim()
+            || viceCaptainName.trim() !== (orgDetails?.vice_captain_name || '').trim());
+
     const handleSaveOrgDetails = async () => {
         if (!captainName.trim()) {
             showToast('Captain name is required', 'error');
@@ -360,14 +372,14 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             <SankalpSettingsCard user={user} />
 
             {/* Profile Incomplete nudge */}
-            {isSevak && (!user.blood_group || !user.emergency_number || !user.address) && (
+            {isSevak && (!user.blood_group || !user.emergency_number || !user.emergency_contact_name || !user.occupation || !user.address) && (
                 <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
                     <div className="mt-0.5 text-blue-600 shrink-0">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
                     <div>
                         <p className="text-sm font-bold text-blue-900 mb-0.5">Please Complete Your Profile</p>
-                        <p className="text-xs text-blue-800 leading-relaxed">Filling in your Blood Group, Family Emergency Number, and Address ensures we can assist you promptly during an incident, and is required for your Vihar Sevak Card.</p>
+                        <p className="text-xs text-blue-800 leading-relaxed">Filling in your Blood Group, Family Emergency Number (and whose it is), Occupation, and Address ensures we can assist you promptly during an incident, and is required for your Vihar Sevak Card.</p>
                     </div>
                 </div>
             )}
@@ -560,8 +572,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
                 <button
                     onClick={isSevak ? handleSave : handleSaveOrgDetails}
-                    disabled={isSaving}
-                    className="w-full py-3.5 bg-saffron-600 hover:bg-saffron-700 text-white font-extrabold rounded-2xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
+                    disabled={isSaving || !hasChanges}
+                    className={`w-full py-3.5 font-extrabold rounded-2xl transition-all flex items-center justify-center gap-2 mt-1 ${hasChanges ? 'bg-saffron-600 hover:bg-saffron-700 text-white shadow-sm active:scale-[0.98]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'} ${isSaving ? 'opacity-60' : ''}`}
                 >
                     {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                     {isSaving ? 'Saving…' : 'Save Changes'}

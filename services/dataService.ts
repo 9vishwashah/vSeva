@@ -229,6 +229,11 @@ export const dataService = {
     await superAdminCall('reject', { id });
   },
 
+  // Everything about one organisation (group + Captain, every Sevak, Vihar entries, Sankalps) — server-scoped to the caller's brand.
+  async getSuperAdminOrgDetail(orgId: string): Promise<any> {
+    return superAdminCall('org_detail', { orgId }, true);
+  },
+
   async getOrgActivityStats(): Promise<{ org_id: string; org_name: string; city: string; created_at: string; total_sevaks: number; total_entries: number; last_updated: string | null; brand?: string }[]> {
     return getCached('orgActivityStats', async () => {
       try {

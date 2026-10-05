@@ -236,7 +236,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
       {/* Sankalp */}
       {/* The Vihar Group's own Sankalp — org-wide progress against the
           Captain's org-wide goal, not just whoever's looking at the page. */}
-      <SankalpRing count={orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length} goal={orgSankalp?.target} title="Group Sankalp" tone="purple" periodLabel={selectedVY.label} />
+      <SankalpRing count={orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length} goal={orgSankalp?.target} title="Group Sankalp" tone="mint" periodLabel={selectedVY.label} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Weekly trend */}

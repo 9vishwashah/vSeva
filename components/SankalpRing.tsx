@@ -6,8 +6,8 @@ interface SankalpRingProps {
   goal: number | null | undefined;
   /** Card title, e.g. "My Sankalp" or "Group Sankalp". */
   title?: string;
-  /** Colour: saffron for a Sevak's own Sankalp, purple for the Group Sankalp. */
-  tone?: 'saffron' | 'purple';
+  /** Colour: saffron for a Sevak's own Sankalp, mint green for the Group Sankalp. */
+  tone?: 'saffron' | 'mint';
   /** e.g. "VY 2026-27" — the Vihar Year this count is scoped to. */
   periodLabel?: string;
 }
@@ -39,8 +39,8 @@ const SankalpRing: React.FC<SankalpRingProps> = ({ count, goal, title = 'Yearly 
   return (
     <div
       style={{
-        background: tone === 'purple' ? 'linear-gradient(150deg,#9B7BF5 0%,#6D3FD1 100%)' : 'linear-gradient(150deg,#FF9947 0%,#DE6B38 100%)',
-        boxShadow: tone === 'purple' ? '0 8px 20px -10px rgba(109,63,209,0.55)' : '0 8px 20px -10px rgba(222,107,56,0.55)',
+        background: tone === 'mint' ? 'linear-gradient(150deg,#52CFA0 0%,#1F9A70 100%)' : 'linear-gradient(150deg,#FF9947 0%,#DE6B38 100%)',
+        boxShadow: tone === 'mint' ? '0 8px 20px -10px rgba(31,154,112,0.55)' : '0 8px 20px -10px rgba(222,107,56,0.55)',
       }}
       className="rounded-[18px] px-5 py-3.5 flex items-center gap-3.5"
     >

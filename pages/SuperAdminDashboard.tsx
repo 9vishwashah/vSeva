@@ -11,6 +11,7 @@ import { BRAND } from '@brand';
 import StatusScreen from '../components/StatusScreen';
 import SuperAdminDirectoryPanel from '../components/directory/SuperAdminDirectoryPanel';
 import { deliverPdf } from '../services/pdfDelivery';
+import SuperAdminPinGate, { isSuperAdminPinVerified, clearSuperAdminPin } from '../components/SuperAdminPinGate';
 
 interface RegistrationRequest {
     id: string;
@@ -48,8 +49,6 @@ interface OrgStat {
     last_updated: string | null;
 }
 
-const SUPER_ADMIN_PIN = "2424";
-
 // Platform a request / group belongs to, so the owner can tell SSG applicants from general vSeva ones.
 const PLATFORM_LABELS: Record<string, string> = { vseva: 'vSeva', ssg: 'SSG · Shraman Seva Group' };
 const platformOf = (brand?: string | null) => brand || 'vseva';
@@ -76,9 +75,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
     const [statsError, setStatsError] = useState<'offline' | 'error' | null>(null);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [orgAdmins, setOrgAdmins] = useState<Record<string, OrgAdminDetails>>({});
-    const [pinEntry, setPinEntry] = useState('');
-    const [isPinVerified, setIsPinVerified] = useState(false);
-    const [pinError, setPinError] = useState(false);
+    const [isPinVerified, setIsPinVerified] = useState(isSuperAdminPinVerified());
     // What this signed-in account may see, decided by the server (never by the client).
     const [scope, setScope] = useState<{ email: string; all: boolean; brands: string[] } | null>(null);
     const [accessError, setAccessError] = useState<string | null>(null);
@@ -142,18 +139,6 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
         })();
         return () => { cancelled = true; };
     }, [isPinVerified]);
-
-    const handlePinSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (pinEntry === SUPER_ADMIN_PIN) {
-            setIsPinVerified(true);
-            setPinError(false);
-        } else {
-            setPinError(true);
-            setPinEntry('');
-            setTimeout(() => setPinError(false), 2000);
-        }
-    };
 
     const toggleRow = (id: string) => {
         setExpandedRows(prev => {
@@ -347,43 +332,7 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
     });
 
     if (!isPinVerified) {
-        return (
-            <div className="h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-slate-900 to-black p-6">
-                <div className="max-w-md w-full bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl text-center">
-                    <div className="w-20 h-20 bg-saffron-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-saffron-500/30">
-                        <Lock className="text-saffron-500" size={40} />
-                    </div>
-                    <h1 className="text-2xl font-bold text-white mb-2">Super Admin Access</h1>
-                    <p className="text-gray-400 mb-8">Enter the secure PIN to access the global dashboard</p>
-                    
-                    <form onSubmit={handlePinSubmit} className="space-y-6">
-                        <div className="relative">
-                            <input
-                                type="password"
-                                maxLength={4}
-                                placeholder="• • • •"
-                                value={pinEntry}
-                                onChange={(e) => setPinEntry(e.target.value)}
-                                className={`w-full bg-white/5 border-2 text-center text-3xl tracking-[1.5em] font-mono py-4 rounded-2xl text-white focus:outline-none transition-all ${
-                                    pinError ? 'border-red-500 animate-shake' : 'border-white/10 focus:border-saffron-500'
-                                }`}
-                                autoFocus
-                            />
-                            {pinError && (
-                                <p className="text-red-500 text-sm mt-2 font-medium">Incorrect PIN. Please try again.</p>
-                            )}
-                        </div>
-                        <button
-                            type="submit"
-                            className="w-full bg-saffron-600 hover:bg-saffron-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-saffron-900/20 active:scale-[0.98] transition-all"
-                        >
-                            Authorize Access
-                        </button>
-                    </form>
-                    <p className="mt-8 text-xs text-gray-500 uppercase tracking-widest font-bold">Secure Environment</p>
-                </div>
-            </div>
-        );
+        return <SuperAdminPinGate onVerified={() => setIsPinVerified(true)} />;
     }
 
     if (accessError) {
@@ -425,7 +374,7 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                             Refresh Data
                         </button>
                         <button 
-                            onClick={() => setIsPinVerified(false)}
+                            onClick={() => { clearSuperAdminPin(); setIsPinVerified(false); }}
                             className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                             title="Lock Dashboard"
                         >
@@ -659,7 +608,9 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                                     </span>
                                                 </td>
                                                 <td className="p-5 font-bold text-gray-900">
-                                                    {stat.org_name}
+                                                    <a href={`/super-admin/org/${stat.org_id}`} className="text-gray-900 hover:text-saffron-700 hover:underline underline-offset-2" title="Open full details">
+                                                        {stat.org_name}
+                                                    </a>
                                                     {scope?.all && <PlatformBadge brand={stat.brand} />}
                                                 </td>
                                                 <td className="p-5 text-sm text-gray-700 font-medium">

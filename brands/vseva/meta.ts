@@ -34,6 +34,10 @@ export const getMeta = (_env: Env): BrandMeta => ({
     email: '9vishwashah@gmail.com',
     demoContact: 'Alpesh Shah (9324503214)',
   },
+  supportContacts: [
+    { role: 'For Guide & Demo', name: 'Alpesh Shah', phone: '9324503214' },
+    { role: 'For Technical Support', name: 'Vishwa Shah', phone: '9594503214' },
+  ],
   instagram: { url: 'https://www.instagram.com/the.vseva/', handle: '@the.vseva' },
   operator: 'Vishwa Alpesh Shah (VJAS)',
   showsDirectoryAdmin: true,

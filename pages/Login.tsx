@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UserProfile } from '../types';
-import { Loader2, Instagram, ArrowLeft, MapPin, User, Lock, Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Loader2, Instagram, ArrowLeft, MapPin, User, Lock, Eye, EyeOff, UserPlus, Phone } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageDropdown from '../components/LanguageDropdown';
@@ -19,7 +19,7 @@ const AuthShell: React.FC<{ children: React.ReactNode; maxWidth?: string; topLef
   <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-gradient-to-br from-saffron-50 via-white to-orange-50">
     <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-saffron-200/40 blur-3xl" />
     <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -right-32 h-[28rem] w-[28rem] rounded-full bg-orange-200/40 blur-3xl" />
-    <div className="relative z-10 flex h-14 shrink-0 items-center justify-between gap-2 px-3 sm:px-6">
+    <div className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-2 px-3 sm:px-6">
       <div className="min-w-0">{topLeft}</div>
       <LanguageDropdown />
     </div>
@@ -285,20 +285,23 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         <UserPlus size={17} /> {t(BRAND.registerLabelKey)}
       </button>
 
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-gray-400">
+      <div className="mt-4 flex flex-col items-center gap-1.5 text-center text-[11px] text-gray-400">
         <span>{BRAND.byline}</span>
-        <span aria-hidden="true">·</span>
-        <a href={`${BRAND.siteUrl}/privacy`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Privacy Policy</a>
-        <span aria-hidden="true">·</span>
-        <a href={`${BRAND.siteUrl}/delete-account`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Delete account</a>
-        {BRAND.instagram && (
-          <>
-            <span aria-hidden="true">·</span>
-            <a href={BRAND.instagram.url} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="inline-flex items-center text-gray-400 hover:text-pink-600">
-              <Instagram size={14} />
-            </a>
-          </>
-        )}
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <a href="/contact" className="inline-flex items-center gap-1 font-semibold text-saffron-700 hover:underline"><Phone size={12} /> Contact</a>
+          <span aria-hidden="true">·</span>
+          <a href={`${BRAND.siteUrl}/privacy`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Privacy Policy</a>
+          <span aria-hidden="true">·</span>
+          <a href={`${BRAND.siteUrl}/delete-account`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Delete account</a>
+          {BRAND.instagram && (
+            <>
+              <span aria-hidden="true">·</span>
+              <a href={BRAND.instagram.url} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="inline-flex items-center text-gray-400 hover:text-pink-600">
+                <Instagram size={14} />
+              </a>
+            </>
+          )}
+        </div>
       </div>
     </AuthShell>
   );

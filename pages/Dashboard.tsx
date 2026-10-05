@@ -110,7 +110,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
   useEffect(() => {
     if (currentUser.role === UserRole.SEVAK) {
-      const isProfileIncomplete = !currentUser.blood_group?.trim() || !currentUser.emergency_number?.trim() || !currentUser.address?.trim();
+      const isProfileIncomplete = !currentUser.blood_group?.trim() || !currentUser.emergency_number?.trim() || !currentUser.emergency_contact_name?.trim() || !currentUser.occupation?.trim() || !currentUser.address?.trim();
       if (isProfileIncomplete) {
         const hasSeen = sessionStorage.getItem('hasSeenCompletenessPrompt');
         if (!hasSeen) {
@@ -1162,7 +1162,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         count={yearlyViharCount}
         goal={currentUser.role === UserRole.ORG_ADMIN ? orgSankalp?.target : mySankalp}
         title={currentUser.role === UserRole.ORG_ADMIN ? 'Group Sankalp' : 'My Sankalp'}
-        tone={currentUser.role === UserRole.ORG_ADMIN ? 'purple' : 'saffron'}
+        tone={currentUser.role === UserRole.ORG_ADMIN ? 'mint' : 'saffron'}
         periodLabel={selectedVY.label}
       />
 

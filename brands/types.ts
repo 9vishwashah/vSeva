@@ -45,6 +45,8 @@ export interface BrandMeta {
     email: string;
     demoContact: string; // named in the Captain approval message
   };
+  // People shown on the public Contact page (/contact); phone = 10 digits, India.
+  supportContacts: { role: string; name: string; phone: string }[];
   instagram: { url: string; handle: string } | null;
   operator: string;      // who runs the service, for the legal pages
   // Show the shared Directory moderation panel inside Super Admin
