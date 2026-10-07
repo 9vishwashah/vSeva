@@ -312,6 +312,19 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
     const isSevak = user.role === UserRole.SEVAK;
 
     const accountBadge = getAccountBadge(user.username);
+
+    // Sevak profile completeness: the six fields a Sevak fills in here (shown as a ring around the photo).
+    const filled = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== '';
+    const missingFields: string[] = [];
+    if (!filled(user.age)) missingFields.push('Age');
+    if (!filled(user.blood_group)) missingFields.push('Blood group');
+    if (!filled(user.emergency_number)) missingFields.push('Family emergency number');
+    if (!filled(user.emergency_contact_name)) missingFields.push('Emergency contact name');
+    if (!filled(user.occupation) || (user.occupation === 'Other' && !filled(user.occupation_details))) missingFields.push('Occupation');
+    if (!filled(user.address)) missingFields.push('Address');
+    const completionPct = Math.round(((6 - missingFields.length) / 6) * 100);
+    const ringColor = completionPct === 100 ? '#16A34A' : completionPct >= 50 ? '#F59E0B' : '#DC2626';
+    const RING = 104, RING_R = 48, RING_C = 2 * Math.PI * RING_R;
     const joinedLabel = user.created_at && !isNaN(new Date(user.created_at).getTime())
         ? new Date(user.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
         : null;
@@ -328,18 +341,32 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
             {/* Avatar card */}
             <div className="bg-white rounded-[22px] py-5 px-5 flex items-center gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-                <div className="relative w-[88px] h-[88px] shrink-0">
-                    <Avatar name={user.full_name} url={avatarUrl} size={88} variant="gradient" className="text-[28px]" />
-                    {uploadingAvatar && (
-                        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
-                            <Loader2 size={22} className="animate-spin text-white" />
-                        </div>
+                <div className="relative shrink-0" style={{ width: RING, height: RING }} title={isSevak ? (missingFields.length ? `Profile ${completionPct}% complete. Still to add: ${missingFields.join(', ')}` : 'Profile 100% complete') : undefined}>
+                    {isSevak && (
+                        <svg className="absolute inset-0" width={RING} height={RING} viewBox={`0 0 ${RING} ${RING}`} style={{ transform: 'rotate(-90deg)' }} aria-hidden="true">
+                            <circle cx={RING / 2} cy={RING / 2} r={RING_R} fill="none" stroke="#EFE7DE" strokeWidth="5" />
+                            <circle cx={RING / 2} cy={RING / 2} r={RING_R} fill="none" stroke={ringColor} strokeWidth="5" strokeLinecap="round"
+                                strokeDasharray={RING_C} strokeDashoffset={RING_C * (1 - completionPct / 100)} style={{ transition: 'stroke-dashoffset 600ms ease-out' }} />
+                        </svg>
+                    )}
+                    <div className="absolute rounded-full overflow-hidden" style={{ inset: 8 }}>
+                        <Avatar name={user.full_name} url={avatarUrl} size={88} variant="gradient" className="text-[28px]" />
+                        {uploadingAvatar && (
+                            <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                                <Loader2 size={22} className="animate-spin text-white" />
+                            </div>
+                        )}
+                    </div>
+                    {isSevak && (
+                        <span className="absolute left-1/2 -translate-x-1/2 -bottom-1 rounded-full border-2 border-white px-2 py-0.5 text-[10px] font-extrabold leading-none text-white whitespace-nowrap" style={{ background: ringColor }}>
+                            {completionPct}%
+                        </span>
                     )}
                     <button
                         onClick={() => avatarInputRef.current?.click()}
                         disabled={uploadingAvatar}
                         title="Change photo"
-                        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#241C17] border-2 border-white flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-60"
+                        className="absolute top-0 right-0 w-7 h-7 rounded-full bg-[#241C17] border-2 border-white flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-60"
                     >
                         <Camera size={13} className="text-white" />
                     </button>

@@ -6,6 +6,9 @@ export interface AccountBadge {
 
 const SPECIAL_ACCOUNTS: Record<string, AccountBadge> = {
   'vishwashah@vsevak.in': { title: 'Developer' },
+  'aagamjain': { title: 'Team vSeva' },
+  'alpeshshah@vsevak.in': { title: 'Team vSeva' },
+  'namyamehta@vsevak.in': { title: 'Team vSeva' },
 };
 
 export function getAccountBadge(username?: string | null): AccountBadge | null {
