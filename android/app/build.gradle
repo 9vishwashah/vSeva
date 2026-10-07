@@ -41,8 +41,8 @@ android {
         // you want the visible version to change; it can lag behind versionCode
         // incrementing on every build. There is no auto-increment configured —
         // bump both by hand right before each `./gradlew bundleRelease`.
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
