@@ -38,6 +38,7 @@ const Channel = React.lazy(() => import('./pages/Channel'));
 const ChannelOrganization = React.lazy(() => import('./pages/ChannelOrganization'));
 const SosDetail = React.lazy(() => import('./pages/SosDetail'));
 const ContactUs = React.lazy(() => import('./pages/ContactUs'));
+const ChildSafetyStandards = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.ChildSafetyStandards })));
 const PrivacyPolicy = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.PrivacyPolicy })));
 const UpdatePassword = React.lazy(() => import('./pages/UpdatePassword'));
 const DeleteAccount = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.DeleteAccount })));
@@ -269,6 +270,15 @@ const App: React.FC = () => {
     return (
       <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]"><div className="animate-pulse text-saffron-600 font-bold">Loading Directory...</div></div>}>
         <DirectoryRouter />
+      </React.Suspense>
+    );
+  }
+
+  // Public child-safety standards page (Google Play requires a published URL)
+  if (normalizedPath === '/child-safety') {
+    return (
+      <React.Suspense fallback={<div className="min-h-screen bg-[#FDFBF7]" />}>
+        <ChildSafetyStandards />
       </React.Suspense>
     );
   }

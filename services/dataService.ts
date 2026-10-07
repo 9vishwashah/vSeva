@@ -270,6 +270,16 @@ export const dataService = {
     return map;
   },
 
+  // The Captain's name for the signed-in user's own organisation (a Sevak can't read other profiles, and
+  // get-org-admins is Super-Admin-only). Returns '' if it can't be found.
+  async getMyCaptainName(): Promise<string> {
+    return getCached('myCaptainName', async () => {
+      const { data, error } = await supabase.rpc('get_my_org_captain');
+      if (error) { console.warn('Could not load Captain name:', error.message); return ''; }
+      return (Array.isArray(data) ? data[0]?.full_name : (data as any)?.full_name) || '';
+    }, 5 * 60_000);
+  },
+
   async getDashboardStats(orgId: string) {
     return getCached(`dashboardStats:${orgId}`, async () => {
       try {

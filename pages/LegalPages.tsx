@@ -196,3 +196,58 @@ export const DeleteAccount: React.FC = () => {
     </Shell>
   );
 };
+
+// Child safety standards (Google Play requires a published CSAE policy + a reachable contact for apps with user interaction).
+export const ChildSafetyStandards: React.FC = () => (
+  <Shell title="Child Safety Standards">
+    <Section title="Our position">
+      <p>
+        {BRAND.name} has zero tolerance for child sexual abuse and exploitation (CSAE) and for any content or behaviour that
+        puts a child at risk. This page explains how {BRAND.name} is built to prevent it, how to report a concern, and what we do about reports.
+      </p>
+    </Section>
+
+    <Section title="How the app is designed">
+      <Bullets items={[
+        <><strong>Adults only.</strong> {BRAND.name} is intended for people aged 18 and over. It is not designed for or marketed to children.</>,
+        <><strong>No open sign-up.</strong> A Captain registers a group and creates the accounts of that group's Sevaks. Strangers cannot create an account and message others.</>,
+        <><strong>No private messaging with strangers.</strong> Channel posts are text only, are limited to a Captain by default, and are visible within a group and to groups that follow it. There is no photo, video or audio sharing in chat.</>,
+        <><strong>Reviewed public content.</strong> Community Directory listings (which can include a photo) are reviewed by the platform administrator before they are published.</>,
+        <><strong>Limited personal data.</strong> Profile details are visible to a person's own Captain and Vice-Captain, and a person's emergency ID card page shows emergency details only to someone who scans it. Location is shared only when a person sends an SOS.</>,
+      ]} />
+    </Section>
+
+    <Section title="Prohibited content and conduct">
+      <Bullets items={[
+        'Any sexual content involving a minor, or any content that sexualises or endangers a child.',
+        'Grooming, soliciting, or attempting to contact a child for sexual or exploitative purposes.',
+        'Sharing, requesting or linking to child sexual abuse material (CSAM).',
+      ]} />
+    </Section>
+
+    <Section title="How to report a concern">
+      <p>You can report a child-safety concern at any time, in the app or outside it. Reports are read by a named person and handled promptly.</p>
+      <Bullets items={[
+        <>In the app: <em>Profile &amp; Settings → Report a safety concern</em>, or the <a className="text-saffron-600 underline" href="/contact">Contact</a> page on the sign-in screen.</>,
+        <>WhatsApp: <a className="text-saffron-600 underline" href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">{WHATSAPP_DISPLAY}</a></>,
+        <>Email: <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`${BRAND.name} child safety concern`)}`}>{CONTACT_EMAIL}</a></>,
+      ]} />
+      <p>If a child is in immediate danger, contact local emergency services first (India: 112, or Childline 1098).</p>
+    </Section>
+
+    <Section title="What we do when we receive a report">
+      <Bullets items={[
+        'The reported content is removed and the account involved is suspended while we investigate.',
+        'Confirmed violations lead to permanent removal of the account and content.',
+        'We report apparent CSAE and CSAM to the relevant authorities, including the National Cyber Crime Reporting Portal (cybercrime.gov.in) and law enforcement in India, and cooperate with their investigations, as required by applicable law (including the POCSO Act, 2012 and the IT Act, 2000).',
+      ]} />
+    </Section>
+
+    <Section title="Point of contact">
+      <p>
+        Child-safety contact for {BRAND.name}: {BRAND.operator} — <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>, WhatsApp {WHATSAPP_DISPLAY}.
+        This person is available to discuss our CSAM prevention practices and compliance.
+      </p>
+    </Section>
+  </Shell>
+);

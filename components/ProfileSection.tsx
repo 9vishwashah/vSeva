@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BRAND } from '@brand';
 import { UserProfile, UserRole, Organization } from '../types';
 import { dataService } from '../services/dataService';
-import { Printer, ArrowLeft, ChevronLeft, Check, Loader2, Bell, BellOff, AlertTriangle, RefreshCw, CreditCard, LogOut, Camera, BadgeCheck, CalendarDays } from 'lucide-react';
+import { Printer, ArrowLeft, Check, Loader2, Bell, BellOff, AlertTriangle, RefreshCw, CreditCard, LogOut, Camera, BadgeCheck, CalendarDays, ChevronRight } from 'lucide-react';
 import IDCardBadge from './IDCardBadge';
 import Avatar from './Avatar';
 import AvatarCropModal from './AvatarCropModal';
@@ -31,6 +31,11 @@ const fieldInputClass = "w-full py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] border-non
 
 const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onProfileUpdated, onLogout, onOpenSos }) => {
     const orgName = orgDetails?.name || user.organization_id;
+    // A Sevak sees who their Captain is (read-only).
+    const [myCaptain, setMyCaptain] = useState('');
+    useEffect(() => {
+        if (user.role === UserRole.SEVAK) dataService.getMyCaptainName().then(setMyCaptain);
+    }, [user.role, user.organization_id]);
     const currentVY = getViharYearBounds();
     const { showToast } = useToast();
     const [showIdCard, setShowIdCard] = useState(false);
@@ -316,9 +321,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             {/* Top bar */}
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                    <button onClick={() => window.history.back()} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-                        <ChevronLeft size={16} className="text-[#241C17]" />
-                    </button>
                     <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] truncate">Profile & Settings</h1>
                 </div>
                 {onOpenSos && <SosButton currentUser={user} onOpenDetail={onOpenSos} />}
@@ -504,6 +506,18 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                             <label className={fieldLabelClass}>Vihar Seva Group</label>
                             <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{orgName}</p>
                         </div>
+
+                        {/* Captain — read-only */}
+                        <div>
+                            <label className={fieldLabelClass}>Captain</label>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{myCaptain || '—'}</p>
+                        </div>
+                        {orgDetails?.vice_captain_name && (
+                            <div>
+                                <label className={fieldLabelClass}>Vice Captain</label>
+                                <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{orgDetails.vice_captain_name}</p>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -652,6 +666,18 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     </div>
                 )}
             </div>
+
+            {/* Safety: a visible way to report a child-safety / safety concern */}
+            <a
+                href="/child-safety"
+                className="flex items-center justify-between gap-3 rounded-[22px] bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
+            >
+                <span>
+                    <span className="block text-sm font-bold text-[#241C17]">Report a safety concern</span>
+                    <span className="block text-xs text-[#8A6A57]">Child safety standards and how to reach us</span>
+                </span>
+                <ChevronRight size={18} className="shrink-0 text-[#8A6A57]" />
+            </a>
 
             {/* Captains choose their own password (Sevaks' passwords are managed by their Captain) */}
             {user.role === UserRole.ORG_ADMIN && <ChangePasswordCard />}

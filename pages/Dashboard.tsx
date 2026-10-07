@@ -97,10 +97,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   // already knows it: it's just their own currentUser.full_name.
   useEffect(() => {
     if (currentUser.role === UserRole.SEVAK) {
-      dataService.getOrgAdmins([currentUser.organization_id]).then(map => {
-        const admin = map[currentUser.organization_id];
-        if (admin?.full_name) setCaptainName(admin.full_name);
-      });
+      dataService.getMyCaptainName().then(name => { if (name) setCaptainName(name); });
     }
   }, [currentUser.organization_id, currentUser.role]);
 
@@ -1162,7 +1159,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         count={yearlyViharCount}
         goal={currentUser.role === UserRole.ORG_ADMIN ? orgSankalp?.target : mySankalp}
         title={currentUser.role === UserRole.ORG_ADMIN ? 'Group Sankalp' : 'My Sankalp'}
-        tone={currentUser.role === UserRole.ORG_ADMIN ? 'mint' : 'saffron'}
+        tone={currentUser.role === UserRole.ORG_ADMIN ? 'purple' : 'saffron'}
         periodLabel={selectedVY.label}
       />
 

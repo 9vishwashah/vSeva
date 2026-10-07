@@ -4,7 +4,7 @@ import { sosService } from '../services/sosService';
 import { dataService } from '../services/dataService';
 import { supabase } from '../services/supabase';
 import { useToast } from '../context/ToastContext';
-import { ChevronLeft, AlertTriangle, CheckCircle, Phone, MapPin, Clock, Building2, Loader2, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Phone, MapPin, Clock, Building2, Loader2, ShieldCheck } from 'lucide-react';
 
 interface SosDetailProps {
   currentUser: UserProfile;
@@ -128,9 +128,6 @@ const SosDetail: React.FC<SosDetailProps> = ({ currentUser, sosId, onBack }) => 
   return (
     <div className="max-w-md mx-auto space-y-5 pb-10">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-          <ChevronLeft size={16} className="text-[#241C17]" />
-        </button>
         <h1 className="text-lg font-extrabold text-[#241C17]">SOS Alert</h1>
       </div>
 

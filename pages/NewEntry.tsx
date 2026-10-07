@@ -3,7 +3,6 @@ import { dataService } from '../services/dataService';
 import { UserProfile, UserRole, ViharEntry, AreaRoute } from '../types';
 import { Save, Loader2, MapPin, Search, X, Users, ChevronDown, Map, ChevronLeft, Clock } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import { Organization } from '../types';
 import Avatar from '../components/Avatar';
 import { toLocalDateKey } from '../services/dateUtils';
 
@@ -38,7 +37,6 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
   const isReviewingPending = isEditing && editEntry?.status && editEntry.status !== 'approved';
   // A Sevak creating a brand-new entry always lands as a submission awaiting approval.
   const isSevakSubmission = currentUser.role === UserRole.SEVAK && !isEditing;
-  const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
   const [step, setStep] = useState(1);
 
   const { showToast } = useToast();
@@ -71,17 +69,15 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
         // A Sevak's session can't read other profiles via RLS (by design — keeps
         // mobile/blood group/etc private), so the picker uses the narrow roster
         // endpoint for Sevaks and the full profile list (already permitted) for Admins.
-        const [sevaks, routes, org] = await Promise.all([
+        const [sevaks, routes] = await Promise.all([
           currentUser.role === UserRole.SEVAK
             ? dataService.getOrgRoster(currentUser.organization_id)
             : dataService.getAllOrgUsers(currentUser.organization_id),
           dataService.getRoutes(currentUser.organization_id),
-          dataService.getOrganization(currentUser.organization_id),
         ]);
 
         setOrgSevaks(sevaks as UserProfile[]);
         setAvailableRoutes(routes);
-        setOrgDetails(org);
 
         const areas = new Set<string>();
         routes.forEach(r => {
@@ -370,11 +366,11 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
         <h2 className="text-xl sm:text-2xl font-extrabold text-[#241C17]">
           {isReviewingPending ? 'Review & Correct Submission' : isEditing ? 'Edit Vihar Entry' : isSevakSubmission ? 'Submit Vihar for Approval' : 'New Vihar Entry'}
         </h2>
-        <p className="text-sm text-[#8A6A57] mt-1">
-          {isSevakSubmission
-            ? 'This will be sent to your Captain for approval before it counts as an official Vihar.'
-            : (orgDetails ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}` : 'Loading organization…')}
-        </p>
+        {isSevakSubmission && (
+          <p className="text-sm text-[#8A6A57] mt-1">
+            This will be sent to your Captain for approval before it counts as an official Vihar.
+          </p>
+        )}
         {isReviewingPending && (
           <span className="mt-2 inline-flex items-center gap-1.5 bg-saffron-100 text-saffron-700 text-xs font-bold px-3 py-1 rounded-full">
             <Clock size={12} /> Pending Captain Approval

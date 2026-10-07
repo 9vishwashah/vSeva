@@ -4,7 +4,7 @@ import { channelService } from '../services/channelService';
 import { useToast } from '../context/ToastContext';
 import Modal from '../components/Modal';
 import Avatar from '../components/Avatar';
-import { ChevronLeft, Loader2, Send, Trash2, Settings } from 'lucide-react';
+import { Loader2, Send, Trash2, Settings } from 'lucide-react';
 
 const roleLabel = (role?: string | null): string => (role === UserRole.ORG_ADMIN ? 'Captain / Organization Head' : 'Vihar Sevak');
 
@@ -238,9 +238,6 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
   return (
     <div className="max-w-3xl mx-auto space-y-5 pb-10">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-          <ChevronLeft size={16} className="text-[#241C17]" />
-        </button>
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-extrabold text-[#241C17] truncate">{profile.name}</h1>
           {isOwnOrg ? (
