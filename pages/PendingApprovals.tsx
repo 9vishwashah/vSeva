@@ -194,6 +194,35 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({ currentUser, onEdit
                                                     <span className="font-medium">{entry.vihar_from} → {entry.vihar_to}</span>
                                                 </div>
 
+                                                {/* Wheelchair Seva / Car Seva — yes/no plus who did it */}
+                                                {([
+                                                    { label: 'Wheelchair Seva', on: !!entry.wheelchair, names: entry.wheelchair_sevaks || [], tone: 'bg-blue-50 border-blue-100 text-blue-700' },
+                                                    { label: 'Car Seva', on: !!entry.car_seva, names: entry.car_seva_sevaks || [], tone: 'bg-emerald-50 border-emerald-100 text-emerald-700' },
+                                                ]).map(row => (
+                                                    <div key={row.label}>
+                                                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{row.label}</h4>
+                                                        {row.on ? (
+                                                            <div className="flex flex-wrap gap-2 items-center">
+                                                                <span className="px-2.5 py-1 rounded-lg bg-gray-800 text-white text-xs font-bold">Yes</span>
+                                                                {row.names.length > 0 ? row.names.map((u, i) => (
+                                                                    <span key={i} className={`inline-flex items-center gap-1.5 px-3 py-1 border rounded-lg text-xs font-semibold shadow-sm ${row.tone}`}>{getName(u)}</span>
+                                                                )) : <span className="text-xs text-gray-400 italic">No names selected</span>}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-sm font-semibold text-gray-500">No</span>
+                                                        )}
+                                                    </div>
+                                                ))}
+
+                                                {entry.photo_url && (
+                                                    <div>
+                                                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Vihar Photo</h4>
+                                                        <a href={entry.photo_url} target="_blank" rel="noopener noreferrer" className="block rounded-xl overflow-hidden border border-gray-100 bg-gray-50">
+                                                            <img src={entry.photo_url} alt="Vihar photo" loading="lazy" className="w-full max-h-64 object-cover" />
+                                                        </a>
+                                                    </div>
+                                                )}
+
                                                 {entry.notes && (
                                                     <div>
                                                         <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Notes</h4>

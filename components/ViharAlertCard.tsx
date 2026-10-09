@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { UpcomingVihar, UserProfile } from '../types';
-import { MapPin, Clock, Users, Check, Phone, Share2 } from 'lucide-react';
+import { MapPin, Clock, Users, Check, Phone, Share2, Accessibility, Car, ShieldCheck, UserRound } from 'lucide-react';
 
 interface InterestedSevak {
   user_id: string;
@@ -43,6 +43,14 @@ const buildShareMessage = (v: UpcomingVihar): string => {
     if (v.sadhu_count > 0) parts.push(`${v.sadhu_count} Sadhu`);
     if (v.sadhvi_count > 0) parts.push(`${v.sadhvi_count} Sadhviji`);
     lines.push(`🙏 ${parts.join(' / ')}`);
+  }
+  if (v.sadhu_sadhvi_names) lines.push(`*Sadhu / Sadhvi:* ${v.sadhu_sadhvi_names}`);
+  if (v.samuday) lines.push(`*Samuday:* ${v.samuday}`);
+  if (v.wheelchair_required) lines.push(`*Wheelchair:* Required (${v.wheelchair_count || 1})`);
+  if (v.car_seva_required) lines.push('*Car Seva:* Required');
+  if (v.police_security) lines.push('*Police security:* Opted');
+  if (v.emergency_contact_name || v.emergency_contact_phone) {
+    lines.push(`*Emergency contact:* ${[v.emergency_contact_name, v.emergency_contact_phone].filter(Boolean).join(', ')}`);
   }
   lines.push('', "Tap below to open it and mark yourself as I'm Interested:");
   lines.push(`${window.location.origin}/?vihar=${v.id}`);
@@ -144,6 +152,8 @@ const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, con
         </div>
       </div>
 
+      <ViharAlertDetails vihar={vihar} />
+
       {!isPast && (
         <div className="flex items-center gap-2">
           <button
@@ -217,6 +227,47 @@ const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, con
           )
         )}
       </div>
+    </div>
+  );
+};
+
+// The optional details the Captain added when announcing the Vihar (only what was filled in).
+const ViharAlertDetails: React.FC<{ vihar: UpcomingVihar }> = ({ vihar: v }) => {
+  const chips: { icon: React.ReactNode; label: string }[] = [];
+  if (v.wheelchair_required) chips.push({ icon: <Accessibility size={13} />, label: `Wheelchair x${v.wheelchair_count || 1}` });
+  if (v.car_seva_required) chips.push({ icon: <Car size={13} />, label: 'Car Seva' });
+  if (v.police_security) chips.push({ icon: <ShieldCheck size={13} />, label: 'Police security' });
+  const hasText = v.sadhu_sadhvi_names || v.samuday || v.emergency_contact_name || v.emergency_contact_phone;
+  if (!hasText && chips.length === 0) return null;
+  return (
+    <div className="rounded-xl bg-[#FFF8F1] px-3.5 py-3 space-y-2 text-sm">
+      {v.sadhu_sadhvi_names && (
+        <p className="m-0 text-[#241C17]"><span className="text-[#8A6A57] font-semibold">Sadhu / Sadhvi: </span><span className="font-semibold whitespace-pre-wrap">{v.sadhu_sadhvi_names}</span></p>
+      )}
+      {v.samuday && (
+        <p className="m-0 text-[#241C17]"><span className="text-[#8A6A57] font-semibold">Samuday: </span><span className="font-semibold">{v.samuday}</span></p>
+      )}
+      {chips.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {chips.map(c => (
+            <span key={c.label} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-saffron-100 text-xs font-bold text-saffron-700">{c.icon}{c.label}</span>
+          ))}
+        </div>
+      )}
+      {(v.emergency_contact_name || v.emergency_contact_phone) && (
+        <div className="flex items-center justify-between gap-2">
+          <p className="m-0 flex items-center gap-1.5 text-[#241C17] min-w-0">
+            <UserRound size={14} className="text-[#8A6A57] shrink-0" />
+            <span className="text-[#8A6A57] font-semibold shrink-0">Emergency:</span>
+            <span className="font-semibold truncate">{[v.emergency_contact_name, v.emergency_contact_phone].filter(Boolean).join(', ')}</span>
+          </p>
+          {v.emergency_contact_phone && (
+            <a href={`tel:+91${v.emergency_contact_phone}`} aria-label={`Call ${v.emergency_contact_name || 'emergency contact'}`} className="shrink-0 w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center active:scale-95">
+              <Phone size={14} />
+            </a>
+          )}
+        </div>
+      )}
     </div>
   );
 };

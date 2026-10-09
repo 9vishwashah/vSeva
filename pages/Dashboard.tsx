@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
 import { UserProfile, ViharEntry, UserRole, Organization, AreaRoute } from '../types';
 import { dataService } from '../services/dataService';
 import UpcomingViharCard from '../components/UpcomingViharCard';
 import Avatar from '../components/Avatar';
 import SankalpRing from '../components/SankalpRing';
 import { useMySankalp, useOrgSankalp } from '../services/sankalpService';
+import { useCacheRefresh } from '../hooks/useCacheRefresh';
 import ViharYearSelector from '../components/ViharYearSelector';
 import Modal from '../components/Modal';
 import StatusScreen from '../components/StatusScreen';
-import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X, Plus, Handshake, Medal, Crown, Shield, Flame, Calendar, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X, Plus, Handshake, Medal, Crown, Shield, Flame, Calendar, SlidersHorizontal, Loader2, Share2 } from 'lucide-react';
 import { BRAND } from '@brand';
 import { useToast } from '../context/ToastContext';
 import { useViharYear } from '../context/ViharYearContext';
@@ -16,7 +17,11 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../services/supabase';
 import { getViharYearBounds, getViharYearForDate, isDateInViharYear } from '../services/viharYear';
 import { toLocalDateKey } from '../services/dateUtils';
-import { deliverPdf } from '../services/pdfDelivery';
+import { deliverPdf, deliverFile } from '../services/pdfDelivery';
+import { buildAchievements } from '../services/achievements';
+
+// The share sheet (and its card renderer) is only downloaded when someone opens it.
+const ShareAchievementSheet = lazy(() => import('../components/ShareAchievementSheet'));
 
 type ExportColumnKey = 'date' | 'from' | 'to' | 'sadhu' | 'sadhvi' | 'samuday' | 'wheelchair' | 'type' | 'kms' | 'sevaks';
 
@@ -104,10 +109,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   // Profile completion modal state
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showActiveSevaksModal, setShowActiveSevaksModal] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
 
   useEffect(() => {
     if (currentUser.role === UserRole.SEVAK) {
-      const isProfileIncomplete = !currentUser.blood_group?.trim() || !currentUser.emergency_number?.trim() || !currentUser.emergency_contact_name?.trim() || !currentUser.occupation?.trim() || !currentUser.address?.trim();
+      const isProfileIncomplete = !currentUser.blood_group?.trim() || !currentUser.emergency_number?.trim() || !currentUser.emergency_contact_name?.trim() || !currentUser.occupation?.trim() || !currentUser.address?.trim()
+        || (BRAND.sevakViharPreferences && (!currentUser.vihar_scope || !currentUser.seva_preferences?.length));
       if (isProfileIncomplete) {
         const hasSeen = sessionStorage.getItem('hasSeenCompletenessPrompt');
         if (!hasSeen) {
@@ -122,18 +129,14 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   const [availableRoutes, setAvailableRoutes] = useState<AreaRoute[]>([]);
   const [uniqueAreas, setUniqueAreas] = useState<string[]>([]);
 
-  const [alertData, setAlertData] = useState({
-    date: toLocalDateKey(new Date()),
-    time: '06:00',
-    from: '',
-    to: '',
-    type: 'morning',
-    sadhu: 0,
-    sadhvi: 0
-  });
+  const [alertData, setAlertData] = useState({ date: toLocalDateKey(new Date()), time: '06:00', from: '', to: '', type: 'morning', sadhu: 0, sadhvi: 0, samuday: '', names: '', wheelchair: false, wheelchairCount: 1, carSeva: false, contactName: '', contactPhone: '', police: false });
 
   const handleCreateAlert = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (alertData.contactPhone && alertData.contactPhone.length !== 10) {
+      showToast('Emergency contact number must be 10 digits', 'error');
+      return;
+    }
     setIsLoading(true);
     try {
       console.log("Triggering create_upcoming_alert RPC with data:", alertData);
@@ -144,7 +147,15 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         to_loc: alertData.to,
         v_type: alertData.type,
         s_count: Number(alertData.sadhu),
-        sv_count: Number(alertData.sadhvi)
+        sv_count: Number(alertData.sadhvi),
+        p_samuday: alertData.samuday.trim() || null,
+        p_sadhu_sadhvi_names: alertData.names.trim() || null,
+        p_wheelchair_required: alertData.wheelchair,
+        p_wheelchair_count: alertData.wheelchair ? Math.max(1, Number(alertData.wheelchairCount) || 1) : null,
+        p_car_seva_required: alertData.carSeva,
+        p_emergency_contact_name: alertData.contactName.trim() || null,
+        p_emergency_contact_phone: alertData.contactPhone || null,
+        p_police_security: alertData.police,
       });
 
       if (error) {
@@ -157,7 +168,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       showToast(`Alert sent with Priority!`, 'success');
       setIsAlertOpen(false);
       // Reset form
-      setAlertData({ date: toLocalDateKey(new Date()), time: '06:00', from: '', to: '', type: 'morning', sadhu: 0, sadhvi: 0 });
+      setAlertData({ date: toLocalDateKey(new Date()), time: '06:00', from: '', to: '', type: 'morning', sadhu: 0, sadhvi: 0, samuday: '', names: '', wheelchair: false, wheelchairCount: 1, carSeva: false, contactName: '', contactPhone: '', police: false });
     } catch (err: any) {
       console.error("Catch Error:", err);
       alert(`System Error: ${err.message || "Unknown error occurred"}`);
@@ -167,10 +178,13 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
     }
   };
 
-  const loadData = async () => {
+  // silent = a background refresh after the screen already showed on-device data: no skeletons, no error screen.
+  const loadData = async (silent = false) => {
       try {
-        setIsLoading(true);
-        setLoadError(null);
+        if (!silent) {
+          setIsLoading(true);
+          setLoadError(null);
+        }
         const isAdmin = currentUser.role === UserRole.ORG_ADMIN;
 
         // All of these only depend on currentUser (already known), not on each
@@ -271,7 +285,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         dataService.checkInactivity(currentUser.organization_id, isAdmin ? undefined : currentUser.username);
       } catch (e) {
         console.error("Failed to load dashboard data", e);
-        setLoadError(navigator.onLine ? 'error' : 'offline');
+        if (!silent) setLoadError(navigator.onLine ? 'error' : 'offline');
       } finally {
         setIsLoading(false);
       }
@@ -280,6 +294,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   useEffect(() => {
     loadData();
   }, [currentUser]);
+  useCacheRefresh(() => loadData(true));
 
   // Helper for names
   const getSevakName = (username: string) => {
@@ -641,7 +656,9 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       const wb = XLSX.utils.book_new();
       const sheetName = exportGender === 'male' ? 'Sevak Report' : exportGender === 'female' ? 'Sevika Report' : 'Vihar Entries';
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      XLSX.writeFile(wb, `${BRAND.shortName}_Report_${toLocalDateKey(new Date())}.xlsx`);
+      // deliverFile, not XLSX.writeFile: a browser download does nothing inside the Android app
+      const xlsxBytes = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      await deliverFile(new Blob([xlsxBytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${BRAND.shortName}_Report_${toLocalDateKey(new Date())}.xlsx`);
 
       showToast("Excel Export downloaded successfully", 'success');
       setShowExportModal(false);
@@ -701,6 +718,31 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
   const yearlyViharCount = data.entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length;
 
+  // Seva Achievement cards: phrased from the numbers already on this screen (displayStats, the Sankalp ring),
+  // for the selected Vihar Year. A Captain's card is about the whole Group, like their Dashboard.
+  const isGroupCard = currentUser.role === UserRole.ORG_ADMIN;
+  const achievements = useMemo(() => {
+    if (isLoading) return [];
+    const sevaDays = new Set(data.entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).map(e => e.vihar_date)).size;
+    return buildAchievements({
+      subject: isGroupCard ? 'group' : 'sevak',
+      stats: displayStats,
+      sevaDays,
+      sankalp: { count: yearlyViharCount, target: isGroupCard ? orgSankalp?.target : mySankalp },
+      vyLabel: selectedVY.label,
+    });
+  }, [isLoading, data.entries, vyStats, yearlyViharCount, isGroupCard, orgSankalp?.target, mySankalp, selectedVY.label]);
+  const shareIdentity = useMemo(() => {
+    const group = orgDetails ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}` : '';
+    return {
+      primary: isGroupCard ? (orgDetails?.name || currentUser.full_name) : currentUser.full_name,
+      secondary: isGroupCard ? (orgDetails?.city || '') : group,
+      captain: isGroupCard ? currentUser.full_name : (captainName || ''),
+      vyLabel: selectedVY.label,
+      brandName: BRAND.name,
+    };
+  }, [isGroupCard, orgDetails, currentUser.full_name, captainName, selectedVY.label]);
+
   // Always the real current week, regardless of which VY is selected for
   // the other KPIs — "Consistency" answers "have I kept it up this actual
   // week", not "this week within whatever period I'm browsing".
@@ -756,7 +798,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   if (loadError && !isLoading) {
     return (
       <div className="space-y-5 animate-fade-in relative">
-        <StatusScreen variant={loadError} onRetry={loadData} />
+        <StatusScreen variant={loadError} onRetry={() => loadData()} />
       </div>
     );
   }
@@ -882,6 +924,44 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                   <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Sadhviji Bhagwan</label>
                   <input type="number" min="0" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
                     value={alertData.sadhvi} onChange={e => setAlertData({ ...alertData, sadhvi: Number(e.target.value) })} />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Name of Samuday</label>
+                <input type="text" maxLength={120} placeholder="e.g. Tapagachchh" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                  value={alertData.samuday} onChange={e => setAlertData({ ...alertData, samuday: e.target.value })} />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Name of Sadhu / Sadhvi</label>
+                <textarea rows={2} maxLength={500} placeholder="Names of the Maharaj Saheb / Sadhviji" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow resize-none"
+                  value={alertData.names} onChange={e => setAlertData({ ...alertData, names: e.target.value })} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <AlertYesNo label="Wheelchair required" value={alertData.wheelchair} onChange={v => setAlertData({ ...alertData, wheelchair: v })} />
+                {alertData.wheelchair ? (
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">How many?</label>
+                    <input type="number" min={1} max={50} required className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                      value={alertData.wheelchairCount} onChange={e => setAlertData({ ...alertData, wheelchairCount: Number(e.target.value) })} />
+                  </div>
+                ) : <div />}
+                <AlertYesNo label="Car Seva required" value={alertData.carSeva} onChange={v => setAlertData({ ...alertData, carSeva: v })} />
+                <AlertYesNo label="Police security opted" value={alertData.police} onChange={v => setAlertData({ ...alertData, police: v })} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Emergency Contact Person</label>
+                  <input type="text" maxLength={80} placeholder="Name" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                    value={alertData.contactName} onChange={e => setAlertData({ ...alertData, contactName: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Their Mobile</label>
+                  <input type="tel" inputMode="numeric" maxLength={10} placeholder="10 digits" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                    value={alertData.contactPhone} onChange={e => setAlertData({ ...alertData, contactPhone: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
                 </div>
               </div>
             </form>
@@ -1172,12 +1252,33 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             <p className="m-0 text-sm font-bold text-[#241C17]">{currentUser.role === UserRole.ORG_ADMIN ? t('dashboard.orgStats') : t('dashboard.yourStats')}</p>
             <span className="text-[10px] font-extrabold bg-saffron-100 text-saffron-700 px-2 py-0.5 rounded-full">{selectedVY.label}</span>
           </div>
-          <ViharYearSelector
-            selectedStartYear={selectedVYStartYear}
-            currentStartYear={currentVYStartYear}
-            onChange={setSelectedVYStartYear}
-          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowShareSheet(true)}
+              disabled={isLoading}
+              className="inline-flex items-center gap-1.5 h-8 pl-2.5 pr-3 rounded-full bg-saffron-50 text-saffron-700 hover:bg-saffron-100 text-xs font-extrabold transition active:scale-95 disabled:opacity-50"
+            >
+              <Share2 size={14} />
+              {t('dashboard.shareSeva')}
+            </button>
+            <ViharYearSelector
+              selectedStartYear={selectedVYStartYear}
+              currentStartYear={currentVYStartYear}
+              onChange={setSelectedVYStartYear}
+            />
+          </div>
         </div>
+        {showShareSheet && (
+          <Suspense fallback={null}>
+            <ShareAchievementSheet
+              onClose={() => setShowShareSheet(false)}
+              achievements={achievements}
+              identity={shareIdentity}
+              avatarUrl={isGroupCard ? null : currentUser.avatar_url}
+            />
+          </Suspense>
+        )}
         {/* Quick Stats Grid — primary tiles (Tangerine redesign, flat tints) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* 1. Total Km */}
@@ -1347,5 +1448,26 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
   );
 };
+
+// A labelled Yes / No switch for the Alert Vihar form.
+const AlertYesNo: React.FC<{ label: string; value: boolean; onChange: (v: boolean) => void }> = ({ label, value, onChange }) => (
+  <div>
+    <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">{label}</label>
+    <div className="flex bg-[#F7F4F0] p-1 rounded-xl" role="radiogroup" aria-label={label}>
+      {[true, false].map(v => (
+        <button
+          key={String(v)}
+          type="button"
+          role="radio"
+          aria-checked={value === v}
+          onClick={() => onChange(v)}
+          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${value === v ? 'bg-white text-saffron-700 shadow-sm' : 'text-[#8A6A57]'}`}
+        >
+          {v ? 'Yes' : 'No'}
+        </button>
+      ))}
+    </div>
+  </div>
+);
 
 export default Dashboard;

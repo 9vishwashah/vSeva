@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { supabase } from './services/supabase';
-import { UserRole, UserProfile, ViharEntry, Organization } from './types';
+import { UserRole, UserProfile, ViharEntry, Organization, UserNotification } from './types';
+import { getNotificationTarget } from './services/notificationRouting';
 import { dataService } from './services/dataService';
 import { brandAccessError } from './services/brandAccess';
-import { clearAll as clearRequestCache } from './services/requestCache';
+import { clearAll as clearRequestCache, setCacheScope } from './services/requestCache';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Landing from '@brand/Landing';
@@ -128,6 +129,10 @@ const App: React.FC = () => {
   // app's main navigation (currentPage above) never touches browser history —
   // only DirectoryRouter's own pushState/popstate does, scoped to /directory/*
   // — so this is a separate, additive mechanism rather than a rewrite of it.
+  // The on-device "last time's data" cache belongs to exactly one signed-in user. A layout effect, so it is
+  // set before any screen's own loading effect runs.
+  useLayoutEffect(() => { setCacheScope(user?.id ?? null); }, [user?.id]);
+
   const pageHistoryRef = useRef<string[]>([]);
   const currentPageRef = useRef(currentPage);
   useEffect(() => { currentPageRef.current = currentPage; }, [currentPage]);
@@ -199,23 +204,19 @@ const App: React.FC = () => {
   // Pure by design (role passed in, not read off a ref) — the caller right
   // after setUser(profile) in checkSession below needs the just-fetched
   // profile's role, which userRef won't reflect until the next render.
-  const resolveNotificationTargetPage = (data: any, role: UserRole | undefined): string => {
-    // Same `payload.kind` send-push.js/notify_channel_followers_new_post
-    // already attach — only Captains/admins have a Pending Approvals page
-    // to land on; a Channel post opens straight to that organization's
-    // Channel (channelOrgId is set alongside this at both call sites below).
-    if (data?.payload?.kind === 'vihar_submission' && role === UserRole.ORG_ADMIN) {
-      return 'pending-approvals';
-    }
-    if (data?.payload?.kind === 'channel_post' && data?.payload?.organization_id) {
-      return 'channel';
-    }
-    // Not trusted as authoritative on its own — SosDetail re-fetches the
-    // alert (and its own authorization) straight from Supabase by sos_id.
-    if (data?.payload?.kind === 'sos' && data?.payload?.sos_id) {
-      return 'sos-detail';
-    }
-    return 'notifications';
+  // The rules live in services/notificationRouting.ts, shared with the Notifications page and the bell, so a
+  // lock-screen push, a card and a bell item all land on the same screen. (channelOrgId / sosId are set
+  // alongside this at the call sites below.)
+  const resolveNotificationTargetPage = (data: any, role: UserRole | undefined): string =>
+    getNotificationTarget(data, role)?.page ?? 'notifications';
+
+  // Tapping a card in the in-app Notifications page / bell: go to the screen it is about.
+  const openNotification = (n: UserNotification) => {
+    const target = getNotificationTarget(n, userRef.current?.role);
+    if (!target) return;
+    if (target.channelOrgId) setChannelOrgId(target.channelOrgId);
+    if (target.sosId) setSosId(target.sosId);
+    handleSetCurrentPage(target.page);
   };
 
   useEffect(() => {
@@ -504,6 +505,7 @@ const App: React.FC = () => {
         onLogout={handleLogout}
         currentPage={currentPage}
         setCurrentPage={handleSetCurrentPage}
+        onOpenNotification={openNotification}
       >
         {/* Admin Routes */}
         {currentPage === 'dashboard' && user.role === UserRole.ORG_ADMIN && (
@@ -569,7 +571,7 @@ const App: React.FC = () => {
         )}
 
         {currentPage === 'notifications' && (
-          <Notifications currentUser={user} highlightViharId={pendingViharId} />
+          <Notifications currentUser={user} highlightViharId={pendingViharId} onOpenNotification={openNotification} />
         )}
 
         {currentPage === 'statistics' && (

@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { UserProfile } from '../types';
 import { BRAND } from '@brand';
+import { saveImage } from '../services/shareImage';
 import { Download, Printer } from 'lucide-react';
 
 interface IDCardBadgeProps {
@@ -36,13 +37,10 @@ const IDCardBadge: React.FC<IDCardBadgeProps> = ({ user, orgName }) => {
         backgroundColor: null
       });
       
-      const image = canvas.toDataURL("image/png", 1.0);
-      const link = document.createElement("a");
-      link.href = image;
-      link.download = `${BRAND.shortName}_ID_${user.full_name.replace(/\s+/g, '_')}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(b => (b ? resolve(b) : reject(new Error('Could not create the image'))), 'image/png'));
+      // Gallery in the Android app (a plain link download does nothing inside the app), download in browsers.
+      await saveImage(blob, `${BRAND.shortName}_ID_${user.full_name.replace(/\s+/g, '_')}_${Date.now()}.png`);
     } catch (err) {
       console.error("Failed to download image", err);
     } finally {

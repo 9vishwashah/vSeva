@@ -3,6 +3,7 @@ import { UserProfile, ViharEntry, UserRole, Organization } from '../types';
 import { dataService } from '../services/dataService';
 import SankalpRing from '../components/SankalpRing';
 import { useOrgSankalp } from '../services/sankalpService';
+import { useCacheRefresh } from '../hooks/useCacheRefresh';
 import { isDateInViharYear } from '../services/viharYear';
 import { useViharYear } from '../context/ViharYearContext';
 import { toLocalDateKey } from '../services/dateUtils';
@@ -34,9 +35,11 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
   // The Group Sankalp the Captain set for the selected Vihar Year (everyone in the group sees the same card).
   const orgSankalp = useOrgSankalp(currentUser.organization_id, selectedVY.startYear);
 
-  const load = async () => {
-      setLoading(true);
-      setLoadError(null);
+  const load = async (silent = false) => {
+      if (!silent) {
+        setLoading(true);
+        setLoadError(null);
+      }
       try {
         const [allOrgEntries, rankingEntries, orgSevaks, org] = await Promise.all([
           dataService.getEntries(currentUser.organization_id),
@@ -82,7 +85,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
         }
       } catch (e) {
         console.error("Failed to load statistics", e);
-        setLoadError(navigator.onLine ? 'error' : 'offline');
+        if (!silent) setLoadError(navigator.onLine ? 'error' : 'offline');
       } finally {
         setLoading(false);
       }
@@ -91,6 +94,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
   useEffect(() => {
     load();
   }, [currentUser.organization_id, currentUser.id, currentUser.role, currentUser.username]);
+  useCacheRefresh(() => load(true));
 
   // Vihar Year (VY) scoping: KPI tiles, achievements, and the leaderboard all
   // reset for whichever VY the selector picks, like a Financial Year P&L —
@@ -152,7 +156,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
   if (loadError) {
     return (
       <div className="max-w-5xl mx-auto space-y-5 pb-10">
-        <StatusScreen variant={loadError} onRetry={load} />
+        <StatusScreen variant={loadError} onRetry={() => load()} />
       </div>
     );
   }

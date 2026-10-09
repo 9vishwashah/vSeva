@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { dataService } from '../services/dataService';
 import { UserProfile, UserRole, ViharEntry, AreaRoute } from '../types';
-import { Save, Loader2, MapPin, Search, X, Users, ChevronDown, Map, ChevronLeft, Clock } from 'lucide-react';
+import { Save, Loader2, MapPin, Search, X, Users, ChevronDown, Map, ChevronLeft, Clock, ImagePlus } from 'lucide-react';
+import { BRAND } from '@brand';
 import { useToast } from '../context/ToastContext';
 import Avatar from '../components/Avatar';
 import { toLocalDateKey } from '../services/dateUtils';
@@ -54,6 +55,22 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
   });
 
   const [loading, setLoading] = useState(false);
+  // Optional Vihar photo (brands with viharEntryPhoto): kept locally and uploaded only on submit
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
+  const pickPhoto = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showToast('Please choose a photo', 'warning'); return; }
+    if (file.size > 20 * 1024 * 1024) { showToast('That photo is too large (max 20 MB)', 'warning'); return; }
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setFormData(prev => ({ ...prev, photo_url: null }));
+  };
   const [orgSevaks, setOrgSevaks] = useState<UserProfile[]>([]);
   const [sevakSearch, setSevakSearch] = useState('');
   const [wheelchairSearch, setWheelchairSearch] = useState('');
@@ -115,6 +132,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
         samuday: editEntry.samuday,
         distance_km: editEntry.distance_km,
         notes: editEntry.notes || '',
+        photo_url: editEntry.photo_url ?? null,
       });
     }
   }, [editEntry]);
@@ -123,9 +141,11 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
   // Distance Calculation
   useEffect(() => {
     if (formData.vihar_from && formData.vihar_to) {
-      const route = availableRoutes.find(
+      // "A -> B" and "A -> B via C" can both exist: the direct route gives the distance when there is one
+      const matches = availableRoutes.filter(
         r => r.from_name === formData.vihar_from && r.to_name === formData.vihar_to
       );
+      const route = matches.find(r => !r.via) || matches[0];
       if (route) {
         setFormData(prev => ({ ...prev, distance_km: route.distance_km }));
         setDistanceInfo(`${route.distance_km} km`);
@@ -240,6 +260,16 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
         no_sadhubhagwan: formData.group_sadhu && formData.no_sadhubhagwan ? Number(formData.no_sadhubhagwan) : 0,
         no_sadhvijibhagwan: formData.group_sadhvi && formData.no_sadhvijibhagwan ? Number(formData.no_sadhvijibhagwan) : 0,
       };
+      if (photoFile) {
+        try {
+          entryPayload.photo_url = await dataService.uploadViharPhoto(currentUser.organization_id, photoFile);
+        } catch (photoErr: any) {
+          console.error('Vihar photo upload failed', photoErr);
+          showToast('The photo could not be uploaded. Please try again, or remove it to submit without one.', 'error');
+          setLoading(false);
+          return;
+        }
+      }
 
       if (isEditing && editEntry?.id) {
         // Correcting details only — never touches status. Approve/Reject on the
@@ -571,6 +601,31 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                 onChange={e => setFormData({ ...formData, notes: e.target.value })}
               />
             </div>
+            {BRAND.viharEntryPhoto && (
+              <div>
+                <label className={labelClass}>Vihar Photo (Optional)</label>
+                {photoPreview || formData.photo_url ? (
+                  <div className="relative rounded-2xl overflow-hidden bg-[#F7F4F0]">
+                    <img src={photoPreview || formData.photo_url || ''} alt="Vihar photo" className="w-full max-h-72 object-cover" />
+                    <button
+                      type="button"
+                      onClick={removePhoto}
+                      aria-label="Remove photo"
+                      className="absolute top-2 right-2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center active:scale-95"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-saffron-200 bg-saffron-50/40 py-6 cursor-pointer text-saffron-700 active:scale-[0.99] transition">
+                    <ImagePlus size={24} />
+                    <span className="text-sm font-bold">Add a photo of the Vihar</span>
+                    <span className="text-[11px] font-semibold text-[#8A6A57]">From the camera or the gallery</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { pickPhoto(e.target.files?.[0]); e.target.value = ''; }} />
+                  </label>
+                )}
+              </div>
+            )}
           </StepCard>
         )}
 

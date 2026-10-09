@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useSwipeDismiss } from '../hooks/useSwipeDismiss';
 
 interface ModalProps {
     open: boolean;
@@ -29,6 +30,8 @@ interface ModalProps {
 //    the scrollbar width and can't cause a reflow "jump" behind the modal.
 const Modal: React.FC<ModalProps> = ({ open, onClose, children, maxWidth = 'max-w-lg', closeOnBackdrop = true, className = '' }) => {
     const scrollTopRef = useRef(0);
+    // Pull the pop-up down to close it (touch screens; Escape is already handled just below).
+    const swipe = useSwipeDismiss(onClose, { enabled: open && closeOnBackdrop, escape: false });
 
     useEffect(() => {
         if (!open) return;
@@ -58,10 +61,13 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, maxWidth = 'max-
     // wrapper is sized to that wrapper, not the viewport, which left a strip at the top un-dimmed.
     return createPortal(
         <div
+            ref={swipe.backdropRef}
             className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 app-modal-backdrop"
             onClick={closeOnBackdrop ? onClose : undefined}
         >
             <div
+                ref={swipe.sheetRef}
+                {...swipe.handlers}
                 className={`bg-white rounded-[22px] shadow-2xl w-full ${maxWidth} overflow-hidden app-modal-card flex flex-col max-h-[90vh] ${className}`}
                 onClick={e => e.stopPropagation()}
             >

@@ -42,7 +42,7 @@ async function rawHandler(event) {
 
     const { data: profile, error: profileFetchError } = await supabaseAdmin
       .from('profiles')
-      .select('role')
+      .select('role, organization_id')
       .eq('id', user.id)
       .single();
 
@@ -65,6 +65,15 @@ async function rawHandler(event) {
     }
 
     const { email, password, user_metadata } = body;
+
+    // Newer clients send the name part of the username and let us pick a free one. vSeva and Shraman Seva
+    // Group share one login system, so two different people may well have the same name: the first is
+    // "alpeshshah", the next "alpeshshah2", and so on. Only the same name AND the same mobile number is
+    // treated as the same person and refused. (Older app versions still send a ready-made email; that
+    // path below is unchanged.)
+    if (body.username_base) {
+      return await createWithFreeUsername(supabaseAdmin, profile.organization_id, body);
+    }
 
     console.log(`Creating user: ${email}`);
 
@@ -98,6 +107,55 @@ async function rawHandler(event) {
       }),
     };
   }
+}
+
+const bareUsername = (u) => String(u || '').toLowerCase().replace(/@vsevak(\.in)?$/, '');
+const last10 = (m) => String(m || '').replace(/\D/g, '').slice(-10);
+
+async function createWithFreeUsername(supabaseAdmin, adminOrgId, body) {
+  const base = String(body.username_base).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const phone = last10(body.mobile);
+  if (base.length < 2) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'Please enter the full name.' }) };
+  }
+
+  // Everyone whose username is this name, with or without a number after it (base is letters/digits only).
+  const { data: rows, error } = await supabaseAdmin
+    .from('profiles')
+    .select('username, mobile, organization_id')
+    .ilike('username', `${base}%`)
+    .limit(1000);
+  if (error) throw error;
+  const family = (rows || []).filter((r) => new RegExp(`^${base}\\d*$`).test(bareUsername(r.username)));
+
+  const same = phone && family.find((r) => last10(r.mobile) === phone);
+  if (same) {
+    const msg = same.organization_id === adminOrgId
+      ? `This Sevak (same name and mobile number) is already in your group as "${bareUsername(same.username)}".`
+      : 'A Sevak with this name and mobile number already exists in another group. Please check the details.';
+    return { statusCode: 409, body: JSON.stringify({ error: msg }) };
+  }
+
+  const taken = new Set(family.map((r) => bareUsername(r.username)));
+  for (let n = 1; n <= 500; n++) {
+    const candidate = n === 1 ? base : `${base}${n}`;
+    if (taken.has(candidate)) continue;
+    const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email: `${candidate}@vsevak.in`,
+      password: body.password,
+      email_confirm: true,
+      user_metadata: body.user_metadata || {},
+    });
+    if (!createError) {
+      console.log(`Created Sevak login ${candidate}`);
+      return { statusCode: 200, body: JSON.stringify({ user_id: created.user.id, username: candidate }) };
+    }
+    // a login with this address exists without a profile (e.g. left over from a deleted Sevak): try the next
+    if (/already|registered|exists/i.test(createError.message || '')) continue;
+    console.error('Supabase admin create error:', createError);
+    return { statusCode: 400, body: JSON.stringify({ error: createError.message }) };
+  }
+  return { statusCode: 409, body: JSON.stringify({ error: 'Could not find a free username for this name.' }) };
 }
 
 export const handler = withCors(rawHandler);

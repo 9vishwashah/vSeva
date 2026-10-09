@@ -2,10 +2,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
 import { Bell, Check, MapPin, X, Users, Clock } from 'lucide-react';
-import { UserNotification } from '../types';
+import { UserNotification, UserRole } from '../types';
+import { getNotificationTarget } from '../services/notificationRouting';
 import { useToast } from '../context/ToastContext';
 
-const NotificationBell: React.FC<{ userId?: string; onViewAll?: () => void }> = ({ userId, onViewAll }) => {
+const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?: () => void; onOpenNotification?: (n: UserNotification) => void }> = ({ userId, role, onViewAll, onOpenNotification }) => {
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -159,13 +160,23 @@ const NotificationBell: React.FC<{ userId?: string; onViewAll?: () => void }> = 
               notifications.map(notif => {
                 const isUpcoming = notif.type === 'alert_upcoming';
                 const payload = notif.payload || {};
+                // Where tapping this one goes (null = nowhere, so it isn't clickable)
+                const target = onOpenNotification ? getNotificationTarget(notif, role) : null;
+                const openTarget = () => {
+                  if (!target || !onOpenNotification) return;
+                  if (!notif.is_read && !isUpcoming) markAsRead(notif.id);
+                  setIsOpen(false);
+                  onOpenNotification(notif);
+                };
 
                 return (
                   <div
                     key={notif.id}
+                    onClick={target ? openTarget : undefined}
                     className={`p-4 border-b last:border-b-0 transition-colors 
                        ${!notif.is_read ? 'bg-blue-50/50' : 'hover:bg-gray-50'}
                        ${isUpcoming ? 'border-l-4 border-l-saffron-500 bg-orange-50/40' : ''}
+                       ${target ? 'cursor-pointer active:bg-gray-100' : ''}
                      `}
                   >
                     <div className="flex justify-between items-start gap-3">
@@ -206,6 +217,7 @@ const NotificationBell: React.FC<{ userId?: string; onViewAll?: () => void }> = 
                           </div>
                         )}
 
+                        {target && <p className="mt-1.5 text-[11px] font-bold text-saffron-600">{target.label} →</p>}
                         <p className="text-[10px] text-gray-400 mt-2">
                           {new Date(notif.created_at).toLocaleString()}
                         </p>

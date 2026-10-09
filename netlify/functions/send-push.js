@@ -73,12 +73,18 @@ export async function handler(event, context) {
     }
     const brandAppId = brandKey && process.env[`ONESIGNAL_APP_ID_${brandKey}`];
     const brandApiKey = brandKey && process.env[`ONESIGNAL_API_KEY_${brandKey}`];
+    // Brands never share a OneSignal app: a white-label brand without its own credentials gets no push at
+    // all (the in-app notification row is already saved), rather than a push through vSeva's app.
     if (brandKey && !(brandAppId && brandApiKey)) {
-      console.warn(`No OneSignal credentials configured for brand ${brandKey}; falling back to the default app.`);
+      console.warn(`No OneSignal credentials (ONESIGNAL_APP_ID_${brandKey} / ONESIGNAL_API_KEY_${brandKey}) for brand ${brandKey}; push skipped.`);
+      return { statusCode: 200, headers, body: JSON.stringify({ skipped: `no OneSignal app configured for brand ${brandKey}` }) };
     }
-    const oneSignalAppId = (brandAppId && brandApiKey) ? brandAppId : process.env.ONESIGNAL_APP_ID;
-    const oneSignalApiKey = (brandAppId && brandApiKey) ? brandApiKey : process.env.ONESIGNAL_API_KEY;
-    const webUrl = (brandKey && process.env[`SITE_URL_${brandKey}`]) || 'https://vseva.vjas.in';
+    const oneSignalAppId = brandKey ? brandAppId : process.env.ONESIGNAL_APP_ID;
+    const oneSignalApiKey = brandKey ? brandApiKey : process.env.ONESIGNAL_API_KEY;
+    const DEFAULT_SITES = { SSG: 'https://ssg.vjas.in' };
+    const webUrl = brandKey
+      ? (process.env[`SITE_URL_${brandKey}`] || DEFAULT_SITES[brandKey] || 'https://vseva.vjas.in')
+      : 'https://vseva.vjas.in';
 
     const isSos = notification.type === 'sos';
 
@@ -117,8 +123,12 @@ export async function handler(event, context) {
       // step this backend code can't perform. Once created, set its id here
       // via env var; until then SOS pushes still deliver (priority 10 above),
       // just on OneSignal's default channel rather than the custom one.
-      if (process.env.ONESIGNAL_SOS_ANDROID_CHANNEL_ID) {
-        requestBody.android_channel_id = process.env.ONESIGNAL_SOS_ANDROID_CHANNEL_ID;
+      // Categories belong to one OneSignal app, so each brand has its own: ONESIGNAL_SOS_ANDROID_CHANNEL_ID_<BRAND>.
+      const sosChannel = brandKey
+        ? process.env[`ONESIGNAL_SOS_ANDROID_CHANNEL_ID_${brandKey}`]
+        : process.env.ONESIGNAL_SOS_ANDROID_CHANNEL_ID;
+      if (sosChannel) {
+        requestBody.android_channel_id = sosChannel;
       }
     }
 

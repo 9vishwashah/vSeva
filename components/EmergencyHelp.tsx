@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertTriangle, Loader2, PlusSquare, Shield, MapPin, X, Navigation, Phone } from 'lucide-react';
 import { callFn } from '../services/apiBase';
 import Portal from './Portal';
+import { useSwipeDismiss } from '../hooks/useSwipeDismiss';
 
 interface Place {
     name: string;
@@ -26,6 +27,8 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export const EmergencyHelp: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
+    // drag the sheet down (or tap outside / back button) to close it
+    const swipe = useSwipeDismiss(() => setIsOpen(false), { enabled: isOpen });
     const [loading, setLoading] = useState(false);
     const [hospitals, setHospitals] = useState<Place[]>([]);
     const [police, setPolice] = useState<Place[]>([]);
@@ -165,8 +168,8 @@ export const EmergencyHelp: React.FC = () => {
             {/* Modal */}
             {isOpen && (
                 <Portal>
-                <div className="fixed inset-0 z-50 flex flex-col md:items-center justify-end md:justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-gray-50 w-full max-w-lg rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom md:fade-in-up">
+                <div ref={swipe.backdropRef} onClick={swipe.close} className="fixed inset-0 z-50 flex flex-col md:items-center justify-end md:justify-center bg-black/60 backdrop-blur-sm p-4 app-modal-backdrop">
+                    <div ref={swipe.sheetRef} {...swipe.handlers} onClick={e => e.stopPropagation()} style={{ overscrollBehavior: 'contain' }} className="bg-gray-50 w-full max-w-lg rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] app-sheet-up">
                         <div className="bg-gradient-to-r from-saffron-500 to-saffron-700 text-white p-5 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/20 p-2 rounded-full">
@@ -175,7 +178,7 @@ export const EmergencyHelp: React.FC = () => {
                                 <h2 className="text-xl font-bold">Emergency Help Nearby</h2>
                             </div>
                             <button
-                                onClick={() => setIsOpen(false)}
+                                onClick={swipe.close}
                                 className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors cursor-pointer"
                             >
                                 <X size={20} />

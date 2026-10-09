@@ -10,7 +10,7 @@ No real accounts, passwords, or personal data belong in this file.
 |---|---|
 | Package name | `in.vjas.vseva` (cannot change after first upload) |
 | Min / target SDK | 24 / 36 (meets the Aug-2026 target-API rule) |
-| Upload artifact | `android/app/build/outputs/bundle/release/app-release.aab` (signed) |
+| Upload artifact | `android/app/build/outputs/bundle/vsevaRelease/app-vseva-release.aab` (signed; build with `npm run android:vseva`, then `./gradlew bundleVsevaRelease` in `android/`) |
 | Upload-key SHA-256 | `4A:20:7A:53:C3:AA:F0:C0:A4:E8:92:1F:1B:3C:FB:8B:7D:9A:DF:79:75:65:5C:E0:6C:DB:18:B7:6B:20:19:E2` |
 | Privacy policy URL | `https://vseva.vjas.in/privacy` |
 | Account-deletion URL | `https://vseva.vjas.in/delete-account` |

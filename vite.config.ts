@@ -1,4 +1,6 @@
 import path from 'path';
+import fs from 'fs';
+import { parse as dotenvParse } from 'dotenv';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -21,7 +23,23 @@ export default defineConfig(({ mode }) => {
     console.warn(`[brand:${brand.id}] VITE_SITE_URL is not set — canonical, og:image and sitemap are omitted. Set it in the site's environment.`);
   }
 
+  // Brands never share a OneSignal app. A white-label build whose VITE_ONESIGNAL_APP_ID is missing, or is just
+  // vSeva's id inherited from the shared .env file, gets push switched off instead of registering its users in
+  // vSeva's app. Set the brand's own id in its site's environment (or .env.<brand>.local) to turn push on.
+  const pushDefine: Record<string, string> = {};
+  if (brand.id !== 'vseva') {
+    const vsevaFileId = (() => {
+      try { return dotenvParse(fs.readFileSync(path.resolve(__dirname, '.env'))).VITE_ONESIGNAL_APP_ID || ''; } catch { return ''; }
+    })();
+    const id = _env.VITE_ONESIGNAL_APP_ID || '';
+    if (!id || id === vsevaFileId) {
+      console.warn(`[brand:${brand.id}] No own VITE_ONESIGNAL_APP_ID: push notifications are OFF in this build.`);
+      pushDefine['import.meta.env.VITE_ONESIGNAL_APP_ID'] = JSON.stringify('');
+    }
+  }
+
   return {
+    define: pushDefine,
     publicDir: prepareBrandPublicDir(__dirname, brand),
     server: {
       port: 3000,

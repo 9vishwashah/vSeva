@@ -50,6 +50,26 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // One project, two apps. `vseva` is the original (in.vjas.vseva, the app already on Google Play) and keeps the
+    // defaultConfig above exactly as it was; `ssg` is Shraman Seva Group: its own applicationId, name, icons and
+    // version counter (everything brand-specific lives in src/ssg/).
+    //   Android Studio:  Build > Select Build Variant > vsevaDebug / ssgDebug, then Run.
+    //   Command line:    ./gradlew assembleSsgDebug  |  bundleVsevaRelease  |  bundleSsgRelease
+    // Which web build gets bundled is decided by `cap sync` (npm run android:vseva / android:ssg) and is verified at
+    // the bottom of this file, so one brand's web app can never be packaged inside the other brand's app.
+    flavorDimensions "brand"
+    productFlavors {
+        vseva {
+            dimension "brand"
+        }
+        ssg {
+            dimension "brand"
+            applicationId "in.vjas.ssg"
+            // Its own Play listing => its own, independent version counter.
+            versionCode 1
+            versionName "1.0"
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -88,4 +108,38 @@ try {
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+// SSG has no Firebase app yet. Until android/app/src/ssg/google-services.json exists (download it from Firebase after
+// adding an Android app for in.vjas.ssg), the google-services step is skipped for the ssg variants so they still
+// build and run — they just have no Firebase push configuration. vSeva is unaffected.
+if (!file('src/ssg/google-services.json').exists()) {
+    tasks.matching { it.name ==~ /process(Ssg)\w*GoogleServices/ }.configureEach { enabled = false }
+}
+
+// Guard: the web build bundled by `cap sync` must belong to the variant being built. cap sync writes the brand's
+// appId into src/main/assets/capacitor.config.json (see capacitor.config.ts); it has to match this variant's
+// applicationId, otherwise the build stops with instructions instead of packaging the wrong brand's app.
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def appId = variant.applicationId
+        def capName = variant.name.capitalize()
+        def brandName = variant.name.toLowerCase().startsWith('ssg') ? 'ssg' : 'vseva'
+        def webConfig = file('src/main/assets/capacitor.config.json')
+        def guard = tasks.register("verify${capName}WebAssets") {
+            group = 'verification'
+            description = "Fails if the synced web build belongs to a different brand than ${variant.name}."
+            doLast {
+                if (!webConfig.exists()) {
+                    throw new GradleException("No web build is bundled yet. Run:  npm run android:${brandName}   (from the project root), then build again.")
+                }
+                def synced = new groovy.json.JsonSlurper().parseText(webConfig.text).appId
+                def expected = appId.get()
+                if (synced != expected) {
+                    throw new GradleException("The bundled web build is for '${synced}' but this variant is '${expected}'. Run:  npm run android:${brandName}   (from the project root) so the right web build is bundled, then build again.")
+                }
+            }
+        }
+        tasks.matching { it.name == "pre${capName}Build" }.configureEach { dependsOn guard }
+    }
 }

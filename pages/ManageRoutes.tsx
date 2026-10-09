@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import { UserProfile, AreaRoute } from '../types';
-import { Plus, Trash2, Save, Map, Search, ArrowRight, Table, Pencil, X, Check } from 'lucide-react';
+import { Plus, Trash2, Save, Map, Search, ArrowRight, Table, Pencil, X, Check, Navigation } from 'lucide-react';
+import WhatsAppIcon from '../components/WhatsAppIcon';
+import { shareTextToWhatsApp } from '../services/shareImage';
+import { extractMapsUrl, routeWhatsAppMessage } from '../services/routeShare';
 import { useToast } from '../context/ToastContext';
 import Skeleton from '../components/Skeleton';
 import StatusScreen from '../components/StatusScreen';
@@ -15,7 +18,14 @@ interface TempRoute {
     from_name: string;
     to_name: string;
     distance_km: string; // string for input handling
+    via: string;         // optional
+    maps_url: string;    // optional Google Maps link (pasted)
 }
+
+const newRow = (): TempRoute => ({ id: Date.now() + Math.random(), from_name: '', to_name: '', distance_km: '', via: '', maps_url: '' });
+
+// Pasted Google Maps text -> the link, '' for nothing pasted, null for something that is not an https link
+const cleanMapsInput = (v: string): string | null => (v.trim() ? extractMapsUrl(v) : '');
 
 const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
     const { showToast } = useToast();
@@ -26,9 +36,10 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
     const [loading, setLoading] = useState(false);
     const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [groupName, setGroupName] = useState<string | undefined>(undefined);
 
     // Add State
-    const [tempRoutes, setTempRoutes] = useState<TempRoute[]>([{ id: Date.now(), from_name: '', to_name: '', distance_km: '' }]);
+    const [tempRoutes, setTempRoutes] = useState<TempRoute[]>([newRow()]);
     const [knownAreas, setKnownAreas] = useState<string[]>([]);
 
     // Edit State
@@ -41,6 +52,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
         try {
             const routes = await dataService.getRoutes(currentUser.organization_id);
             setExistingRoutes(routes);
+            dataService.getOrganization(currentUser.organization_id).then(o => setGroupName(o?.name)).catch(() => {});
 
             // Extract known areas for suggestions
             const areas = new Set<string>();
@@ -63,7 +75,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
     // Initial Rows
     useEffect(() => {
-        setTempRoutes([{ id: Date.now(), from_name: '', to_name: '', distance_km: '' }]);
+        setTempRoutes([newRow()]);
     }, []);
 
     const updateRow = (id: number, field: keyof TempRoute, value: string) => {
@@ -82,6 +94,10 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
             showToast("Please fill at least one route completely", "warning");
             return;
         }
+        if (validRoutes.some(r => cleanMapsInput(r.maps_url) === null)) {
+            showToast("The Google Maps link must start with https://", "warning");
+            return;
+        }
 
         setLoading(true);
         let successCount = 0;
@@ -90,13 +106,16 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
             for (const r of validRoutes) {
                 const fromUpper = r.from_name.trim().toUpperCase();
                 const toUpper = r.to_name.trim().toUpperCase();
+                const via = r.via.trim().toUpperCase() || null;
                 
                 await dataService.addRoute({
                     organization_id: currentUser.organization_id,
                     from_name: fromUpper,
                     to_name: toUpper,
                     distance_km: parseFloat(r.distance_km),
-                    note: ''
+                    note: '',
+                    via,
+                    maps_url: cleanMapsInput(r.maps_url) || null,
                 });
                 successCount++;
                 
@@ -107,7 +126,9 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                             from_name: toUpper,
                             to_name: fromUpper,
                             distance_km: parseFloat(r.distance_km),
-                            note: ''
+                            note: '',
+                            // same road back; the map link is for the forward direction, so it is not copied
+                            via,
                         });
                         successCount++;
                     } catch (reverseErr: any) {
@@ -116,7 +137,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                 }
             }
             showToast(`Successfully added ${successCount} routes (including reverse)!`, "success");
-            setTempRoutes([{ id: Date.now(), from_name: '', to_name: '', distance_km: '' }]); // Reset
+            setTempRoutes([newRow()]); // Reset
             loadRoutes(); // Refresh list
             setActiveTab('list'); // Switch to list view
         } catch (err: any) {
@@ -129,6 +150,16 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
             loadRoutes();
         } finally {
             setLoading(false);
+        }
+    };
+
+    // WhatsApp opens with the route message typed out; the Captain picks the group or chat.
+    const shareRoute = async (route: AreaRoute) => {
+        try {
+            await shareTextToWhatsApp(routeWhatsAppMessage(route, groupName));
+        } catch (err) {
+            console.error(err);
+            showToast("Could not open WhatsApp", "error");
         }
     };
 
@@ -148,7 +179,9 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
         setEditValues({
             from_name: route.from_name,
             to_name: route.to_name,
-            distance_km: route.distance_km
+            distance_km: route.distance_km,
+            via: route.via || '',
+            maps_url: route.maps_url || '',
         });
     };
 
@@ -159,20 +192,28 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
     const saveEdit = async () => {
         if (!editingId) return;
+        const mapsUrl = cleanMapsInput(editValues.maps_url || '');
+        if (mapsUrl === null) {
+            showToast("The Google Maps link must start with https://", "warning");
+            return;
+        }
+        const changes = {
+            from_name: editValues.from_name,
+            to_name: editValues.to_name,
+            distance_km: Number(editValues.distance_km),
+            via: (editValues.via || '').trim().toUpperCase() || null,
+            maps_url: mapsUrl || null,
+        };
 
         try {
-            await dataService.updateRoute(editingId, {
-                from_name: editValues.from_name,
-                to_name: editValues.to_name,
-                distance_km: Number(editValues.distance_km)
-            });
+            await dataService.updateRoute(editingId, changes);
 
             showToast("Route updated successfully", "success");
 
             // Update local state
             setExistingRoutes(prev => prev.map(r =>
                 r.id === editingId
-                    ? { ...r, ...editValues, distance_km: Number(editValues.distance_km) } as AreaRoute
+                    ? { ...r, ...changes } as AreaRoute
                     : r
             ));
 
@@ -186,7 +227,8 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
     // Filtered List
     const filteredRoutes = existingRoutes.filter(r =>
         r.from_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.to_name.toLowerCase().includes(searchTerm.toLowerCase())
+        r.to_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (r.via || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -292,6 +334,33 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                         />
                                     </div>
 
+                                    {/* Via + Google Maps link (optional) */}
+                                    <div className="w-full md:col-span-12 md:order-last grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4">
+                                        <div className="md:col-span-4">
+                                            <label className="text-xs font-bold text-gray-400 mb-1 block md:hidden">Via (optional)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Via (optional)"
+                                                list="area-suggestions"
+                                                maxLength={200}
+                                                className="w-full p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none uppercase"
+                                                value={route.via}
+                                                onChange={e => updateRow(route.id, 'via', e.target.value.toUpperCase())}
+                                            />
+                                        </div>
+                                        <div className="md:col-span-7">
+                                            <label className="text-xs font-bold text-gray-400 mb-1 block md:hidden">Google Maps link (optional)</label>
+                                            <input
+                                                type="url"
+                                                inputMode="url"
+                                                placeholder="Paste the Google Maps route link (optional)"
+                                                className="w-full p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
+                                                value={route.maps_url}
+                                                onChange={e => updateRow(route.id, 'maps_url', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
                                     {/* Delete */}
                                     <div className="flex md:col-span-1 justify-end md:justify-center mt-2 md:mt-0">
                                         <button
@@ -309,7 +378,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
                         <div className="mt-4 flex justify-start">
                             <button
-                                onClick={() => setTempRoutes(prev => [...prev, { id: Date.now(), from_name: '', to_name: '', distance_km: '' }])}
+                                onClick={() => setTempRoutes(prev => [...prev, newRow()])}
                                 className="flex items-center space-x-2 text-gray-500 hover:text-saffron-600 font-bold px-4 py-2 mt-2 rounded-lg hover:bg-saffron-50 transition-colors border border-transparent hover:border-saffron-100"
                             >
                                 <Plus size={18} />
@@ -399,6 +468,24 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                                     onChange={e => setEditValues({ ...editValues, distance_km: parseFloat(e.target.value) })}
                                                 />
                                             </div>
+                                            <div>
+                                                <label className="text-[10px] uppercase font-bold text-gray-400">Via (optional)</label>
+                                                <input
+                                                    className="w-full p-2 border rounded-lg text-sm bg-white uppercase"
+                                                    value={editValues.via || ''}
+                                                    onChange={e => setEditValues({ ...editValues, via: e.target.value.toUpperCase() })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] uppercase font-bold text-gray-400">Google Maps link (optional)</label>
+                                                <input
+                                                    type="url"
+                                                    className="w-full p-2 border rounded-lg text-sm bg-white"
+                                                    placeholder="https://maps.app.goo.gl/..."
+                                                    value={editValues.maps_url || ''}
+                                                    onChange={e => setEditValues({ ...editValues, maps_url: e.target.value })}
+                                                />
+                                            </div>
                                             <div className="flex justify-end gap-2 mt-2">
                                                 <button onClick={cancelEditing} className="p-2 border rounded-lg text-sm">Cancel</button>
                                                 <button onClick={saveEdit} className="p-2 bg-saffron-600 text-white rounded-lg text-sm font-bold">Save</button>
@@ -417,12 +504,21 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                                     <span>{route.to_name}</span>
                                                 </div>
                                             </div>
+                                            {route.via && <p className="-mt-1.5 text-xs font-semibold text-[#8A6A57]">via {route.via}</p>}
 
                                             <div className="flex items-center justify-between pt-2 border-t border-gray-200/50">
                                                 <span className="bg-saffron-50 text-saffron-700 px-3 py-1 rounded-full text-xs font-bold">
                                                     {route.distance_km} km
                                                 </span>
-                                                <div className="flex gap-2">
+                                                <div className="flex items-center gap-1">
+                                                    {route.maps_url && (
+                                                        <a href={route.maps_url} target="_blank" rel="noopener noreferrer" aria-label="Open route in Google Maps" className="p-2 text-[#2E7EB0]">
+                                                            <Navigation size={18} />
+                                                        </a>
+                                                    )}
+                                                    <button onClick={() => shareRoute(route)} aria-label="Share route on WhatsApp" className="p-2 text-[#25D366]">
+                                                        <WhatsAppIcon size={18} />
+                                                    </button>
                                                     <button onClick={() => startEditing(route)} className="p-2 text-gray-400 hover:text-saffron-600">
                                                         <Pencil size={18} />
                                                     </button>
@@ -447,7 +543,9 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                 <tr>
                                     <th className="p-4">From</th>
                                     <th className="p-4">To</th>
+                                    <th className="p-4">Via</th>
                                     <th className="p-4 text-center">Distance (Km)</th>
+                                    <th className="p-4">Map</th>
                                     <th className="p-4 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -470,6 +568,14 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                                         onChange={e => setEditValues({ ...editValues, to_name: e.target.value })}
                                                     />
                                                 </td>
+                                                <td className="p-4">
+                                                    <input
+                                                        className="w-full p-2 border rounded-lg text-sm uppercase"
+                                                        placeholder="Optional"
+                                                        value={editValues.via || ''}
+                                                        onChange={e => setEditValues({ ...editValues, via: e.target.value.toUpperCase() })}
+                                                    />
+                                                </td>
                                                 <td className="p-4 text-center">
                                                     <input
                                                         type="number"
@@ -477,6 +583,15 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                                         className="w-20 p-2 border rounded-lg text-sm text-center"
                                                         value={editValues.distance_km}
                                                         onChange={e => setEditValues({ ...editValues, distance_km: parseFloat(e.target.value) })}
+                                                    />
+                                                </td>
+                                                <td className="p-4">
+                                                    <input
+                                                        type="url"
+                                                        className="w-full p-2 border rounded-lg text-sm"
+                                                        placeholder="Google Maps link"
+                                                        value={editValues.maps_url || ''}
+                                                        onChange={e => setEditValues({ ...editValues, maps_url: e.target.value })}
                                                     />
                                                 </td>
                                                 <td className="p-4 text-right">
@@ -500,13 +615,28 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                             <>
                                                 <td className="p-4 font-medium text-gray-800">{route.from_name}</td>
                                                 <td className="p-4 font-medium text-gray-800">{route.to_name}</td>
+                                                <td className="p-4 text-sm font-semibold text-[#8A6A57]">{route.via || '-'}</td>
                                                 <td className="p-4 text-center">
                                                     <span className="bg-saffron-50 text-saffron-700 px-3 py-1 rounded-full text-xs font-bold">
                                                         {route.distance_km} km
                                                     </span>
                                                 </td>
+                                                <td className="p-4">
+                                                    {route.maps_url ? (
+                                                        <a href={route.maps_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#2E7EB0] hover:underline">
+                                                            <Navigation size={14} /> Open
+                                                        </a>
+                                                    ) : <span className="text-gray-300">-</span>}
+                                                </td>
                                                 <td className="p-4 text-right">
                                                     <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => shareRoute(route)}
+                                                            title="Share on WhatsApp"
+                                                            className="text-[#25D366] p-2 rounded-full hover:bg-green-50 transition-colors"
+                                                        >
+                                                            <WhatsAppIcon size={16} />
+                                                        </button>
                                                         <button
                                                             onClick={() => startEditing(route)}
                                                             className="text-gray-400 hover:text-saffron-600 p-2 rounded-full hover:bg-saffron-50 transition-colors"
@@ -526,7 +656,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={4} className="p-8 text-center text-gray-400">
+                                        <td colSpan={6} className="p-8 text-center text-gray-400">
                                             No routes found. Switch to the "Add Routes" tab to create some!
                                         </td>
                                     </tr>

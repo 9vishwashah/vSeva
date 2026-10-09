@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Shraman Seva Group</string>
+    <string name="title_activity_main">Shraman Seva Group</string>
+    <string name="package_name">in.vjas.ssg</string>
+    <string name="custom_url_scheme">in.vjas.ssg</string>
+    <string name="sos_channel_name">SSG SOS Alerts</string>
+</resources>

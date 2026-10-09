@@ -37,3 +37,33 @@ export async function deliverPdf(doc: jsPDF, filename: string): Promise<void> {
     url: written.uri,
   });
 }
+
+// Same delivery for any generated file (Excel, CSV, ...): a normal download in browsers; in the Android app
+// it is written to the cache and handed to the share sheet (Save to Files / Drive / WhatsApp ...), because a
+// plain <a download> does nothing inside the app's WebView.
+export async function deliverFile(blob: Blob, filename: string): Promise<void> {
+  if (!isNativePlatform()) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return;
+  }
+
+  const { Filesystem, Directory } = await import('@capacitor/filesystem');
+  const { Share } = await import('@capacitor/share');
+  const base64Data = await new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1] || '');
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+  const written = await Filesystem.writeFile({ path: filename, data: base64Data, directory: Directory.Cache });
+  await Share.share({ title: filename, url: written.uri }).catch((e: any) => {
+    if (!/cancel/i.test(String(e?.message || e))) throw e;
+  });
+}

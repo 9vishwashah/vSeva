@@ -4,7 +4,9 @@ import { channelService } from '../services/channelService';
 import { useToast } from '../context/ToastContext';
 import Modal from '../components/Modal';
 import Avatar from '../components/Avatar';
-import { Loader2, Send, Trash2, Settings } from 'lucide-react';
+import BottomSheet from '../components/BottomSheet';
+import ChannelMessageRow from '../components/ChannelMessageRow';
+import { Loader2, Send, Settings, X, Reply, Copy, Trash2 } from 'lucide-react';
 
 const roleLabel = (role?: string | null): string => (role === UserRole.ORG_ADMIN ? 'Captain / Organization Head' : 'Vihar Sevak');
 
@@ -46,6 +48,12 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
   const [showSettings, setShowSettings] = useState(false);
   const [postingPermission, setPostingPermission] = useState<ChannelPostingPermission>('captain_only');
   const [profilePost, setProfilePost] = useState<ChannelPost | null>(null);
+  // Reply: the message being answered (shown above the box), the long-press menu target, and the message
+  // briefly highlighted after jumping to it from a quote.
+  const [replyTo, setReplyTo] = useState<ChannelPost | null>(null);
+  const [actionPost, setActionPost] = useState<ChannelPost | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const seenPostIds = useRef(new Set<string>());
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const skipAutoScrollRef = useRef(false);
@@ -83,6 +91,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
   }, [organizationId, isOwnOrg, currentUser.role, showToast]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { setReplyTo(null); setActionPost(null); }, [organizationId]);
 
   // Scroll to the newest message on first load and whenever one is appended
   // — but not right after "Load earlier" prepends older ones above. Sets
@@ -167,6 +176,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
     setSending(true);
     // Optimistic insert
     const optimisticId = `optimistic-${Date.now()}`;
+    const replyingTo = replyTo; // keep it so a failed send can put it back
     const optimisticPost: ChannelPost = {
       id: optimisticId,
       organization_id: organizationId,
@@ -176,11 +186,15 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
       author_role: currentUser.role,
       message,
       created_at: new Date().toISOString(),
+      reply_to_id: replyingTo?.id ?? null,
+      reply_to_author: replyingTo?.author_name ?? null,
+      reply_to_excerpt: replyingTo ? replyingTo.message.slice(0, 140) : null,
     };
     setPosts(prev => [...prev, optimisticPost]);
     setDraft('');
+    setReplyTo(null);
     try {
-      const saved = await channelService.sendPost(organizationId, currentUser.id, currentUser.full_name, message, currentUser.avatar_url, currentUser.role);
+      const saved = await channelService.sendPost(organizationId, currentUser.id, currentUser.full_name, message, currentUser.avatar_url, currentUser.role, replyingTo?.id ?? null);
       seenPostIds.current.add(saved.id);
       setPosts(prev => {
         // The realtime broadcast for this same post can arrive before this
@@ -195,10 +209,63 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
     } catch (e: any) {
       setPosts(prev => prev.filter(p => p.id !== optimisticId));
       setDraft(message);
+      setReplyTo(replyingTo);
       showToast(e?.message || 'Message failed to send', 'error');
     } finally {
       setSending(false);
     }
+  };
+
+  // Start a reply to a message: it appears above the box, and the box takes focus.
+  const handleReply = (post: ChannelPost) => {
+    if (!canPost || post.id.startsWith('optimistic-')) return;
+    setActionPost(null);
+    setReplyTo(post);
+    window.setTimeout(() => inputRef.current?.focus(), 60);
+  };
+
+  const copyMessage = async (post: ChannelPost) => {
+    setActionPost(null);
+    try {
+      await navigator.clipboard.writeText(post.message);
+      showToast('Message copied', 'success');
+    } catch {
+      showToast('Could not copy this message', 'error');
+    }
+  };
+
+  // Tap a quote -> scroll to the original (loading older messages if it isn't on screen yet) and flash it.
+  const jumpTo = async (postId: string) => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    if (!document.getElementById(`chat-post-${postId}`)) {
+      let cursor = posts[0]?.created_at;
+      let more = hasMore;
+      let found = false;
+      const extra: ChannelPost[] = []; // newest-first, as returned
+      for (let i = 0; i < 5 && more && cursor; i++) {
+        const older = await channelService.getPosts(organizationId, cursor);
+        older.forEach(o => seenPostIds.current.add(o.id));
+        extra.push(...older);
+        more = older.length >= 30;
+        cursor = older[older.length - 1]?.created_at;
+        if (older.some(o => o.id === postId)) { found = true; break; }
+      }
+      if (!found) {
+        showToast('That message is too old to show here.', 'info');
+        return;
+      }
+      skipAutoScrollRef.current = true;
+      setPosts(prev => [...extra.slice().reverse(), ...prev]);
+      setHasMore(more);
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    }
+    const el = document.getElementById(`chat-post-${postId}`);
+    if (!el) return;
+    const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - 24;
+    container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    setHighlightId(postId);
+    window.setTimeout(() => setHighlightId(h => (h === postId ? null : h)), 1600);
   };
 
   const handleDelete = async (postId: string) => {
@@ -276,7 +343,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
             overscroll-contain stops the scroll gesture from "chaining" up to
             the page once you hit the top/bottom of this list, which is what
             made the whole page drag along with it. */}
-        <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div ref={messagesContainerRef} className="chat-wallpaper flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl px-3 py-3 ring-1 ring-inset ring-[#EADBC8]">
           {posts.length === 0 ? (
             <p className="text-sm text-[#8A6A57] py-4">No messages yet.</p>
           ) : (
@@ -291,59 +358,64 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
                 </button>
               )}
               <div className="space-y-3">
-                {posts.map(post => {
-                  const isMine = post.author_user_id === currentUser.id;
-                  return (
-                    <div key={post.id} className={`flex gap-2 ${isMine ? 'flex-row-reverse' : ''}`}>
-                      <button type="button" onClick={() => setProfilePost(post)} className="shrink-0 hover:opacity-80 transition-opacity">
-                        <Avatar name={post.author_name} url={post.author_avatar_url} size={26} />
-                      </button>
-                      <div className={`max-w-[78%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
-                        <div className={`flex items-center gap-2 ${isMine ? 'flex-row-reverse' : ''}`}>
-                          <button type="button" onClick={() => setProfilePost(post)} className="text-xs font-extrabold uppercase tracking-wide text-saffron-600 hover:opacity-80 transition-opacity truncate">
-                            {isMine ? 'You' : post.author_name}
-                          </button>
-                          <p className="text-[10px] text-[#8A6A57] shrink-0">{formatRelativeTime(post.created_at)}</p>
-                          {isMine && !post.id.startsWith('optimistic-') && (
-                            <button onClick={() => handleDelete(post.id)} className="text-gray-300 hover:text-red-500 shrink-0">
-                              <Trash2 size={13} />
-                            </button>
-                          )}
-                        </div>
-                        <div
-                          className={`mt-1 px-3.5 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
-                            isMine ? 'bg-saffron-100 text-[#241C17] rounded-tr-sm' : 'bg-[#F7F4F0] text-[#241C17] rounded-tl-sm'
-                          }`}
-                        >
-                          {post.message}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {posts.map(post => (
+                  <ChannelMessageRow
+                    key={post.id}
+                    post={post}
+                    isMine={post.author_user_id === currentUser.id}
+                    canReply={canPost}
+                    highlighted={highlightId === post.id}
+                    formatTime={formatRelativeTime}
+                    onReply={handleReply}
+                    onOpenActions={setActionPost}
+                    onOpenProfile={setProfilePost}
+                    onJumpTo={jumpTo}
+                    onDelete={handleDelete}
+                  />
+                ))}
               </div>
             </>
           )}
         </div>
 
         {canPost && (
-          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 shrink-0">
-            <input
-              type="text"
-              value={draft}
-              onChange={e => setDraft(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
-              maxLength={4000}
-              placeholder="Write a message..."
-              className="flex-1 px-3.5 py-2.5 rounded-full bg-[#F9FAFB] border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-200"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!draft.trim() || sending}
-              className="w-10 h-10 rounded-full bg-saffron-600 hover:bg-saffron-700 disabled:opacity-50 text-white flex items-center justify-center shrink-0"
-            >
-              <Send size={16} />
-            </button>
+          <div className="mt-4 pt-4 border-t border-gray-100 shrink-0">
+            {replyTo && (
+              <div className="mb-2 flex items-start gap-2 rounded-xl border-l-4 border-saffron-500 bg-[#F7F4F0] px-3 py-2">
+                <Reply size={15} className="mt-0.5 shrink-0 text-saffron-600" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[11px] font-extrabold text-saffron-700">
+                    Replying to {replyTo.author_user_id === currentUser.id ? 'yourself' : replyTo.author_name}
+                  </p>
+                  <p className="truncate text-xs text-[#6B5B50]">{replyTo.message}</p>
+                </div>
+                <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancel reply" className="shrink-0 rounded-full p-1 text-gray-400 hover:bg-black/5 hover:text-gray-600">
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSend();
+                  else if (e.key === 'Escape' && replyTo) { e.stopPropagation(); setReplyTo(null); }
+                }}
+                maxLength={4000}
+                placeholder={replyTo ? 'Write your reply...' : 'Write a message...'}
+                className="flex-1 px-3.5 py-2.5 rounded-full bg-[#F9FAFB] border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-200"
+              />
+              <button
+                onClick={handleSend}
+                disabled={!draft.trim() || sending}
+                className="w-10 h-10 rounded-full bg-saffron-600 hover:bg-saffron-700 disabled:opacity-50 text-white flex items-center justify-center shrink-0"
+              >
+                <Send size={16} />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -401,6 +473,43 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
           <button onClick={() => setShowSettings(false)} className="w-full mt-5 py-2.5 rounded-xl bg-saffron-600 text-sm font-bold text-white">Done</button>
         </div>
       </Modal>
+
+      {/* Long-press / right-click menu for a message */}
+      <BottomSheet open={!!actionPost} onClose={() => setActionPost(null)}>
+        {actionPost && (
+          <div className="px-4 pb-4 pt-3">
+            <div className="mb-3 rounded-xl border-l-4 border-saffron-500 bg-[#F7F4F0] px-3 py-2">
+              <p className="truncate text-[11px] font-extrabold text-saffron-700">
+                {actionPost.author_user_id === currentUser.id ? 'You' : actionPost.author_name}
+              </p>
+              <p
+                className="text-xs text-[#6B5B50] whitespace-pre-wrap"
+                style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+              >
+                {actionPost.message}
+              </p>
+            </div>
+            <div className="space-y-1">
+              {canPost && (
+                <button onClick={() => handleReply(actionPost)} className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-[#241C17] transition-colors active:scale-[0.98] hover:bg-gray-50">
+                  <Reply size={18} className="text-saffron-600" /> Reply
+                </button>
+              )}
+              <button onClick={() => copyMessage(actionPost)} className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-[#241C17] transition-colors active:scale-[0.98] hover:bg-gray-50">
+                <Copy size={18} className="text-[#8A6A57]" /> Copy
+              </button>
+              {actionPost.author_user_id === currentUser.id && (
+                <button
+                  onClick={() => { const id = actionPost.id; setActionPost(null); handleDelete(id); }}
+                  className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-red-600 transition-colors active:scale-[0.98] hover:bg-red-50"
+                >
+                  <Trash2 size={18} /> Delete
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </BottomSheet>
 
       {/* Mini sender profile — "who sent this", nothing more. Every sender in
           this list belongs to this same organization (posting is scoped to

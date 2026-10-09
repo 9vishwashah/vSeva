@@ -47,6 +47,13 @@ export interface BrandMeta {
   };
   // People shown on the public Contact page (/contact); phone = 10 digits, India.
   supportContacts: { role: string; name: string; phone: string }[];
+  // Verified-tick titles for specific usernames on their profile page (a label only, no permissions).
+  accountBadges: Record<string, string>;
+  // Sevak profile asks "Vihar Type" (Internal / External / Both) and Seva preferences (Walking / Car Seva /
+  // Wheelchair Seva), and counts them towards profile completion.
+  sevakViharPreferences: boolean;
+  // Vihar entry forms (Sevak submission and Captain entry) offer an optional photo of the Vihar.
+  viharEntryPhoto: boolean;
   instagram: { url: string; handle: string } | null;
   operator: string;      // who runs the service, for the legal pages
   // Show the shared Directory moderation panel inside Super Admin

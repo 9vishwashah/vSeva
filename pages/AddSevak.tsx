@@ -1,10 +1,15 @@
 import ResetSevakPasswordModal from '../components/ResetSevakPasswordModal';
 import React, { useState, useEffect, useMemo } from 'react';
 import { BRAND } from '@brand';
-import { UserProfile, Organization, ContactNumber, ViharEntry } from '../types';
+import { UserProfile, Organization, ContactNumber, ViharEntry, SevaPreference } from '../types';
+import { getMissingProfileFields, getProfileCompletion } from '../services/profileCompletion';
+import ViharPreferencesFields, { formatSevaPreferences } from '../components/ViharPreferencesFields';
+import BulkSevakImport from '../components/BulkSevakImport';
+import BottomSheet from '../components/BottomSheet';
+import { deliverPdf, deliverFile } from '../services/pdfDelivery';
 import { dataService } from '../services/dataService';
 import { OCCUPATIONS } from '../services/occupations';
-import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft, Footprints, KeyRound } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft, Footprints, KeyRound, Upload, FileText, Table } from 'lucide-react';
 import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
 import CircularProgressBar from '../components/CircularProgressBar';
@@ -76,11 +81,12 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const [formData, setFormData] = useState({
     fullName: '',
     mobile: '',
-    gender: 'Male'
+    gender: 'Male',
+    alias: '',
   });
 
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState<{ username: string, password: string } | null>(null);
+  const [success, setSuccess] = useState<{ username: string, password: string, renamed: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // State for the list of existing sevaks
@@ -98,11 +104,14 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const [showDeleteModal, setShowDeleteModal] = useState<{ id: string, name: string } | null>(null);
 
   const [selectedSevak, setSelectedSevak] = useState<UserProfile | null>(null);
-  const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string; emergencyNumber: string; emergencyContactName: string; occupation: string; occupationDetails: string; address: string; gender: string }>({ mobile: '', age: '', bloodGroup: '', emergencyNumber: '', emergencyContactName: '', occupation: '', occupationDetails: '', address: '', gender: 'Male' });
+  const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string; emergencyNumber: string; emergencyContactName: string; occupation: string; occupationDetails: string; address: string; gender: string; alias: string; viharScope: string; sevaPreferences: SevaPreference[] }>({ mobile: '', age: '', bloodGroup: '', emergencyNumber: '', emergencyContactName: '', occupation: '', occupationDetails: '', address: '', gender: 'Male', alias: '', viharScope: '', sevaPreferences: [] });
   const [showIdCard, setShowIdCard] = useState(false);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
+  const [showExportChoice, setShowExportChoice] = useState(false);
+  const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   
   // Organization State
   const [orgDetails, setOrgDetails] = useState<any>(null);
@@ -150,12 +159,15 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         age: undefined,
         bloodGroup: undefined,
         emergencyNumber: '',
-        address: ''
+        address: '',
+        alias: formData.alias,
       });
 
-      setSuccess(creds);
+      // the server adds a number when another Sevak (in any group) already has this name
+      const wanted = formData.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      setSuccess({ ...creds, renamed: creds.username !== wanted });
       showToast(`Sevak ${formData.fullName} added successfully!`, 'success');
-      setFormData({ fullName: '', mobile: '', gender: 'Male' });
+      setFormData({ fullName: '', mobile: '', gender: 'Male', alias: '' });
       // Refresh the list after successful addition
       fetchData();
     } catch (err: any) {
@@ -215,7 +227,10 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       occupation: sevak.occupation || '',
       occupationDetails: sevak.occupation_details || '',
       address: sevak.address || '',
-      gender: sevak.gender || 'Male'
+      gender: sevak.gender || 'Male',
+      alias: sevak.alias || '',
+      viharScope: sevak.vihar_scope || '',
+      sevaPreferences: (sevak.seva_preferences || []) as SevaPreference[],
     });
   };
 
@@ -238,10 +253,13 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         occupation: editForm.occupation,
         occupationDetails: editForm.occupation ? editForm.occupationDetails : '',
         address: editForm.address,
-        gender: editForm.gender
+        gender: editForm.gender,
+        alias: editForm.alias,
+        ...(BRAND.sevakViharPreferences ? { viharScope: editForm.viharScope, sevaPreferences: editForm.sevaPreferences } : {}),
       });
       // update local
-      const updated = { ...selectedSevak, age: newAge, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, emergency_contact_name: editForm.emergencyNumber ? editForm.emergencyContactName.trim() || null : null, occupation: editForm.occupation || null, occupation_details: editForm.occupation ? editForm.occupationDetails.trim() || null : null, address: editForm.address, gender: editForm.gender };
+      const updated = { ...selectedSevak, age: newAge, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, emergency_contact_name: editForm.emergencyNumber ? editForm.emergencyContactName.trim() || null : null, occupation: editForm.occupation || null, occupation_details: editForm.occupation ? editForm.occupationDetails.trim() || null : null, address: editForm.address, gender: editForm.gender, alias: editForm.alias.trim() || null,
+        ...(BRAND.sevakViharPreferences ? { vihar_scope: (editForm.viharScope || null) as UserProfile['vihar_scope'], seva_preferences: editForm.sevaPreferences.length ? editForm.sevaPreferences : null } : {}) };
       setSevaks(prev => prev.map(s => s.id === selectedSevak.id ? updated : s));
       setSelectedSevak(updated);
       showToast(`Profile updated successfully!`, 'success');
@@ -269,22 +287,8 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     return map;
   }, [orgEntries, selectedVY.start.getTime(), selectedVY.end.getTime()]);
 
-  // Profile completion: the fields a Sevak fills in from Profile & Settings. Occupation "Other" also needs
-  // its details; a family emergency number needs the name of whose number it is.
-  const getMissingProfileFields = (sevak: UserProfile): string[] => {
-    const has = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== '';
-    const missing: string[] = [];
-    if (!has(sevak.age)) missing.push('Age');
-    if (!has(sevak.blood_group)) missing.push('Blood group');
-    if (!has(sevak.emergency_number)) missing.push('Family emergency number');
-    if (!has(sevak.emergency_contact_name)) missing.push('Emergency contact name');
-    if (!has(sevak.occupation) || (sevak.occupation === 'Other' && !has(sevak.occupation_details))) missing.push('Occupation');
-    if (!has(sevak.address)) missing.push('Address');
-    return missing;
-  };
-  const PROFILE_FIELD_COUNT = 6;
-  const getProfileCompletion = (sevak: UserProfile): number =>
-    Math.round(((PROFILE_FIELD_COUNT - getMissingProfileFields(sevak).length) / PROFILE_FIELD_COUNT) * 100);
+  // Profile completion (getMissingProfileFields / getProfileCompletion) comes from services/profileCompletion.
+
 
 
 
@@ -297,37 +301,92 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const filteredSevaks = sortedSevaks.filter(sevak =>
     sevak.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     sevak.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (sevak.alias || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     sevak.mobile.includes(searchQuery)
   );
 
-  const downloadCSV = () => {
+  // Sr. No. follows the order Sevaks were added (#1 = the first one ever added) and stays with the card,
+  // whatever order the cards are shown in.
+  const serialById = useMemo(() => {
+    const ordered = [...sevaks].sort((a, b) =>
+      (a.created_at || '').localeCompare(b.created_at || '') || a.id.localeCompare(b.id));
+    return Object.fromEntries(ordered.map((s, i) => [s.id, i + 1])) as Record<string, number>;
+  }, [sevaks]);
+
+  const exportRows = () => [...sevaks]
+    .sort((a, b) => (serialById[a.id] || 0) - (serialById[b.id] || 0))
+    .map(s => ({
+      'Sr. No': serialById[s.id],
+      Name: s.full_name,
+      Alias: s.alias || '',
+      Username: s.username,
+      Mobile: s.mobile,
+      Gender: s.gender || '',
+      Age: s.age ? String(s.age) : '',
+      ...(BRAND.sevakViharPreferences ? { 'Vihar Type': s.vihar_scope || '', 'Seva Preference': formatSevaPreferences(s.seva_preferences) } : {}),
+    }));
+
+  const exportMembers = async (kind: 'pdf' | 'excel') => {
     if (sevaks.length === 0) {
       showToast("No members to download", 'error');
       return;
     }
-
-    const headers = ["Sr. No", "Name", "Username", "Mobile", "Gender", "Age"];
-    const csvContent = [
-      headers.join(","),
-      ...sevaks.map((s, i) => [
-        i + 1,
-        `"${s.full_name}"`,
-        s.username,
-        s.mobile,
-        s.gender || '-',
-        s.age || '-'
-      ].join(","))
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `sevaks_${toLocalDateKey(new Date())}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setExporting(kind);
+    const rows = exportRows();
+    const base = `${BRAND.shortName}_Sevaks_${toLocalDateKey(new Date())}`.replace(/\s+/g, '_');
+    try {
+      if (kind === 'excel') {
+        const XLSX = await import('xlsx');
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Sevaks');
+        const bytes = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        await deliverFile(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${base}.xlsx`);
+      } else {
+        const needsIndic = rows.some(r => Object.values(r).some(v => /[\u0900-\u097F\u0A80-\u0AFF]/.test(String(v))));
+        const [{ default: jsPDF }, { default: autoTable }, fonts] = await Promise.all([
+          import('jspdf'),
+          import('jspdf-autotable'),
+          needsIndic
+            ? Promise.all([import('../assets/NotoSansDevanagari-Regular'), import('../assets/NotoSansGujarati-Regular')])
+            : Promise.resolve(null),
+        ]);
+        const doc = new jsPDF({ orientation: BRAND.sevakViharPreferences ? 'landscape' : 'portrait' });
+        if (fonts) {
+          doc.addFileToVFS('NotoSansDevanagari-Regular.ttf', fonts[0].NotoSansDevanagariBase64);
+          doc.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
+          doc.addFileToVFS('NotoSansGujarati-Regular.ttf', fonts[1].NotoSansGujaratiBase64);
+          doc.addFont('NotoSansGujarati-Regular.ttf', 'NotoSansGujarati', 'normal');
+        }
+        const title = orgDetails?.name ? `${orgDetails.name}${orgDetails.city ? `, ${orgDetails.city}` : ''}` : BRAND.name;
+        doc.setFontSize(14);
+        doc.text(title, 14, 16);
+        doc.setFontSize(9);
+        doc.setTextColor(120);
+        doc.text(`Sevaks: ${rows.length}   ·   ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`, 14, 22);
+        const head = Object.keys(rows[0]);
+        autoTable(doc, {
+          startY: 27,
+          head: [head],
+          body: rows.map(r => head.map(h => String((r as Record<string, unknown>)[h] ?? ''))),
+          styles: { fontSize: 8, lineColor: [220, 220, 220], lineWidth: 0.2, textColor: [30, 30, 30] },
+          headStyles: { fillColor: [222, 107, 56], textColor: 255 },
+          alternateRowStyles: { fillColor: [255, 250, 245] },
+          didParseCell: (hook) => {
+            const text = hook.cell.raw != null ? String(hook.cell.raw) : '';
+            if (/[\u0A80-\u0AFF]/.test(text)) hook.cell.styles.font = 'NotoSansGujarati';
+            else if (/[\u0900-\u097F]/.test(text)) hook.cell.styles.font = 'NotoSansDevanagari';
+          },
+        });
+        await deliverPdf(doc, `${base}.pdf`);
+      }
+      setShowExportChoice(false);
+    } catch (err) {
+      console.error('Export failed', err);
+      showToast('Could not create the file', 'error');
+    } finally {
+      setExporting(null);
+    }
   };
 
 
@@ -418,11 +477,14 @@ Kindly do Vihar and continue your Seva.`;
                 <p className="text-sm"><strong>Username:</strong> {success.username}</p>
                 <p className="text-sm"><strong>Password:</strong> {success.password}</p>
               </div>
+              {success.renamed && (
+                <p className="mt-3 text-xs text-gray-600 max-w-sm mx-auto">Another Sevak already uses this name, so a number was added to the username. The Sevak can still sign in with their name and mobile number.</p>
+              )}
             </div>
           )}
 
           {/* Mobile: stacked. Desktop: one row — name, mobile, gender, create button */}
-          <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-[1.3fr_1.1fr_auto_auto] md:items-end md:gap-3">
+          <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-[1.25fr_1fr_0.9fr_auto_auto] md:items-end md:gap-3">
             <div>
               <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Full Name</label>
               <input
@@ -450,6 +512,18 @@ Kindly do Vihar and continue your Seva.`;
                 }}
               />
               <p className="text-xs text-gray-400 mt-1 md:hidden">Additional details (age, address, etc.) can be filled by the sevak on their profile.</p>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Alias <span className="normal-case font-semibold text-gray-400">(optional)</span></label>
+              <input
+                type="text"
+                maxLength={60}
+                className="w-full p-3 rounded-xl bg-[#F7F4F0] border-none focus:ring-2 focus:ring-saffron-300 outline-none font-semibold text-[#241C17]"
+                placeholder="e.g. Rahul Paldi, Bhai"
+                value={formData.alias}
+                onChange={e => setFormData({ ...formData, alias: e.target.value })}
+              />
             </div>
 
             <div>
@@ -520,9 +594,17 @@ Kindly do Vihar and continue your Seva.`;
             </div>
             
             <button
-              onClick={downloadCSV}
+              onClick={() => setShowBulkImport(true)}
               className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
-              title="Download as CSV"
+              title="Add many Sevaks from a CSV or Excel file"
+            >
+              <Upload size={16} className="text-gray-500" />
+              Bulk upload
+            </button>
+            <button
+              onClick={() => setShowExportChoice(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
+              title="Download the member list"
             >
               <Download size={16} className="text-gray-500" />
               Export
@@ -563,10 +645,11 @@ Kindly do Vihar and continue your Seva.`;
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded tracking-widest uppercase border border-gray-100 whitespace-nowrap flex-shrink-0">
-                            #{index + 1}
+                            #{serialById[sevak.id] ?? index + 1}
                           </span>
                           <h3 className="text-base font-bold text-gray-900 tracking-tight truncate group-hover:text-saffron-600 transition-colors">
                             {sevak.full_name}
+                            {sevak.alias && <span className="font-semibold text-[#8A6A57]"> ({sevak.alias})</span>}
                           </h3>
                         </div>
                         {/* Last seen */}
@@ -627,6 +710,29 @@ Kindly do Vihar and continue your Seva.`;
       </div>
 
 
+      <BulkSevakImport open={showBulkImport} onClose={() => setShowBulkImport(false)} orgId={currentUser.organization_id} onCreated={fetchData} />
+
+      <BottomSheet open={showExportChoice} onClose={() => { if (!exporting) setShowExportChoice(false); }} maxWidth="max-w-sm">
+        <div className="px-5 pt-3 pb-5 md:pt-5">
+          <p className="m-0 text-base font-extrabold text-[#241C17]">Export member list</p>
+          <p className="m-0 mt-0.5 text-xs text-[#8A6A57]">{sevaks.length} members, numbered in the order they were added</p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {([['pdf', 'PDF', FileText, 'text-red-600 bg-red-50'], ['excel', 'Excel', Table, 'text-green-700 bg-green-50']] as const).map(([kind, label, Icon, tone]) => (
+              <button
+                key={kind}
+                type="button"
+                disabled={!!exporting}
+                onClick={() => exportMembers(kind)}
+                className={`flex flex-col items-center justify-center gap-1.5 py-5 rounded-2xl font-extrabold text-sm active:scale-[0.98] transition disabled:opacity-60 ${tone}`}
+              >
+                {exporting === kind ? <Loader2 size={24} className="animate-spin" /> : <Icon size={24} />}
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </BottomSheet>
+
       {/* View More Details Modal */}
       <Modal open={!!selectedSevak} onClose={() => { setSelectedSevak(null); setEditingId(null); setShowIdCard(false); }} maxWidth="max-w-md">
         {selectedSevak && (() => {
@@ -667,7 +773,7 @@ Kindly do Vihar and continue your Seva.`;
                       <Avatar name={selectedSevak.full_name} url={selectedSevak.avatar_url} size={56} variant="gradient" className="text-xl" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-base font-bold text-gray-900 truncate">{selectedSevak.full_name}</h4>
+                      <h4 className="text-base font-bold text-gray-900 truncate">{selectedSevak.full_name}{selectedSevak.alias && <span className="font-semibold text-gray-500"> ({selectedSevak.alias})</span>}</h4>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                         {editing ? (
                           <div className="flex bg-gray-100 p-0.5 rounded-lg">
@@ -753,6 +859,35 @@ Kindly do Vihar and continue your Seva.`;
                         <span className="text-sm font-semibold text-gray-900 break-words">{selectedSevak.occupation ? (selectedSevak.occupation_details ? `${selectedSevak.occupation} · ${selectedSevak.occupation_details}` : selectedSevak.occupation) : '-'}</span>
                       )}
                     </DetailField>
+
+                    <DetailField label="Alias" wide>
+                      {editing ? (
+                        <input type="text" maxLength={60} value={editForm.alias} onChange={e => setEditForm({ ...editForm, alias: e.target.value })} placeholder="A name you know them by (optional)" className={inp} />
+                      ) : (
+                        <span className="text-sm font-semibold text-gray-900 break-words">{selectedSevak.alias || '-'}</span>
+                      )}
+                    </DetailField>
+
+                    {BRAND.sevakViharPreferences && (editing ? (
+                      <div className="col-span-2 space-y-2.5">
+                        <ViharPreferencesFields
+                          scope={editForm.viharScope}
+                          preferences={editForm.sevaPreferences}
+                          onChange={({ scope, preferences }) => setEditForm({ ...editForm, viharScope: scope, sevaPreferences: preferences })}
+                          selectClassName={inp}
+                          labelClassName="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <DetailField label="Vihar Type">
+                          <span className="text-sm font-semibold text-gray-900">{selectedSevak.vihar_scope || '-'}</span>
+                        </DetailField>
+                        <DetailField label="Seva Preference">
+                          <span className="text-sm font-semibold text-gray-900 break-words">{formatSevaPreferences(selectedSevak.seva_preferences) || '-'}</span>
+                        </DetailField>
+                      </>
+                    ))}
 
                     <DetailField label="Address" wide>
                       {editing ? (

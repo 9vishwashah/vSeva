@@ -33,7 +33,19 @@ export interface UserProfile {
   created_at?: string; // ISO timestamp the profile (Sevak/Captain) was added — shown as "Joined"
   yearly_goal?: number; // Sankalp: target number of Vihars this calendar year
   avatar_url?: string | null;
+  alias?: string | null; // optional reference name the Captain uses to identify the Sevak quickly
+  // Shraman Seva Group only: which Vihars the Sevak joins, and how they like to serve
+  vihar_scope?: 'Internal' | 'External' | 'Both' | null;
+  seva_preferences?: SevaPreference[] | null;
 }
+
+export type SevaPreference = 'Walking' | 'Car Seva' | 'Wheelchair Seva';
+export const SEVA_PREFERENCES: { value: SevaPreference; label: string }[] = [
+  { value: 'Walking', label: 'Walking' },
+  { value: 'Car Seva', label: 'Car Seva (Updhi)' },
+  { value: 'Wheelchair Seva', label: 'Wheelchair Seva' },
+];
+export const VIHAR_SCOPES = ['Internal', 'External', 'Both'] as const;
 
 export interface AreaRoute {
   id: number;
@@ -42,6 +54,8 @@ export interface AreaRoute {
   to_name: string;
   distance_km: number;
   note?: string;
+  via?: string | null;      // optional place the route passes through ("A -> B via C")
+  maps_url?: string | null; // the route the Captain drew in Google Maps
 }
 
 // Matching public.vihar_entries
@@ -72,6 +86,7 @@ export interface ViharEntry {
   status?: 'pending' | 'approved' | 'rejected';
   reviewed_by?: string; // uuid of the Captain/admin who approved or rejected
   reviewed_at?: string; // ISO timestamp
+  photo_url?: string | null; // optional photo of the Vihar (Shraman Seva Group entry forms)
 }
 
 export interface StatSummary {
@@ -95,7 +110,7 @@ export interface UserNotification {
   id: string;
   user_id: string;
   organization_id?: string;
-  type: 'password_reset' | 'info' | 'alert' | 'alert_upcoming' | 'inactivity';
+  type: 'password_reset' | 'info' | 'alert' | 'alert_upcoming' | 'inactivity' | 'channel_message' | 'sos';
   title: string;
   message: string;
   payload?: any;
@@ -116,6 +131,15 @@ export interface UpcomingVihar {
   sadhu_count: number;
   sadhvi_count: number;
   created_at: string;
+  // optional details the Captain adds when announcing the Vihar
+  samuday?: string | null;
+  sadhu_sadhvi_names?: string | null;
+  wheelchair_required?: boolean;
+  wheelchair_count?: number | null;
+  car_seva_required?: boolean;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  police_security?: boolean;
 }
 
 // Matching public.vihar_interests — a sevak's "I'm Interested" response to an UpcomingVihar
@@ -332,6 +356,11 @@ export interface ChannelPost {
   author_role?: string | null;
   message: string;
   created_at: string;
+  // Set when this message is a reply: which message it answers and a snapshot of who wrote it / what it said.
+  // reply_to_id becomes null if the original is later deleted (the quote then reads "Original message deleted").
+  reply_to_id?: string | null;
+  reply_to_author?: string | null;
+  reply_to_excerpt?: string | null;
 }
 
 export interface ChannelSettings {

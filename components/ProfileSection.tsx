@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BRAND } from '@brand';
-import { UserProfile, UserRole, Organization } from '../types';
+import { UserProfile, UserRole, Organization, SevaPreference } from '../types';
+import { getMissingProfileFields, getProfileCompletion } from '../services/profileCompletion';
+import ViharPreferencesFields from './ViharPreferencesFields';
 import { dataService } from '../services/dataService';
 import { Printer, ArrowLeft, Check, Loader2, Bell, BellOff, AlertTriangle, RefreshCw, CreditCard, LogOut, Camera, BadgeCheck, CalendarDays, ChevronRight } from 'lucide-react';
 import IDCardBadge from './IDCardBadge';
@@ -94,6 +96,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
         occupation: user.occupation || '',
         occupation_details: user.occupation_details || '',
         address: user.address || '',
+        vihar_scope: user.vihar_scope || '',
+        seva_preferences: (user.seva_preferences || []) as SevaPreference[],
     });
 
     useEffect(() => {
@@ -105,6 +109,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             occupation: user.occupation || '',
             occupation_details: user.occupation_details || '',
             address: user.address || '',
+            vihar_scope: user.vihar_scope || '',
+            seva_preferences: (user.seva_preferences || []) as SevaPreference[],
         });
     }, [user]);
 
@@ -148,6 +154,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 address: editForm.address,
                 occupation: editForm.occupation,
                 occupationDetails: editForm.occupation ? editForm.occupation_details.trim() : '',
+                ...(BRAND.sevakViharPreferences ? { viharScope: editForm.vihar_scope, sevaPreferences: editForm.seva_preferences } : {}),
             });
             showToast('Profile updated successfully!', 'success');
             if (onProfileUpdated) await onProfileUpdated();
@@ -166,7 +173,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             || editForm.emergency_contact_name.trim() !== (user.emergency_contact_name || '')
             || editForm.occupation !== (user.occupation || '')
             || editForm.occupation_details.trim() !== (user.occupation_details || '')
-            || editForm.address.trim() !== (user.address || '').trim())
+            || editForm.address.trim() !== (user.address || '').trim()
+            || (BRAND.sevakViharPreferences && (editForm.vihar_scope !== (user.vihar_scope || '')
+                || [...editForm.seva_preferences].sort().join('|') !== [...(user.seva_preferences || [])].sort().join('|'))))
         : (captainName.trim() !== user.full_name.trim()
             || viceCaptainName.trim() !== (orgDetails?.vice_captain_name || '').trim());
 
@@ -313,16 +322,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
     const accountBadge = getAccountBadge(user.username);
 
-    // Sevak profile completeness: the six fields a Sevak fills in here (shown as a ring around the photo).
-    const filled = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== '';
-    const missingFields: string[] = [];
-    if (!filled(user.age)) missingFields.push('Age');
-    if (!filled(user.blood_group)) missingFields.push('Blood group');
-    if (!filled(user.emergency_number)) missingFields.push('Family emergency number');
-    if (!filled(user.emergency_contact_name)) missingFields.push('Emergency contact name');
-    if (!filled(user.occupation) || (user.occupation === 'Other' && !filled(user.occupation_details))) missingFields.push('Occupation');
-    if (!filled(user.address)) missingFields.push('Address');
-    const completionPct = Math.round(((6 - missingFields.length) / 6) * 100);
+    // Sevak profile completeness (shown as a ring around the photo): services/profileCompletion.
+    const missingFields = getMissingProfileFields(user);
+    const completionPct = getProfileCompletion(user);
     const ringColor = completionPct === 100 ? '#16A34A' : completionPct >= 50 ? '#F59E0B' : '#DC2626';
     const RING = 104, RING_R = 48, RING_C = 2 * Math.PI * RING_R;
     const joinedLabel = user.created_at && !isNaN(new Date(user.created_at).getTime())
@@ -401,14 +403,14 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             <SankalpSettingsCard user={user} />
 
             {/* Profile Incomplete nudge */}
-            {isSevak && (!user.blood_group || !user.emergency_number || !user.emergency_contact_name || !user.occupation || !user.address) && (
+            {isSevak && missingFields.some(f => f !== 'Age') && (
                 <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
                     <div className="mt-0.5 text-blue-600 shrink-0">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
                     <div>
                         <p className="text-sm font-bold text-blue-900 mb-0.5">Please Complete Your Profile</p>
-                        <p className="text-xs text-blue-800 leading-relaxed">Filling in your Blood Group, Family Emergency Number (and whose it is), Occupation, and Address ensures we can assist you promptly during an incident, and is required for your Vihar Sevak Card.</p>
+                        <p className="text-xs text-blue-800 leading-relaxed">Filling in your Blood Group, Family Emergency Number (and whose it is), Occupation, Address{BRAND.sevakViharPreferences ? ', Vihar Type and Seva Preference' : ''} ensures we can assist you promptly during an incident, and is required for your Vihar Sevak Card.</p>
                     </div>
                 </div>
             )}
@@ -519,6 +521,23 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                                 className={fieldInputClass + ' resize-none'}
                             />
                         </div>
+
+                        {/* Vihar preferences (Shraman Seva Group) */}
+                        {BRAND.sevakViharPreferences && (
+                            <div className="sm:col-span-2 rounded-2xl bg-[#FFF8F1] p-4 flex flex-col gap-3">
+                                <div>
+                                    <p className="m-0 text-sm font-bold text-[#241C17]">Vihar Preferences</p>
+                                    <p className="m-0 text-xs text-[#8A6A57]">Which Vihars you join and how you like to serve.</p>
+                                </div>
+                                <ViharPreferencesFields
+                                    scope={editForm.vihar_scope}
+                                    preferences={editForm.seva_preferences}
+                                    onChange={({ scope, preferences }) => setEditForm({ ...editForm, vihar_scope: scope, seva_preferences: preferences })}
+                                    selectClassName={fieldInputClass}
+                                    labelClassName={fieldLabelClass}
+                                />
+                            </div>
+                        )}
 
                         {/* Gender — read-only */}
                         <div>

@@ -23,11 +23,13 @@ const SankalpGate: React.FC<SankalpGateProps> = ({ user }) => {
   const org = useOrgSankalp(isCaptain ? user.organization_id : undefined, year);
   const missing = isCaptain ? (org !== undefined && org.target === null) : mine === null;
 
-  const [value, setValue] = useState('');
+  // A Sevak starts from a default Sankalp of 5 Vihars (they can change it before saving).
+  const SEVAK_DEFAULT = 5;
+  const [value, setValue] = useState(isCaptain ? '' : String(SEVAK_DEFAULT));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const quick = isCaptain ? [25, 50, 100, 200] : [12, 25, 50, 100];
+  const quick = isCaptain ? [25, 50, 100, 200] : [SEVAK_DEFAULT, 12, 25, 50];
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +74,7 @@ const SankalpGate: React.FC<SankalpGateProps> = ({ user }) => {
           required
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={String(quick[1])}
+          placeholder={String(isCaptain ? quick[1] : SEVAK_DEFAULT)}
           className="mt-1.5 h-12 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-3.5 text-lg font-bold text-gray-900 outline-none transition focus:border-saffron-400 focus:bg-white focus:ring-4 focus:ring-saffron-100"
         />
         <div className="mt-2 flex flex-wrap gap-2">

@@ -9,6 +9,8 @@
     "dev:ssg": "vite --mode ssg",
     "build:ssg": "vite build --mode ssg",
     "check:brand": "node scripts/check_brand_leak.mjs dist ssg",
+    "android:vseva": "node scripts/android.mjs vseva",
+    "android:ssg": "node scripts/android.mjs ssg",
     "preview": "vite preview"
   },
   "dependencies": {

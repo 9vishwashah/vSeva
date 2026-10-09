@@ -50,4 +50,19 @@
          denied. No background-location permission is requested or needed. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Only Android 9 and older need this to save a shared card into the Gallery (Pictures/<app>);
+         Android 10+ saves there without any permission (AppSharePlugin.saveToGallery). -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+
+    <!-- Android 11+ package visibility: lets AppSharePlugin check for and open WhatsApp / Instagram
+         directly ("Share to WhatsApp", "Instagram Story"). -->
+    <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+        <package android:name="com.instagram.android" />
+        <intent>
+            <action android:name="com.instagram.share.ADD_TO_STORY" />
+            <data android:mimeType="image/*" />
+        </intent>
+    </queries>
 </manifest>

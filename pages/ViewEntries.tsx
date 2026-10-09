@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCacheRefresh } from '../hooks/useCacheRefresh';
 import { UserProfile, ViharEntry, Organization, UserRole } from '../types';
 import { dataService } from '../services/dataService';
 import { Search, Calendar, User, MessageCircle, Trash2, Pencil, X } from 'lucide-react';
@@ -28,9 +29,11 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
   // Same Vihar Year (VY) segregation as Dashboard/Group Analytics — shared
   // app-wide via ViharYearContext, set only from the Dashboard's selector.
   const { selectedVY } = useViharYear();
-  const fetchData = async () => {
-      setLoading(true);
-      setLoadError(null);
+  const fetchData = async (silent = false) => {
+      if (!silent) {
+        setLoading(true);
+        setLoadError(null);
+      }
       try {
         // Admin's "View Entries" is the official ledger (approved only). A Sevak's
         // "My Vihars" also needs to show their own pending submissions, so it uses
@@ -83,7 +86,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
 
       } catch (err) {
         console.error('Failed to load entries', err);
-        setLoadError(navigator.onLine ? 'error' : 'offline');
+        if (!silent) setLoadError(navigator.onLine ? 'error' : 'offline');
       } finally {
         setLoading(false);
       }
@@ -92,6 +95,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
   useEffect(() => {
     fetchData();
   }, [currentUser.organization_id]);
+  useCacheRefresh(() => fetchData(true));
 
   const entriesInVY = entries.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
 
@@ -176,7 +180,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
       {loading ? (
         <EntriesSkeleton />
       ) : loadError ? (
-        <StatusScreen variant={loadError} onRetry={fetchData} />
+        <StatusScreen variant={loadError} onRetry={() => fetchData()} />
       ) : (
         <>
           {/* Desktop Table View */}
@@ -192,6 +196,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                     <th className="p-4 text-center">Sadhvi</th>
                     <th className="p-4">Sevaks</th>
                     <th className="p-4 text-center">Wheelchair</th>
+                    <th className="p-4 text-center">Car Seva</th>
                     <th className="p-4">Samuday</th>
                     <th className="p-4">Type</th>
                     <th className="p-4 text-center">Kms</th>
@@ -226,8 +231,21 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                           {(entry.sevaks || []).map(u => getSevakInfo(u).name).join(', ')}
                         </div>
                       </td>
-                      <td className="p-4 text-center text-gray-400">
-                        {entry.wheelchair ? <span className="text-blue-600 font-bold text-xs">Yes</span> : '-'}
+                      <td className="p-4 text-center text-gray-400" title={(entry.wheelchair_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}>
+                        {entry.wheelchair ? (
+                          <div className="text-xs">
+                            <span className="text-blue-600 font-bold">Yes</span>
+                            {(entry.wheelchair_sevaks || []).length > 0 && <div className="text-gray-600 font-medium max-w-[130px] whitespace-normal">{(entry.wheelchair_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}</div>}
+                          </div>
+                        ) : '-'}
+                      </td>
+                      <td className="p-4 text-center text-gray-400" title={(entry.car_seva_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}>
+                        {entry.car_seva ? (
+                          <div className="text-xs">
+                            <span className="text-emerald-600 font-bold">Yes</span>
+                            {(entry.car_seva_sevaks || []).length > 0 && <div className="text-gray-600 font-medium max-w-[130px] whitespace-normal">{(entry.car_seva_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}</div>}
+                          </div>
+                        ) : '-'}
                       </td>
                       <td className="p-4 max-w-[150px] truncate" title={entry.samuday}>{entry.samuday || '-'}</td>
                       <td className="p-4">

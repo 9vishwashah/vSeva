@@ -3,7 +3,8 @@ import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UpcomingVihar, UserProfile, UserNotification } from '../types';
 import ViharAlertCard from '../components/ViharAlertCard';
-import { Bell, MapPin, ChevronDown, Check, Users, KeyRound } from 'lucide-react';
+import { Bell, MapPin, ChevronDown, ChevronRight, Check, Users, KeyRound } from 'lucide-react';
+import { getNotificationTarget } from '../services/notificationRouting';
 import ResetSevakPasswordModal from '../components/ResetSevakPasswordModal';
 import { useToast } from '../context/ToastContext';
 import Skeleton from '../components/Skeleton';
@@ -14,6 +15,8 @@ interface NotificationsProps {
   // Set when arriving via a shared WhatsApp deep link (?vihar=<id>) — scrolls
   // to and highlights that specific Vihar's card so "I'm Interested" is one tap away.
   highlightViharId?: string | null;
+  // Tapping a card: go to the screen it is about (VChat for a chat message, Pending Approvals for a submission…).
+  onOpenNotification?: (n: UserNotification) => void;
 }
 
 const relativeDaysAway = (v: UpcomingVihar): number => {
@@ -40,7 +43,7 @@ const bucketByDay = (rows: UserNotification[]) => {
 
 // Every Vihar alert (upcoming and past) plus general notifications, in one place.
 // Nothing here ever disappears when a new alert is created — each is its own card.
-const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightViharId }) => {
+const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightViharId, onOpenNotification }) => {
   const { showToast } = useToast();
   const [resetTarget, setResetTarget] = useState<UserNotification | null>(null);
   const [resetDone, setResetDone] = useState<Set<string>>(new Set());
@@ -145,8 +148,22 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
 
   // A Sevak asked for a password reset (Forgot password): the Captain sets the Sevak's new mobile number
   // (their password) in a small dialog.
-  const NotificationRow: React.FC<{ n: UserNotification }> = ({ n }) => (
-    <div className={`bg-white rounded-[18px] p-4 flex items-start gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${!n.is_read ? '' : 'opacity-80'}`}>
+  const NotificationRow: React.FC<{ n: UserNotification }> = ({ n }) => {
+    // Where this card leads (null = it is just information, so it isn't clickable)
+    const target = onOpenNotification ? getNotificationTarget(n, currentUser.role) : null;
+    const open = () => {
+      if (!target || !onOpenNotification) return;
+      if (!n.is_read) markAsRead(n.id);
+      onOpenNotification(n);
+    };
+    return (
+    <div
+      role={target ? 'button' : undefined}
+      tabIndex={target ? 0 : undefined}
+      onClick={target ? open : undefined}
+      onKeyDown={target ? (e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }) : undefined}
+      className={`bg-white rounded-[18px] p-4 flex items-start gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${!n.is_read ? '' : 'opacity-80'} ${target ? 'cursor-pointer transition-transform active:scale-[0.99] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-saffron-300' : ''}`}
+    >
       <div className="shrink-0 w-[38px] h-[38px] rounded-xl flex items-center justify-center" style={{ background: '#FFF0E5' }}>
         <Bell size={17} style={{ color: '#DE6B38' }} />
       </div>
@@ -158,7 +175,7 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
             <p className="mt-2 text-[12px] font-bold text-green-700">Password reset — new number set</p>
           ) : (
             <button
-              onClick={() => setResetTarget(n)}
+              onClick={e => { e.stopPropagation(); setResetTarget(n); }}
               className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-saffron-600 px-3 py-1.5 text-[12px] font-bold text-white hover:bg-saffron-700"
             >
               <KeyRound size={13} />
@@ -166,21 +183,25 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
             </button>
           )
         )}
+        {target && <p className="mt-1.5 text-[12px] font-bold text-saffron-600">{target.label} →</p>}
         <p className="mt-1.5 text-[11px] font-semibold text-[#B7B7AF]">{new Date(n.created_at).toLocaleString()}</p>
       </div>
       {!n.is_read ? (
         <button
-          onClick={() => markAsRead(n.id)}
+          onClick={e => { e.stopPropagation(); markAsRead(n.id); }}
           title="Mark as read"
           className="shrink-0 mt-0.5 p-1 rounded-full text-saffron-600 hover:bg-saffron-50 transition-colors"
         >
           <Check size={16} />
         </button>
+      ) : target ? (
+        <ChevronRight size={16} className="shrink-0 mt-1 text-[#B7B7AF]" />
       ) : (
         <div className="shrink-0 mt-1.5 w-2 h-2 rounded-full bg-transparent" />
       )}
     </div>
-  );
+    );
+  };
 
   const resetModal = (
     <ResetSevakPasswordModal

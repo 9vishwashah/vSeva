@@ -127,12 +127,19 @@ export const channelService = {
     authorName: string,
     message: string,
     authorAvatarUrl?: string | null,
-    authorRole?: string | null
+    authorRole?: string | null,
+    // The message being replied to (same channel only — the database re-checks that and fills in the quote).
+    replyToId?: string | null
   ): Promise<ChannelPost> {
     const { data, error } = await supabase
       .from('channel_posts')
-      .insert({ organization_id: organizationId, author_user_id: authorUserId, message: message.slice(0, 4000) })
-      .select('id, organization_id, author_user_id, message, created_at')
+      .insert({
+        organization_id: organizationId,
+        author_user_id: authorUserId,
+        message: message.slice(0, 4000),
+        ...(replyToId ? { reply_to_id: replyToId } : {}),
+      })
+      .select('id, organization_id, author_user_id, message, created_at, reply_to_id, reply_to_author, reply_to_excerpt')
       .single();
     if (error) throw error;
     return { ...(data as any), author_name: authorName, author_avatar_url: authorAvatarUrl, author_role: authorRole } as ChannelPost;

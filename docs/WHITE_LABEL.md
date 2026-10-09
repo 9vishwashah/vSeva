@@ -100,9 +100,35 @@ get a step-by-step "Add to Home Screen" guide, with a copy-link helper when the 
 starts at `/`: signed-out users land on the login screen (the marketing landing page is skipped in standalone mode), signed-in users on their dashboard.
 The icon, name and splash colours come from the brand (`manifest.webmanifest`, apple-touch-icon, `apple-mobile-web-app-title`).
 
+## Android apps (Android Studio)
+
+One Android project builds both apps as Gradle *product flavors* (`android/app/build.gradle`): `vseva` (`in.vjas.vseva`, the app on
+Google Play) and `ssg` (`in.vjas.ssg`, Shraman Seva Group — own name, icons, splash and version counter, all in `android/app/src/ssg/`).
+They install side by side on one phone/emulator.
+
+**One-time:** create `.env.ssg.local` (git-ignored) with `VITE_SITE_URL=https://ssg.vjas.in` and, for push, `VITE_ONESIGNAL_APP_ID=<SSG's OneSignal App ID>`.
+(Without the OneSignal id the SSG Android build simply leaves push off; it never borrows vSeva's.)
+
+**Run one brand:**
+
+1. `npm run android:ssg` (or `android:vseva`) — builds that brand's web app and syncs it into `android/`. Add `-- --open` to open Android Studio, or `-- --run` to install and launch on a connected device.
+2. Android Studio: **Build > Select Build Variant** > `ssgDebug` (or `vsevaDebug`) for module **app**, then **Run**.
+
+Step 1 must be repeated whenever you switch brand or change web code. If the variant and the bundled web app disagree, Gradle stops with a message
+(`verify<Variant>WebAssets`) rather than packaging the wrong brand.
+
+**Release bundles:** `npm run android:<brand>`, then in `android/`: `./gradlew bundleVsevaRelease` -> `app/build/outputs/bundle/vsevaRelease/app-vseva-release.aab`,
+or `./gradlew bundleSsgRelease` -> `app/build/outputs/bundle/ssgRelease/app-ssg-release.aab`. Use JDK 21 (Android Studio's bundled JBR), not JDK 25.
+Bump `versionCode` in `defaultConfig` (vSeva) or in the `ssg` flavor (SSG) before every Play upload. Both are signed with the keystore in `keystore.properties`.
+
+**Before publishing SSG on Google Play:** confirm the package name `in.vjas.ssg` (it cannot change after the first upload; set in `build.gradle` and `capacitor.config.ts`),
+add an Android app for it in Firebase and save its `google-services.json` as `android/app/src/ssg/google-services.json` (until then the ssg variants skip Firebase),
+add the FCM credentials to SSG's OneSignal app, and set up a Play Console listing (see `docs/PLAY_CONSOLE.md`).
+If the logo changes, regenerate the SSG icons with `node scripts/prepare_android_ssg_assets.mjs`.
+
 ## Not done / decisions for the owner
 
-* **Android app for SSG** — would need its own `applicationId`, Play listing, `capacitor.config.ts`, icons and signing key. The web site/PWA works today.
+* **SSG on Google Play** — the Android app builds and runs (see above); it still needs its Play listing, Firebase app and a final package-name decision.
 * **Privacy policy / deletion pages** are brand-driven but SSG's text names "Shraman Seva Group" as operator and uses
   the contact details above — have SSG confirm and, ideally, have the policy reviewed.
 * **Gujarati/Hindi landing copy** was written for this page — please have a native speaker proofread it.

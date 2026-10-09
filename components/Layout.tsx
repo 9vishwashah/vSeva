@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserRole } from '../types';
+import { UserRole, UserNotification } from '../types';
 import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck, WifiOff, Compass, MessageSquare } from 'lucide-react';
 
 import NotificationBell from './NotificationBell';
@@ -8,6 +8,7 @@ import LanguageDropdown from './LanguageDropdown';
 import Avatar from './Avatar';
 import { BRAND } from '@brand';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useSwipeDismiss } from '../hooks/useSwipeDismiss';
 import { useLanguage } from '../context/LanguageContext';
 
 interface LayoutProps {
@@ -20,10 +21,12 @@ interface LayoutProps {
   onLogout: () => void;
   currentPage: string;
   setCurrentPage: (page: string) => void;
+  /** Tapping a notification in the bell: open the screen it is about. */
+  onOpenNotification?: (n: UserNotification) => void;
 }
 
 const Layout: React.FC<LayoutProps> = ({
-  children, role, userInitials, userName, avatarUrl, userId, onLogout, currentPage, setCurrentPage
+  children, role, userInitials, userName, avatarUrl, userId, onLogout, currentPage, setCurrentPage, onOpenNotification
 }) => {
   const isOnline = useOnlineStatus();
   const { t } = useLanguage();
@@ -119,6 +122,114 @@ const Layout: React.FC<LayoutProps> = ({
       mainRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     }
   }, [currentPage]);
+
+  // A tiny haptic tick on tab changes, like native apps (ignored where unsupported).
+  const tick = () => { try { (navigator as any).vibrate?.(8); } catch { /* ignore */ } };
+
+  // "More" sheet: glides up, drag down (or tap outside / back button) to glide away.
+  const sheet = useSwipeDismiss(() => setMoreOpen(false), { enabled: moreOpen });
+
+  // Swipe left/right between the main tabs, like WhatsApp's Chats / Status / Calls. Forms and detail
+  // pages are left out on purpose so a sideways drag never costs anyone their input.
+  const swipeOrder = role === UserRole.ORG_ADMIN
+    ? ['dashboard', 'view-entries', 'statistics', 'pending-approvals']
+    : ['analytics', 'my-vihars', 'statistics'];
+
+  const prevPageRef = React.useRef(currentPage);
+  const slideDirRef = React.useRef<'next' | 'prev' | null>(null);
+  if (prevPageRef.current !== currentPage) {
+    const a = swipeOrder.indexOf(prevPageRef.current);
+    const b = swipeOrder.indexOf(currentPage);
+    slideDirRef.current = a >= 0 && b >= 0 ? (b > a ? 'next' : 'prev') : null;
+    prevPageRef.current = currentPage;
+  }
+
+  const latest = React.useRef({ currentPage, swipeOrder, moreOpen, setCurrentPage });
+  latest.current = { currentPage, swipeOrder, moreOpen, setCurrentPage };
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const g = { x0: 0, y0: 0, t0: 0, dx: 0, active: false, horizontal: false };
+
+    // Don't hijack gestures that belong to something else: inputs, maps, and anything that scrolls sideways.
+    const shouldSkip = (target: EventTarget | null) => {
+      let n = target as HTMLElement | null;
+      while (n && n !== el) {
+        if (n.matches?.('input, textarea, select, canvas, iframe, [data-no-swipe], .leaflet-container')) return true;
+        if (n.scrollWidth > n.clientWidth + 2) {
+          const ox = getComputedStyle(n).overflowX;
+          if (ox === 'auto' || ox === 'scroll') return true;
+        }
+        n = n.parentElement;
+      }
+      return false;
+    };
+    const neighbour = (dir: 1 | -1): string | null => {
+      const { swipeOrder: order, currentPage: cur } = latest.current;
+      const i = order.indexOf(cur);
+      return i < 0 ? null : (order[i + dir] ?? null);
+    };
+
+    const onStart = (e: TouchEvent) => {
+      const L = latest.current;
+      if (window.innerWidth >= 768 || L.moreOpen || e.touches.length !== 1) return;
+      if (L.swipeOrder.indexOf(L.currentPage) < 0) return;
+      const t = e.touches[0];
+      if (t.clientX < 24 || t.clientX > window.innerWidth - 24) return; // leave the system's edge gestures alone
+      if (shouldSkip(e.target)) return;
+      g.x0 = t.clientX; g.y0 = t.clientY; g.t0 = Date.now(); g.dx = 0; g.active = true; g.horizontal = false;
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!g.active) return;
+      const t = e.touches[0];
+      const dx = t.clientX - g.x0;
+      const dy = t.clientY - g.y0;
+      if (!g.horizontal) {
+        if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { g.active = false; return; } // it's a scroll
+        if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+        g.horizontal = true;
+      }
+      g.dx = dx;
+      const c = contentRef.current;
+      if (!c) return;
+      // follow the finger (half speed); at the first/last tab it resists
+      const shift = neighbour(dx < 0 ? 1 : -1) ? dx * 0.5 : dx * 0.12;
+      c.style.transition = 'none';
+      c.style.transform = `translateX(${shift}px)`;
+      c.style.opacity = String(1 - Math.min(Math.abs(shift) / 420, 0.35));
+    };
+    const onEnd = () => {
+      if (!g.active) return;
+      g.active = false;
+      if (!g.horizontal) return;
+      const c = contentRef.current;
+      const dx = g.dx;
+      const velocity = Math.abs(dx) / Math.max(1, Date.now() - g.t0);
+      const target = neighbour(dx < 0 ? 1 : -1);
+      if (target && (Math.abs(dx) > 70 || (velocity > 0.45 && Math.abs(dx) > 30))) {
+        if (c) { c.style.transition = ''; c.style.transform = ''; c.style.opacity = ''; }
+        tick();
+        latest.current.setCurrentPage(target);
+      } else if (c) {
+        c.style.transition = 'transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 220ms ease-out';
+        c.style.transform = '';
+        c.style.opacity = '';
+      }
+    };
+
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove', onMove, { passive: true });
+    el.addEventListener('touchend', onEnd, { passive: true });
+    el.addEventListener('touchcancel', onEnd, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', onMove);
+      el.removeEventListener('touchend', onEnd);
+      el.removeEventListener('touchcancel', onEnd);
+    };
+  }, []);
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 font-sans">
@@ -225,7 +336,7 @@ const Layout: React.FC<LayoutProps> = ({
                 </div>
               )}
             </button>
-            <NotificationBell userId={userId} onViewAll={() => setCurrentPage('notifications')} />
+            <NotificationBell userId={userId} role={role} onOpenNotification={onOpenNotification} onViewAll={() => setCurrentPage('notifications')} />
           </div>
           {/* Language: one compact dropdown instead of three pills squeezed beside the account name */}
           {!sidebarCollapsed && <LanguageDropdown placement="top" block className="mb-2.5" />}
@@ -262,7 +373,7 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <LanguageSwitcher compact />
-            <NotificationBell userId={userId} onViewAll={() => setCurrentPage('notifications')} />
+            <NotificationBell userId={userId} role={role} onOpenNotification={onOpenNotification} onViewAll={() => setCurrentPage('notifications')} />
           </div>
         </header>
 
@@ -274,7 +385,9 @@ const Layout: React.FC<LayoutProps> = ({
           style={{ WebkitOverflowScrolling: 'touch', scrollbarGutter: 'stable' } as React.CSSProperties}
         >
           <div className="max-w-7xl mx-auto px-4 pt-[72px] pb-28 md:p-8">
-            {children}
+            <div key={currentPage} ref={contentRef} className={slideDirRef.current ? `app-slide-${slideDirRef.current}` : undefined}>
+              {children}
+            </div>
           </div>
         </main>
 
@@ -299,7 +412,7 @@ const Layout: React.FC<LayoutProps> = ({
               return (
                 <button
                   key={item.page}
-                  onClick={() => setCurrentPage(item.page)}
+                  onClick={() => { tick(); setCurrentPage(item.page); }}
                   className="flex items-center justify-center min-w-0 active:scale-95 transition-[flex-grow] duration-300 ease-out"
                   style={{ flex: `${active ? 1.7 : 1} 1 0%` }}
                 >
@@ -316,7 +429,7 @@ const Layout: React.FC<LayoutProps> = ({
 
             {/* More */}
             <button
-              onClick={() => setMoreOpen(true)}
+              onClick={() => { tick(); setMoreOpen(true); }}
               className="flex items-center justify-center min-w-0 active:scale-95 transition-[flex-grow] duration-300 ease-out"
               style={{ flex: `${moreActive ? 1.7 : 1} 1 0%` }}
             >
@@ -342,11 +455,13 @@ const Layout: React.FC<LayoutProps> = ({
 
         {/* More sheet */}
         {moreOpen && (
-          <div className="md:hidden fixed inset-0 z-40 flex items-end justify-center" onClick={() => setMoreOpen(false)}>
-            <div className="absolute inset-0 bg-black/40" />
+          <div className="md:hidden fixed inset-0 z-40 flex items-end justify-center" onClick={sheet.close}>
+            <div ref={sheet.backdropRef} className="absolute inset-0 bg-black/40 app-modal-backdrop" />
             <div
-              className="relative w-full max-w-md bg-white rounded-t-[28px] p-4 shadow-2xl"
-              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
+              ref={sheet.sheetRef}
+              {...sheet.handlers}
+              className="relative w-full max-w-md bg-white rounded-t-[28px] p-4 shadow-2xl app-sheet-up"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)', overscrollBehavior: 'contain' }}
               onClick={e => e.stopPropagation()}
             >
               <div className="w-9 h-1 rounded-full bg-gray-200 mx-auto mb-4" />

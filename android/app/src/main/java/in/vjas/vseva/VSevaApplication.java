@@ -40,7 +40,7 @@ public class VSevaApplication extends Application {
 
         NotificationChannel channel = new NotificationChannel(
                 SOS_CHANNEL_ID,
-                "VSeva SOS Alerts",
+                getString(R.string.sos_channel_name), // brand-specific (res/values/strings.xml, overridden in src/ssg)
                 NotificationManager.IMPORTANCE_HIGH
         );
         channel.setDescription("Urgent SOS alerts from Sevaks requiring immediate attention");

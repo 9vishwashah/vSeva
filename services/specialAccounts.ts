@@ -1,16 +1,13 @@
-// Accounts that carry a public title + verified tick on their profile. Usernames are unique across the
-// platform, so this is a plain lookup — it grants no permissions, it is only a label.
+import { BRAND } from '@brand';
+
+// Accounts that carry a public title + verified tick on their profile. Which accounts, and what title, is part
+// of each brand's settings (brands/<id>/meta.ts -> accountBadges), so one brand's names never ship in another's app.
+// Usernames are unique, so this is a plain lookup — it grants no permissions, it is only a label.
 export interface AccountBadge {
   title: string;
 }
 
-const SPECIAL_ACCOUNTS: Record<string, AccountBadge> = {
-  'vishwashah@vsevak.in': { title: 'Developer' },
-  'aagamjain': { title: 'Team vSeva' },
-  'alpeshshah@vsevak.in': { title: 'Team vSeva' },
-  'namyamehta@vsevak.in': { title: 'Team vSeva' },
-};
-
 export function getAccountBadge(username?: string | null): AccountBadge | null {
-  return (username && SPECIAL_ACCOUNTS[username.trim().toLowerCase()]) || null;
+  const title = username ? BRAND.accountBadges[username.trim().toLowerCase()] : undefined;
+  return title ? { title } : null;
 }

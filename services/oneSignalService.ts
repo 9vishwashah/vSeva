@@ -29,6 +29,9 @@ async function waitForOneSignalReady(OneSignal: any, maxAttempts = 14): Promise<
   return false;
 }
 
+// False in a build without its own OneSignal app id (push is then off everywhere in that build).
+const PUSH_ENABLED = !!import.meta.env.VITE_ONESIGNAL_APP_ID;
+
 export const initOneSignal = async () => {
   if (initPromise) return initPromise;
 
@@ -42,8 +45,15 @@ export const initOneSignal = async () => {
   if (isNativePlatform()) {
     initPromise = (async () => {
       try {
+        const appId = import.meta.env.VITE_ONESIGNAL_APP_ID;
+        if (!appId) {
+          // e.g. an SSG test build made before SSG's own OneSignal app id was configured: skip push rather than
+          // register the device in another brand's OneSignal app.
+          console.warn('OneSignal: no VITE_ONESIGNAL_APP_ID in this build - push notifications are off');
+          return;
+        }
         const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
-        await OneSignal.initialize(import.meta.env.VITE_ONESIGNAL_APP_ID);
+        await OneSignal.initialize(appId);
         // Push notifications need explicit runtime permission on Android 13+
         // (API 33+, which this app's minSdk/targetSdk cover) — silently no-op
         // on older Android versions where permission is implicit.
@@ -53,6 +63,13 @@ export const initOneSignal = async () => {
         console.error('OneSignal: Native initialization failed', err);
       }
     })();
+    return initPromise;
+  }
+
+  if (!import.meta.env.VITE_ONESIGNAL_APP_ID) {
+    // e.g. a white-label build whose own OneSignal app is not configured yet (see vite.config.ts)
+    console.warn('OneSignal: no VITE_ONESIGNAL_APP_ID in this build - push notifications are off');
+    initPromise = Promise.resolve();
     return initPromise;
   }
 
@@ -89,7 +106,7 @@ export const initOneSignal = async () => {
 };
 
 export const loginToOneSignal = async (username: string, retries = 3) => {
-  if (!username) return;
+  if (!username || !PUSH_ENABLED) return;
 
   await initOneSignal();
 
@@ -150,7 +167,7 @@ export const loginToOneSignal = async (username: string, retries = 3) => {
 // send-push.js's `data` object (`{ url, type, payload }`) — same shape the
 // web notifications already use, just delivered a different way.
 export const onNotificationClick = async (handler: (data: any) => void) => {
-  if (!isNativePlatform()) return;
+  if (!isNativePlatform() || !PUSH_ENABLED) return;
   await initOneSignal();
   try {
     const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
@@ -163,6 +180,7 @@ export const onNotificationClick = async (handler: (data: any) => void) => {
 };
 
 export const logoutFromOneSignal = async () => {
+  if (!PUSH_ENABLED) return;
   if (isNativePlatform()) {
     try {
       const { default: OneSignal } = await import('@onesignal/capacitor-plugin');

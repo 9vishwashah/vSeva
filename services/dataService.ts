@@ -14,6 +14,32 @@ async function superAdminCall<T = any>(action: string, extra: Record<string, unk
   });
 }
 
+// Downscales a picked photo so uploads stay small on mobile data.
+async function shrinkImage(file: File, maxSide: number, quality: number): Promise<Blob> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('That file is not a photo we can read.'));
+      i.src = url;
+    });
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Could not prepare the photo.');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob(b => (b ? resolve(b) : reject(new Error('Could not prepare the photo.'))), 'image/jpeg', quality));
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export const dataService = {
 
   // --- Profiles & Sevaks ---
@@ -22,7 +48,7 @@ export const dataService = {
     return getCached(`profile:${userId}`, async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at')
+        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at, alias, vihar_scope, seva_preferences')
         .eq('id', userId)
         .single();
 
@@ -146,7 +172,7 @@ export const dataService = {
         return null;
       }
       return fallbackData as Organization;
-    }, 60_000);
+    }, 60_000, { persist: true });
   },
 
   async updateOrgLeadership(updates: { captainName?: string; viceCaptainName?: string }): Promise<void> {
@@ -177,7 +203,7 @@ export const dataService = {
     return getCached(`orgSevaks:${orgId}`, async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at, avatar_url')
+        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at, avatar_url, alias, vihar_scope, seva_preferences')
         .eq('organization_id', orgId)
         .eq('role', 'sevak')
         .eq('is_active', true);
@@ -287,7 +313,7 @@ export const dataService = {
       } catch (e: any) {
         throw new Error(e?.message || "Failed to fetch dashboard stats");
       }
-    }, 20_000);
+    }, 20_000, { persist: true });
   },
 
   async getSevakNameMap(orgId: string): Promise<Record<string, string>> {
@@ -298,7 +324,7 @@ export const dataService = {
         console.warn("Failed to fetch secure sevak name config via serverless");
         return {};
       }
-    }, 60_000);
+    }, 60_000, { persist: true });
   },
 
   // Username -> avatar_url, same shape/scope as getSevakNameMap. Kept separate
@@ -312,7 +338,7 @@ export const dataService = {
         console.warn("Failed to fetch secure sevak avatar map via serverless");
         return {};
       }
-    }, 60_000);
+    }, 60_000, { persist: true });
   },
 
   async getOrgSevakContacts(orgId: string): Promise<Record<string, { full_name: string; mobile: string; avatar_url?: string | null; role?: string; is_active?: boolean }>> {
@@ -323,7 +349,7 @@ export const dataService = {
         console.warn("Failed to fetch secure sevak contacts via serverless");
         return {};
       }
-    }, 30_000);
+    }, 30_000, { persist: true });
   },
 
   // profiles has no "same org" SELECT policy — a Sevak's session can only read
@@ -356,21 +382,21 @@ export const dataService = {
       });
       if (error) throw error;
       return (data || []) as { username: string; full_name: string; gender: string | null }[];
-    }, 30_000);
+    }, 30_000, { persist: true });
   },
 
   async createSevak(
     adminOrgId: string,
-    sevakData: { fullName: string; mobile: string; gender: string; age: number; bloodGroup?: string; emergencyNumber?: string; address?: string }
+    sevakData: { fullName: string; mobile: string; gender: string; age: number; bloodGroup?: string; emergencyNumber?: string; address?: string; alias?: string }
   ) {
-    // 1. Generate Username & Auth Email
+    // 1. Username = the name in lowercase letters/digits. Both apps (vSeva and Shraman Seva Group) share one
+    // login system, so two different people can have the same name: the server then picks the next free
+    // username (alpeshshah2, alpeshshah3, ...). Only the same name AND the same mobile number is refused.
     const cleanName = sevakData.fullName
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '');
-    // username stored in profiles (display username, no domain suffix)
-    const username = cleanName;
-    // email used internally for Supabase auth only
-    const authEmail = `${cleanName}@vsevak.in`;
+    if (cleanName.length < 2) throw new Error('Please enter the Sevak\'s full name.');
+    let username = cleanName;
     const password = sevakData.mobile;
 
     // 2. Get Admin Session (REQUIRED)
@@ -388,10 +414,11 @@ export const dataService = {
     // Sevak.
     let newUserId: string | undefined;
     try {
-      const result = await callFn<{ user_id?: string }>('create-user', {
+      const result = await callFn<{ user_id?: string; username?: string }>('create-user', {
         headers: { Authorization: `Bearer ${session.access_token}` },
         body: {
-          email: authEmail,
+          username_base: cleanName,
+          mobile: sevakData.mobile,
           password: password,
           user_metadata: {
             full_name: sevakData.fullName,
@@ -401,12 +428,9 @@ export const dataService = {
         },
       });
       newUserId = result.user_id;
+      if (result.username) username = result.username;
     } catch (e: any) {
-      let errorMessage = e?.message || 'Could not create login credentials.';
-      if (errorMessage.toLowerCase().includes('already')) {
-        errorMessage = `Username ${username} already exists. Please modify the name slightly.`;
-      }
-      throw new Error(errorMessage);
+      throw new Error(e?.message || 'Could not create login credentials.');
     }
 
     if (!newUserId) {
@@ -428,6 +452,7 @@ export const dataService = {
         blood_group: sevakData.bloodGroup,
         emergency_number: sevakData.emergencyNumber,
         address: sevakData.address,
+        alias: sevakData.alias?.trim() || null,
         is_active: true,
       });
 
@@ -469,7 +494,7 @@ export const dataService = {
     return true;
   },
 
-  async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string; emergencyNumber?: string; emergencyContactName?: string; address?: string; gender?: string; occupation?: string; occupationDetails?: string }) {
+  async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string; emergencyNumber?: string; emergencyContactName?: string; address?: string; gender?: string; occupation?: string; occupationDetails?: string; alias?: string; viharScope?: string; sevaPreferences?: string[] }) {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
@@ -500,7 +525,10 @@ export const dataService = {
       p_gender: updates.gender !== undefined ? updates.gender : null,
       p_emergency_contact_name: updates.emergencyContactName !== undefined ? updates.emergencyContactName : null,
       p_occupation: updates.occupation !== undefined ? updates.occupation : null,
-      p_occupation_details: updates.occupationDetails !== undefined ? updates.occupationDetails : null
+      p_occupation_details: updates.occupationDetails !== undefined ? updates.occupationDetails : null,
+      p_alias: updates.alias !== undefined ? updates.alias : null,
+      p_vihar_scope: updates.viharScope !== undefined ? updates.viharScope : null,
+      p_seva_preferences: updates.sevaPreferences !== undefined ? updates.sevaPreferences : null,
     });
 
     if (rpcError) {
@@ -520,6 +548,9 @@ export const dataService = {
         if (updates.emergencyContactName !== undefined) directUpdates.emergency_contact_name = updates.emergencyContactName || null;
         if (updates.occupation !== undefined)      directUpdates.occupation       = updates.occupation || null;
         if (updates.occupationDetails !== undefined) directUpdates.occupation_details = updates.occupationDetails || null;
+        if (updates.alias !== undefined)           directUpdates.alias            = updates.alias.trim() || null;
+        if (updates.viharScope !== undefined)      directUpdates.vihar_scope      = updates.viharScope || null;
+        if (updates.sevaPreferences !== undefined) directUpdates.seva_preferences = updates.sevaPreferences.length ? updates.sevaPreferences : null;
 
         const { error: directError } = await supabase
           .from('profiles')
@@ -542,7 +573,7 @@ export const dataService = {
     return true;
   },
 
-  async updateOwnProfile(updates: { age?: number; bloodGroup?: string; emergencyNumber?: string; emergencyContactName?: string; address?: string; occupation?: string; occupationDetails?: string; yearlyGoal?: number }) {
+  async updateOwnProfile(updates: { age?: number; bloodGroup?: string; emergencyNumber?: string; emergencyContactName?: string; address?: string; occupation?: string; occupationDetails?: string; yearlyGoal?: number; viharScope?: string; sevaPreferences?: string[] }) {
     const { data: { session } } = await supabase.auth.getSession();
     const selfId = session?.user?.id;
 
@@ -578,6 +609,9 @@ export const dataService = {
       p_emergency_contact_name: updates.emergencyContactName ?? null,
       p_occupation:             updates.occupation ?? null,
       p_occupation_details:     updates.occupationDetails ?? null,
+      // Shraman Seva Group: '' / [] = clear
+      p_vihar_scope:            updates.viharScope ?? null,
+      p_seva_preferences:       updates.sevaPreferences ?? null,
     });
     if (error) {
       console.error('updateOwnProfile RPC error:', error);
@@ -618,14 +652,14 @@ export const dataService = {
       const { data, error } = await query;
       if (error) throw error;
       return data || [];
-    }, 60_000);
+    }, 60_000, { persist: true });
   },
 
   async getDistance(from: string, to: string, orgId?: string): Promise<number> {
     return getCached(`distance:${from}:${to}:${orgId || ''}`, async () => {
       let query = supabase
         .from('area_routes')
-        .select('distance_km')
+        .select('distance_km, via')
         .eq('from_name', from)
         .eq('to_name', to);
 
@@ -633,9 +667,10 @@ export const dataService = {
         query = query.eq('organization_id', orgId);
       }
 
-      const { data } = await query.single(); // Might error if multiple found and no orgId provided, but existing behavior was single() anyway.
+      // "A -> B" and "A -> B via C" can both exist; the direct one sets the distance when there is one.
+      const { data } = await query.order('via', { ascending: true, nullsFirst: true }).limit(1);
 
-      return data ? data.distance_km : 0;
+      return data && data[0] ? data[0].distance_km : 0;
     }, 60_000);
   },
 
@@ -651,8 +686,9 @@ export const dataService = {
       throw error;
     }
 
-    // Auto-update any existing Vihar Entries that have these locations but 0 km (or any km really)
-    if (data && data.organization_id) {
+    // Auto-update any existing Vihar Entries that have these locations but 0 km (or any km really).
+    // Only a direct route does this; a "via" variant is an alternative and must not overwrite entries.
+    if (data && data.organization_id && !data.via) {
       await supabase
         .from('vihar_entries')
         .update({ distance_km: route.distance_km })
@@ -695,8 +731,8 @@ export const dataService = {
 
     if (error) throw error;
 
-    // Auto-update existing Vihar Entries if distance has changed
-    if (data && data.organization_id && updates.distance_km !== undefined) {
+    // Auto-update existing Vihar Entries if distance has changed (direct routes only, as in addRoute)
+    if (data && data.organization_id && updates.distance_km !== undefined && !data.via) {
       await supabase
         .from('vihar_entries')
         .update({ distance_km: updates.distance_km })
@@ -719,8 +755,7 @@ export const dataService = {
   // --- Vihar Entries ---
 
   async createViharEntry(entry: ViharEntry) {
-    // Strip fields that don't yet exist in the DB schema
-    const { car_seva, car_seva_sevaks, wheelchair_sevaks, ...safeEntry } = entry as any;
+    const safeEntry = entry as any;
     // No status set here — the DB column defaults to 'approved', so a Captain's
     // direct entry becomes official immediately, exactly as it did before this feature.
     const { data, error } = await supabase
@@ -743,9 +778,20 @@ export const dataService = {
 
   // Sevak-submitted Vihar entry. Always lands as 'pending' — only a Captain's
   // approve_vihar_entry RPC can turn it into an official record.
+  // Optional Vihar photo: shrunk on the device (longest side 1600 px, JPEG) and stored under the group's
+  // folder in the "vihar-photos" bucket. Returns the public URL saved on the entry.
+  async uploadViharPhoto(orgId: string, file: File): Promise<string> {
+    const blob = await shrinkImage(file, 1600, 0.82);
+    const path = `${orgId}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}.jpg`;
+    const { error } = await supabase.storage
+      .from('vihar-photos')
+      .upload(path, blob, { cacheControl: '31536000', contentType: 'image/jpeg' });
+    if (error) throw error;
+    return supabase.storage.from('vihar-photos').getPublicUrl(path).data.publicUrl;
+  },
+
   async submitViharEntry(entry: ViharEntry) {
-    const { car_seva, car_seva_sevaks, wheelchair_sevaks, ...safeEntry } = entry as any;
-    const payload = { ...safeEntry, status: 'pending' };
+    const payload = { ...(entry as any), status: 'pending' };
     const { data, error } = await supabase
       .from('vihar_entries')
       .insert(payload)
@@ -768,14 +814,14 @@ export const dataService = {
       // Only official (approved) Vihars feed stats, KPIs, leaderboard and exports.
       const { data, error } = await supabase
         .from('vihar_entries')
-        .select('id, organization_id, created_by, vihar_date, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, vihar_from, vihar_to, sevaks, notes, wheelchair, distance_km, haversine_km, vihar_type, samuday, created_at, status, reviewed_by, reviewed_at')
+        .select('id, organization_id, created_by, vihar_date, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, vihar_from, vihar_to, sevaks, notes, wheelchair, wheelchair_sevaks, car_seva, car_seva_sevaks, distance_km, haversine_km, vihar_type, samuday, created_at, status, reviewed_by, reviewed_at, photo_url')
         .eq('organization_id', orgId)
         .eq('status', 'approved')
         .order('vihar_date', { ascending: false });
 
       if (error) throw error;
       return data as ViharEntry[];
-    }, 20_000);
+    }, 20_000, { persist: true });
   },
 
   // Org-wide (vihar_date, distance_km, sevaks) only — for rank/leaderboard
@@ -793,7 +839,7 @@ export const dataService = {
       });
       if (error) throw error;
       return (data || []) as ViharEntry[];
-    }, 20_000);
+    }, 20_000, { persist: true });
   },
 
   async getSevakEntries(username: string): Promise<ViharEntry[]> {
@@ -829,7 +875,7 @@ export const dataService = {
       [...(ownSubmissions.data || []), ...(participantEntries.data || [])].forEach((e: any) => byId.set(e.id, e));
 
       return Array.from(byId.values()).sort((a, b) => (a.vihar_date < b.vihar_date ? 1 : -1));
-    }, 20_000);
+    }, 20_000, { persist: true });
   },
 
   // --- Vihar Approval Workflow (Captain review) ---
@@ -874,11 +920,9 @@ export const dataService = {
   },
 
   async updateViharEntry(entryId: number, updates: Partial<ViharEntry>) {
-    // Strip fields that don't yet exist in the DB schema
-    const { car_seva, car_seva_sevaks, wheelchair_sevaks, ...safeUpdates } = updates as any;
     const { data, error } = await supabase
       .from('vihar_entries')
-      .update(safeUpdates)
+      .update(updates as any)
       .eq('id', entryId)
       .select()
       .single();
@@ -1111,7 +1155,7 @@ export const dataService = {
         return null;
       }
       return data as number;
-    }, 30_000);
+    }, 30_000, { persist: true });
   },
 
   async getTopSevaks(orgId: string, limit: number = 1000) {

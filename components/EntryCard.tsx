@@ -3,6 +3,7 @@ import { BRAND } from '@brand';
 import { ViharEntry } from '../types';
 import { MessageCircle, Download, Trash2, Pencil } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { isNative, shareToApp, saveImage, shareImage } from '../services/shareImage';
 import Avatar from './Avatar';
 
 interface EntryCardProps {
@@ -14,77 +15,84 @@ interface EntryCardProps {
 
 const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, onEdit }) => {
     const cardRef = useRef<HTMLDivElement>(null);
-    const [isSharing, setIsSharing] = useState(false);
+    // which action is preparing the image ('share' | 'save'); while set, the card is laid out for capture
+    const [busy, setBusy] = useState<'share' | 'save' | null>(null);
+    const isSharing = busy !== null;
     const { showToast } = useToast();
 
+    // Renders the card (with every Sevak visible and the branding footer) into a PNG.
+    const captureCard = async (): Promise<Blob> => {
+        // html2canvas (~200KB) is only needed for this on-demand action, so it is loaded when used.
+        const { default: html2canvas } = await import('html2canvas');
+
+        // busy switches Sevaks Present from a horizontal scroller to a wrapped, fully-visible layout and
+        // reveals the branding footer, only for the capture. Wait two frames for that reflow to settle,
+        // then for any Sevak photos to finish loading (or fail) before handing the DOM to html2canvas.
+        await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+        if (cardRef.current) {
+            const imgs = Array.from(cardRef.current.querySelectorAll<HTMLImageElement>('img'));
+            await Promise.race([
+                Promise.all(imgs.map((img: HTMLImageElement) => img.complete
+                    ? Promise.resolve()
+                    : new Promise<void>(res => {
+                        img.addEventListener('load', () => res(), { once: true });
+                        img.addEventListener('error', () => res(), { once: true });
+                    })
+                )),
+                new Promise(res => setTimeout(res, 1200)),
+            ]);
+        }
+        await new Promise(r => setTimeout(r, 80));
+        if (!cardRef.current) throw new Error('Card is not on screen');
+
+        const canvas = await html2canvas(cardRef.current, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            // the buttons sit inside the capture area; keep them out of the image
+            ignoreElements: (el) => el.getAttribute('data-html2canvas-ignore') === 'true',
+        });
+        return await new Promise<Blob>((resolve, reject) =>
+            canvas.toBlob(b => (b ? resolve(b) : reject(new Error('Could not create the image'))), 'image/png'));
+    };
+
+    const fileName = `Vihar_${entry.vihar_date}_${entry.id ?? ''}.png`;
+    const shareText = `Vihar from ${entry.vihar_from} to ${entry.vihar_to} on ${entry.vihar_date}`;
+
+    // Android app: WhatsApp opens straight to its "Send to" list (chats, groups, My status) with the
+    // image attached. Browser: the share menu where available, otherwise a download.
     const handleShare = async () => {
-        if (!cardRef.current || isSharing) return;
-        setIsSharing(true);
-
+        if (isSharing) return;
+        setBusy('share');
         try {
-            // html2canvas (~200KB) is only needed for this on-demand share action —
-            // load it when actually used instead of on every entries page visit.
-            const { default: html2canvas } = await import('html2canvas');
-
-            // isSharing switches Sevaks Present from a horizontal scroller to a
-            // wrapped, fully-visible layout and reveals the branding footer —
-            // both only for the capture, never for normal on-screen browsing.
-            // Capturing before that reflow/paint actually settles is exactly
-            // what was dragging text down / distorting the shared image, so
-            // wait two frames for it, then for any sevak avatar photos to
-            // finish loading (or fail) before handing the DOM to html2canvas.
-            await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-            if (cardRef.current) {
-                const imgs = Array.from(cardRef.current.querySelectorAll<HTMLImageElement>('img'));
-                await Promise.race([
-                    Promise.all(imgs.map((img: HTMLImageElement) => img.complete
-                        ? Promise.resolve()
-                        : new Promise<void>(res => {
-                            img.addEventListener('load', () => res(), { once: true });
-                            img.addEventListener('error', () => res(), { once: true });
-                        })
-                    )),
-                    new Promise(res => setTimeout(res, 1200)),
-                ]);
-            }
-            await new Promise(r => setTimeout(r, 80));
-
-            const canvas = await html2canvas(cardRef.current, {
-                scale: 2, // Retain quality
-                useCORS: true,
-                backgroundColor: '#ffffff', // Ensure white background
-                logging: false,
-                // The Share button itself sits inside the capture area (right
-                // under Sevaks Present) so it doesn't need its own footer row —
-                // exclude just that one element from the exported image.
-                ignoreElements: (el) => el.getAttribute('data-html2canvas-ignore') === 'true',
-            });
-
-            const dataUrl = canvas.toDataURL("image/png", 1.0);
-            const fileName = `Vihar_${entry.vihar_date}.png`;
-            const file = await (await fetch(dataUrl)).blob().then(blob => new File([blob], fileName, { type: 'image/png' }));
-
-            // Try native sharing first
-            if (navigator.share && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Vihar Update',
-                    text: `Vihar from ${entry.vihar_from} to ${entry.vihar_to} on ${entry.vihar_date}`
-                });
+            const blob = await captureCard();
+            if (isNative()) {
+                await shareToApp('whatsapp', blob, fileName, shareText);
             } else {
-                // Fallback for Desktop: Download
-                const link = document.createElement("a");
-                link.href = dataUrl;
-                link.download = fileName;
-                link.click();
-                showToast("Image downloaded. Please share on WhatsApp.", "success");
+                const outcome = await shareImage(blob, fileName, { title: 'Vihar Update', text: shareText });
+                if (outcome === 'downloaded') showToast('Image downloaded. Attach it in WhatsApp.', 'success');
             }
-
         } catch (error) {
-            console.error("Share failed", error);
-            showToast("Failed to generate image.", "error");
+            console.error('Share failed', error);
+            showToast('Could not share the image.', 'error');
         } finally {
-            setIsSharing(false);
+            setBusy(null);
+        }
+    };
+
+    const handleSave = async () => {
+        if (isSharing) return;
+        setBusy('save');
+        try {
+            const blob = await captureCard();
+            const where = await saveImage(blob, fileName.replace(/\.png$/, `_${Date.now()}.png`));
+            showToast(where === 'gallery' ? `Saved to your Gallery (Pictures/${BRAND.name})` : 'Image downloaded.', 'success');
+        } catch (error) {
+            console.error('Save failed', error);
+            showToast('Could not save the image.', 'error');
+        } finally {
+            setBusy(null);
         }
     };
 
@@ -163,25 +171,62 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                     </div>
                 </div>
 
+                {/* Wheelchair Seva / Car Seva — who did it (only when marked Yes) */}
+                {(entry.wheelchair || entry.car_seva) && (
+                    <div className="mb-2 space-y-1.5">
+                        {[
+                            { label: 'Wheelchair Seva', on: !!entry.wheelchair, names: entry.wheelchair_sevaks || [], bg: '#E9F4FD', fg: '#2B6CB0' },
+                            { label: 'Car Seva', on: !!entry.car_seva, names: entry.car_seva_sevaks || [], bg: '#E6F7F0', fg: '#1F7A57' },
+                        ].filter(r => r.on).map(r => (
+                            <div key={r.label}>
+                                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-[#8A6A57]">{r.label}</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {r.names.length > 0 ? r.names.map((u, i) => (
+                                        <span key={i} className="text-[11px] px-2.5 py-0.5 rounded-full font-semibold" style={{ background: r.bg, color: r.fg }}>{getSevakInfo(u).name}</span>
+                                    )) : <span className="text-[11px] px-2.5 py-0.5 rounded-full font-semibold" style={{ background: r.bg, color: r.fg }}>Yes</span>}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {/* Share — sits right under Sevaks Present, excluded from the
                     captured image itself via data-html2canvas-ignore below. */}
                 {entry.status !== 'pending' && entry.status !== 'rejected' && (
-                    <div className="flex justify-end mb-2" data-html2canvas-ignore="true">
+                    <div className="flex justify-end gap-2 mb-2" data-html2canvas-ignore="true">
+                        <button
+                            onClick={handleSave}
+                            disabled={isSharing}
+                            aria-label="Save image"
+                            className="flex items-center gap-1.5 bg-[#F7F4F0] text-[#8A6A57] px-3 py-1.5 rounded-full text-[11px] font-bold hover:bg-[#EFE9E2] transition-colors"
+                        >
+                            {busy === 'save'
+                                ? <span className="animate-spin w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full"></span>
+                                : <Download size={14} />}
+                            <span>Save</span>
+                        </button>
                         <button
                             onClick={handleShare}
                             disabled={isSharing}
                             className="flex items-center gap-1.5 bg-[#25D366]/10 text-[#25D366] px-3 py-1.5 rounded-full text-[11px] font-bold hover:bg-[#25D366]/20 transition-colors"
                         >
-                            {isSharing ? (
+                            {busy === 'share' ? (
                                 <span className="animate-spin w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full"></span>
                             ) : (
                                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                                 </svg>
                             )}
-                            <span>Share</span>
+                            <span>WhatsApp</span>
                         </button>
                     </div>
+                )}
+
+                {/* Vihar photo (optional, Shraman Seva Group entry forms) */}
+                {entry.photo_url && (
+                    <a href={entry.photo_url} target="_blank" rel="noopener noreferrer" className="block mb-2 rounded-xl overflow-hidden bg-[#F7F4F0]" data-html2canvas-ignore="true">
+                        <img src={entry.photo_url} alt="Vihar photo" loading="lazy" className="w-full max-h-56 object-cover" />
+                    </a>
                 )}
 
                 {/* Notes (included in image) */}

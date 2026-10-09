@@ -4,4 +4,6 @@
     <string name="title_activity_main">vSeva</string>
     <string name="package_name">in.vjas.vseva</string>
     <string name="custom_url_scheme">in.vjas.vseva</string>
+    <!-- Shown in the phone's notification settings for the SOS channel. Each brand overrides it (src/ssg/res). -->
+    <string name="sos_channel_name">VSeva SOS Alerts</string>
 </resources>
