@@ -30,7 +30,7 @@ async function waitForOneSignalReady(OneSignal: any, maxAttempts = 14): Promise<
 }
 
 // False in a build without its own OneSignal app id (push is then off everywhere in that build).
-const PUSH_ENABLED = !!import.meta.env.VITE_ONESIGNAL_APP_ID;
+export const PUSH_ENABLED = !!import.meta.env.VITE_ONESIGNAL_APP_ID;
 
 export const initOneSignal = async () => {
   if (initPromise) return initPromise;

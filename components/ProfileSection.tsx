@@ -13,6 +13,7 @@ import { getViharYearBounds } from '../services/viharYear';
 import SosButton from './SosButton';
 import ChangePasswordCard from './ChangePasswordCard';
 import SankalpSettingsCard from './SankalpSettingsCard';
+import { PUSH_ENABLED } from '../services/oneSignalService';
 import { OCCUPATIONS } from '../services/occupations';
 import { getAccountBadge } from '../services/specialAccounts';
 
@@ -675,6 +676,18 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                                 In Chrome: tap the <strong>lock / info icon</strong> next to the address bar → <strong>Permissions</strong> (or Site settings) →
                                 set <strong>Notifications</strong> to <strong>Allow</strong> → then reload the app.
                             </p>
+                        </div>
+                    </div>
+                ) : !PUSH_ENABLED ? (
+                    // This build has no push service of its own yet (e.g. a new white-label brand), so there is
+                    // nothing to enable; in-app notifications (the bell) still work.
+                    <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: '#F7F4F0' }}>
+                        <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#FFF0E5' }}>
+                            <BellOff size={18} style={{ color: '#B5602C' }} />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="font-bold text-[#241C17] text-sm">Push Notifications</p>
+                            <p className="text-xs mt-0.5 text-[#8A6A57]">Coming soon for {BRAND.name}. Until then, alerts appear under the bell icon in the app.</p>
                         </div>
                     </div>
                 ) : pushPermission === 'unsupported' ? (
