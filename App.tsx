@@ -12,7 +12,7 @@ import { BRAND } from '@brand';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import SankalpGate from './components/SankalpGate';
 import UpdateAppBanner from './components/UpdateAppBanner';
-import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationClick } from './services/oneSignalService';
+import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationClick, ONESIGNAL_OWNS_SERVICE_WORKER } from './services/oneSignalService';
 import StatusScreen from './components/StatusScreen';
 import { ViharYearProvider } from './context/ViharYearContext';
 
@@ -640,7 +640,8 @@ const App: React.FC = () => {
         )}
       </Layout>
       </ViharYearProvider>
-      <UpdateAppBanner />
+      {/* When OneSignal registers the worker (web push on), it must be the only registrar: see oneSignalService */}
+      {!ONESIGNAL_OWNS_SERVICE_WORKER && <UpdateAppBanner />}
     </React.Suspense>
   );
 };

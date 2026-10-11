@@ -28,6 +28,8 @@ export interface BrandMeta {
   registration: { askSanghName: boolean; askGroupName: boolean };
   usernameHint: string;  // placeholder on the forgot-password field
   examples: { username: string; mobile: string }; // placeholder text on Login / Register
+  // Placeholder (example) values on the Create Captain Account form
+  registrationExamples: { captain: string; viceCaptain: string; mobile: string; email: string; pin: string; town: string; city: string; district: string; state: string };
   description: string;   // default meta description
   finderName: string;    // the public "nearby Derasar" tool
   directoryName: string; // the public community directory

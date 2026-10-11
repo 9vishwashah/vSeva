@@ -18,6 +18,7 @@ export const getMeta = (_env: Env): BrandMeta => ({
   registration: { askSanghName: true, askGroupName: true },
   usernameHint: 'name@vsevak or admin@example.com',
   examples: { username: 'e.g. Vishwa Shah', mobile: '9594503214' },
+  registrationExamples: { captain: 'Vijay Mehta', viceCaptain: 'Mukesh Duggad', mobile: '9594503214', email: '9vishwashah@gmail.com', pin: '400703', town: 'Vashi', city: 'Navi Mumbai', district: 'Thane', state: 'Maharashtra' },
   description: 'Your Steps. Your Seva. Your Legacy. Digitizing Jain Vihar Seva activities.',
   finderName: 'vSeva Finder',
   directoryName: 'VSeva Community Directory',

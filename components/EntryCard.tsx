@@ -22,8 +22,9 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
 
     // Renders the card (with every Sevak visible and the branding footer) into a PNG.
     const captureCard = async (): Promise<Blob> => {
-        // html2canvas (~200KB) is only needed for this on-demand action, so it is loaded when used.
-        const { default: html2canvas } = await import('html2canvas');
+        // html-to-image lets the browser itself paint the card (SVG foreignObject), so the image matches the
+        // screen exactly; html2canvas re-drew the text by hand and misplaced it. Loaded only when used.
+        const { toBlob } = await import('html-to-image');
 
         // busy switches Sevaks Present from a horizontal scroller to a wrapped, fully-visible layout and
         // reveals the branding footer, only for the capture. Wait two frames for that reflow to settle,
@@ -45,16 +46,18 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
         await new Promise(r => setTimeout(r, 80));
         if (!cardRef.current) throw new Error('Card is not on screen');
 
-        const canvas = await html2canvas(cardRef.current, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            logging: false,
-            // the buttons sit inside the capture area; keep them out of the image
-            ignoreElements: (el) => el.getAttribute('data-html2canvas-ignore') === 'true',
-        });
-        return await new Promise<Blob>((resolve, reject) =>
-            canvas.toBlob(b => (b ? resolve(b) : reject(new Error('Could not create the image'))), 'image/png'));
+        // The buttons and the photo sit inside the capture area: take them out of the layout for the moment of
+        // the capture, so the image is exactly as tall as what it shows.
+        const hidden = Array.from(cardRef.current.querySelectorAll('[data-html2canvas-ignore="true"]')) as HTMLElement[];
+        const previous = hidden.map(el => el.style.display);
+        hidden.forEach(el => { el.style.display = 'none'; });
+        try {
+            const blob = await toBlob(cardRef.current, { pixelRatio: 3, backgroundColor: '#ffffff' });
+            if (!blob) throw new Error('Could not create the image');
+            return blob;
+        } finally {
+            hidden.forEach((el, i) => { el.style.display = previous[i]; });
+        }
     };
 
     const fileName = `Vihar_${entry.vihar_date}_${entry.id ?? ''}.png`;
@@ -230,9 +233,9 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                 )}
 
                 {/* Notes (included in image) */}
-                {entry.notes && (
+                {entry.notes?.trim() && (
                     <div className="pt-2 border-t border-gray-100 mb-2">
-                        <p className="text-xs text-gray-500 italic">"{entry.notes}"</p>
+                        <p className="text-xs text-gray-500 italic">"{entry.notes.trim()}"</p>
                     </div>
                 )}
 

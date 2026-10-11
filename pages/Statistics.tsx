@@ -6,8 +6,8 @@ import { useOrgSankalp } from '../services/sankalpService';
 import { useCacheRefresh } from '../hooks/useCacheRefresh';
 import { isDateInViharYear } from '../services/viharYear';
 import { useViharYear } from '../context/ViharYearContext';
-import { toLocalDateKey } from '../services/dateUtils';
 import LeaderboardCard from '../components/LeaderboardCard';
+import { LastSevenDaysChart, ConsistencyCalendar } from '../components/ViharActivityCharts';
 import { Trophy, Medal, Flame } from 'lucide-react';
 import Skeleton from '../components/Skeleton';
 import StatusScreen from '../components/StatusScreen';
@@ -167,27 +167,6 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
   const isViewingCurrentVY = selectedVYStartYear === currentVYStartYear;
   const vyAnchorDate = isViewingCurrentVY ? new Date() : selectedVY.end;
 
-  // Weekly trend — Vihar count per day, last 7 days (of the selected VY)
-  const weekDays = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date(vyAnchorDate);
-    d.setDate(d.getDate() - (6 - i));
-    const key = toLocalDateKey(d);
-    const count = entries.filter(e => e.vihar_date === key).length;
-    return { label: d.toLocaleDateString('en-IN', { weekday: 'short' }).slice(0, 3), count };
-  });
-  const maxWeeklyCount = Math.max(1, ...weekDays.map(d => d.count));
-
-  // Consistency — 12 weeks x 7 days heatmap (columns = weeks, oldest first)
-  const heatmapWeeks = Array.from({ length: 12 }).map((_, weekIndex) => {
-    const weeksAgo = 11 - weekIndex;
-    return Array.from({ length: 7 }).map((_, dayIndex) => {
-      const d = new Date(vyAnchorDate);
-      d.setDate(d.getDate() - weeksAgo * 7 - (6 - dayIndex));
-      const key = toLocalDateKey(d);
-      return entries.some(e => e.vihar_date === key);
-    });
-  });
-
   // Top routes — org-wide (not just the viewer's own entries), scoped to
   // the selected VY like the rest of this page.
   const routeCounts: Record<string, number> = {};
@@ -239,39 +218,15 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
           Captain's org-wide goal, not just whoever's looking at the page. */}
       <SankalpRing count={orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY)).length} goal={orgSankalp?.target} title="Group Sankalp" tone="purple" periodLabel={selectedVY.label} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Weekly trend */}
-        <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-          <p className="m-0 mb-4 text-sm font-bold text-[#241C17]">Vihars · Last 7 Days</p>
-          <div className="flex items-end gap-2" style={{ height: 110 }}>
-            {weekDays.map((d, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                <div
-                  className="w-full rounded-t-md"
-                  style={{
-                    height: `${Math.max(8, (d.count / maxWeeklyCount) * 100)}%`,
-                    background: d.count > 0 ? '#DE6B38' : '#F2E9DE',
-                  }}
-                />
-                <span className="text-[10px] font-semibold text-gray-400">{d.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Leaderboards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <LeaderboardCard title="Top Vihar Sevaks" icon={<Trophy size={20} />} items={leaderboard.male} colorClass="text-blue-600" bgClass="bg-blue-50" orgName={orgDetails?.name} orgCity={orgDetails?.city} captainName={captainName} viceCaptainName={orgDetails?.vice_captain_name} vyLabel={selectedVY.label} />
+        <LeaderboardCard title="Top Vihar Sevikas" icon={<Trophy size={20} />} items={leaderboard.female} colorClass="text-pink-600" bgClass="bg-pink-50" orgName={orgDetails?.name} orgCity={orgDetails?.city} captainName={captainName} viceCaptainName={orgDetails?.vice_captain_name} vyLabel={selectedVY.label} />
+      </div>
 
-        {/* Consistency heatmap */}
-        <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-          <p className="m-0 mb-3.5 text-sm font-bold text-[#241C17]">Consistency · Last 12 Weeks</p>
-          <div className="grid grid-cols-12 gap-1">
-            {heatmapWeeks.map((week, wi) => (
-              <div key={wi} className="flex flex-col gap-1">
-                {week.map((done, di) => (
-                  <div key={di} className="aspect-square rounded-[3px]" style={{ background: done ? '#DE6B38' : '#F2E9DE' }} />
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <LastSevenDaysChart entries={entries} anchorDate={vyAnchorDate} />
+        <ConsistencyCalendar entries={entries} anchorDate={vyAnchorDate} />
       </div>
 
       {/* Gender participation */}
@@ -294,12 +249,6 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
           </div>
         </div>
       )}
-
-      {/* Leaderboards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <LeaderboardCard title="Top Vihar Sevaks" icon={<Trophy size={20} />} items={leaderboard.male} colorClass="text-blue-600" bgClass="bg-blue-50" orgName={orgDetails?.name} orgCity={orgDetails?.city} captainName={captainName} viceCaptainName={orgDetails?.vice_captain_name} vyLabel={selectedVY.label} />
-        <LeaderboardCard title="Top Vihar Sevikas" icon={<Trophy size={20} />} items={leaderboard.female} colorClass="text-pink-600" bgClass="bg-pink-50" orgName={orgDetails?.name} orgCity={orgDetails?.city} captainName={captainName} viceCaptainName={orgDetails?.vice_captain_name} vyLabel={selectedVY.label} />
-      </div>
 
       {/* Highest Streaks — Captain-only, org-wide */}
       {isAdmin && streakLeaderboard.length > 0 && (

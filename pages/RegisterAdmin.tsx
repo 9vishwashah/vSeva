@@ -3,6 +3,7 @@ import { supabase } from '../services/supabase';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { BRAND } from '@brand';
+import { lookupPin } from '../services/pincode';
 
 interface RegisterAdminProps {
     onBack: () => void;
@@ -19,43 +20,54 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
         city: '',
         town: '',
         pincode: '',
-        state: 'Maharashtra',
+        district: '',
+        // filled from the PIN code (never assumed)
+        state: '',
         viharGroupName: 'Vihar Seva Group',
         sanghName: ''
     });
     const [pinLoading, setPinLoading] = useState(false);
+    const [pinAreas, setPinAreas] = useState<string[]>([]);
+    const [pinNote, setPinNote] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const { showToast } = useToast();
 
-    const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
 
-        // Handle Pincode Auto-fill
-        if (name === 'pincode' && value.length === 6) {
-            handlePinLookup(value);
+        // PIN code: digits only, and a complete 6-digit PIN fills Town, City, District and State
+        if (name === 'pincode') {
+            const pin = value.replace(/\D/g, '').slice(0, 6);
+            setFormData(prev => ({ ...prev, pincode: pin }));
+            if (pin.length === 6) handlePinLookup(pin);
+            else { setPinAreas([]); setPinNote(null); }
         }
     };
 
     const handlePinLookup = async (pin: string) => {
         setPinLoading(true);
+        setPinNote(null);
         try {
-            const response = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
-            const data = await response.json();
-
-            if (data[0].Status === 'Success') {
-                const details = data[0].PostOffice[0];
-                setFormData(prev => ({
-                    ...prev,
-                    city: details.District,
-                    town: details.Name,
-                    state: details.State
-                }));
-                showToast(`Location Loaded: ${details.Name}`, 'info');
+            const details = await lookupPin(pin);
+            if (!details) {
+                setPinAreas([]);
+                setPinNote('PIN code not found. Please check it, or fill the details below yourself.');
+                return;
             }
+            setFormData(prev => prev.pincode !== pin ? prev : ({
+                ...prev,
+                town: details.town,
+                city: details.city,
+                district: details.district,
+                state: details.state,
+            }));
+            setPinAreas(details.areas);
+            setPinNote(details.areas.length > 1 ? 'Filled from the PIN code. Pick your exact area if it is different.' : 'Filled from the PIN code. You can edit any field.');
         } catch (err) {
             console.warn("PIN lookup failed:", err);
+            setPinNote('Could not look up the PIN code right now. Please fill the details yourself.');
         } finally {
             setPinLoading(false);
         }
@@ -88,6 +100,7 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                     city: formData.city,
                     town: formData.town,
                     pin_code: formData.pincode,
+                    district: formData.district.trim() || null,
                     state: formData.state,
                     vihar_group_name: finalViharGroupName,
                     sangh_name: formData.sanghName,
@@ -118,7 +131,8 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
 Captain: ${formData.captainName}
 Mobile: ${formData.mobile}
 Group: ${finalViharGroupName}
-City: ${formData.city}
+Area: ${formData.town}, ${formData.city}
+District: ${formData.district}
 State: ${formData.state}
 
 Kindly review and Approve.`;
@@ -167,6 +181,7 @@ Kindly review and Approve.`;
         );
     }
 
+    const ex = BRAND.registrationExamples;
     const inputCls = 'h-11 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-3.5 text-[15px] text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-saffron-400 focus:bg-white focus:ring-4 focus:ring-saffron-100';
     const field = (label: React.ReactNode, input: React.ReactNode, wide = false) => (
         <label className={`block ${wide ? 'sm:col-span-2' : ''}`}>
@@ -191,24 +206,31 @@ Kindly review and Approve.`;
             <form onSubmit={handleRegister}>
                 <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
                     {field('Captain Name',
-                        <input name="captainName" type="text" required className={inputCls} placeholder="Vijay Mehta" value={formData.captainName} onChange={handleChange} />)}
-                    {field('Vice Captain Name (Optional)',
-                        <input name="viceCaptainName" type="text" className={inputCls} value={formData.viceCaptainName} onChange={handleChange} />)}
+                        <input name="captainName" type="text" required autoComplete="name" className={inputCls} placeholder={ex.captain} value={formData.captainName} onChange={handleChange} />)}
+                    {field(<>Vice Captain Name <span className="font-normal text-gray-400">(optional)</span></>,
+                        <input name="viceCaptainName" type="text" className={inputCls} placeholder={ex.viceCaptain} value={formData.viceCaptainName} onChange={handleChange} />)}
                     {field('Captain Mobile Number',
-                        <input name="mobile" type="tel" inputMode="numeric" required pattern="[0-9]{10}" className={inputCls} placeholder={BRAND.examples.mobile} value={formData.mobile} onChange={handleChange} />)}
+                        <input name="mobile" type="tel" inputMode="numeric" required pattern="[0-9]{10}" maxLength={10} autoComplete="tel-national" className={inputCls} placeholder={ex.mobile} value={formData.mobile} onChange={e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10); handleChange(e); }} />)}
                     {field('Captain Email ID',
-                        <input name="email" type="email" required className={inputCls} placeholder="youremail@gmail.com" value={formData.email} onChange={handleChange} />)}
-                    {field('Full Address',
-                        <input name="address" type="text" required className={inputCls} placeholder="Full Address" value={formData.address} onChange={handleChange} />, true)}
+                        <input name="email" type="email" required autoComplete="email" className={inputCls} placeholder={ex.email} value={formData.email} onChange={handleChange} />)}
+
                     {field(
                         <span className="flex items-center justify-between">Pin Code {pinLoading && <Loader2 size={12} className="animate-spin text-saffron-600" />}</span>,
-                        <input name="pincode" type="text" inputMode="numeric" required maxLength={6} className={`${inputCls} ${pinLoading ? 'animate-pulse' : ''}`} placeholder="6 Digit PIN" value={formData.pincode} onChange={handleChange} />)}
-                    {field('State',
-                        <input name="state" type="text" required className={inputCls} placeholder="Maharashtra" value={formData.state} onChange={handleChange} />)}
-                    {field('City',
-                        <input name="city" type="text" required className={inputCls} placeholder="City" value={formData.city} onChange={handleChange} />)}
+                        <input name="pincode" type="text" inputMode="numeric" required pattern="[1-9][0-9]{5}" maxLength={6} autoComplete="postal-code" className={`${inputCls} ${pinLoading ? 'animate-pulse' : ''}`} placeholder={ex.pin} value={formData.pincode} onChange={handleChange} />)}
                     {field('Town / Area',
-                        <input name="town" type="text" required className={inputCls} placeholder="Town/Area Name" value={formData.town} onChange={handleChange} />)}
+                        <input name="town" type="text" required list="pin-areas" className={inputCls} placeholder={ex.town} value={formData.town} onChange={handleChange} />)}
+                    {pinNote && (
+                        <p className={`sm:col-span-2 -mt-1 text-[11px] font-semibold ${pinNote.startsWith('Filled') ? 'text-saffron-700' : 'text-amber-700'}`}>{pinNote}</p>
+                    )}
+                    <datalist id="pin-areas">{pinAreas.map(a => <option key={a} value={a} />)}</datalist>
+                    {field('City',
+                        <input name="city" type="text" required className={inputCls} placeholder={ex.city} value={formData.city} onChange={handleChange} />)}
+                    {field('District',
+                        <input name="district" type="text" required className={inputCls} placeholder={ex.district} value={formData.district} onChange={handleChange} />)}
+                    {field('State',
+                        <input name="state" type="text" required className={inputCls} placeholder={ex.state} value={formData.state} onChange={handleChange} />)}
+                    {field('Full Address',
+                        <textarea name="address" required rows={2} autoComplete="street-address" className={`${inputCls} h-auto py-2.5 resize-none`} placeholder="Building, street, landmark" value={formData.address} onChange={handleChange} />, true)}
                     {BRAND.registration.askSanghName && field('Sangh Name',
                         <input name="sanghName" type="text" required className={inputCls} placeholder="Sangh Name" value={formData.sanghName} onChange={handleChange} />)}
                     {BRAND.registration.askGroupName && field(

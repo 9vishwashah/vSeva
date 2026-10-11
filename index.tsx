@@ -30,9 +30,25 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 // PWA Auto Update mechanism
+// When a new deployment's service worker takes over, reload once so the page runs the new code. Guarded so it can
+// never loop: no reload when the page had no worker before (first visit), none when only the worker's URL query
+// changed (OneSignal's "sw.js?appId=.." vs "sw.js" is the same file), and at most one reload per 30 seconds.
 if ('serviceWorker' in navigator) {
+  let previous = navigator.serviceWorker.controller?.scriptURL || null;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    // When the service worker controlling this page changes (e.g. new update activates)
+    const next = navigator.serviceWorker.controller?.scriptURL || null;
+    const before = previous;
+    previous = next;
+    if (!before || !next) return;
+    const samePathOnly = new URL(before).pathname === new URL(next).pathname && before !== next;
+    if (samePathOnly) return;
+    try {
+      const last = Number(sessionStorage.getItem('sw_reload_at') || 0);
+      if (Date.now() - last < 30_000) return;
+      sessionStorage.setItem('sw_reload_at', String(Date.now()));
+    } catch {
+      // storage unavailable: still safe, the checks above already stop the URL-swap loop
+    }
     window.location.reload();
   });
 }

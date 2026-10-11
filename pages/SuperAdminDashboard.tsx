@@ -23,6 +23,7 @@ interface RegistrationRequest {
     city: string;
     town?: string;
     pin_code: string;
+    district?: string | null;
     state: string;
     mobile: string;
     email: string;
@@ -216,6 +217,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
                     ["Full Address", req.full_address],
                     ["City", req.city],
                     ["Town / Area", req.town || "N/A"],
+                    ["District", req.district || "N/A"],
                     ["State", req.state],
                     ["Pin Code", req.pin_code]
                 ];
@@ -541,6 +543,10 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                                             <div className="space-y-1">
                                                                 <span className="block text-gray-400 font-bold text-[10px] uppercase tracking-wider">Pin Code</span>
                                                                 <span className="text-gray-800 font-bold">{req.pin_code}</span>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <span className="block text-gray-400 font-bold text-[10px] uppercase tracking-wider">District / State</span>
+                                                                <span className="text-gray-800 font-bold">{[req.district, req.state].filter(Boolean).join(', ') || '-'}</span>
                                                             </div>
                                                         </div>
                                                     </td>

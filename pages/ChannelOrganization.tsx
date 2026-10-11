@@ -6,7 +6,7 @@ import Modal from '../components/Modal';
 import Avatar from '../components/Avatar';
 import BottomSheet from '../components/BottomSheet';
 import ChannelMessageRow from '../components/ChannelMessageRow';
-import { Loader2, Send, Settings, X, Reply, Copy, Trash2 } from 'lucide-react';
+import { Loader2, Send, Settings, X, Reply, Copy, Trash2, Lock } from 'lucide-react';
 
 const roleLabel = (role?: string | null): string => (role === UserRole.ORG_ADMIN ? 'Captain / Organization Head' : 'Vihar Sevak');
 
@@ -146,6 +146,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
     try {
       await channelService.follow(currentUser.organization_id, organizationId);
       setIsFollowing(true);
+      load();
     } catch (e: any) {
       showToast(e?.message || 'Could not follow organization', 'error');
     } finally {
@@ -334,6 +335,24 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         )}
       </div>
 
+      {!isOwnOrg && !isFollowing && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-6 py-10 text-center">
+          <div className="w-14 h-14 rounded-full bg-saffron-50 text-saffron-600 flex items-center justify-center mx-auto mb-3"><Lock size={24} /></div>
+          <p className="m-0 text-base font-extrabold text-[#241C17]">Follow to see this group</p>
+          <p className="m-0 mt-1 text-sm text-[#8A6A57] max-w-xs mx-auto">
+            {currentUser.role === UserRole.ORG_ADMIN
+              ? 'Their VChat and recent Vihars open once your group follows them.'
+              : 'Their VChat and recent Vihars open once your Captain follows this group.'}
+          </p>
+          {currentUser.role === UserRole.ORG_ADMIN && (
+            <button onClick={handleFollow} disabled={followBusy} className="mt-5 h-11 px-6 rounded-full bg-saffron-600 hover:bg-saffron-700 text-white text-sm font-extrabold disabled:opacity-60">
+              {followBusy ? 'Following…' : 'Follow'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {(isOwnOrg || isFollowing) && (<>
       {/* Chat first — the primary reason to be on this screen — then Recent
           Vihars below it, not competing for the initial scroll position. */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 flex flex-col h-[65dvh]">
@@ -438,6 +457,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
           </div>
         </div>
       )}
+      </>)}
 
       <Modal open={confirmUnfollow} onClose={() => setConfirmUnfollow(false)} maxWidth="max-w-sm">
         <div className="p-6">

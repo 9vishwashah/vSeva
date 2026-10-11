@@ -32,6 +32,23 @@ async function waitForOneSignalReady(OneSignal: any, maxAttempts = 14): Promise<
 // False in a build without its own OneSignal app id (push is then off everywhere in that build).
 export const PUSH_ENABLED = !!import.meta.env.VITE_ONESIGNAL_APP_ID;
 
+// In a browser with push on, OneSignal registers the app's service worker itself, as "/sw.js?appId=..&sdkVersion=..".
+// The PWA update helper registers "/sw.js". Two different URLs on one scope keep replacing each other, and every
+// swap reloaded the page (the reload loop seen on ssg.vjas.in). So in that case OneSignal is the only registrar;
+// the file is the same sw.js (Workbox precache + OneSignal), so offline support and updates are unchanged.
+export const ONESIGNAL_OWNS_SERVICE_WORKER = PUSH_ENABLED && !isNativePlatform();
+
+// If OneSignal could not start (blocked, offline, wrong domain), still register the app's worker so the PWA works.
+const ensureServiceWorker = async () => {
+  try {
+    if (!('serviceWorker' in navigator)) return;
+    const existing = await navigator.serviceWorker.getRegistration('/');
+    if (!existing) await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+  } catch (err) {
+    console.warn('Service worker fallback registration failed', err);
+  }
+};
+
 export const initOneSignal = async () => {
   if (initPromise) return initPromise;
 
@@ -97,6 +114,7 @@ export const initOneSignal = async () => {
       } catch (err) {
         console.error('OneSignal: Initialization failed', err);
       } finally {
+        await ensureServiceWorker();
         resolve();
       }
     });

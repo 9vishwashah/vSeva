@@ -31,7 +31,7 @@ async function fetchAll(buildQuery, max = MAX_ENTRIES) {
 }
 
 const REQUEST_COLUMNS =
-    'id, vihar_group_name, sangh_name, captain_name, vice_captain_name, full_address, city, town, pin_code, state, mobile, email, status, created_at';
+    'id, vihar_group_name, sangh_name, captain_name, vice_captain_name, full_address, city, town, pin_code, district, state, mobile, email, status, created_at';
 
 async function rawHandler(event) {
     try {

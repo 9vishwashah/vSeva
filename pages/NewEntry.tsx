@@ -401,6 +401,15 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
             This will be sent to your Captain for approval before it counts as an official Vihar.
           </p>
         )}
+        {isSevakSubmission && step === 1 && (
+          <div className="mt-3 rounded-2xl border border-saffron-200 bg-saffron-50 px-4 py-3 text-sm text-[#5C3B22]">
+            <p className="m-0 font-extrabold text-saffron-700">Before you submit</p>
+            <ul className="m-0 mt-1 pl-4 list-disc space-y-0.5">
+              <li>Select <b>every Sevak who was with you</b> on this Vihar, so it counts for all of them.</li>
+              <li>Only <b>one Sevak</b> submits the Vihar, on behalf of everyone. Others should not submit it again.</li>
+            </ul>
+          </div>
+        )}
         {isReviewingPending && (
           <span className="mt-2 inline-flex items-center gap-1.5 bg-saffron-100 text-saffron-700 text-xs font-bold px-3 py-1 rounded-full">
             <Clock size={12} /> Pending Captain Approval

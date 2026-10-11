@@ -3,9 +3,9 @@ import { UserRole, UserNotification } from '../types';
 import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck, WifiOff, Compass, MessageSquare } from 'lucide-react';
 
 import NotificationBell from './NotificationBell';
-import LanguageSwitcher from './LanguageSwitcher';
 import LanguageDropdown from './LanguageDropdown';
 import Avatar from './Avatar';
+import BottomNavBar from './ui/bottom-nav-bar';
 import { BRAND } from '@brand';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useSwipeDismiss } from '../hooks/useSwipeDismiss';
@@ -129,11 +129,13 @@ const Layout: React.FC<LayoutProps> = ({
   // "More" sheet: glides up, drag down (or tap outside / back button) to glide away.
   const sheet = useSwipeDismiss(() => setMoreOpen(false), { enabled: moreOpen });
 
-  // Swipe left/right between the main tabs, like WhatsApp's Chats / Status / Calls. Forms and detail
-  // pages are left out on purpose so a sideways drag never costs anyone their input.
-  const swipeOrder = role === UserRole.ORG_ADMIN
-    ? ['dashboard', 'view-entries', 'statistics', 'pending-approvals']
-    : ['analytics', 'my-vihars', 'statistics'];
+  // Swipe left/right through every page in the menu, in menu order (bottom bar first, then More, then
+  // Profile), like WhatsApp's tabs. Only the New Vihar Entry form is left out, so a sideways drag never
+  // throws away a half-filled entry; it is one tap away on the bar.
+  const swipeOrder = [...primaryItems, ...moreItems]
+    .map(i => i.page)
+    .filter((page, i, all) => page !== 'new-entry' && all.indexOf(page) === i)
+    .concat('profile');
 
   const prevPageRef = React.useRef(currentPage);
   const slideDirRef = React.useRef<'next' | 'prev' | null>(null);
@@ -368,11 +370,12 @@ const Layout: React.FC<LayoutProps> = ({
           style={{ height: '56px', transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)' }}
         >
           <div className="flex items-center gap-2">
-            <img src={BRAND.logo} alt={BRAND.name} className="h-8 w-8 object-contain drop-shadow-sm shrink-0" />
-            <h1 className="text-lg font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">{BRAND.shortName}</h1>
+            {/* vSeva's logo art has transparent padding, so it is scaled up to read at the same size */}
+            <img src={BRAND.logo} alt={BRAND.name} className={`h-11 w-11 object-contain drop-shadow-sm shrink-0 ${BRAND.logoPadded ? 'scale-125' : ''}`} />
+            <h1 className="text-xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">{BRAND.shortName}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <LanguageSwitcher compact />
+            <LanguageDropdown />
             <NotificationBell userId={userId} role={role} onOpenNotification={onOpenNotification} onViewAll={() => setCurrentPage('notifications')} />
           </div>
         </header>
@@ -398,59 +401,31 @@ const Layout: React.FC<LayoutProps> = ({
           </p>
         </div>}
 
-        {/* Mobile Bottom Nav — expanding pill + More sheet + avatar */}
+        {/* Mobile Bottom Nav: iOS-style frosted bar (components/ui/bottom-nav-bar) + More sheet + avatar */}
         <nav
           className="md:hidden fixed bottom-0 left-0 right-0 z-30 px-2 sm:px-4"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 10px)' }}
         >
-          <div
-            className="flex items-center px-2 py-2 rounded-full shadow-[0_14px_30px_-10px_rgba(36,28,23,0.45)]"
-            style={{ minHeight: '52px', background: '#241C17' }}
-          >
-            {primaryItems.map(item => {
-              const active = currentPage === item.page;
-              return (
-                <button
-                  key={item.page}
-                  onClick={() => { tick(); setCurrentPage(item.page); }}
-                  className="flex items-center justify-center min-w-0 active:scale-95 transition-[flex-grow] duration-300 ease-out"
-                  style={{ flex: `${active ? 1.7 : 1} 1 0%` }}
-                >
-                  <div
-                    className="w-fit mx-auto flex items-center justify-center gap-1.5 p-3 rounded-full transition-colors duration-300"
-                    style={active ? { background: 'linear-gradient(150deg,#FF9947,#DE6B38)' } : undefined}
-                  >
-                    <span style={{ color: active ? '#241C17' : '#B8A798' }}>{item.icon}</span>
-                    {active && <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: '#241C17' }}>{item.label}</span>}
-                  </div>
-                </button>
-              );
-            })}
-
-            {/* More */}
-            <button
-              onClick={() => { tick(); setMoreOpen(true); }}
-              className="flex items-center justify-center min-w-0 active:scale-95 transition-[flex-grow] duration-300 ease-out"
-              style={{ flex: `${moreActive ? 1.7 : 1} 1 0%` }}
-            >
-              <div
-                className="w-fit mx-auto flex items-center justify-center gap-1.5 p-3 rounded-full transition-colors duration-300"
-                style={moreActive ? { background: 'linear-gradient(150deg,#FF9947,#DE6B38)' } : undefined}
+          <BottomNavBar
+            items={[
+              ...primaryItems.map(i => ({ key: i.page, label: i.label, icon: i.icon })),
+              { key: '__more', label: t('nav.more'), icon: <MoreHorizontal size={21} /> },
+            ]}
+            activeKey={moreActive ? '__more' : primaryItems.some(i => i.page === currentPage) ? currentPage : null}
+            onSelect={key => { tick(); if (key === '__more') setMoreOpen(true); else setCurrentPage(key); }}
+            trailing={
+              // Avatar: always visible for both roles, always opens Profile & Settings
+              <button
+                type="button"
+                onClick={() => { tick(); setCurrentPage('profile'); }}
+                aria-label="Profile & Settings"
+                className={`flex items-center justify-center rounded-full active:scale-90 transition-transform duration-150 ${currentPage === 'profile' ? 'ring-2 ring-saffron-400 ring-offset-2 ring-offset-[#241C17]' : ''}`}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <MoreHorizontal size={21} style={{ color: moreActive ? '#241C17' : '#B8A798' }} />
-                {moreActive && <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: '#241C17' }}>{t('nav.more')}</span>}
-              </div>
-            </button>
-
-            {/* Avatar — always visible, both roles, always goes to Profile & Settings.
-                Merged into the same dark bar (not a separate floating circle) per the mock. */}
-            <button
-              onClick={() => setCurrentPage('profile')}
-              className="shrink-0 flex items-center justify-center active:scale-95 transition-all duration-200"
-            >
-              <Avatar name={userName || userInitials} url={avatarUrl} size={34} variant="gradient" className="text-[13px]" />
-            </button>
-          </div>
+                <Avatar name={userName || userInitials} url={avatarUrl} size={36} variant="gradient" className="text-[13px]" />
+              </button>
+            }
+          />
         </nav>
 
         {/* More sheet */}

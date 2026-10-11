@@ -169,7 +169,7 @@ const Channel: React.FC<ChannelProps> = ({ currentUser, onOpenOrganization }) =>
               <OrgRow
                 key={org.id}
                 org={org}
-                onClick={() => onOpenOrganization(org.id)}
+                onClick={() => { if (isFollowingOrg) onOpenOrganization(org.id); else showToast(currentUser.role === UserRole.ORG_ADMIN ? 'Follow this group to see its VChat' : 'Your Captain can follow this group to see its VChat', 'info'); }}
                 trailing={
                   currentUser.role === UserRole.ORG_ADMIN ? (
                     <button

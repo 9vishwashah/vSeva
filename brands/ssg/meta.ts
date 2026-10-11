@@ -27,6 +27,7 @@ export const getMeta = (env: Env): BrandMeta => {
     registration: { askSanghName: false, askGroupName: false },
     usernameHint: 'username or admin@example.com',
     examples: { username: 'e.g. Ramesh Shah', mobile: '9876543210' },
+    registrationExamples: { captain: 'Tejash Shah', viceCaptain: 'Bhaven Haria', mobile: '98241 12292', email: 'unitedtyresvapi@gmail.com', pin: '401404', town: 'Palghar', city: 'Palghar', district: 'Palghar', state: 'Maharashtra' },
     description,
     finderName: 'SSG Derasar Finder',
     directoryName: 'Shraman Seva Group Community Directory',

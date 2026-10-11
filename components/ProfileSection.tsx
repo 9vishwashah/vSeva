@@ -726,10 +726,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 )}
             </div>
 
-            {/* Safety: a visible way to report a child-safety / safety concern */}
+            {/* Safety: a way to report a child-safety / safety concern. Hidden in the app for now; the
+                /child-safety page itself stays public (Google Play's child-safety standards link points there). */}
             <a
                 href="/child-safety"
-                className="flex items-center justify-between gap-3 rounded-[22px] bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
+                className="hidden items-center justify-between gap-3 rounded-[22px] bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
             >
                 <span>
                     <span className="block text-sm font-bold text-[#241C17]">Report a safety concern</span>
