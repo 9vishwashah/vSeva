@@ -45,8 +45,23 @@ const RETRYABLE_STATUS = (status: number) => status === 429 || (status >= 502 &&
 // failures (network error, request timeout, 429/502/503/504). Never retries
 // 4xx other than 429, and never retries unless the caller has said the
 // call is idempotent.
+// The signed-in user's access token, sent with every function call so the server can check who is asking and
+// for which group. Calls that already pass their own Authorization header keep it.
+async function authHeader(headers: Record<string, string>): Promise<Record<string, string>> {
+  if (Object.keys(headers).some(h => h.toLowerCase() === 'authorization')) return {};
+  try {
+    const { supabase } = await import('./supabase');
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function callFn<T = any>(name: string, opts: CallFnOptions = {}): Promise<T> {
-  const { method = 'POST', headers = {}, body, query, retry = false, timeoutMs = 15000 } = opts;
+  const { method = 'POST', body, query, retry = false, timeoutMs = 15000 } = opts;
+  const headers = { ...(await authHeader(opts.headers || {})), ...(opts.headers || {}) };
   const maxAttempts = retry ? 3 : 1;
   let lastError: unknown;
 

@@ -55,10 +55,18 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-pdf': ['jspdf', 'jspdf-autotable'],
-            'vendor-excel': ['xlsx'],
+          // Function form, matching only each library's own folder. The object form also pulled the libraries'
+          // shared helpers (e.g. Babel runtime) into vendor-pdf, and because the app's entry used one of those
+          // helpers, the whole 400 KB PDF chunk was downloaded on every app start.
+          manualChunks(id) {
+            // Vite's dynamic-import helper: jspdf uses it, so it used to land inside vendor-pdf, and the app's
+            // entry needs it at startup. Its own tiny chunk keeps the PDF library out of the first download.
+            if (id.includes('vite/preload-helper')) return 'preload-helper';
+            if (!id.includes('node_modules')) return undefined;
+            if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'vendor-react';
+            if (/[\\/]node_modules[\\/](jspdf|jspdf-autotable)[\\/]/.test(id)) return 'vendor-pdf';
+            if (/[\\/]node_modules[\\/]xlsx[\\/]/.test(id)) return 'vendor-excel';
+            return undefined;
           },
         },
       },

@@ -201,7 +201,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         // other's results — they were previously awaited in a 4-stage sequential
         // chain. Firing them together turns ~4 round-trips into 1.
         const [
-          org, orgSevaks, routes, secureMap, allOrgEntries, rankingEntries, detailedStats, totalOrgSevaksCount
+          org, orgSevaks, routes, allOrgEntries, rankingEntries, detailedStats, totalOrgSevaksCount
         ] = await Promise.all([
           dataService.getOrganization(currentUser.organization_id),
           // Org-wide roster (username/full_name/gender) via the service-role
@@ -211,7 +211,6 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           // grouping (Active Sevaks split, VY leaderboard) for any Sevak.
           dataService.getOrgRosterForStats(currentUser.organization_id, true),
           dataService.getRoutes(currentUser.organization_id),
-          dataService.getSevakNameMap(currentUser.organization_id),
           dataService.getEntries(currentUser.organization_id),
           // Org-wide, for rank/leaderboard only — getEntries() above is RLS-
           // limited to a Sevak's own entries, which breaks ranking (everyone's
@@ -236,8 +235,9 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         setUniqueAreas(Array.from(areas).sort());
 
         // Create username -> fullname map for Synergy display
+        // (the roster above already includes inactive members, so it covers every name the old
+        // separate get-sevak-names call returned - that extra server call is no longer made here)
         const nameMap: Record<string, string> = {};
-        Object.assign(nameMap, secureMap);
         const genderMap: Record<string, string> = {};
         orgSevaks.forEach(s => {
           nameMap[s.username] = s.full_name;

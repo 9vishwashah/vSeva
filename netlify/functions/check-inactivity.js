@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { withCors } from './_shared/cors.js';
+import { requireOrgMember, orgErrorResponse, HttpError } from './_shared/orgAuth.js';
 
 const TIERS = [15, 7, 5]; // checked highest-first so a sevak gets the strongest matching tier
 
@@ -26,10 +26,12 @@ async function rawHandler(event) {
             return { statusCode: 400, body: JSON.stringify({ error: 'orgId is required' }) };
         }
 
-        const supabaseAdmin = createClient(
-            (process.env.SUPABASE_URL && process.env.SUPABASE_URL.includes('.supabase.co') ? process.env.SUPABASE_URL : process.env.VITE_SUPABASE_URL),
-            process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        // caller must be signed in and asking about their own organization
+        const { sb: supabaseAdmin, profile: caller } = await requireOrgMember(event, orgId);
+        // a Sevak may only check themselves; checking the whole group is the Captain's
+        if (caller.role !== 'admin' && (!username || username !== caller.username)) {
+            return { statusCode: 403, body: JSON.stringify({ error: 'Not allowed.' }) };
+        }
 
         // Active sevaks to check — either everyone in the org (Captain's dashboard
         // triggers this) or just one (a Sevak's own dashboard checking themselves).
@@ -139,6 +141,7 @@ async function rawHandler(event) {
 
         return { statusCode: 200, body: JSON.stringify({ created: rowsToInsert.length }) };
     } catch (err) {
+        if (err instanceof HttpError) return orgErrorResponse(err, 'check-inactivity');
         console.error(err);
         return { statusCode: 500, body: JSON.stringify({ error: err.message || 'Internal Server Error' }) };
     }

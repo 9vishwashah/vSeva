@@ -64,7 +64,15 @@ async function rawHandler(event) {
       };
     }
 
-    const { email, password, user_metadata } = body;
+    const { email, password } = body;
+    // Built on the server, never copied from the request: an "org_name" key in user metadata would make the
+    // handle_new_user trigger create a new organization with this account as its Captain.
+    const user_metadata = {
+      full_name: String(body.user_metadata?.full_name || '').slice(0, 120),
+      role: 'sevak',
+      organization_id: profile.organization_id,
+    };
+    body.user_metadata = user_metadata;
 
     // Newer clients send the name part of the username and let us pick a free one. vSeva and Shraman Seva
     // Group share one login system, so two different people may well have the same name: the first is

@@ -12,6 +12,7 @@ import { BRAND } from '@brand';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import SankalpGate from './components/SankalpGate';
 import UpdateAppBanner from './components/UpdateAppBanner';
+import BrandSplash from './components/BrandSplash';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationClick, ONESIGNAL_OWNS_SERVICE_WORKER } from './services/oneSignalService';
 import StatusScreen from './components/StatusScreen';
 import { ViharYearProvider } from './context/ViharYearContext';
@@ -72,6 +73,8 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sessionError, setSessionError] = useState<'offline' | 'error' | null>(null);
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
+  // read by the update reload in index.tsx, so the app reopens on the same page
+  useEffect(() => { (window as any).__appCurrentPage = currentPage; }, [currentPage]);
   const [editingEntry, setEditingEntry] = useState<ViharEntry | null>(null);
   const [channelOrgId, setChannelOrgId] = useState<string | null>(null);
   const [sosId, setSosId] = useState<string | null>(null);
@@ -240,7 +243,7 @@ const App: React.FC = () => {
   
   if (path.startsWith('/verify/')) {
     return (
-      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-pulse font-bold text-saffron-600">Loading Profile...</div></div>}>
+      <React.Suspense fallback={<BrandSplash />}>
         <PublicSevakProfile />
       </React.Suspense>
     );
@@ -259,7 +262,7 @@ const App: React.FC = () => {
   
   if (seoDerasarRoutes.includes(normalizedPath)) {
     return (
-      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]"><div className="animate-pulse text-saffron-600 font-bold">Loading Finder...</div></div>}>
+      <React.Suspense fallback={<BrandSplash />}>
         <NearbyDerasar />
       </React.Suspense>
     );
@@ -269,7 +272,7 @@ const App: React.FC = () => {
   // crawler or a WhatsApp-shared link. Checked before the auth gate below.
   if (normalizedPath === '/directory' || normalizedPath.startsWith('/directory/')) {
     return (
-      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]"><div className="animate-pulse text-saffron-600 font-bold">Loading Directory...</div></div>}>
+      <React.Suspense fallback={<BrandSplash />}>
         <DirectoryRouter />
       </React.Suspense>
     );
@@ -365,7 +368,10 @@ const App: React.FC = () => {
               setCurrentPage(resolveNotificationTargetPage(pendingData, profile.role));
               pendingNotificationDataRef.current = null;
             } else {
-              setCurrentPage(pendingViharId ? 'notifications' : (profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard'));
+              // back from an app-update reload: reopen the page they were on
+              let resumePage: string | null = null;
+              try { resumePage = sessionStorage.getItem('resume_page'); sessionStorage.removeItem('resume_page'); } catch { /* optional */ }
+              setCurrentPage(pendingViharId ? 'notifications' : (resumePage || (profile.role === UserRole.SEVAK ? 'analytics' : 'dashboard')));
             }
             // Show onboarding walkthrough on first-ever session resume too
             if (shouldShowOnboarding(profile.role)) setShowOnboarding(true);
@@ -425,24 +431,8 @@ const App: React.FC = () => {
     setShowLanding(false);
   };
 
-  // While loading, show a white splash screen with the logo
-  if (loading) return (
-    <div style={{ position: 'fixed', inset: 0, background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-      <img src={BRAND.logo} alt={BRAND.name} style={{ width: 96, height: 96, objectFit: 'contain', animation: 'app-splash-logo-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both' }} />
-      <div style={{ marginTop: 20, width: 36, height: 36, borderRadius: '50%', border: '3px solid #f97316', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite, app-splash-fade-in 300ms ease-out 350ms both' }} />
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes app-splash-logo-in {
-          from { opacity: 0; transform: scale(0.85); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes app-splash-fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
-    </div>
-  );
+  // While the session restores (e.g. right after login): the brand logo, gently breathing
+  if (loading) return <BrandSplash />;
 
   // Couldn't even restore the session — show a full-screen retry instead of
   // silently dropping to the login page (which used to happen on any network hiccup).
@@ -464,7 +454,7 @@ const App: React.FC = () => {
       return null;
     }
     return (
-      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-saffron-600"></div></div>}>
+      <React.Suspense fallback={<BrandSplash />}>
         {superAdminOrgId ? <SuperAdminOrgDetail orgId={superAdminOrgId} /> : <SuperAdminDashboard currentUser={user} />}
       </React.Suspense>
     );
@@ -487,7 +477,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <React.Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #f97316', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} /></div>}>
+    <React.Suspense fallback={<BrandSplash />}>
       {showOnboarding && user && (
         <OnboardingWalkthrough
           role={user.role}

@@ -77,8 +77,11 @@ const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?:
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    // Poll only while the app is on screen; catch up as soon as it comes back.
+    const interval = setInterval(() => { if (document.visibilityState === 'visible') fetchNotifications(); }, 30000);
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchNotifications(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisible); };
   }, [userId]);
 
   useEffect(() => {

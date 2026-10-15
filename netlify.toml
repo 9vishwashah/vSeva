@@ -55,3 +55,15 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Baseline security headers for every page (audit 15 Oct 2026). Deliberately conservative: no script/style
+# Content-Security-Policy yet (Supabase, OneSignal, MapLibre tiles and Google Fonts would need a tested allow-list).
+# frame-ancestors stops other sites embedding the app (clickjacking); geolocation is used by Nearby / SOS.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Content-Security-Policy = "frame-ancestors 'self'"
+    Permissions-Policy = "geolocation=(self), camera=(self), microphone=(), payment=(), usb=()"

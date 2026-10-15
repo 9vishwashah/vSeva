@@ -194,7 +194,15 @@ export const dataService = {
   // a "No Vihar Since..." notification for them (deduped per tier). Pass
   // `username` to check just one sevak (their own dashboard), omit it to scan
   // the whole org (the Captain's dashboard).
+  // At most once every 6 hours per device for the same org/person: it runs on every Dashboard open, the
+  // reminders are day-based and deduped server-side, so repeating it sooner only costs a server call.
   checkInactivity(orgId: string, username?: string): void {
+    const key = `inactivityCheckedAt:${orgId}:${username || 'org'}`;
+    try {
+      const last = Number(localStorage.getItem(key) || 0);
+      if (Date.now() - last < 6 * 60 * 60 * 1000) return;
+      localStorage.setItem(key, String(Date.now()));
+    } catch { /* storage unavailable: just run the check */ }
     callFn('check-inactivity', { body: { orgId, username } })
       .catch(e => console.warn('Inactivity check failed:', e));
   },

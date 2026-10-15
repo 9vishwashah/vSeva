@@ -34,11 +34,27 @@ export async function handler(event, context) {
     console.log('Incoming notification payload:', payloadStr);
     
     const data = JSON.parse(payloadStr);
-    const notification = data.record;
+    const incoming = data.record;
 
-    if (!notification || !notification.user_id) {
-       console.error('Invalid notification record:', notification);
+    if (!incoming || !incoming.id) {
+       console.error('Invalid notification record:', incoming);
        return { statusCode: 400, body: 'Missing notification record' };
+    }
+
+    // The request body is only a pointer. This endpoint is public (the database webhook calls it without a
+    // secret), so the notification is re-read from the database and only what is stored there is sent - a
+    // forged request cannot push its own text to someone's phone. Only fresh notifications are delivered.
+    const { data: notification, error: notificationError } = await supabase
+      .from('notifications')
+      .select('id, user_id, type, title, message, payload, created_at')
+      .eq('id', incoming.id)
+      .maybeSingle();
+    if (notificationError || !notification || !notification.user_id) {
+      console.error('Notification not found:', incoming.id, notificationError);
+      return { statusCode: 404, headers, body: 'Notification not found' };
+    }
+    if (Date.now() - new Date(notification.created_at).getTime() > 10 * 60 * 1000) {
+      return { statusCode: 200, headers, body: JSON.stringify({ skipped: 'stale notification' }) };
     }
 
     // 2. Resolve User ID to Username (OneSignal external_id)

@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { requireOrgMember, orgErrorResponse, HttpError } from './_shared/orgAuth.js';
 
 export async function handler(event) {
     try {
@@ -18,10 +18,8 @@ export async function handler(event) {
             };
         }
 
-        const supabaseAdmin = createClient(
-            (process.env.SUPABASE_URL && process.env.SUPABASE_URL.includes('.supabase.co') ? process.env.SUPABASE_URL : process.env.VITE_SUPABASE_URL),
-            process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        // caller must be signed in and asking about their own organization
+        const { sb: supabaseAdmin, profile: caller } = await requireOrgMember(event, orgId);
 
         // 1. Fetch all Organisation Sevaks (to get Gender)
         const { data: sevaks, error: sevaksError } = await supabaseAdmin
@@ -96,6 +94,7 @@ export async function handler(event) {
             body: JSON.stringify({ male: maleSevaks, female: femaleSevaks, overall }),
         };
     } catch (err) {
+        if (err instanceof HttpError) return orgErrorResponse(err, 'get-top-sevaks');
         console.error(err);
         return {
             statusCode: 500,

@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { withCors } from './_shared/cors.js';
+import { requireOrgMember, orgErrorResponse, HttpError } from './_shared/orgAuth.js';
 
 async function rawHandler(event) {
     try {
@@ -19,10 +19,8 @@ async function rawHandler(event) {
             };
         }
 
-        const supabaseAdmin = createClient(
-            (process.env.SUPABASE_URL && process.env.SUPABASE_URL.includes('.supabase.co') ? process.env.SUPABASE_URL : process.env.VITE_SUPABASE_URL),
-            process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        // caller must be signed in and asking about their own organization
+        const { sb: supabaseAdmin, profile: caller } = await requireOrgMember(event, orgId);
 
         // Fetch id/full_name/mobile/avatar_url securely, bypassing RLS, so any
         // org member (not just admins) can resolve who someone is, reach them
@@ -62,6 +60,7 @@ async function rawHandler(event) {
             body: JSON.stringify(map),
         };
     } catch (err) {
+        if (err instanceof HttpError) return orgErrorResponse(err, 'get-org-sevak-contacts');
         console.error(err);
         return {
             statusCode: 500,

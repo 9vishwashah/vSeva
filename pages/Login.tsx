@@ -180,7 +180,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   if (isRegistering) {
     return (
       <AuthShell maxWidth="max-w-2xl">
-        <React.Suspense fallback={<div className="flex justify-center py-16"><Loader2 className="animate-spin text-saffron-600" /></div>}>
+        <React.Suspense fallback={<BrandSplash inline />}>
           <RegisterAdminView onBack={() => setIsRegistering(false)} onSuccess={() => setIsRegistering(false)} />
         </React.Suspense>
       </AuthShell>
@@ -190,7 +190,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   if (isForgotPassword) {
     return (
       <AuthShell>
-        <React.Suspense fallback={<div className="flex justify-center py-16"><Loader2 className="animate-spin text-saffron-600" /></div>}>
+        <React.Suspense fallback={<BrandSplash inline />}>
           <ForgotPasswordView onBack={() => setIsForgotPassword(false)} />
         </React.Suspense>
       </AuthShell>
@@ -311,5 +311,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 // Accessing RegisterAdmin via import
 import RegisterAdminView from './RegisterAdmin';
 import ForgotPasswordView from './ForgotPassword';
+import BrandSplash from '../components/BrandSplash';
 
 export default Login;

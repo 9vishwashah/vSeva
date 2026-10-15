@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { withCors } from './_shared/cors.js';
+import { requireOrgMember, orgErrorResponse, HttpError } from './_shared/orgAuth.js';
 
 // Mirrors get-sevak-names.js exactly (same org-wide, username-keyed shape),
 // just returning avatar_url instead of full_name — kept as its own endpoint
@@ -23,10 +23,8 @@ async function rawHandler(event) {
             };
         }
 
-        const supabaseAdmin = createClient(
-            (process.env.SUPABASE_URL && process.env.SUPABASE_URL.includes('.supabase.co') ? process.env.SUPABASE_URL : process.env.VITE_SUPABASE_URL),
-            process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        // caller must be signed in and asking about their own organization
+        const { sb: supabaseAdmin, profile: caller } = await requireOrgMember(event, orgId);
 
         // avatar_url needs scripts/add_avatar_url.sql run first — fall back to
         // an empty map (→ initials fallback everywhere) rather than erroring.
@@ -53,6 +51,7 @@ async function rawHandler(event) {
             body: JSON.stringify(map),
         };
     } catch (err) {
+        if (err instanceof HttpError) return orgErrorResponse(err, 'get-sevak-avatars');
         console.error(err);
         return {
             statusCode: 500,

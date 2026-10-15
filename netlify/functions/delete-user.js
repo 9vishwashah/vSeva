@@ -53,7 +53,7 @@ async function rawHandler(event, context) {
 
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('role')
+      .select('role, organization_id')
       .eq('id', user.id)
       .single();
 
@@ -84,6 +84,20 @@ async function rawHandler(event, context) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Missing user_id' }),
+      };
+    }
+
+    // A Captain may delete only a Sevak of their own group - never another Captain, someone in another group,
+    // or themselves. (Before this check any Captain could delete any account by its id.)
+    const { data: target } = await supabaseAdmin
+      .from('profiles')
+      .select('role, organization_id')
+      .eq('id', user_id)
+      .maybeSingle();
+    if (!target || target.organization_id !== profile.organization_id || target.role !== 'sevak' || user_id === user.id) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'You can only remove Sevaks of your own group.' }),
       };
     }
 
