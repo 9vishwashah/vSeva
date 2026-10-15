@@ -1,0 +1,278 @@
+<title>vSeva &amp; SSG Engineering Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: a single reading column with a sticky section index on wide screens; tables scroll inside their own boxes. */
+  :root {
+    --bg: #F6F7F9;
+    --surface: #FFFFFF;
+    --ink: #1B2230;
+    --muted: #5B6577;
+    --line: #DDE2EA;
+    --accent: #C2551B;
+    --accent-soft: #FBEDE4;
+    --pass: #1F7A4D; --pass-bg: #E3F4EA;
+    --fail: #B42318; --fail-bg: #FDE8E6;
+    --warn: #8A5A00; --warn-bg: #FFF3D6;
+    --info: #3E5C8A; --info-bg: #E6EEF9;
+    --display: "Archivo", "Segoe UI", system-ui, sans-serif;
+    --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #11151C; --surface: #181E27; --ink: #E7EAF0; --muted: #9AA4B5; --line: #2A3240;
+      --accent: #F08A4B; --accent-soft: #2E2119;
+      --pass: #6FD3A0; --pass-bg: #15301F; --fail: #FF8A7E; --fail-bg: #3A1A17;
+      --warn: #F3C55E; --warn-bg: #33290F; --info: #9DB9E6; --info-bg: #1B2638;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #11151C; --surface: #181E27; --ink: #E7EAF0; --muted: #9AA4B5; --line: #2A3240;
+    --accent: #F08A4B; --accent-soft: #2E2119;
+    --pass: #6FD3A0; --pass-bg: #15301F; --fail: #FF8A7E; --fail-bg: #3A1A17;
+    --warn: #F3C55E; --warn-bg: #33290F; --info: #9DB9E6; --info-bg: #1B2638;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 64px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 40px; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; } nav.index { display: none; } }
+  nav.index { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+  nav.index a { color: var(--muted); text-decoration: none; padding: 4px 10px; border-left: 2px solid var(--line); }
+  nav.index a:hover, nav.index a:focus-visible { color: var(--accent); border-left-color: var(--accent); outline: none; }
+  main { min-width: 0; display: flex; flex-direction: column; gap: 48px; }
+  h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; line-height: 1.1; }
+  h2 { font-size: 24px; font-weight: 700; }
+  h3 { font-size: 17px; font-weight: 700; }
+  p { margin: 0; max-width: 68ch; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+  header.top { display: flex; flex-direction: column; gap: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 24px; }
+  .verdict { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .verdict p.lead { font-size: 18px; max-width: 72ch; }
+  .figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 700px) { .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .fig { border-top: 3px solid var(--accent); padding-top: 10px; display: flex; flex-direction: column; gap: 2px; }
+  .fig .n { font-family: var(--display); font-weight: 800; font-size: 30px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .fig .l { font-size: 13px; color: var(--muted); }
+  ul.plain { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; max-width: 72ch; }
+  .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 640px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--bg); position: sticky; top: 0; }
+  tr:last-child td { border-bottom: 0; }
+  td.id { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; color: var(--muted); }
+  td .what { font-weight: 600; display: block; }
+  td .why { color: var(--muted); display: block; margin-top: 2px; }
+  code { font-family: var(--mono); font-size: 0.86em; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  .pill { display: inline-block; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .pass { color: var(--pass); background: var(--pass-bg); }
+  .fail { color: var(--fail); background: var(--fail-bg); }
+  .warn { color: var(--warn); background: var(--warn-bg); }
+  .info { color: var(--info); background: var(--info-bg); }
+  .sev { font-family: var(--mono); font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .sev.crit { color: var(--fail); } .sev.high { color: var(--accent); } .sev.med { color: var(--warn); } .sev.low, .sev.inf { color: var(--muted); }
+  .bars { display: flex; flex-direction: column; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+  .bar-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 90px; gap: 12px; align-items: center; font-size: 14px; }
+  @media (max-width: 560px) { .bar-row { grid-template-columns: 1fr 80px; } .bar-row .track { grid-column: 1 / -1; grid-row: 2; } }
+  .track { height: 14px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .track span { display: block; height: 100%; background: var(--muted); }
+  .track span.after { background: var(--accent); }
+  .bar-row .v { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+  .note { font-size: 14px; color: var(--muted); max-width: 72ch; }
+  .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 700px) { .two { grid-template-columns: minmax(0, 1fr); } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+  a { color: var(--accent); }
+</style>
+
+<div class="wrap">
+  <nav class="index" aria-label="Sections">
+    <a href="#summary">Summary</a>
+    <a href="#defects">Defect register</a>
+    <a href="#security">Security</a>
+    <a href="#performance">Performance</a>
+    <a href="#android">Android</a>
+    <a href="#risks">Accepted risks</a>
+    <a href="#checklist">Release checklist</a>
+    <a href="#next">Next actions</a>
+  </nav>
+
+  <main>
+    <header class="top">
+      <span class="eyebrow">Engineering audit · final report</span>
+      <h1>vSeva &amp; Shraman Seva Group</h1>
+      <div class="meta">
+        <span><b>Date</b> 15 Oct 2026</span>
+        <span><b>Scope</b> one codebase, two brands (vseva.vjas.in, ssg.vjas.in), Supabase, Netlify Functions, Android</span>
+        <span><b>Prepared by</b> Vishwa Alpesh Shah</span>
+      </div>
+    </header>
+
+    <section id="summary">
+      <div class="verdict">
+        <span class="eyebrow">Production readiness</span>
+        <p class="lead">The app is in a much safer state than at the start of the audit. Every confirmed cross-group data leak is closed on the live database and the live sites. One group of code fixes, plus the Android 1.2 / 1.1 builds, is ready but not yet released.</p>
+        <p class="note">Residual risk: <b>Medium.</b> Three things keep it above Low. Two library advisories are kept by decision, load testing was skipped, and the public ID card page shows full personal details by choice.</p>
+      </div>
+      <div class="figures" role="list">
+        <div class="fig" role="listitem"><span class="n">2</span><span class="l">critical defects found, both fixed</span></div>
+        <div class="fig" role="listitem"><span class="n">6</span><span class="l">high-severity defects found, all fixed</span></div>
+        <div class="fig" role="listitem"><span class="n">−36%</span><span class="l">startup download (Brotli)</span></div>
+        <div class="fig" role="listitem"><span class="n">1</span><span class="l">Android bug fixed (Back button)</span></div>
+      </div>
+      <ul class="plain">
+        <li><b>Most serious:</b> Seven server functions handed any group's member list, including names and mobile numbers, to anyone, without a login. Fixed and live.</li>
+        <li><b>Also critical:</b> Any Captain could delete any account in either app. Fixed in code, waiting for release.</li>
+        <li><b>Largest speed issue:</b> The 413 KB PDF library loaded on every app start. It now loads only when exporting.</li>
+      </ul>
+    </section>
+
+    <section id="defects">
+      <h2>Defect register</h2>
+      <p class="note">“Live” means applied to production and verified there. “Ready” means fixed and tested locally, and goes live with the next push.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>ID</th><th>Severity</th><th>Finding and fix</th><th>Where</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="id">SEC-01</td><td class="sev crit">Critical</td><td><span class="what">Seven org-data functions answered without a login</span><span class="why">Anyone could fetch any group's member names, mobile numbers and stats. Each now requires a signed-in member of that same group, and the app sends its login token on every call.</span></td><td><code>netlify/functions</code></td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">SEC-14</td><td class="sev crit">Critical</td><td><span class="what">Any Captain could delete any account</span><span class="why">The function now removes only a Sevak of the caller's own group.</span></td><td><code>delete-user</code></td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">SEC-02</td><td class="sev high">High</td><td><span class="what">Community Directory moderation trusted a caller-supplied admin ID</span><span class="why">It now requires that ID to be the signed-in user.</span></td><td>DB functions</td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">SEC-03</td><td class="sev high">High</td><td><span class="what">Leaderboard, rank and Sevak count answered for any group</span><span class="why">They now answer only for the caller's own group.</span></td><td>DB functions</td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">SEC-04</td><td class="sev high">High</td><td><span class="what">Upcoming Vihars, with emergency phone numbers, were readable by anyone</span><span class="why">Now readable by the same group only.</span></td><td><code>upcoming_vihars</code></td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">SEC-15</td><td class="sev high">High</td><td><span class="what">Anyone could push any text to any user's phone</span><span class="why">The push function now sends only real, recent notifications read from the database.</span></td><td><code>send-push</code></td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">SEC-16</td><td class="sev high">High</td><td><span class="what">A sign-up or Sevak creation carrying an organization name created a new group with that person as Captain</span><span class="why">That skipped manual group approval. The database rule is disabled and Sevak creation now sets its own details.</span></td><td>trigger, <code>create-user</code></td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">REL-03</td><td class="sev high">High</td><td><span class="what">Push notifications were not delivered (since at least 12 Oct)</span><span class="why">The database sent every notification to vseva.netlify.app, which no longer exists. It now posts to vseva.vjas.in.</span></td><td>DB webhook</td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">REL-04</td><td class="sev med">Medium</td><td><span class="what">“Auth session missing” after the app sat in the background</span><span class="why">The saved login token looked valid but the server had ended the session. Server calls now refresh the login once and retry, or ask the person to sign in again.</span></td><td><code>apiBase.ts</code></td><td><span class="pill warn">Ready</span></td></tr>
+            <tr><td class="id">PERF-01</td><td class="sev high">High</td><td><span class="what">PDF library downloaded on every app start</span><span class="why">Moved out of the startup bundle; it loads only when exporting.</span></td><td><code>vite.config.ts</code></td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">SEC-05/06</td><td class="sev med">Medium</td><td><span class="what">Open read rule on push subscriptions; any signed-in user could create an organization row</span><span class="why">Both rules removed.</span></td><td>RLS</td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">SEC-09</td><td class="sev med">Medium</td><td><span class="what">Missing security headers</span><span class="why">Added clickjacking, MIME-sniffing, referrer and device-permission headers.</span></td><td><code>netlify.toml</code></td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">SEC-11</td><td class="sev med">Medium</td><td><span class="what">Photo buckets had no size or type limits</span><span class="why">Avatars: 5 MB images. Incident reports: 20 MB images and videos.</span></td><td>Storage</td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">REL-01</td><td class="sev med">Medium</td><td><span class="what">After a deploy, the app reloaded mid-use and returned to Home</span><span class="why">The update now applies when the app is in the background, and the current page is restored.</span></td><td><code>index.tsx</code></td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">AND-01</td><td class="sev med">Medium</td><td><span class="what">Back on Find Derasar, Privacy or ID card closed the Android app</span><span class="why">Back now returns to the previous page.</span></td><td><code>App.tsx</code></td><td><span class="pill warn">Ready</span></td></tr>
+            <tr><td class="id">REL-02</td><td class="sev med">Medium</td><td><span class="what">A fast double tap could save a Vihar entry twice, or announce an upcoming Vihar to the whole group twice</span><span class="why">Both forms now ignore a second submit while the first is saving.</span></td><td>NewEntry, Dashboard</td><td><span class="pill warn">Ready</span></td></tr>
+            <tr><td class="id">PERF-02–04</td><td class="sev low">Low</td><td><span class="what">Repeated server calls</span><span class="why">Removed a duplicate name lookup. The inactivity check runs at most every 6 hours. Notification polling pauses while the app is hidden.</span></td><td>Dashboard, bell</td><td><span class="pill pass">Live</span></td></tr>
+            <tr><td class="id">UX-01</td><td class="sev inf">Info</td><td><span class="what">Spinner loading screens</span><span class="why">Replaced with each brand's own logo, gently animated.</span></td><td><code>BrandSplash</code></td><td><span class="pill pass">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="security">
+      <h2>Security</h2>
+      <div class="two">
+        <div class="box">
+          <h3>Verified on production</h3>
+          <ul class="plain">
+            <li>All 7 org-data functions on both sites answer <code>401</code> without a login. Before the fix they answered <code>200</code>.</li>
+            <li>A forged push request is rejected.</li>
+            <li>Signed-out database calls to the hardened functions are refused or come back empty.</li>
+            <li>Database functions callable without login, with no caller check: <b>5</b>, down from 23. Of those 5, 2 check access through a helper, 1 is the accepted ID card and 2 are low risk.</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3>Checked and clean</h3>
+          <ul class="plain">
+            <li>No service keys or push API keys in the shipped app. No source maps, keystores or Firebase files in git.</li>
+            <li>The app's local cache is per user and cleared on logout.</li>
+            <li>Captain-only functions (phone change, leadership, org approval, Super Admin) check role and group.</li>
+            <li>You changed the Supabase public sign-up and leaked-password settings yourself. I didn&rsquo;t verify them, because they aren&rsquo;t visible to my tools.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="note">Limits: these are code review and targeted live checks, not a full penetration test. Logged-in access across two real groups was confirmed through your own tests on the device.</p>
+    </section>
+
+    <section id="performance">
+      <h2>Performance</h2>
+      <div class="bars" role="img" aria-label="Startup download before and after: raw 1126 to 784 KB, gzip 332 to 219 KB, Brotli 279 to 179 KB">
+        <div class="bar-row"><span>Raw, before</span><div class="track"><span style="width:100%"></span></div><span class="v">1,126 KB</span></div>
+        <div class="bar-row"><span>Raw, after</span><div class="track"><span class="after" style="width:69.6%"></span></div><span class="v">784 KB</span></div>
+        <div class="bar-row"><span>Brotli, before</span><div class="track"><span style="width:24.8%"></span></div><span class="v">279 KB</span></div>
+        <div class="bar-row"><span>Brotli, after</span><div class="track"><span class="after" style="width:15.9%"></span></div><span class="v">179 KB</span></div>
+      </div>
+      <p class="note">Method: the size of every file the first page load requests, compressed with standard gzip and Brotli. The same method was used before and after, and the result is the same for both brands. Bars share one scale, with raw-before at 100%.</p>
+      <div class="two">
+        <div class="box">
+          <h3>Database</h3>
+          <p class="note">This isn't a bottleneck at today's size. The largest table has under 1,000 rows, the indexes the app needs exist, and the slowest app query averages 17 ms. No index changes needed now. Duplicate access rules on a few tables are a clean-up candidate when the data grows.</p>
+        </div>
+        <div class="box">
+          <h3>Fewer server calls</h3>
+          <p class="note">The Dashboard makes one fewer function call per open. The inactivity scan drops from every open to every 6 hours. The notification bell stops its 120 calls an hour while the app is in the background.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="android">
+      <h2>Android</h2>
+      <p class="note">Tested on the Pixel 6 emulator (Android 16). Release bundles are signed with the Play upload key: <code>vseva-v1.2-vc3.aab</code> and <code>ssg-v1.1-vc2.aab</code>.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Check</th><th>vSeva</th><th>SSG</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Install, launch, version</td><td><span class="pill pass">Pass</span></td><td><span class="pill pass">Pass</span></td><td>1.2 (3) and 1.1 (2)</td></tr>
+            <tr><td>Cold start</td><td>~1.7 s</td><td>~2.4 s</td><td>Emulator timing; a phone will differ</td></tr>
+            <tr><td>Server calls from the app (CORS)</td><td><span class="pill pass">Pass</span></td><td><span class="pill pass">Pass</span></td><td>The earlier 405 / blocked-request issue no longer happens</td></tr>
+            <tr><td>Back button</td><td><span class="pill pass">Pass</span></td><td><span class="pill pass">Pass</span></td><td>After fix AND-01</td></tr>
+            <tr><td>Save to gallery, share PDF</td><td><span class="pill pass">Pass</span></td><td><span class="pill info">Same code</span></td><td>File confirmed in Pictures; share sheet shows the file</td></tr>
+            <tr><td>Logged-in flows: export, photo upload, notification tap, session restore, Sevak delete</td><td><span class="pill pass">Pass</span></td><td><span class="pill pass">Pass</span></td><td>Tested by you on the device</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="risks">
+      <h2>Accepted risks</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Risk</th><th>Why it is accepted</th></tr></thead>
+          <tbody>
+            <tr><td><span class="what">Public ID card shows mobile, address, emergency contact and blood group</span></td><td>An owner decision: the card is meant for emergencies. Usernames are name-based, so the details are easy to look up.</td></tr>
+            <tr><td><span class="what">Map library advisory (critical, fix needs a major upgrade)</span></td><td>Kept by decision. It affects the Directory map's popup content.</td></tr>
+            <tr><td><span class="what">Excel library advisory (high, no fix available)</span></td><td>Kept by decision. The app only writes Excel files and never reads uploaded ones.</td></tr>
+            <tr><td><span class="what">No load test</span></td><td>Skipped by decision. There's no separate test database, and the live one has real users.</td></tr>
+            <tr><td><span class="what">Sevak password is their mobile number</span></td><td>Existing design. Anyone who knows a Sevak's name and number can sign in as them.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="checklist">
+      <h2>Release checklist</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Item</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>Type check, vSeva build, SSG build, SSG brand-leak check</td><td><span class="pill pass">Pass</span></td><td>—</td></tr>
+            <tr><td>Database hardening (two migrations, rollbacks in <code>scripts/</code>)</td><td><span class="pill pass">Pass</span></td><td>—</td></tr>
+            <tr><td>Org-data, delete, create and push functions locked down</td><td><span class="pill pass">Pass</span></td><td>—</td></tr>
+            <tr><td>Back-button fix, double-submit guards, version bump</td><td><span class="pill warn">Ready</span></td><td>Push when convenient</td></tr>
+            <tr><td>Android release bundles</td><td><span class="pill warn">Ready</span></td><td>Upload both to Play Console. Old installs lose the Sevak picker and stats until they update.</td></tr>
+            <tr><td>Map and Excel library advisories</td><td><span class="pill fail">Open</span></td><td>Accepted. Review at the next dependency upgrade.</td></tr>
+            <tr><td>Load test</td><td><span class="pill info">Not tested</span></td><td>Run on a Supabase branch before a large onboarding</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="next">
+      <h2>Next actions</h2>
+      <ul class="plain">
+        <li><b>Now:</b> upload both Android bundles. Installed apps have been missing the Sevak picker and group stats since the security release.</li>
+        <li><b>Next push:</b> release the Back-button fix and the double-submit guards.</li>
+        <li><b>Before a big rollout:</b> run a load test on a Supabase branch, and decide on the ID card fields.</li>
+        <li><b>Next dependency round:</b> MapLibre 6 and an Excel library replacement.</li>
+      </ul>
+    </section>
+
+    <footer>Full working notes and rollback scripts are in the repository under <code>docs/audit/</code> and <code>scripts/security_*.sql</code>.</footer>
+  </main>
+</div>

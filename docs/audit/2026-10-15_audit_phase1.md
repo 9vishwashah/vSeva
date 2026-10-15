@@ -108,3 +108,22 @@ project or branch first. Android export/notification/back-button retests need an
 | SEC-15 | High | `send-push` | Public, no secret: anyone could POST any `user_id` + title + message and push arbitrary text to that person's phone | The body is treated as a pointer: the notification is re-read from the database by id and only fresh (≤10 min) stored notifications are sent | Fixed in code, not deployed. Residual: a fresh notification can be re-sent (duplicate) by someone who knows its id |
 | SEC-16 | High | `create-user` + `handle_new_user` trigger | User metadata was copied from the request; an `org_name` key makes the trigger create a new organization with that account as its Captain, bypassing manual approval. The same trigger path is reachable through public sign-up if it is enabled. Never used (0 accounts carry `org_name`). | `create-user` now builds the metadata itself (name, role sevak, caller's org) | Function fixed in code. Trigger neutralised in the live DB 15 Oct (migration security_signup_storage_limits, owner-approved; rollback script next to it): **PASS** |
 | OK | — | `update-user-phone`, `update-org-leadership`, `approve-org`, `super-admin`, `get-org-admins` | Verify token; check role and same organization / brand scope | — | PASS (code review) |
+
+## Phase E — Android (15 Oct, Pixel 6 emulator, API 36)
+
+Builds: vSeva **versionCode 3 / 1.2**, SSG **versionCode 2 / 1.1**. Release bundles signed with the upload key
+(SHA-256 starts 4A:20:7A:53), copied to `release-builds/` (git-ignored): `vseva-v1.2-vc3.aab`, `ssg-v1.1-vc2.aab`.
+
+| Check | vSeva | SSG | Notes |
+|---|---|---|---|
+| Install + launch, correct version | PASS | PASS | |
+| Cold start (TotalTime) | 2.6 s first, ~1.7 s after | ~2.4 s | `am start -W`, emulator, not a phone |
+| Warm start | 0.26 s | NOT TESTED | |
+| Native notification permission prompt | PASS | (already granted) | native OneSignal plugin present, web SDK not used |
+| Server calls from WebView origin `https://localhost` with Authorization header (CORS preflight) | PASS (401 for fake token, body readable) | PASS | the historical CORS / OPTIONS 405 issue does not reproduce |
+| **Back button on Find Derasar** | **FAIL → fixed** | PASS after fix | Standalone pages loaded by full navigation had no in-app stack, so Back closed the app. `App.tsx` now steps back in WebView history when not on `/`. Back on Login still exits (correct). |
+| File write / read in cache (export path) | PASS | — | Filesystem plugin |
+| Save image to gallery (AppShare.saveToGallery) | PASS | — | file confirmed in `Pictures/vSeva/` via MediaStore, then removed |
+| Share sheet with a PDF file | PASS | — | system sheet shows the file |
+| Console errors | Info only | Info only | "Error injecting safe area CSS" comes from Capacitor's SystemBars before the page exists; the app uses `env(safe-area-inset-*)`, not those variables — harmless |
+| Logged-in flows (Dashboard export end-to-end, notification tap routing, photo upload, session restore) | NOT TESTED | NOT TESTED | need a test account; I can't use real credentials |

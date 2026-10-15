@@ -182,7 +182,13 @@ const App: React.FC = () => {
           setCurrentPage(previous);
           return;
         }
-        // 5. Nothing left to go back to — let the app exit, same as pressing
+        // 5. Standalone pages opened by a full page load (Find Derasar, Privacy, Delete account, ID card...)
+        // have no in-app page stack; step back in the WebView's history instead of closing the app.
+        if (window.location.pathname !== '/' && window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+        // 6. Nothing left to go back to — let the app exit, same as pressing
         // Back on any Android app's home/root screen.
         CapacitorApp.exitApp();
       }).then(handle => { listenerHandle = handle; });

@@ -69,16 +69,20 @@ export function BottomNavBar({ items, activeKey, onSelect, trailing, className }
                   <span className={cn('flex transition-colors duration-200 [&>svg]:w-6 [&>svg]:h-6', active ? 'text-white' : 'text-[#7A4A2E]')}>
                     {item.icon}
                   </span>
-                  {/* Always rendered and simply opened / closed, so a label can never be left floating over
-                      another tab (an exit animation used to leave it behind). Long labels end in an ellipsis. */}
-                  <motion.span
-                    initial={false}
-                    animate={active ? { opacity: 1, width: 'auto', marginLeft: 6 } : { opacity: 0, width: 0, marginLeft: 0 }}
+                  {/* Opened / closed with a CSS grid-track transition (0fr <-> 1fr) instead of an animated
+                      width: it always lands on its end state, so a deselected label can never stay half-open
+                      next to its icon. Long labels end in an ellipsis. */}
+                  <span
                     aria-hidden={!active}
-                    className={cn('block overflow-hidden whitespace-nowrap text-ellipsis max-w-[112px] text-[13px] font-bold', active ? 'text-white' : 'text-[#5C3A24]')}
+                    className={cn(
+                      'grid transition-[grid-template-columns,opacity,margin] duration-300 ease-out motion-reduce:transition-none',
+                      active ? 'grid-cols-[1fr] opacity-100 ml-1.5' : 'grid-cols-[0fr] opacity-0 ml-0',
+                    )}
                   >
-                    {item.label}
-                  </motion.span>
+                    <span className="min-w-0 overflow-hidden whitespace-nowrap text-ellipsis max-w-[104px] text-[13px] font-bold text-white">
+                      {item.label}
+                    </span>
+                  </span>
                 </motion.span>
               </motion.button>
             );

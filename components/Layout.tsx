@@ -409,7 +409,12 @@ const Layout: React.FC<LayoutProps> = ({
           <BottomNavBar
             items={[
               ...primaryItems.map(i => ({ key: i.page, label: i.label, icon: i.icon })),
-              { key: '__more', label: t('nav.more'), icon: <MoreHorizontal size={21} /> },
+              // On a page that lives in the More menu, this tab shows that page's own icon and name
+              // (e.g. "Sevaks") instead of a generic "More"; tapping it still opens the More menu.
+              (() => {
+                const current = moreActive ? moreItems.find(i => i.page === currentPage) : undefined;
+                return { key: '__more', label: current ? current.label : t('nav.more'), icon: current ? current.icon : <MoreHorizontal size={21} /> };
+              })(),
             ]}
             activeKey={moreActive ? '__more' : primaryItems.some(i => i.page === currentPage) ? currentPage : null}
             onSelect={key => { tick(); if (key === '__more') setMoreOpen(true); else setCurrentPage(key); }}

@@ -136,8 +136,11 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
   const [alertData, setAlertData] = useState({ date: toLocalDateKey(new Date()), time: '06:00', from: '', to: '', type: 'morning', routeKind: 'internal' as 'internal' | 'highway', sadhu: 0, sadhvi: 0, samuday: '', names: '', wheelchair: false, wheelchairCount: 1, carSeva: false, contactName: '', contactPhone: '', police: false });
 
+  // a double tap must not announce the same Vihar (and notify the whole group) twice
+  const alertSubmittingRef = useRef(false);
   const handleCreateAlert = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (alertSubmittingRef.current) return;
     if (!alertData.from || !alertData.to) {
       showToast('Select both From and To locations', 'warning');
       return;
@@ -146,6 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       showToast('Emergency contact number must be 10 digits', 'error');
       return;
     }
+    alertSubmittingRef.current = true;
     setIsLoading(true);
     try {
       console.log("Triggering create_upcoming_alert RPC with data:", alertData);
@@ -185,6 +189,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       showToast(err.message || "Failed to create alert", 'error');
     } finally {
       setIsLoading(false);
+      alertSubmittingRef.current = false;
     }
   };
 

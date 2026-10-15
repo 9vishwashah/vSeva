@@ -209,6 +209,9 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
   // rendered. This lock makes handleSubmit ignore any submit that fires in
   // the brief window immediately after a step change.
   const navLockRef = useRef(false);
+  // Set synchronously on the first submit, so a fast double tap / double Enter can never save the entry twice
+  // (the disabled button only takes effect after the next render).
+  const submittingRef = useRef(false);
 
   const goNext = () => {
     const err = stepError(step);
@@ -255,6 +258,8 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
       return;
     }
 
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setLoading(true);
     try {
       const entryPayload: ViharEntry = {
@@ -275,6 +280,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
           console.error('Vihar photo upload failed', photoErr);
           showToast('The photo could not be uploaded. Please try again, or remove it to submit without one.', 'error');
           setLoading(false);
+          submittingRef.current = false;
           return;
         }
       }
@@ -297,6 +303,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
       showToast(`Error saving entry: ${err.message}`, 'error');
     } finally {
       setLoading(false);
+      submittingRef.current = false;
     }
   };
 

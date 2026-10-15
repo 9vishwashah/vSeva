@@ -59,9 +59,23 @@ async function authHeader(headers: Record<string, string>): Promise<Record<strin
   }
 }
 
+// After the app sat in the background, its saved access token can still look valid while the server has already
+// ended that session ("Auth session missing"). Get a fresh token once; null when the session is really over.
+async function refreshedAuthHeader(): Promise<Record<string, string> | null> {
+  try {
+    const { supabase } = await import('./supabase');
+    const { data, error } = await supabase.auth.refreshSession();
+    const token = data.session?.access_token;
+    return !error && token ? { Authorization: `Bearer ${token}` } : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function callFn<T = any>(name: string, opts: CallFnOptions = {}): Promise<T> {
   const { method = 'POST', body, query, retry = false, timeoutMs = 15000 } = opts;
-  const headers = { ...(await authHeader(opts.headers || {})), ...(opts.headers || {}) };
+  let headers: Record<string, string> = { ...(await authHeader(opts.headers || {})), ...(opts.headers || {}) };
+  let authRetried = false;
   const maxAttempts = retry ? 3 : 1;
   let lastError: unknown;
 
@@ -88,6 +102,16 @@ export async function callFn<T = any>(name: string, opts: CallFnOptions = {}): P
 
       if (response.ok) {
         return (await response.json().catch(() => undefined)) as T;
+      }
+
+      // 401 = the server refused before doing anything, so one retry with a refreshed login is safe even for writes
+      if (response.status === 401 && !authRetried && Object.keys(headers).some(h => h.toLowerCase() === 'authorization')) {
+        authRetried = true;
+        const fresh = await refreshedAuthHeader();
+        if (!fresh) throw new Error('Your session has ended. Please sign in again.');
+        headers = { ...Object.fromEntries(Object.entries(headers).filter(([h]) => h.toLowerCase() !== 'authorization')), ...fresh };
+        attempt--; // this retry does not use up one of the network-retry attempts
+        continue;
       }
 
       if (RETRYABLE_STATUS(response.status) && attempt < maxAttempts - 1) {
