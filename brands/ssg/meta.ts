@@ -50,6 +50,7 @@ export const getMeta = (env: Env): BrandMeta => {
     ],
     sevakViharPreferences: true,
     viharEntryPhoto: true,
+    viharEntryExtras: true,
     accountBadges: {},
     instagram: instagramUrl ? { url: instagramUrl, handle: 'Instagram' } : null,
     operator: 'Shraman Seva Group',

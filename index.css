@@ -8,3 +8,21 @@
   font-family: 'Anek Gujarati', 'Noto Sans Gujarati', 'Manrope', sans-serif;
   font-stretch: 85%;
 }
+
+/* Dashboard "Share & Inspire" badge: a light sweep across the pill and the two logos taking turns to hop */
+@keyframes share-shine { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(220%); } }
+@keyframes share-hop { 0%, 70%, 100% { transform: translateY(0) scale(1); } 80% { transform: translateY(-3px) scale(1.15); } 90% { transform: translateY(0) scale(1); } }
+.share-badge-shine { animation: share-shine 3.2s ease-in-out infinite; }
+.share-badge-hop { animation: share-hop 3.2s ease-in-out infinite; }
+.share-badge-hop-2 { animation-delay: 0.25s; }
+@media (prefers-reduced-motion: reduce) { .share-badge-shine, .share-badge-hop { animation: none; } }
+/* rotating word in the share badge: Share → Inspire → Impact → Motivate → (Share again) */
+@keyframes share-words { 0%, 20% { transform: translateY(0); } 25%, 45% { transform: translateY(-1.25rem); } 50%, 70% { transform: translateY(-2.5rem); } 75%, 95% { transform: translateY(-3.75rem); } 100% { transform: translateY(-5rem); } }
+.share-badge-words { animation: share-words 8s cubic-bezier(.6,0,.3,1) infinite; }
+@media (prefers-reduced-motion: reduce) { .share-badge-words { animation: none; } }
+/* Sankalp card: a soft halo breathing around the ring, and a light sweep across the card every few seconds */
+@keyframes sankalp-breathe { 0%, 100% { transform: scale(0.92); opacity: 0.35; } 50% { transform: scale(1.12); opacity: 0; } }
+@keyframes sankalp-sweep { 0%, 70% { transform: translateX(-150%) skewX(-12deg); } 100% { transform: translateX(350%) skewX(-12deg); } }
+.sankalp-breathe { animation: sankalp-breathe 2.6s ease-out infinite; }
+.sankalp-sweep { animation: sankalp-sweep 5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .sankalp-breathe, .sankalp-sweep { animation: none; opacity: 0; } }

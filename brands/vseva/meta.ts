@@ -41,6 +41,7 @@ export const getMeta = (_env: Env): BrandMeta => ({
   ],
   sevakViharPreferences: false,
   viharEntryPhoto: false,
+  viharEntryExtras: false,
   accountBadges: {
     'vishwashah@vsevak.in': 'Developer',
     'aagamjain': 'Team vSeva',

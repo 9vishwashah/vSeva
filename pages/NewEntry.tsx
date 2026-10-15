@@ -5,6 +5,7 @@ import { Save, Loader2, MapPin, Search, X, Users, ChevronDown, Map, ChevronLeft,
 import { BRAND } from '@brand';
 import { useToast } from '../context/ToastContext';
 import Avatar from '../components/Avatar';
+import ThemedSelect from '../components/ThemedSelect';
 import { toLocalDateKey } from '../services/dateUtils';
 
 
@@ -44,6 +45,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
   const [formData, setFormData] = useState<Partial<ViharEntry>>({
     vihar_date: toLocalDateKey(new Date()),
     vihar_type: 'morning',
+    ...(BRAND.viharEntryExtras ? { route_kind: 'internal' as const, no_mumukshu: 0, mukhya_bhagwant: '' } : {}),
     group_sadhu: false,
     group_sadhvi: false,
     wheelchair: false,
@@ -93,7 +95,8 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
           dataService.getRoutes(currentUser.organization_id),
         ]);
 
-        setOrgSevaks(sevaks as UserProfile[]);
+        // only Sevaks can be assigned; a Captain (admin) account is never a Vihar Sevak
+        setOrgSevaks((sevaks as UserProfile[]).filter(s => s.role !== UserRole.ORG_ADMIN));
         setAvailableRoutes(routes);
 
         const areas = new Set<string>();
@@ -130,6 +133,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
         car_seva: editEntry.car_seva || false,
         car_seva_sevaks: editEntry.car_seva_sevaks || [],
         samuday: editEntry.samuday,
+        ...(BRAND.viharEntryExtras ? { no_mumukshu: editEntry.no_mumukshu || 0, mukhya_bhagwant: editEntry.mukhya_bhagwant || '', route_kind: editEntry.route_kind ?? 'internal' } : {}),
         distance_km: editEntry.distance_km,
         notes: editEntry.notes || '',
         photo_url: editEntry.photo_url ?? null,
@@ -187,7 +191,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
       return null;
     }
     if (s === 2) {
-      if (!formData.group_sadhu && !formData.group_sadhvi) return 'Select Sadhubhagwan or Sadhvijibhagwan';
+      if (!formData.group_sadhu && !formData.group_sadhvi && !(formData.no_mumukshu! > 0)) return BRAND.viharEntryExtras ? 'Select Sadhubhagwan, Sadhvijibhagwan or Mumukshu' : 'Select Sadhubhagwan or Sadhvijibhagwan';
       if (!formData.vihar_from || !formData.vihar_to) return 'Select both From and To locations';
       return null;
     }
@@ -246,7 +250,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
       return;
     }
 
-    if (!formData.group_sadhu && !formData.group_sadhvi) {
+    if (!formData.group_sadhu && !formData.group_sadhvi && !(formData.no_mumukshu! > 0)) {
       showToast("Please select Vihar Of (Sadhu or Sadhvi)", 'warning');
       return;
     }
@@ -260,6 +264,10 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
         no_sadhubhagwan: formData.group_sadhu && formData.no_sadhubhagwan ? Number(formData.no_sadhubhagwan) : 0,
         no_sadhvijibhagwan: formData.group_sadhvi && formData.no_sadhvijibhagwan ? Number(formData.no_sadhvijibhagwan) : 0,
       };
+      if (BRAND.viharEntryExtras) {
+        entryPayload.no_mumukshu = Math.max(0, Number(formData.no_mumukshu) || 0);
+        entryPayload.mukhya_bhagwant = formData.mukhya_bhagwant?.trim() || null;
+      }
       if (photoFile) {
         try {
           entryPayload.photo_url = await dataService.uploadViharPhoto(currentUser.organization_id, photoFile);
@@ -387,7 +395,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
   const inputClass = "w-full py-3 px-3.5 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm";
   const labelClass = "text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider block mb-2";
   const pillWrapClass = "flex bg-[#F7F4F0] p-1 rounded-xl";
-  const pillClass = (active: boolean) => `flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${active ? 'bg-white text-saffron-700 shadow-sm' : 'text-[#8A6A57]'}`;
+  const pillClass = (active: boolean) => `flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${active ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-[#8A6A57]'}`;
 
   return (
     <div className="max-w-xl mx-auto space-y-5 pb-24">
@@ -453,7 +461,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                 />
               </div>
               <div className="flex-1">
-                <label className={labelClass}>Vihar Type</label>
+                <label className={labelClass}>Vihar Session</label>
                 <div className={pillWrapClass}>
                   {['morning', 'evening'].map(type => (
                     <button
@@ -468,6 +476,18 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                 </div>
               </div>
             </div>
+            {BRAND.viharEntryExtras && (
+              <div>
+                <label className={labelClass}>Vihar Type</label>
+                <div className={pillWrapClass}>
+                  {(['internal', 'highway'] as const).map(kind => (
+                    <button key={kind} type="button" onClick={() => setFormData({ ...formData, route_kind: kind })} className={pillClass(formData.route_kind === kind) + ' capitalize'}>
+                      {kind}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </StepCard>
         )}
 
@@ -475,14 +495,14 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
           <StepCard n={2} title="Vihar Of & Route">
             <div>
               <label className={labelClass}>Vihar Of</label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`grid gap-3 ${BRAND.viharEntryExtras ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <div
                   onClick={() => setFormData(prev => ({ ...prev, group_sadhu: !prev.group_sadhu }))}
                   className={`cursor-pointer border-2 rounded-xl p-3.5 transition-all relative ${formData.group_sadhu ? 'border-saffron-500 bg-saffron-50/60' : 'border-transparent bg-[#F7F4F0]'}`}
                 >
                   <div className="flex flex-col items-center gap-1.5">
                     <Users size={22} className={formData.group_sadhu ? 'text-saffron-600' : 'text-[#B7B7AF]'} />
-                    <span className={`text-sm font-bold ${formData.group_sadhu ? 'text-[#241C17]' : 'text-[#8A6A57]'}`}>Sadhubhagwan</span>
+                    <span className={`text-sm font-bold ${formData.group_sadhu ? 'text-[#241C17]' : 'text-[#8A6A57]'}`}>{BRAND.viharEntryExtras ? 'Sadhu' : 'Sadhubhagwan'}</span>
                   </div>
                   {formData.group_sadhu && (
                     <div className="mt-2.5" onClick={e => e.stopPropagation()}>
@@ -505,7 +525,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                 >
                   <div className="flex flex-col items-center gap-1.5">
                     <Users size={22} className={formData.group_sadhvi ? 'text-pink-600' : 'text-[#B7B7AF]'} />
-                    <span className={`text-sm font-bold ${formData.group_sadhvi ? 'text-[#241C17]' : 'text-[#8A6A57]'}`}>Sadhvijibhagwan</span>
+                    <span className={`text-sm font-bold ${formData.group_sadhvi ? 'text-[#241C17]' : 'text-[#8A6A57]'}`}>{BRAND.viharEntryExtras ? 'Sadhvi' : 'Sadhvijibhagwan'}</span>
                   </div>
                   {formData.group_sadhvi && (
                     <div className="mt-2.5" onClick={e => e.stopPropagation()}>
@@ -521,6 +541,30 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                     </div>
                   )}
                 </div>
+
+                {BRAND.viharEntryExtras && (
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, no_mumukshu: prev.no_mumukshu! > 0 ? 0 : 1 }))}
+                    className={`cursor-pointer border-2 rounded-xl p-3.5 transition-all relative ${formData.no_mumukshu! > 0 ? 'border-purple-400 bg-purple-50/60' : 'border-transparent bg-[#F7F4F0]'}`}
+                  >
+                    <div className="flex flex-col items-center gap-1.5">
+                      <Users size={22} className={formData.no_mumukshu! > 0 ? 'text-purple-600' : 'text-[#B7B7AF]'} />
+                      <span className={`text-sm font-bold ${formData.no_mumukshu! > 0 ? 'text-[#241C17]' : 'text-[#8A6A57]'}`}>Mumukshu</span>
+                    </div>
+                    {formData.no_mumukshu! > 0 && (
+                      <div className="mt-2.5" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="Count"
+                          className="w-full text-center py-1.5 rounded-lg outline-none text-base font-extrabold text-[#241C17] bg-white"
+                          value={formData.no_mumukshu || ''}
+                          onChange={e => setFormData({ ...formData, no_mumukshu: Math.max(1, parseInt(e.target.value) || 1) })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -533,30 +577,32 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
               </div>
               <div className="flex items-center gap-2 bg-[#F7F4F0] rounded-xl p-1.5">
                 <div className="relative flex-1">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B7B7AF] pointer-events-none" size={15} />
-                  <select
-                    required
-                    className="w-full py-2 pl-8 pr-6 bg-transparent appearance-none font-semibold text-sm text-[#241C17] outline-none"
-                    value={formData.vihar_from}
-                    onChange={e => setFormData({ ...formData, vihar_from: e.target.value, vihar_to: '' })}
-                  >
-                    <option value="">From</option>
-                    {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
+                  <ThemedSelect
+                    value={formData.vihar_from || ''}
+                    onChange={v => setFormData({ ...formData, vihar_from: v, vihar_to: '' })}
+                    options={uniqueAreas}
+                    placeholder="From"
+                    title="Vihar From"
+                    clearable={false}
+                    hideChevron
+                    leading={<MapPin className="text-[#B7B7AF] shrink-0" size={15} />}
+                    className="w-full py-2 px-3 bg-transparent font-semibold text-sm text-[#241C17] outline-none"
+                  />
                 </div>
                 <ChevronDown className="rotate-[-90deg] text-[#B7B7AF] shrink-0" size={14} />
                 <div className="relative flex-1">
-                  <Map className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B7B7AF] pointer-events-none" size={15} />
-                  <select
-                    required
+                  <ThemedSelect
+                    value={formData.vihar_to || ''}
+                    onChange={v => setFormData({ ...formData, vihar_to: v })}
+                    options={uniqueAreas.filter(a => a !== formData.vihar_from)}
+                    placeholder="To"
+                    title="Vihar To"
                     disabled={!formData.vihar_from}
-                    className="w-full py-2 pl-8 pr-6 bg-transparent appearance-none font-semibold text-sm text-[#241C17] outline-none disabled:text-gray-400"
-                    value={formData.vihar_to}
-                    onChange={e => setFormData({ ...formData, vihar_to: e.target.value })}
-                  >
-                    <option value="">To</option>
-                    {uniqueAreas.filter(a => a !== formData.vihar_from).map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
+                    clearable={false}
+                    hideChevron
+                    leading={<Map className="text-[#B7B7AF] shrink-0" size={15} />}
+                    className="w-full py-2 px-3 bg-transparent font-semibold text-sm text-[#241C17] outline-none"
+                  />
                 </div>
               </div>
             </div>
@@ -601,6 +647,19 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                 onChange={e => setFormData({ ...formData, samuday: e.target.value })}
               />
             </div>
+            {BRAND.viharEntryExtras && (
+              <div>
+                <label className={labelClass}>Mukhya Sadhu Bhagwant / Sadhviji Bhagwant</label>
+                <input
+                  type="text"
+                  maxLength={200}
+                  className={inputClass}
+                  placeholder="e.g. P.P. Acharya Shri …"
+                  value={formData.mukhya_bhagwant || ''}
+                  onChange={e => setFormData({ ...formData, mukhya_bhagwant: e.target.value })}
+                />
+              </div>
+            )}
             <div>
               <label className={labelClass}>Notes / Remark (Optional)</label>
               <textarea

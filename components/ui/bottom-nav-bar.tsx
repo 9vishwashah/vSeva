@@ -33,8 +33,8 @@ export function BottomNavBar({ items, activeKey, onSelect, trailing, className }
           aria-label="Main navigation"
           className={cn(
             'relative flex items-center gap-1 p-1.5 rounded-full',
-            'bg-[#241C17]/[0.93] backdrop-blur-xl backdrop-saturate-150',
-            'border border-white/[0.08] shadow-[0_18px_40px_-14px_rgba(36,28,23,0.6),inset_0_1px_0_rgba(255,255,255,0.06)]',
+            'bg-[#FFE9D6]/[0.72] backdrop-blur-xl backdrop-saturate-150',
+            'border border-white/70 shadow-[0_18px_40px_-14px_rgba(222,107,56,0.45),inset_0_1px_0_rgba(255,255,255,0.8)]',
             className,
           )}
         >
@@ -62,14 +62,11 @@ export function BottomNavBar({ items, activeKey, onSelect, trailing, className }
                   <motion.span
                     layoutId="bottom-nav-active-pill"
                     className="absolute inset-0 rounded-full"
-                    style={{
-                      background: 'linear-gradient(150deg,#FF9947 0%,#DE6B38 100%)',
-                      boxShadow: '0 6px 16px -6px rgba(222,107,56,0.75), inset 0 1px 0 rgba(255,255,255,0.28)',
-                    }}
+                    style={{ background: '#DE6B38' }}
                   />
                 )}
                 <motion.span layout="position" className="relative z-10 flex items-center">
-                  <span className={cn('flex transition-colors duration-200', active ? 'text-[#241C17]' : 'text-white/85')}>
+                  <span className={cn('flex transition-colors duration-200 [&>svg]:w-6 [&>svg]:h-6', active ? 'text-white' : 'text-[#7A4A2E]')}>
                     {item.icon}
                   </span>
                   {/* Always rendered and simply opened / closed, so a label can never be left floating over
@@ -78,7 +75,7 @@ export function BottomNavBar({ items, activeKey, onSelect, trailing, className }
                     initial={false}
                     animate={active ? { opacity: 1, width: 'auto', marginLeft: 6 } : { opacity: 0, width: 0, marginLeft: 0 }}
                     aria-hidden={!active}
-                    className="block overflow-hidden whitespace-nowrap text-ellipsis max-w-[112px] text-[13px] font-bold text-[#241C17]"
+                    className={cn('block overflow-hidden whitespace-nowrap text-ellipsis max-w-[112px] text-[13px] font-bold', active ? 'text-white' : 'text-[#5C3A24]')}
                   >
                     {item.label}
                   </motion.span>

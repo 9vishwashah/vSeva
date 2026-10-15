@@ -36,7 +36,7 @@ const buildShareMessage = (v: UpcomingVihar): string => {
     '',
     `📍 ${v.from_location} → ${v.to_location}`,
     `📅 ${dateStr}${timeStr ? ` at ${timeStr}` : ''}`,
-    `🌗 ${v.vihar_type === 'morning' ? 'Morning' : 'Evening'} Vihar`,
+    `🌗 ${v.vihar_type === 'morning' ? 'Morning' : 'Evening'}${v.route_kind ? (v.route_kind === 'highway' ? ' Highway' : ' Internal') : ''} Vihar`,
   ];
   if (v.sadhu_count > 0 || v.sadhvi_count > 0) {
     const parts: string[] = [];
@@ -129,7 +129,7 @@ const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, con
           <span>{isPast ? 'Past Vihar' : 'Upcoming Vihar'}</span>
         </div>
         <span className={`text-xs font-semibold px-2 py-1 rounded-full capitalize ${isPast ? 'bg-gray-100 text-gray-500' : 'bg-saffron-100 text-saffron-700'}`}>
-          {vihar.vihar_type}
+          {vihar.vihar_type}{vihar.route_kind ? ` · ${vihar.route_kind}` : ''}
         </span>
       </div>
 

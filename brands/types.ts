@@ -56,6 +56,8 @@ export interface BrandMeta {
   sevakViharPreferences: boolean;
   // Vihar entry forms (Sevak submission and Captain entry) offer an optional photo of the Vihar.
   viharEntryPhoto: boolean;
+  // Vihar entry forms also ask Internal / Highway, a Mumukshu count and the Mukhya Sadhu / Sadhviji Bhagwant.
+  viharEntryExtras: boolean;
   instagram: { url: string; handle: string } | null;
   operator: string;      // who runs the service, for the legal pages
   // Show the shared Directory moderation panel inside Super Admin

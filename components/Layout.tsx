@@ -419,7 +419,7 @@ const Layout: React.FC<LayoutProps> = ({
                 type="button"
                 onClick={() => { tick(); setCurrentPage('profile'); }}
                 aria-label="Profile & Settings"
-                className={`flex items-center justify-center rounded-full active:scale-90 transition-transform duration-150 ${currentPage === 'profile' ? 'ring-2 ring-saffron-400 ring-offset-2 ring-offset-[#241C17]' : ''}`}
+                className={`flex items-center justify-center rounded-full active:scale-90 transition-transform duration-150 ${currentPage === 'profile' ? 'ring-2 ring-saffron-400 ring-offset-2 ring-offset-[#FFE9D6]' : ''}`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <Avatar name={userName || userInitials} url={avatarUrl} size={36} variant="gradient" className="text-[13px]" />
@@ -435,21 +435,21 @@ const Layout: React.FC<LayoutProps> = ({
             <div
               ref={sheet.sheetRef}
               {...sheet.handlers}
-              className="relative w-full max-w-md bg-white rounded-t-[28px] p-4 shadow-2xl app-sheet-up"
+              className="relative w-full max-w-md bg-[#FBE8D9] rounded-t-[28px] p-4 shadow-xl app-sheet-up"
               style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)', overscrollBehavior: 'contain' }}
               onClick={e => e.stopPropagation()}
             >
-              <div className="w-9 h-1 rounded-full bg-gray-200 mx-auto mb-4" />
-              <div className="space-y-1">
+              <div className="w-9 h-1 rounded-full bg-[#7A4A2E]/25 mx-auto mb-4" />
+              <div className="space-y-2">
                 {moreItems.map(item => {
                   const active = currentPage === item.page;
                   return (
                     <button
                       key={item.page}
                       onClick={() => { setCurrentPage(item.page); setMoreOpen(false); }}
-                      className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] ${active ? ((item as any).tone === 'purple' ? 'bg-purple-50 text-purple-700' : 'bg-saffron-50 text-saffron-700') : 'text-[#241C17] hover:bg-gray-50'}`}
+                      className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] ${active ? 'bg-[#DE6B38] text-white' : 'bg-white/75 text-[#5C3A24] hover:bg-white'}`}
                     >
-                      <span className={(item as any).tone === 'purple' ? 'text-purple-600' : active ? 'text-saffron-600' : 'text-[#8A6A57]'}>{item.icon}</span>
+                      <span className={`[&>svg]:w-[22px] [&>svg]:h-[22px] ${active ? 'text-white' : (item as any).tone === 'purple' ? 'text-purple-600' : 'text-[#7A4A2E]'}`}>{item.icon}</span>
                       <span className="text-sm font-bold">{item.label}</span>
                     </button>
                   );
@@ -459,9 +459,9 @@ const Layout: React.FC<LayoutProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMoreOpen(false)}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] text-[#241C17] hover:bg-gray-50"
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] bg-white/75 text-[#5C3A24] hover:bg-white"
                 >
-                  <span className="text-[#8A6A57]"><Compass size={18} /></span>
+                  <span className="text-[#7A4A2E]"><Compass size={22} /></span>
                   <span className="text-sm font-bold">{t('nav.communityDirectory')}</span>
                 </a>
               </div>

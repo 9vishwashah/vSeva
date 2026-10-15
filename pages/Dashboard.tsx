@@ -9,7 +9,8 @@ import { useCacheRefresh } from '../hooks/useCacheRefresh';
 import ViharYearSelector from '../components/ViharYearSelector';
 import Modal from '../components/Modal';
 import StatusScreen from '../components/StatusScreen';
-import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X, Plus, Handshake, Medal, Crown, Shield, Flame, Calendar, SlidersHorizontal, Loader2, Share2 } from 'lucide-react';
+import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X, Plus, Handshake, Medal, Crown, Shield, Flame, Calendar, SlidersHorizontal, Loader2, Share2, ChevronRight, Route } from 'lucide-react';
+import ThemedSelect from '../components/ThemedSelect';
 import { BRAND } from '@brand';
 import { useToast } from '../context/ToastContext';
 import { useViharYear } from '../context/ViharYearContext';
@@ -23,7 +24,7 @@ import { buildAchievements } from '../services/achievements';
 // The share sheet (and its card renderer) is only downloaded when someone opens it.
 const ShareAchievementSheet = lazy(() => import('../components/ShareAchievementSheet'));
 
-type ExportColumnKey = 'date' | 'from' | 'to' | 'sadhu' | 'sadhvi' | 'samuday' | 'wheelchair' | 'type' | 'kms' | 'sevaks';
+type ExportColumnKey = 'date' | 'from' | 'to' | 'sadhu' | 'sadhvi' | 'mumukshu' | 'samuday' | 'bhagwant' | 'wheelchair' | 'type' | 'route' | 'kms' | 'sevaks';
 
 const EXPORT_COLUMNS: { key: ExportColumnKey; label: string }[] = [
   { key: 'date', label: 'Date' },
@@ -31,12 +32,16 @@ const EXPORT_COLUMNS: { key: ExportColumnKey; label: string }[] = [
   { key: 'to', label: 'To' },
   { key: 'sadhu', label: 'Sadhu' },
   { key: 'sadhvi', label: 'Sadhvi' },
+  ...(BRAND.viharEntryExtras ? [{ key: 'mumukshu' as const, label: 'Mumukshu' }] : []),
   { key: 'samuday', label: 'Samuday' },
+  ...(BRAND.viharEntryExtras ? [{ key: 'bhagwant' as const, label: 'Mukhya Bhagwant' }] : []),
   { key: 'wheelchair', label: 'Wheelchair' },
-  { key: 'type', label: 'Type' },
+  { key: 'type', label: BRAND.viharEntryExtras ? 'Session' : 'Type' },
+  ...(BRAND.viharEntryExtras ? [{ key: 'route' as const, label: 'Vihar Type' }] : []),
   { key: 'kms', label: 'Kms' },
   { key: 'sevaks', label: 'Sevaks' },
 ];
+const routeLabel = (k?: string | null) => (k === 'highway' ? 'Highway' : k === 'internal' ? 'Internal' : '-');
 
 interface DashboardProps {
   currentUser: UserProfile;
@@ -88,8 +93,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   const [exportDateTo, setExportDateTo] = useState('');
   const [exportGender, setExportGender] = useState<'all' | 'male' | 'female'>('all');
   const [exportColumns, setExportColumns] = useState<Record<ExportColumnKey, boolean>>({
-    date: true, from: true, to: true, sadhu: true, sadhvi: true,
-    samuday: true, wheelchair: true, type: true, kms: true, sevaks: true,
+    date: true, from: true, to: true, sadhu: true, sadhvi: true, mumukshu: true,
+    samuday: true, bhagwant: true, wheelchair: true, type: true, route: true, kms: true, sevaks: true,
   });
   const [exporting, setExporting] = useState(false);
 
@@ -129,10 +134,14 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   const [availableRoutes, setAvailableRoutes] = useState<AreaRoute[]>([]);
   const [uniqueAreas, setUniqueAreas] = useState<string[]>([]);
 
-  const [alertData, setAlertData] = useState({ date: toLocalDateKey(new Date()), time: '06:00', from: '', to: '', type: 'morning', sadhu: 0, sadhvi: 0, samuday: '', names: '', wheelchair: false, wheelchairCount: 1, carSeva: false, contactName: '', contactPhone: '', police: false });
+  const [alertData, setAlertData] = useState({ date: toLocalDateKey(new Date()), time: '06:00', from: '', to: '', type: 'morning', routeKind: 'internal' as 'internal' | 'highway', sadhu: 0, sadhvi: 0, samuday: '', names: '', wheelchair: false, wheelchairCount: 1, carSeva: false, contactName: '', contactPhone: '', police: false });
 
   const handleCreateAlert = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!alertData.from || !alertData.to) {
+      showToast('Select both From and To locations', 'warning');
+      return;
+    }
     if (alertData.contactPhone && alertData.contactPhone.length !== 10) {
       showToast('Emergency contact number must be 10 digits', 'error');
       return;
@@ -156,6 +165,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         p_emergency_contact_name: alertData.contactName.trim() || null,
         p_emergency_contact_phone: alertData.contactPhone || null,
         p_police_security: alertData.police,
+        ...(BRAND.viharEntryExtras ? { p_route_kind: alertData.routeKind } : {}),
       });
 
       if (error) {
@@ -168,7 +178,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       showToast(`Alert sent with Priority!`, 'success');
       setIsAlertOpen(false);
       // Reset form
-      setAlertData({ date: toLocalDateKey(new Date()), time: '06:00', from: '', to: '', type: 'morning', sadhu: 0, sadhvi: 0, samuday: '', names: '', wheelchair: false, wheelchairCount: 1, carSeva: false, contactName: '', contactPhone: '', police: false });
+      setAlertData({ date: toLocalDateKey(new Date()), time: '06:00', from: '', to: '', type: 'morning', routeKind: 'internal' as 'internal' | 'highway', sadhu: 0, sadhvi: 0, samuday: '', names: '', wheelchair: false, wheelchairCount: 1, carSeva: false, contactName: '', contactPhone: '', police: false });
     } catch (err: any) {
       console.error("Catch Error:", err);
       alert(`System Error: ${err.message || "Unknown error occurred"}`);
@@ -342,7 +352,11 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         to: entry.vihar_to,
         sadhu: entry.no_sadhubhagwan || 0,
         sadhvi: entry.no_sadhvijibhagwan || 0,
+        mumukshu: entry.no_mumukshu || 0,
         samuday: entry.samuday || '-',
+        bhagwant: entry.mukhya_bhagwant || '-',
+        route: routeLabel(entry.route_kind),
+        routeKind: entry.route_kind || null,
         wheelchair: entry.wheelchair ? 'Yes' : 'No',
         type: entry.vihar_type === 'morning' ? 'Morning' : 'Evening',
         kms: entry.distance_km,
@@ -474,11 +488,17 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
       let totalSadhu = 0;
       let totalSadhvi = 0;
+      let totalMumukshu = 0;
+      let totalInternal = 0;
+      let totalHighway = 0;
       let totalKms = 0;
 
       const bodyData = exportData.map(item => {
         totalSadhu += Number(item.sadhu) || 0;
         totalSadhvi += Number(item.sadhvi) || 0;
+        totalMumukshu += Number(item.mumukshu) || 0;
+        if (item.routeKind === 'internal') totalInternal++;
+        if (item.routeKind === 'highway') totalHighway++;
         totalKms += Number(item.kms) || 0;
         return [item.srNo, ...activeColumns.map(c => (item as any)[c.key])];
       });
@@ -486,8 +506,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       // Add Total Row — 'TOTAL' label goes in the Date column if present, else
       // the first selected column; Sadhu/Sadhvi/Km are summed wherever selected.
       const totalsByKey: Record<ExportColumnKey, any> = {
-        date: 'TOTAL', from: '', to: '', sadhu: totalSadhu, sadhvi: totalSadhvi,
-        samuday: '', wheelchair: '', type: '', kms: parseFloat(totalKms.toFixed(2)), sevaks: '',
+        date: 'TOTAL', from: '', to: '', sadhu: totalSadhu, sadhvi: totalSadhvi, mumukshu: totalMumukshu,
+        samuday: '', bhagwant: '', wheelchair: '', type: '', route: `${totalInternal} I / ${totalHighway} H`, kms: parseFloat(totalKms.toFixed(2)), sevaks: '',
       };
       if (!exportColumns.date && activeColumns.length > 0) {
         totalsByKey[activeColumns[0].key] = 'TOTAL';
@@ -499,14 +519,18 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       const kpiY = headerBottomY + 3;
       const kpiH = 20;
       const kpiGap = 4;
-      const kpiCount = 4;
-      const kpiW = (pageWidth - 28 - kpiGap * (kpiCount - 1)) / kpiCount;
       const kpiTiles: { label: string; value: string; bg: [number, number, number]; fg: [number, number, number] }[] = [
         { label: 'TOTAL KM', value: totalKms.toFixed(1), bg: [255, 240, 229], fg: [181, 96, 44] },
         { label: 'TOTAL VIHARS', value: String(exportData.length), bg: [233, 244, 253], fg: [46, 126, 176] },
         { label: 'SADHU', value: String(totalSadhu), bg: [252, 234, 235], fg: [192, 90, 87] },
         { label: 'SADHVI', value: String(totalSadhvi), bg: [241, 234, 251], fg: [107, 79, 174] },
-      ];
+        ...(BRAND.viharEntryExtras ? [
+          { label: 'MUMUKSHU', value: String(totalMumukshu), bg: [255, 246, 224], fg: [148, 104, 0] } as const,
+          { label: 'INTERNAL / HIGHWAY', value: `${totalInternal} / ${totalHighway}`, bg: [227, 246, 245], fg: [27, 138, 148] } as const,
+        ] : []),
+      ].map(t => ({ ...t, bg: [...t.bg] as [number, number, number], fg: [...t.fg] as [number, number, number] }));
+      const kpiCount = kpiTiles.length;
+      const kpiW = (pageWidth - 28 - kpiGap * (kpiCount - 1)) / kpiCount;
       kpiTiles.forEach((tile, i) => {
         const x = 14 + i * (kpiW + kpiGap);
         doc.setFillColor(tile.bg[0], tile.bg[1], tile.bg[2]);
@@ -705,6 +729,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
     base.activeFemale = activeFemale;
     base.activeSevaks = activeMale + activeFemale;
     base.activeUsernames = Array.from(activeUsernamesVY);
+    base.internalVihars = myEntriesVY.filter(e => e.route_kind === 'internal').length;
+    base.highwayVihars = myEntriesVY.filter(e => e.route_kind === 'highway').length;
 
     return base;
   }, [data.entries, orgEntriesAll, selectedVY.start.getTime(), selectedVY.end.getTime(), sevakMap, sevakGenderMap, currentUser.username, currentUser.role]);
@@ -804,7 +830,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   }
 
   return (
-    <div className="space-y-5 animate-fade-in relative">
+    <div className="space-y-4 animate-fade-in relative">
       {/* Profile Completion Modal (Stats Page) */}
       <Modal open={showProfileModal} onClose={() => setShowProfileModal(false)} maxWidth="max-w-sm" className="p-6 relative border-t-4 border-orange-500">
         <button
@@ -871,14 +897,14 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Type</label>
+                <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">{BRAND.viharEntryExtras ? 'Vihar Session' : 'Type'}</label>
                 <div className="flex bg-[#F7F4F0] p-1 rounded-xl">
                   {(['morning', 'evening'] as const).map(t => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => setAlertData({ ...alertData, type: t })}
-                      className={`flex-1 py-2 rounded-lg text-sm font-bold capitalize transition-all ${alertData.type === t ? 'bg-white text-saffron-700 shadow-sm' : 'text-[#8A6A57]'}`}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold capitalize transition-all ${alertData.type === t ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-[#8A6A57]'}`}
                     >
                       {t}
                     </button>
@@ -886,31 +912,32 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                 </div>
               </div>
 
+              {BRAND.viharEntryExtras && (
+                <div>
+                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Vihar Type</label>
+                  <div className="flex bg-[#F7F4F0] p-1 rounded-xl">
+                    {(['internal', 'highway'] as const).map(k => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setAlertData({ ...alertData, routeKind: k })}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold capitalize transition-all ${alertData.routeKind === k ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-[#8A6A57]'}`}
+                      >
+                        {k}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">From</label>
-                  <select
-                    required
-                    className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm appearance-none transition-shadow"
-                    value={alertData.from}
-                    onChange={e => setAlertData({ ...alertData, from: e.target.value, to: '' })}
-                  >
-                    <option value="">Start Location</option>
-                    {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
+                  <ThemedSelect value={alertData.from} onChange={v => setAlertData({ ...alertData, from: v, to: '' })} options={uniqueAreas} placeholder="Start Location" title="Vihar From" clearable={false} className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">To</label>
-                  <select
-                    required
-                    disabled={!alertData.from}
-                    className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm appearance-none transition-shadow disabled:opacity-60"
-                    value={alertData.to}
-                    onChange={e => setAlertData({ ...alertData, to: e.target.value })}
-                  >
-                    <option value="">End Location</option>
-                    {uniqueAreas.filter(a => a !== alertData.from).map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
+                  <ThemedSelect value={alertData.to} onChange={v => setAlertData({ ...alertData, to: v })} options={uniqueAreas.filter(a => a !== alertData.from)} placeholder="End Location" title="Vihar To" disabled={!alertData.from} clearable={false} className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm" />
                 </div>
               </div>
 
@@ -1204,7 +1231,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         {currentUser.role === UserRole.SEVAK && onAddVihar && (
           <button
             onClick={onAddVihar}
-            className="flex items-center justify-center gap-1.5 bg-saffron-600 hover:bg-saffron-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 text-sm w-full md:w-auto shrink-0"
+            className="flex items-center justify-center gap-1.5 bg-saffron-600 hover:bg-saffron-700 text-white font-bold h-10 px-4 rounded-full transition-all active:scale-95 text-sm w-full md:w-auto shrink-0"
           >
             <Plus size={18} />
             <span>{t('dashboard.addVihar')}</span>
@@ -1239,28 +1266,36 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         count={yearlyViharCount}
         goal={currentUser.role === UserRole.ORG_ADMIN ? orgSankalp?.target : mySankalp}
         title={currentUser.role === UserRole.ORG_ADMIN ? 'Group Sankalp' : 'My Sankalp'}
-        tone={currentUser.role === UserRole.ORG_ADMIN ? 'purple' : 'saffron'}
+        tone={currentUser.role === UserRole.ORG_ADMIN ? 'purple' : 'light'}
+        compact
         periodLabel={selectedVY.label}
       />
 
       <UpcomingViharCard currentUser={currentUser} onViewAll={navigateToNotifications} />
 
       {/* Stats section */}
-      <div className="max-w-4xl space-y-5">
-        <div className="flex items-center justify-between gap-2 flex-wrap px-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="m-0 text-sm font-bold text-[#241C17]">{currentUser.role === UserRole.ORG_ADMIN ? t('dashboard.orgStats') : t('dashboard.yourStats')}</p>
-            <span className="text-[10px] font-extrabold bg-saffron-100 text-saffron-700 px-2 py-0.5 rounded-full">{selectedVY.label}</span>
-          </div>
-          <div className="flex items-center gap-2">
+      <div className="max-w-4xl space-y-3">
+        {/* one line at any width: the Vihar Year already shows in the selector, so no extra chip */}
+        <div className="flex items-center justify-between gap-2 px-1">
+          <p className="m-0 min-w-0 truncate text-sm font-bold text-[#241C17]">{currentUser.role === UserRole.ORG_ADMIN ? t('dashboard.orgStats') : t('dashboard.yourStats')}</p>
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => setShowShareSheet(true)}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 h-8 pl-2.5 pr-3 rounded-full bg-saffron-50 text-saffron-700 hover:bg-saffron-100 text-xs font-extrabold transition active:scale-95 disabled:opacity-50"
+              aria-label="Share"
+              className="relative overflow-hidden inline-flex items-center gap-1.5 h-8 pl-1.5 pr-3 rounded-full bg-saffron-50 text-saffron-700 hover:bg-saffron-100 ring-1 ring-saffron-200 text-xs font-extrabold whitespace-nowrap transition active:scale-95 disabled:opacity-50"
             >
-              <Share2 size={14} />
-              {t('dashboard.shareSeva')}
+              <span aria-hidden="true" className="share-badge-shine pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/80 to-transparent -skew-x-12" />
+              <span className="relative flex -space-x-1.5">
+                <span className="share-badge-hop w-5 h-5 rounded-full bg-[#25D366] ring-2 ring-saffron-50 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="#fff" aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35zM12.05 21.5h-.01a9.4 9.4 0 0 1-4.8-1.32l-.34-.2-3.56.93.95-3.47-.22-.36a9.4 9.4 0 0 1-1.44-5.02c0-5.2 4.23-9.43 9.44-9.43a9.4 9.4 0 0 1 9.43 9.44c0 5.2-4.24 9.43-9.45 9.43zm8.03-17.46A11.3 11.3 0 0 0 12.05.72C5.8.72.7 5.8.7 12.06c0 2 .52 3.95 1.52 5.67L.6 23.6l6.02-1.58a11.3 11.3 0 0 0 5.42 1.38h.01c6.25 0 11.34-5.09 11.34-11.34 0-3.03-1.18-5.88-3.32-8.02z"/></svg>
+                </span>
+                <span className="share-badge-hop share-badge-hop-2 w-5 h-5 rounded-full ring-2 ring-saffron-50 flex items-center justify-center" style={{ background: 'radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)' }}>
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" strokeWidth="2.4" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" fill="#fff" stroke="none" /></svg>
+                </span>
+              </span>
+              <span className="relative h-5 overflow-hidden"><span className="share-badge-words flex flex-col">{['Share', 'Inspire', 'Impact', 'Motivate', 'Share'].map((w, i) => <span key={i} aria-hidden={i > 0} className="h-5 leading-5">{w}</span>)}</span></span>
             </button>
             <ViharYearSelector
               selectedStartYear={selectedVYStartYear}
@@ -1324,7 +1359,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                     displayStats.vSynergy && displayStats.vSynergy !== "N/A" ? (
                       <p className="text-[15px] font-extrabold text-[#241C17] leading-tight truncate">{displayStats.vSynergy.split(',')[0]}</p>
                     ) : (
-                      <p className="text-[15px] font-semibold text-[#8A6A57]/70 italic">{t('dashboard.findPartner')}</p>
+                      <p className="text-[15px] font-semibold text-[#8A6A57]/70 italic truncate">{t('dashboard.findPartner')}</p>
                     )
                   )}
                   <Handshake size={21} style={{ color: '#9A85C9' }} className="shrink-0" />
@@ -1379,18 +1414,34 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             </div>
 
             <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#E3F6F5', animationDelay: '240ms' }}>
-              {isLoading ? <SkeletonLoader /> : (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Activity size={21} style={{ color: '#2F9CA6' }} className="shrink-0" />
-                    <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.activeSevaks)}</span>
-                  </div>
-                  <button onClick={() => setShowActiveSevaksModal(true)} className="text-[9px] font-bold px-2.5 py-1 bg-white/70 text-[#1B8A94] rounded-lg hover:bg-white transition-colors active:scale-95 tracking-wider">{t('dashboard.view')}</button>
-                </div>
-              )}
-              <p className="mt-1 text-xs font-semibold text-[#1B8A94]" title=">= 1 Vihar in last 30 days">{t('dashboard.activeSevaks')}</p>
+              <div className="flex items-start justify-between">
+                {isLoading ? <SkeletonLoader /> : (
+                  <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.activeSevaks)}</span>
+                )}
+                <Activity size={21} style={{ color: '#2F9CA6' }} className="shrink-0" />
+              </div>
+              <button type="button" onClick={() => setShowActiveSevaksModal(true)} disabled={isLoading} title=">= 1 Vihar in last 30 days" className="mt-1.5 inline-flex items-center gap-0.5 text-xs font-bold px-2.5 py-1 bg-white/70 text-[#1B8A94] rounded-full hover:bg-white transition-colors active:scale-95 disabled:opacity-60">
+                {t('dashboard.activeSevaks')}<ChevronRight size={13} />
+              </button>
             </div>
           </div>
+
+          {BRAND.viharEntryExtras && (
+            <div className="rounded-[18px] p-4 app-stagger-in flex items-center justify-between gap-3" style={{ background: '#EEF1FB', animationDelay: '260ms' }}>
+              <div className="flex items-center gap-5">
+                <div>
+                  {isLoading ? <SkeletonLoader /> : <p className="m-0 text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.internalVihars || 0)}</p>}
+                  <p className="m-0 mt-1 text-xs font-semibold text-[#4A5BA8]">Internal</p>
+                </div>
+                <span className="w-px h-9 bg-[#4A5BA8]/20" />
+                <div>
+                  {isLoading ? <SkeletonLoader /> : <p className="m-0 text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.highwayVihars || 0)}</p>}
+                  <p className="m-0 mt-1 text-xs font-semibold text-[#4A5BA8]">Highway</p>
+                </div>
+              </div>
+              <Route size={21} style={{ color: '#6E7FC9' }} className="shrink-0" />
+            </div>
+          )}
 
           {/* Consistency — this week */}
           <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
@@ -1461,7 +1512,7 @@ const AlertYesNo: React.FC<{ label: string; value: boolean; onChange: (v: boolea
           role="radio"
           aria-checked={value === v}
           onClick={() => onChange(v)}
-          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${value === v ? 'bg-white text-saffron-700 shadow-sm' : 'text-[#8A6A57]'}`}
+          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${value === v ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-[#8A6A57]'}`}
         >
           {v ? 'Yes' : 'No'}
         </button>

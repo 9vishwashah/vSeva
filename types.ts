@@ -35,7 +35,7 @@ export interface UserProfile {
   avatar_url?: string | null;
   alias?: string | null; // optional reference name the Captain uses to identify the Sevak quickly
   // Shraman Seva Group only: which Vihars the Sevak joins, and how they like to serve
-  vihar_scope?: 'Internal' | 'External' | 'Both' | null;
+  vihar_scope?: 'Internal' | 'Highway' | 'Both' | null;
   seva_preferences?: SevaPreference[] | null;
 }
 
@@ -45,7 +45,7 @@ export const SEVA_PREFERENCES: { value: SevaPreference; label: string }[] = [
   { value: 'Car Seva', label: 'Car Seva (Updhi)' },
   { value: 'Wheelchair Seva', label: 'Wheelchair Seva' },
 ];
-export const VIHAR_SCOPES = ['Internal', 'External', 'Both'] as const;
+export const VIHAR_SCOPES = ['Internal', 'Highway', 'Both'] as const;
 
 export interface AreaRoute {
   id: number;
@@ -77,6 +77,9 @@ export interface ViharEntry {
   car_seva?: boolean;
   car_seva_sevaks?: string[];
   samuday?: string;
+  no_mumukshu?: number;
+  mukhya_bhagwant?: string | null;
+  route_kind?: 'internal' | 'highway' | null;
   distance_km?: number;
   haversine_km?: number;
   vihar_type: 'morning' | 'evening';
@@ -123,6 +126,7 @@ export interface UpcomingVihar {
   id: string;
   organization_id: string;
   created_by: string;
+  route_kind?: 'internal' | 'highway' | null;
   vihar_date: string;
   vihar_time?: string;
   from_location: string;

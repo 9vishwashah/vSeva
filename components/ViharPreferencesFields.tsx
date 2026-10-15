@@ -1,5 +1,6 @@
 import React from 'react';
 import { Check } from 'lucide-react';
+import ThemedSelect from './ThemedSelect';
 import { SEVA_PREFERENCES, VIHAR_SCOPES, type SevaPreference } from '../types';
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
   labelClassName: string;
 }
 
-// "Vihar Type" (one of Internal / External / Both) and "Seva Preference" (any of Walking, Car Seva (Updhi),
+// "Vihar Type" (one of Internal / Highway / Both) and "Seva Preference" (any of Walking, Car Seva (Updhi),
 // Wheelchair Seva). Shown only for brands with sevakViharPreferences (Shraman Seva Group).
 const ViharPreferencesFields: React.FC<Props> = ({ scope, preferences, onChange, selectClassName, labelClassName }) => {
   const toggle = (p: SevaPreference) =>
@@ -21,10 +22,7 @@ const ViharPreferencesFields: React.FC<Props> = ({ scope, preferences, onChange,
     <>
       <div>
         <label className={labelClassName}>Vihar Type</label>
-        <select value={scope} onChange={e => onChange({ scope: e.target.value, preferences })} className={selectClassName}>
-          <option value="">Select Vihar type</option>
-          {VIHAR_SCOPES.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
+        <ThemedSelect value={scope} onChange={v => onChange({ scope: v, preferences })} options={[...VIHAR_SCOPES]} placeholder="Select Vihar type" title="Vihar Type" className={selectClassName} />
       </div>
       <div>
         <label className={labelClassName}>Seva Preference <span className="normal-case font-semibold opacity-70">(choose any)</span></label>

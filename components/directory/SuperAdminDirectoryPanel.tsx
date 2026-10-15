@@ -1,5 +1,6 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { Clock, User, Phone, Check, X, ClipboardList, Pencil, Trash2, ExternalLink } from 'lucide-react';
+import ThemedSelect from '../ThemedSelect';
 import { directoryService } from '../../services/directoryService';
 import { DirectorySubmission, DirectoryChangeRequest, DirectoryCardFields, DirectoryListing } from '../../types';
 import { useToast } from '../../context/ToastContext';
@@ -310,9 +311,7 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
 
             {rejectingId === reviewSubmission.id ? (
               <div className="bg-red-50 rounded-xl p-3 mb-3 space-y-2">
-                <select value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="w-full py-2 px-2 rounded-lg border border-red-200 text-sm">
-                  {REJECTION_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
+                <ThemedSelect value={rejectReason} onChange={setRejectReason} options={[...REJECTION_REASONS]} placeholder="Reason" title="Rejection reason" clearable={false} className="w-full py-2 px-2 rounded-lg border border-red-200 text-sm bg-white" />
                 <textarea value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Note (optional)" className="w-full py-2 px-2 rounded-lg border border-red-200 text-sm" rows={2} />
                 <div className="flex gap-2">
                   <button onClick={() => setRejectingId(null)} className="flex-1 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold">Cancel</button>
@@ -351,9 +350,7 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
 
             {rejectingId === reviewChangeRequest.id ? (
               <div className="bg-red-50 rounded-xl p-3 mb-3 space-y-2">
-                <select value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="w-full py-2 px-2 rounded-lg border border-red-200 text-sm">
-                  {REJECTION_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
+                <ThemedSelect value={rejectReason} onChange={setRejectReason} options={[...REJECTION_REASONS]} placeholder="Reason" title="Rejection reason" clearable={false} className="w-full py-2 px-2 rounded-lg border border-red-200 text-sm bg-white" />
                 <div className="flex gap-2">
                   <button onClick={() => setRejectingId(null)} className="flex-1 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold">Cancel</button>
                   <button onClick={() => handleRejectChangeRequest(reviewChangeRequest.id)} disabled={busy} className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-bold">Confirm Reject</button>

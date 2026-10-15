@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SSG-RU-2026-002 · Review and Update</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 15mm 15mm 16mm 15mm; }
+  :root { --ink: #241C17; --muted: #7A6355; --accent: #E8730C; --deep: #B5542A; --soft: #FFF3E8; --line: #EFE4D8; --add: #1F6FB2; --addbg: #E7F1FB; --upd: #8A5A00; --updbg: #FFF4DB; --ok: #1F8A4C; --okbg: #E8F6EE; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Manrope, 'Segoe UI', Roboto, sans-serif; color: var(--ink); font-size: 10pt; line-height: 1.5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h1, h2, h3, p { margin: 0; }
+
+  .cover { display: flex; align-items: center; gap: 16px; padding-bottom: 12px; border-bottom: 3px solid var(--accent); }
+  .cover img { width: 60px; height: 60px; border-radius: 14px; }
+  .cover .t1 { font-size: 8.5pt; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  .cover h1 { font-size: 20pt; font-weight: 800; letter-spacing: -.01em; line-height: 1.15; margin-top: 2px; }
+  .cover .ref { margin-left: auto; text-align: right; }
+  .cover .ref b { display: block; font-size: 7.5pt; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .cover .ref span { font-size: 12pt; font-weight: 800; color: var(--deep); letter-spacing: .02em; }
+
+  /* release comparison rows */
+  .rel { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin: 14px 0 4px; }
+  .rel th { text-align: left; font-size: 7.5pt; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 800; padding: 0 12px 2px; }
+  .rel td { padding: 9px 12px; background: #FBF8F4; font-weight: 700; font-size: 9.5pt; }
+  .rel tr td:first-child { border-radius: 10px 0 0 10px; }
+  .rel tr td:last-child { border-radius: 0 10px 10px 0; }
+  .rel tr.new td { background: var(--soft); }
+  .rel .lbl { font-size: 8pt; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
+  .rel tr.new .lbl { color: var(--deep); }
+  .rel .num { text-align: center; }
+
+  .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0 14px; }
+  .meta div { border: 1px solid var(--line); border-radius: 10px; padding: 7px 11px; }
+  .meta b { display: block; font-size: 7.5pt; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
+  .meta span { font-weight: 700; font-size: 9.5pt; }
+
+  .lead { color: var(--muted); margin-bottom: 6px; }
+  h2 { font-size: 13pt; font-weight: 800; margin: 18px 0 8px; display: flex; align-items: center; gap: 8px; break-after: avoid; }
+  h2 .n { min-width: 24px; height: 24px; padding: 0 7px; border-radius: 99px; background: var(--accent); color: #fff; font-size: 9pt; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+
+  /* timeline */
+  .tl { position: relative; padding-left: 18px; margin: 4px 0 0; }
+  .tl::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+  .tl .item { position: relative; padding-left: 10px !important; display: grid; grid-template-columns: 140px 1fr auto; gap: 12px; align-items: center; padding: 6px 0; }
+  .tl .item::before { content: ''; position: absolute; left: -18px; top: 50%; margin-top: -6px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 2.5px solid var(--muted); }
+  .tl .item.now::before { border-color: var(--accent); background: var(--accent); }
+  .tl .ref { font-weight: 800; font-size: 9.5pt; }
+  .tl .item.now .ref { color: var(--deep); }
+  .tl .what { font-size: 9pt; color: var(--muted); }
+  .tl .what b { color: var(--ink); }
+  .counts { white-space: nowrap; }
+
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 7.8pt; font-weight: 800; white-space: nowrap; }
+  .pill.add { background: var(--addbg); color: var(--add); }
+  .pill.upd { background: var(--updbg); color: var(--upd); }
+  .pill.ok { background: var(--okbg); color: var(--ok); }
+
+  table.list { width: 100%; border-collapse: collapse; font-size: 9.2pt; }
+  table.list th { text-align: left; font-size: 7.5pt; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 800; padding: 6px 8px; border-bottom: 2px solid var(--line); }
+  table.list td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.list tr { break-inside: avoid; }
+  table.list td.id { width: 34px; font-weight: 800; color: var(--deep); white-space: nowrap; }
+  table.list td.area { width: 120px; color: var(--muted); font-size: 8.6pt; }
+  table.list td b { font-weight: 800; }
+  table.list .d { display: block; color: var(--muted); font-size: 8.7pt; margin-top: 1px; }
+
+  .discuss { border: 1.5px dashed #E9C27A; background: #FFFBF1; border-radius: 14px; padding: 12px 16px; break-inside: avoid; }
+  .discuss ol { margin: 4px 0 0; padding-left: 18px; }
+  .discuss li { margin: 5px 0; }
+  .discuss li span { color: var(--muted); }
+
+  .foot { margin-top: 20px; padding-top: 9px; border-top: 1px solid var(--line); font-size: 8.3pt; color: var(--muted); display: flex; justify-content: space-between; }
+  .pb { break-before: page; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <img src="emblem.png" alt="Shraman Seva Group">
+  <div>
+    <p class="t1">Shraman Seva Group &middot; App Update</p>
+    <h1>Review and Update</h1>
+  </div>
+  <div class="ref"><b>Reference No.</b><span>SSG-RU-2026-002</span></div>
+</div>
+
+<table class="rel">
+  <thead><tr><th>Date</th><th>Release</th><th>Reference No.</th><th class="num">New Additions</th><th class="num">Updated</th><th class="num">Total</th></tr></thead>
+  <tbody>
+    <tr><td>9 Oct 2026</td><td class="lbl">Previous update release</td><td>SSG-RU-2026-001</td><td class="num">4</td><td class="num">0</td><td class="num">4</td></tr>
+    <tr class="new"><td>15 Oct 2026</td><td class="lbl">New update release</td><td>SSG-RU-2026-002</td><td class="num">9</td><td class="num">12</td><td class="num">21</td></tr>
+  </tbody>
+</table>
+
+<div class="meta">
+  <div><b>Web app</b><span>ssg.vjas.in</span></div>
+  <div><b>Cumulative to date</b><span>13 new &middot; 12 updated &middot; 25 total</span></div>
+  <div><b>Prepared by</b><span>Vishwa Alpesh Shah</span></div>
+</div>
+
+<p class="lead">This document follows the first Review and Update (SSG-RU-2026-001, 9 October 2026). It lists every new addition and update to the Shraman Seva Group app since then, based on the team's feedback between 9 and 15 October 2026, and closes with the points for our next discussion.</p>
+
+<h2><span class="n">&#8635;</span>Release timeline</h2>
+<div class="tl">
+  <div class="item">
+    <span class="ref">SSG-RU-2026-001</span>
+    <span class="what"><b>9 Oct 2026</b> &middot; Requirements from the Google Meet of 8 Oct: Vihar photo, Sevak Vihar preferences, Upcoming Vihar details, Routes</span>
+    <span class="counts"><span class="pill add">4 New Additions</span></span>
+  </div>
+  <div class="item now">
+    <span class="ref">SSG-RU-2026-002</span>
+    <span class="what"><b>15 Oct 2026</b> &middot; Mumukshu and Internal / Highway Vihars, reports, Dashboard and design refresh, fixes</span>
+    <span class="counts"><span class="pill add">9 New Additions</span> <span class="pill upd">12 Updated</span></span>
+  </div>
+</div>
+
+<h2><span class="n">A</span>New Additions in this release <span class="pill add" style="margin-left:4px">9</span></h2>
+<table class="list">
+  <thead><tr><th>#</th><th>Area</th><th>What is new</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td class="id">A1</td><td class="area">Vihar entry</td><td><b>Mumukshu count</b><span class="d">"Vihar Of" now has Sadhu, Sadhvi and Mumukshu, each with its own count. An entry with only Mumukshu is accepted.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">A2</td><td class="area">Vihar entry</td><td><b>Mukhya Sadhu Bhagwant / Sadhviji Bhagwant</b><span class="d">A new field below Samuday. Shown to the Captain in Pending Approvals.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">A3</td><td class="area">Vihar entry</td><td><b>Vihar Type: Internal / Highway</b><span class="d">A toggle on the first step of the entry form, for both the Captain's entry and a Sevak's submission. Defaults to Internal.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">A4</td><td class="area">Upcoming Vihar</td><td><b>Internal / Highway when announcing</b><span class="d">The same toggle in Announce Upcoming Vihar. The alert to Sevaks reads, for example, "Upcoming Highway Vihar on &hellip;", and the card and WhatsApp share show it too.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">A5</td><td class="area">Dashboard</td><td><b>Internal / Highway tile</b><span class="d">Shows the Internal and Highway Vihar counts side by side for the selected Vihar Year. For a Captain it covers the whole group.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">A6</td><td class="area">PDF &amp; Excel export</td><td><b>New columns and summary</b><span class="d">Mumukshu, Mukhya Bhagwant and Vihar Type columns (each can be ticked or unticked). The TOTAL row adds up Mumukshu and the Internal / Highway split; the PDF summary gains Mumukshu and Internal / Highway boxes.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">A7</td><td class="area">Dashboard</td><td><b>Share badge with WhatsApp and Instagram</b><span class="d">The share button now shows both logos and a rotating word (Share, Inspire, Impact, Motivate) with a light animation, to encourage sharing Seva achievements.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">A8</td><td class="area">Statistics</td><td><b>Last 7 days chart and monthly Consistency calendar</b><span class="d">A month-by-month calendar coloured by Vihars per day, with tap-to-see details. Leaderboards now sit above the charts.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">A9</td><td class="area">Sevak submission</td><td><b>"Before you submit" guidance</b><span class="d">A short note on the first step reminding the Sevak to select every Sevak who was on the Vihar.</span></td><td><span class="pill ok">Completed</span></td></tr>
+  </tbody>
+</table>
+
+<h2><span class="n">U</span>Updated in this release <span class="pill upd" style="margin-left:4px">12</span></h2>
+<table class="list">
+  <thead><tr><th>#</th><th>Area</th><th>What changed</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td class="id">U1</td><td class="area">Vihar entry</td><td><b>Save error resolved</b><span class="d">An entry could fail to save with a technical error when a Captain account was among the selected Sevaks. Entries now save normally in every case.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U2</td><td class="area">Vihar entry</td><td><b>Captain accounts hidden from Sevak selection</b><span class="d">Only Sevaks appear when assigning Sevaks to a Vihar, for both the Captain's entry and a Sevak's submission.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U3</td><td class="area">Sevak profile</td><td><b>"External" renamed to "Highway"</b><span class="d">Vihar Type in the profile is now Internal, Highway or Both. Existing choices were carried over.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U4</td><td class="area">Vihar entry</td><td><b>Morning / Evening renamed "Vihar Session"</b><span class="d">So it is not confused with the new Vihar Type (Internal / Highway). In exports this column is now "Session".</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U5</td><td class="area">Whole app</td><td><b>App-styled selection screens</b><span class="d">The phone's plain pickers are replaced with sheets in the app's colours: From / To locations, Vihar Type, Blood Group, Occupation and others. Long lists such as locations have a search box.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U6</td><td class="area">Whole app</td><td><b>Clearer selected options</b><span class="d">The selected option in toggles (Session, Vihar Type, Yes / No) is now solid saffron, so the choice is obvious at a glance.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U7</td><td class="area">Navigation</td><td><b>New bottom navigation bar</b><span class="d">A lighter, rounded bar with larger icons, a matching More menu, and the language menu moved into the header. Swipe left or right to move between pages.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U8</td><td class="area">Dashboard</td><td><b>Tighter, cleaner layout</b><span class="d">Even spacing between stat tiles, "Your Stats", Share and Vihar Year on one line, and Active Sevaks as a single tap-to-open button.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U9</td><td class="area">Dashboard</td><td><b>My Sankalp card redesigned</b><span class="d">A compact white card with a saffron progress ring showing, for example, "2/10", a count-up animation and a soft pulse. Add Vihar stays the one orange action.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U10</td><td class="area">View Entries</td><td><b>Vihar card image alignment</b><span class="d">The saved and shared image of a Vihar card now matches the card on screen, with every value in its correct place.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U11</td><td class="area">Registration</td><td><b>Captain registration form</b><span class="d">Fields reordered with SSG examples, the pincode fills in the city, district and state, and District is recorded.</span></td><td><span class="pill ok">Completed</span></td></tr>
+    <tr><td class="id">U12</td><td class="area">Web app</td><td><b>Repeated page reload resolved</b><span class="d">ssg.vjas.in could reload itself repeatedly on some phones. Fixed.</span></td><td><span class="pill ok">Completed</span></td></tr>
+  </tbody>
+</table>
+
+<h2><span class="n">?</span>For our next discussion</h2>
+<div class="discuss">
+  <ol>
+    <li><b>Google Play Store listing.</b> <span>The Android app is ready; the store listing is still pending, carried over from SSG-RU-2026-001.</span></li>
+    <li><b>Further requirements.</b> <span>Any new feedback from the Captains and Sevaks for the next release (SSG-RU-2026-003).</span></li>
+  </ol>
+</div>
+
+<div class="foot">
+  <span>Shraman Seva Group &middot; Review and Update &middot; SSG-RU-2026-002</span>
+  <span>15 October 2026 &middot; Prepared by Vishwa Alpesh Shah</span>
+</div>
+
+</body>
+</html>

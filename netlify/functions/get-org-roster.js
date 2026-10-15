@@ -36,11 +36,11 @@ async function rawHandler(event) {
             return q;
         };
 
-        let { data, error } = await buildQuery('username, full_name, gender, avatar_url');
+        let { data, error } = await buildQuery('username, full_name, gender, avatar_url, role');
         if (error) {
             // avatar_url needs scripts/add_avatar_url.sql run first — fall back to
             // the narrower select rather than erroring the whole roster out.
-            ({ data, error } = await buildQuery('username, full_name, gender'));
+            ({ data, error } = await buildQuery('username, full_name, gender, role'));
         }
         if (error) throw error;
 

@@ -814,7 +814,7 @@ export const dataService = {
       // Only official (approved) Vihars feed stats, KPIs, leaderboard and exports.
       const { data, error } = await supabase
         .from('vihar_entries')
-        .select('id, organization_id, created_by, vihar_date, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, vihar_from, vihar_to, sevaks, notes, wheelchair, wheelchair_sevaks, car_seva, car_seva_sevaks, distance_km, haversine_km, vihar_type, samuday, created_at, status, reviewed_by, reviewed_at, photo_url')
+        .select('id, organization_id, created_by, vihar_date, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, vihar_from, vihar_to, sevaks, notes, wheelchair, wheelchair_sevaks, car_seva, car_seva_sevaks, distance_km, haversine_km, vihar_type, samuday, created_at, status, reviewed_by, reviewed_at, photo_url, no_mumukshu, mukhya_bhagwant, route_kind')
         .eq('organization_id', orgId)
         .eq('status', 'approved')
         .order('vihar_date', { ascending: false });

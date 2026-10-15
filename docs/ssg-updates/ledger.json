@@ -1,0 +1,23 @@
+{
+  "_about": "Running record of every Review & Update document shared with the Shraman Seva Group team. Add one entry per release; the next document's timeline and 'previous release' row are built from this list.",
+  "releases": [
+    {
+      "ref": "SSG-RU-2026-001",
+      "date": "2026-10-09",
+      "title": "Requirements Review and Update",
+      "basis": "Google Meet, 8 Oct 2026",
+      "adds": 4,
+      "updates": 0,
+      "file": "docs/SSG_Requirements_Review_Oct2026.pdf"
+    },
+    {
+      "ref": "SSG-RU-2026-002",
+      "date": "2026-10-15",
+      "title": "Review and Update",
+      "basis": "Feedback received 9 to 15 Oct 2026",
+      "adds": 9,
+      "updates": 12,
+      "file": "docs/ssg-updates/SSG-RU-2026-002.pdf"
+    }
+  ]
+}

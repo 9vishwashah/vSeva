@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ThemedSelect from './ThemedSelect';
 import { BRAND } from '@brand';
 import { UserProfile, UserRole, Organization, SevaPreference } from '../types';
 import { getMissingProfileFields, getProfileCompletion } from '../services/profileCompletion';
@@ -437,14 +438,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                         {/* Blood Group */}
                         <div>
                             <label className={fieldLabelClass}>Blood Group</label>
-                            <select
-                                value={editForm.blood_group}
-                                onChange={e => setEditForm({ ...editForm, blood_group: e.target.value })}
-                                className={fieldInputClass}
-                            >
-                                <option value="">— Select —</option>
-                                {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
-                            </select>
+                            <ThemedSelect value={editForm.blood_group} onChange={v => setEditForm({ ...editForm, blood_group: v })} options={[...BLOOD_GROUPS]} placeholder="— Select —" title="Blood Group" className={fieldInputClass} />
                         </div>
 
                         {/* Age */}
@@ -488,14 +482,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                         {/* Occupation / Profession (recommended) */}
                         <div>
                             <label className={fieldLabelClass}>Occupation / Profession <span className="ml-1 rounded-full bg-saffron-50 px-1.5 py-0.5 text-[9px] font-extrabold normal-case tracking-normal text-saffron-700">Recommended</span></label>
-                            <select
-                                value={editForm.occupation}
-                                onChange={e => setEditForm({ ...editForm, occupation: e.target.value, occupation_details: e.target.value ? editForm.occupation_details : '' })}
-                                className={fieldInputClass}
-                            >
-                                <option value="">Select occupation</option>
-                                {OCCUPATIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
+                            <ThemedSelect value={editForm.occupation} onChange={v => setEditForm({ ...editForm, occupation: v, occupation_details: v ? editForm.occupation_details : '' })} options={[...OCCUPATIONS]} placeholder="Select occupation" title="Occupation" className={fieldInputClass} />
                         </div>
                         {editForm.occupation && (
                             <div>

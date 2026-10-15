@@ -3,6 +3,7 @@ import { UserProfile, ViharEntry } from '../types';
 import { dataService } from '../services/dataService';
 import { useToast } from '../context/ToastContext';
 import { supabase } from '../services/supabase';
+import { BRAND } from '@brand';
 import { Calendar, MapPin, Users, User, Loader2, ClipboardCheck, ChevronDown, ChevronUp, Check, X as XIcon, Pencil, Clock } from 'lucide-react';
 import StatusScreen from '../components/StatusScreen';
 
@@ -187,6 +188,20 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({ currentUser, onEdit
                                                         <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sadhviji Bhagwan</h4>
                                                         <p className="text-sm font-bold text-gray-800">{entry.no_sadhvijibhagwan || 0}</p>
                                                     </div>
+                                                    {BRAND.viharEntryExtras && (<>
+                                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Mumukshu</h4>
+                                                        <p className="text-sm font-bold text-gray-800 capitalize break-words">{entry.no_mumukshu || 0}</p>
+                                                    </div>
+                                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Vihar Type</h4>
+                                                        <p className="text-sm font-bold text-gray-800 capitalize break-words">{entry.route_kind || '-'}</p>
+                                                    </div>
+                                                    {entry.mukhya_bhagwant && (<div className="col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Mukhya Bhagwant</h4>
+                                                        <p className="text-sm font-bold text-gray-800 break-words">{entry.mukhya_bhagwant}</p>
+                                                    </div>)}
+                                                    </>)}
                                                 </div>
 
                                                 <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">

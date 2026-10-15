@@ -10,6 +10,7 @@ import { deliverPdf, deliverFile } from '../services/pdfDelivery';
 import { dataService } from '../services/dataService';
 import { OCCUPATIONS } from '../services/occupations';
 import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft, Footprints, KeyRound, Upload, FileText, Table } from 'lucide-react';
+import ThemedSelect from '../components/ThemedSelect';
 import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
 import CircularProgressBar from '../components/CircularProgressBar';
@@ -820,9 +821,7 @@ Kindly do Vihar and continue your Seva.`;
 
                     <DetailField label="Blood Group">
                       {editing ? (
-                        <select value={editForm.bloodGroup} onChange={e => setEditForm({ ...editForm, bloodGroup: e.target.value })} className={inp}>
-                          {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map(b => <option key={b} value={b}>{b}</option>)}
-                        </select>
+                        <ThemedSelect value={editForm.bloodGroup} onChange={v => setEditForm({ ...editForm, bloodGroup: v })} options={['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']} placeholder="Select" title="Blood Group" className={inp} />
                       ) : (
                         <span className="text-sm font-semibold text-gray-900">{selectedSevak.blood_group || '-'}</span>
                       )}
@@ -847,10 +846,7 @@ Kindly do Vihar and continue your Seva.`;
                     <DetailField label="Occupation / Profession" wide>
                       {editing ? (
                         <div className="grid grid-cols-2 gap-2">
-                          <select value={editForm.occupation} onChange={e => setEditForm({ ...editForm, occupation: e.target.value, occupationDetails: e.target.value ? editForm.occupationDetails : '' })} className={inp}>
-                            <option value="">Select occupation</option>
-                            {OCCUPATIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
+                          <ThemedSelect value={editForm.occupation} onChange={v => setEditForm({ ...editForm, occupation: v, occupationDetails: v ? editForm.occupationDetails : '' })} options={[...OCCUPATIONS]} placeholder="Select occupation" title="Occupation" className={inp} />
                           {editForm.occupation && (
                             <input type="text" maxLength={120} value={editForm.occupationDetails} onChange={e => setEditForm({ ...editForm, occupationDetails: e.target.value })} placeholder={editForm.occupation === 'Other' ? 'Specify occupation' : 'Details (optional)'} className={inp} />
                           )}

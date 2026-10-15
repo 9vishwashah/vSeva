@@ -7,6 +7,7 @@ import { BRAND } from '@brand';
 import { dataService } from '../services/dataService';
 import { useToast } from '../context/ToastContext';
 import StatusScreen from '../components/StatusScreen';
+import ThemedSelect from '../components/ThemedSelect';
 import SuperAdminPinGate, { isSuperAdminPinVerified, clearSuperAdminPin } from '../components/SuperAdminPinGate';
 import { deliverPdf } from '../services/pdfDelivery';
 import { getViharYearStartYear, getViharYearBoundsForStartYear, isDateInViharYear } from '../services/viharYear';
@@ -323,9 +324,7 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
             <p className="mt-1 text-sm text-gray-500 flex items-center gap-1.5"><MapPin size={14} /> {place || 'Location not provided'} <span className="text-gray-300">•</span> Joined {fmtDate(org.created_at)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <select value={vyYear} onChange={e => setVyYear(parseInt(e.target.value, 10))} className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-bold text-gray-700">
-              {calc.years.map(y => <option key={y} value={y}>{getViharYearBoundsForStartYear(y).label}</option>)}
-            </select>
+            <ThemedSelect value={String(vyYear)} onChange={v => setVyYear(parseInt(v, 10))} options={calc.years.map(y => ({ value: String(y), label: getViharYearBoundsForStartYear(y).label }))} placeholder="Vihar Year" clearable={false} className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-bold text-gray-700" />
             <button onClick={load} className={`${btn} bg-white border border-gray-200 text-gray-600 hover:bg-gray-50`}><RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh</button>
             <button onClick={exportReportPdf} disabled={exporting} className={`${btn} bg-saffron-600 text-white hover:bg-saffron-700 disabled:opacity-60`}>
               {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />} Report (PDF)
@@ -418,9 +417,7 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
                 <Search size={15} className="absolute left-3 top-2.5 text-gray-400" />
                 <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name, mobile, occupation…" className="pl-9 pr-3 py-2 w-64 max-w-full rounded-xl border border-gray-200 text-sm outline-none focus:border-saffron-400" />
               </div>
-              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)} className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700">
-                <option value="all">All</option><option value="active">Active</option><option value="inactive">Inactive</option>
-              </select>
+              <ThemedSelect value={statusFilter} onChange={v => setStatusFilter(v as any)} options={[{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} placeholder="Status" clearable={false} className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700" />
             </div>
           </div>
           <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
