@@ -26,15 +26,22 @@
   status = 200
   force = true
 
+# Routes without a file of their own get the plain app page (dist/app.html, see vite.config.ts). The public
+# website pages are real files: index.html, documentation.html, contact.html, support-us.html (scripts/prerender.mjs).
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/app.html"
   status = 200
 
 # Ensure the HTML entry point and service worker files are never cached
 # so mobile PWA users always get notified about new deploys.
 [[headers]]
   for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/app.html"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 

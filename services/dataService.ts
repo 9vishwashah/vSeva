@@ -279,8 +279,8 @@ export const dataService = {
     }, 30_000);
   },
 
-  async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string; state: string; yearly_goal?: number }>> {
-    const map: Record<string, { full_name: string; mobile: string; town: string; state: string; yearly_goal?: number }> = {};
+  async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string; state: string; email: string; yearly_goal?: number }>> {
+    const map: Record<string, { full_name: string; mobile: string; town: string; state: string; email: string; yearly_goal?: number }> = {};
     if (!orgIds || orgIds.length === 0) return map;
 
     const cacheKey = `orgAdmins:${[...orgIds].sort().join(',')}`;
@@ -295,6 +295,8 @@ export const dataService = {
           mobile: p.mobile,
           town: p.town || '',
           state: p.state || '',
+          // A Captain signs in with their email, stored as the username
+          email: typeof p.username === 'string' && p.username.includes('@') ? p.username : '',
           yearly_goal: typeof p.yearly_goal === 'number' ? p.yearly_goal : undefined
         };
       });

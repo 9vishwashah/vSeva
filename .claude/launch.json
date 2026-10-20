@@ -21,6 +21,19 @@
         "3100"
       ],
       "port": 3100
+    },
+    {
+      "name": "vseva-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "--",
+        "--port",
+        "4173",
+        "--strictPort"
+      ],
+      "port": 4173
     }
   ]
 }

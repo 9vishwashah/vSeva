@@ -5,19 +5,21 @@ import { getNotificationTarget } from './services/notificationRouting';
 import { dataService } from './services/dataService';
 import { brandAccessError } from './services/brandAccess';
 import { clearAll as clearRequestCache, setCacheScope } from './services/requestCache';
-import Layout from './components/Layout';
 import Login from './pages/Login';
 import Landing from '@brand/Landing';
+import { PUBLIC_PATHS } from '@brand/publicPaths';
 import { BRAND } from '@brand';
-import OnboardingWalkthrough from './components/OnboardingWalkthrough';
-import SankalpGate from './components/SankalpGate';
-import UpdateAppBanner from './components/UpdateAppBanner';
 import BrandSplash from './components/BrandSplash';
 import { initOneSignal, loginToOneSignal, logoutFromOneSignal, onNotificationClick, ONESIGNAL_OWNS_SERVICE_WORKER } from './services/oneSignalService';
 import StatusScreen from './components/StatusScreen';
 import { ViharYearProvider } from './context/ViharYearContext';
 
-// Lazy load the inner components to reduce initial JS bundle size
+// Lazy load the inner components to reduce initial JS bundle size. The signed-in shell (Layout and the gates around
+// it) is lazy too, so the public website pages don't download it; it renders inside the Suspense below.
+const Layout = React.lazy(() => import('./components/Layout'));
+const OnboardingWalkthrough = React.lazy(() => import('./components/OnboardingWalkthrough'));
+const SankalpGate = React.lazy(() => import('./components/SankalpGate'));
+const UpdateAppBanner = React.lazy(() => import('./components/UpdateAppBanner'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const NewEntry = React.lazy(() => import('./pages/NewEntry'));
 const AddSevak = React.lazy(() => import('./pages/AddSevak'));
@@ -40,6 +42,8 @@ const Channel = React.lazy(() => import('./pages/Channel'));
 const ChannelOrganization = React.lazy(() => import('./pages/ChannelOrganization'));
 const SosDetail = React.lazy(() => import('./pages/SosDetail'));
 const ContactUs = React.lazy(() => import('./pages/ContactUs'));
+// The brand's own public website pages (/documentation, /contact, /support-us for vSeva; none for other brands)
+const PublicRoutes = React.lazy(() => import('@brand/PublicRoutes'));
 const ChildSafetyStandards = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.ChildSafetyStandards })));
 const PrivacyPolicy = React.lazy(() => import('./pages/LegalPages').then(m => ({ default: m.PrivacyPolicy })));
 const UpdatePassword = React.lazy(() => import('./pages/UpdatePassword'));
@@ -85,6 +89,11 @@ const App: React.FC = () => {
   // Show landing page only if NOT in standalone mode (PWA) and not on /login
   const isLoginRoute = window.location.pathname === '/login';
   const [showLanding, setShowLanding] = useState(!isStandalone && !isLoginRoute && !pendingViharId);
+  // No saved sign-in on this device (supabase-js keeps it under "sb-<project>-auth-token"): the landing page can
+  // show straight away instead of waiting for the session check, which can only come back empty.
+  const [hasStoredSession] = useState(() => {
+    try { return Object.keys(localStorage).some(k => k.startsWith('sb-') && k.endsWith('-auth-token')); } catch { return true; }
+  });
 
   // Check if onboarding should be shown for a given role
   const shouldShowOnboarding = (role: UserRole): boolean => {
@@ -293,6 +302,15 @@ const App: React.FC = () => {
     );
   }
 
+  // The brand's public website pages (vSeva: /documentation, /contact, /support-us), prerendered at build time
+  if (PUBLIC_PATHS.includes(normalizedPath)) {
+    return (
+      <React.Suspense fallback={<div className="min-h-screen bg-[#FBF7F1]" />}>
+        <PublicRoutes path={normalizedPath} />
+      </React.Suspense>
+    );
+  }
+
   // Public contact page (linked from the login screen)
   if (normalizedPath === '/contact') {
     return (
@@ -437,8 +455,9 @@ const App: React.FC = () => {
     setShowLanding(false);
   };
 
-  // While the session restores (e.g. right after login): the brand logo, gently breathing
-  if (loading) return <BrandSplash />;
+  // While the session restores (e.g. right after login): the brand logo, gently breathing.
+  // A visitor with no saved sign-in skips this and sees the landing page at once.
+  if (loading && !(showLanding && !hasStoredSession)) return <BrandSplash />;
 
   // Couldn't even restore the session — show a full-screen retry instead of
   // silently dropping to the login page (which used to happen on any network hiccup).

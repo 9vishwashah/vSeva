@@ -409,6 +409,21 @@ export default defineConfig(({ mode }) => {
         name: 'brand-html',
         transformIndexHtml: { order: 'pre', handler: (html: string) => renderHtml(html, brand) },
       },
+      // dist/app.html: the plain app page, served for every route that has no file of its own (netlify.toml,
+      // public/_redirects). scripts/prerender.mjs later fills dist/index.html with the landing page, so the
+      // fallback is kept separate and other routes get exactly the HTML they always had.
+      (() => {
+        let outDir = 'dist';
+        return {
+          name: 'spa-fallback-html',
+          apply: 'build' as const,
+          configResolved(c: { root: string; build: { outDir: string } }) { outDir = path.resolve(c.root, c.build.outDir); },
+          closeBundle() {
+            const index = path.join(outDir, 'index.html');
+            if (fs.existsSync(index)) fs.copyFileSync(index, path.join(outDir, 'app.html'));
+          },
+        };
+      })(),
       react(),
       VitePWA({
         strategies: 'injectManifest',

@@ -1,2 +1,2 @@
-// vSeva's own landing page (unchanged); other brands ship their own Landing.tsx.
-export { default } from '../../pages/LandingPage';
+// vSeva's public landing page (the website at /); other brands ship their own Landing.tsx.
+export { default } from './site/LandingPage';

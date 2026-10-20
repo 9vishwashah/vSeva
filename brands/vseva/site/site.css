@@ -1,0 +1,379 @@
+/* vSeva public website (/, /documentation, /contact, /support-us).
+   Tokens: warm ivory paper, deep warm charcoal ink, the app's saffron (#DE6B38) used sparingly.
+   Type: Schibsted Grotesk (display, heavy), Instrument Sans (text), JetBrains Mono (labels and numbers) —
+   the same families as the vSeva App Guide, so the site and the guide read as one system.
+   Everything is scoped under .vs so the logged-in app is untouched. */
+
+/* Self-hosted (SIL Open Font License), latin subset, all preloaded by scripts/prerender.mjs. Text and label faces use
+   font-display: optional so body text never reflows after the first paint (no layout shift); the display face swaps. */
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: normal;
+  font-weight: 700 800;
+  font-display: swap;
+  src: url('/vseva-site/fonts/SchibstedGrotesk.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: optional;
+  src: url('/vseva-site/fonts/InstrumentSans.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: optional;
+  src: url('/vseva-site/fonts/JetBrainsMono.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+.vs {
+  --ink: #1c1714;
+  --ink-2: #4a3f38;
+  --muted: #76675c;
+  --paper: #fbf7f1;
+  --card: #ffffff;
+  --line: #eadfd3;
+  --line-strong: #d9c8b8;
+  --saffron: #de6b38;
+  --saffron-deep: #b0502a;
+  --saffron-tint: #fcebdd;
+  --night: #1c1714;
+  --header-h: 64px;
+  --display: 'Schibsted Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --text: 'Instrument Sans', 'Segoe UI', Roboto, Arial, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--text);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.vs *, .vs *::before, .vs *::after { box-sizing: border-box; }
+
+/* Smooth in-page scrolling, only for people who have not asked for reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  html.vs-site { scroll-behavior: smooth; }
+}
+.vs [id] { scroll-margin-top: calc(var(--header-h) + 20px); }
+
+.vs-display {
+  font-family: var(--display);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+.vs-h2 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2rem, 4.2vw, 3.4rem);
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+.vs-h3 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+.vs-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--saffron-deep);
+}
+.vs-lede { font-size: 1.15rem; line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
+.vs-muted { color: var(--muted); }
+.vs-mono { font-family: var(--mono); }
+.vs-accent { color: var(--saffron); }
+
+/* Buttons and links */
+.vs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0 1.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.98rem;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.vs-btn:active { transform: translateY(1px); }
+.vs-btn-primary { background: var(--ink); color: #fff; }
+.vs-btn-primary:hover { background: #3a302a; }
+.vs-btn-saffron { background: var(--saffron-deep); color: #fff; }
+.vs-btn-saffron:hover { background: #973f1f; }
+.vs-btn-ghost { border: 1px solid var(--line-strong); color: var(--ink); background: transparent; }
+.vs-btn-ghost:hover { border-color: var(--ink); }
+.vs-btn-light { background: #fff; color: var(--ink); }
+.vs-btn-light:hover { background: var(--saffron-tint); }
+.vs-btn-sm { min-height: 40px; padding: 0 1rem; font-size: 0.9rem; }
+
+.vs-link {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--saffron);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  transition: color 160ms ease;
+}
+.vs-link:hover { color: var(--saffron-deep); }
+
+.vs a:focus-visible, .vs button:focus-visible, .vs select:focus-visible, .vs textarea:focus-visible, .vs input:focus-visible, .vs [tabindex]:focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.vs .vs-btn:focus-visible { border-radius: 999px; }
+
+/* Header */
+.vs-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--header-h);
+  background: rgba(251, 247, 241, 0.92);
+  border-bottom: 1px solid transparent;
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+@supports (backdrop-filter: blur(8px)) {
+  .vs-header { background: rgba(251, 247, 241, 0.8); backdrop-filter: saturate(1.4) blur(10px); }
+}
+.vs-header[data-scrolled='true'] { border-bottom-color: var(--line); }
+.vs-navlink {
+  position: relative;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+  padding: 0.4rem 0;
+  transition: color 160ms ease;
+}
+.vs-navlink:hover, .vs-navlink[aria-current='page'] { color: var(--ink); }
+.vs-navlink[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--saffron);
+}
+
+/* Phone frame around real screenshots: a slim, flat Android bezel */
+.vs-phone {
+  position: relative;
+  border-radius: 34px;
+  background: #1c1714;
+  padding: 7px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 30px 60px -30px rgba(60, 30, 10, 0.35), 0 12px 24px -16px rgba(60, 30, 10, 0.25);
+}
+.vs-phone::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  background: #0b0908;
+  z-index: 2;
+}
+.vs-phone-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 27px;
+  background: #fff;
+  aspect-ratio: 760 / 1553;
+}
+.vs-phone-screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+
+/* Indian highway milestone: the stats are counted the way a road counts kilometres */
+.vs-milestone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 240px;
+  margin: 0 auto;
+  border-radius: 120px 120px 10px 10px / 92px 92px 10px 10px;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  overflow: hidden;
+  text-align: center;
+}
+.vs-milestone-cap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 4.6rem;
+  padding: 1.2rem 0.5rem 0.6rem;
+  background: var(--saffron);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: clamp(0.56rem, 1.7vw, 0.7rem);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.vs-milestone-value {
+  padding: 1.1rem 0.75rem 1.4rem;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 7.2vw, 3.6rem);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--ink);
+}
+.vs-road {
+  height: 10px;
+  border-radius: 999px;
+  background: #2b2420;
+  background-image: repeating-linear-gradient(90deg, transparent 0 22px, rgba(255, 255, 255, 0.55) 22px 40px);
+  background-size: 100% 2px;
+  background-position: 0 50%;
+  background-repeat: no-repeat;
+}
+
+/* Ticker */
+.vs-ticker { overflow: hidden; background: var(--night); color: #f3e9de; }
+.vs-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: vs-ticker 48s linear infinite;
+}
+.vs-ticker:hover .vs-ticker-track, .vs-ticker:focus-within .vs-ticker-track, .vs-ticker[data-paused='true'] .vs-ticker-track { animation-play-state: paused; }
+.vs-ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 0 1.1rem;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.vs-ticker-item::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--saffron); }
+@keyframes vs-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .vs-ticker-track { animation: none; flex-wrap: wrap; width: auto; justify-content: center; row-gap: 0.4rem; }
+  .vs-ticker-dup { display: none; }
+}
+
+/* Scroll reveals: only when JS runs (html.js), only for people who allow motion */
+@media (prefers-reduced-motion: no-preference) {
+  html.js .vs [data-reveal] {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--d, 0) * 90ms);
+  }
+  html.js .vs [data-reveal].is-in { opacity: 1; transform: none; }
+
+  /* Hero: a short load-in that needs no JS */
+  .vs-rise { animation: vs-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) backwards; animation-delay: calc(var(--d, 0) * 110ms); }
+  @keyframes vs-rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+}
+
+/* Route line used by "How it works" (a dashed path with stops) */
+.vs-route-dash { background-image: linear-gradient(90deg, var(--line-strong) 50%, transparent 0); background-size: 10px 2px; background-repeat: repeat-x; }
+.vs-route-dash-v { background-image: linear-gradient(180deg, var(--line-strong) 50%, transparent 0); background-size: 2px 10px; background-repeat: repeat-y; }
+.vs-stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--saffron);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--saffron-deep);
+}
+
+/* Horizontal galleries (screens, steps): native scrolling with snap */
+.vs-strip {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 1.25rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  padding-bottom: 1rem;
+}
+.vs-strip > * { scroll-snap-align: start; }
+
+/* Documentation article */
+.vs-doc h2 { font-family: var(--display); font-weight: 800; font-size: clamp(1.7rem, 3vw, 2.2rem); letter-spacing: -0.025em; line-height: 1.1; margin: 3.5rem 0 1rem; padding-top: 2rem; border-top: 1px solid var(--line); }
+.vs-doc h2:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+.vs-doc h3 { font-family: var(--display); font-weight: 700; font-size: 1.2rem; letter-spacing: -0.01em; margin: 2rem 0 0.5rem; }
+.vs-doc p { margin: 0.75rem 0; color: var(--ink-2); max-width: 68ch; }
+.vs-doc ul, .vs-doc ol { margin: 0.75rem 0; padding-left: 1.3rem; color: var(--ink-2); max-width: 68ch; }
+.vs-doc li { margin: 0.4rem 0; padding-left: 0.2rem; }
+.vs-doc ol { list-style: decimal; }
+.vs-doc ul { list-style: disc; }
+.vs-doc li::marker { color: var(--saffron-deep); font-weight: 600; }
+.vs-doc strong { color: var(--ink); font-weight: 600; }
+.vs-doc .vs-ui { font-weight: 600; color: var(--ink); background: var(--saffron-tint); border-radius: 6px; padding: 0.05em 0.4em; white-space: nowrap; }
+.vs-doc table { width: 100%; max-width: 68ch; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; }
+.vs-doc th { text-align: left; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 0.6rem 0.75rem 0.6rem 0; border-bottom: 1px solid var(--line-strong); }
+.vs-doc td { padding: 0.65rem 0.75rem 0.65rem 0; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-2); }
+.vs-doc td:first-child { color: var(--ink); font-weight: 500; }
+.vs-doc .vs-note { margin: 1.25rem 0; max-width: 68ch; padding: 0.9rem 1.1rem; border-left: 3px solid var(--saffron); background: var(--card); border-radius: 0 10px 10px 0; color: var(--ink-2); }
+.vs-doc details { max-width: 68ch; border-bottom: 1px solid var(--line); }
+.vs-doc summary { cursor: pointer; list-style: none; padding: 1rem 2rem 1rem 0; font-weight: 600; color: var(--ink); position: relative; }
+.vs-doc summary::-webkit-details-marker { display: none; }
+.vs-doc summary::after { content: '+'; position: absolute; right: 0.25rem; top: 0.85rem; font-family: var(--mono); font-size: 1.2rem; color: var(--saffron-deep); }
+.vs-doc details[open] summary::after { content: '\2212'; }
+.vs-doc details p { margin-top: 0; padding-bottom: 1rem; }
+.vs-toc a { display: block; padding: 0.35rem 0 0.35rem 0.9rem; margin-left: -1px; border-left: 2px solid transparent; color: var(--muted); font-size: 0.92rem; text-decoration: none; transition: color 150ms ease, border-color 150ms ease; }
+.vs-toc a:hover { color: var(--ink); }
+.vs-toc a[aria-current='true'] { color: var(--ink); border-left-color: var(--saffron); font-weight: 600; }
+
+/* Floating actions (phones only) */
+.vs-fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: #fff;
+  box-shadow: 0 8px 20px -8px rgba(28, 23, 20, 0.45);
+  transition: transform 160ms ease;
+}
+.vs-fab:active { transform: scale(0.95); }
+
+.vs-skip { position: absolute; left: 1rem; top: -60px; z-index: 60; background: var(--ink); color: #fff; padding: 0.6rem 1rem; border-radius: 8px; text-decoration: none; }
+.vs-skip:focus { top: 0.75rem; }
+
+@media (max-width: 640px) {
+  .vs { font-size: 16px; }
+}

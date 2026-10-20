@@ -4,8 +4,9 @@ import {
     Check, X, MessageCircle, RefreshCw, Loader2,
     ChevronDown, ChevronUp, Users, PieChart, 
     ShieldCheck, Building2, LayoutDashboard, Lock,
-    Download, FileText
+    Download, FileText, Search, ArrowUpDown, SlidersHorizontal
 } from 'lucide-react';
+import ThemedSelect from '../components/ThemedSelect';
 import { useToast } from '../context/ToastContext';
 import { BRAND } from '@brand';
 import StatusScreen from '../components/StatusScreen';
@@ -38,6 +39,8 @@ interface OrgAdminDetails {
     full_name: string;
     mobile: string;
     town: string;
+    state: string;
+    email: string;
 }
 
 interface OrgStat {
@@ -48,7 +51,34 @@ interface OrgStat {
     total_sevaks: number;
     total_entries: number;
     last_updated: string | null;
+    brand?: string;
 }
+
+// Managed Organizations table: sorting and the activity filter.
+type OrgSortKey = 'serial' | 'name' | 'sevaks' | 'vihars' | 'activity';
+type SortDir = 'asc' | 'desc';
+const SORT_OPTIONS: { value: string; label: string }[] = [
+    { value: 'activity:desc', label: 'Last Activity: newest first' },
+    { value: 'activity:asc', label: 'Last Activity: oldest first' },
+    { value: 'serial:asc', label: 'Org ID: first registered' },
+    { value: 'serial:desc', label: 'Org ID: latest registered' },
+    { value: 'name:asc', label: 'Group Name: A to Z' },
+    { value: 'name:desc', label: 'Group Name: Z to A' },
+    { value: 'sevaks:desc', label: 'Sevaks: most first' },
+    { value: 'sevaks:asc', label: 'Sevaks: fewest first' },
+    { value: 'vihars:desc', label: 'Vihars: most first' },
+    { value: 'vihars:asc', label: 'Vihars: fewest first' },
+];
+const ACTIVITY_OPTIONS: { value: string; label: string }[] = [
+    { value: '7', label: 'Active in the last 7 days' },
+    { value: '30', label: 'Active in the last 30 days' },
+    { value: '90', label: 'Active in the last 90 days' },
+    { value: 'idle30', label: 'Inactive for 30+ days' },
+    { value: 'idle90', label: 'Inactive for 90+ days' },
+    { value: 'none', label: 'No activity yet' },
+];
+const DAY_MS = 24 * 60 * 60 * 1000;
+const FILTER_FIELD = 'w-full py-2.5 px-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-medium text-gray-800 outline-none focus:ring-2 focus:ring-saffron-200';
 
 // Platform a request / group belongs to, so the owner can tell SSG applicants from general vSeva ones.
 const PLATFORM_LABELS: Record<string, string> = { vseva: 'vSeva', ssg: 'SSG · Shraman Seva Group' };
@@ -80,6 +110,14 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
     // What this signed-in account may see, decided by the server (never by the client).
     const [scope, setScope] = useState<{ email: string; all: boolean; brands: string[] } | null>(null);
     const [accessError, setAccessError] = useState<string | null>(null);
+    // Managed Organizations: search, filters and sort
+    const [orgSearch, setOrgSearch] = useState('');
+    const [platformFilter, setPlatformFilter] = useState('');
+    const [stateFilter, setStateFilter] = useState('');
+    const [cityFilter, setCityFilter] = useState('');
+    const [activityFilter, setActivityFilter] = useState('');
+    const [sortKey, setSortKey] = useState<OrgSortKey>('serial');
+    const [sortDir, setSortDir] = useState<SortDir>('asc');
     const { showToast } = useToast();
 
     const fetchRequests = async () => {
@@ -332,6 +370,73 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
         serialCounters[b] = (serialCounters[b] || 0) + 1;
         serialById.set(s.org_id, `${ID_PREFIX[b] ?? b.toUpperCase()}${serialCounters[b]}`);
     });
+    const serialIndex = new Map(sortedStats.map((s, i) => [s.org_id, i]));
+
+    // Managed Organizations: options for the filters come from the groups themselves
+    const uniqueSorted = (values: (string | undefined | null)[]) =>
+        [...new Set(values.map(v => (v || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const stateOptions = uniqueSorted(orgStats.map(s => orgAdmins[s.org_id]?.state));
+    const cityOptions = uniqueSorted(orgStats.map(s => s.city));
+    const platformOptions = uniqueSorted(orgStats.map(s => platformOf(s.brand))).map(b => ({ value: b, label: platformLabel(b) }));
+
+    const lastActivityMs = (s: OrgStat) => (s.last_updated ? new Date(s.last_updated).getTime() : 0);
+    const matchesActivity = (s: OrgStat) => {
+        if (!activityFilter) return true;
+        const last = lastActivityMs(s);
+        const daysIdle = last ? (Date.now() - last) / DAY_MS : Infinity;
+        switch (activityFilter) {
+            case 'none': return !last;
+            case 'idle30': return daysIdle >= 30;
+            case 'idle90': return daysIdle >= 90;
+            default: return daysIdle <= Number(activityFilter);
+        }
+    };
+    const searchTerm = orgSearch.trim().toLowerCase();
+    const matchesSearch = (s: OrgStat) => {
+        if (!searchTerm) return true;
+        const a = orgAdmins[s.org_id];
+        return [serialById.get(s.org_id), s.org_name, s.city, a?.full_name, a?.mobile, a?.email, a?.town, a?.state]
+            .some(v => (v || '').toLowerCase().includes(searchTerm));
+    };
+    const compareOrgs = (x: OrgStat, y: OrgStat) => {
+        switch (sortKey) {
+            case 'name': return x.org_name.localeCompare(y.org_name);
+            case 'sevaks': return x.total_sevaks - y.total_sevaks;
+            case 'vihars': return x.total_entries - y.total_entries;
+            // No activity counts as the oldest
+            case 'activity': return lastActivityMs(x) - lastActivityMs(y);
+            default: return (serialIndex.get(x.org_id) ?? 0) - (serialIndex.get(y.org_id) ?? 0);
+        }
+    };
+    const visibleStats = sortedStats
+        .filter(s => (!platformFilter || platformOf(s.brand) === platformFilter)
+            && (!stateFilter || (orgAdmins[s.org_id]?.state || '').trim() === stateFilter)
+            && (!cityFilter || (s.city || '').trim() === cityFilter)
+            && matchesActivity(s)
+            && matchesSearch(s))
+        // ties keep the Org ID order
+        .sort((x, y) => (sortDir === 'asc' ? 1 : -1) * compareOrgs(x, y) || (serialIndex.get(x.org_id) ?? 0) - (serialIndex.get(y.org_id) ?? 0));
+    const activeFilterCount = [orgSearch.trim(), platformFilter, stateFilter, cityFilter, activityFilter].filter(Boolean).length;
+    const clearOrgFilters = () => {
+        setOrgSearch(''); setPlatformFilter(''); setStateFilter(''); setCityFilter(''); setActivityFilter('');
+    };
+    // Clicking a column header sorts by it; clicking it again flips the direction.
+    const sortBy = (key: OrgSortKey) => {
+        if (sortKey === key) { setSortDir(d => (d === 'asc' ? 'desc' : 'asc')); return; }
+        setSortKey(key);
+        setSortDir(key === 'name' || key === 'serial' ? 'asc' : 'desc');
+    };
+    const sortHeader = (k: OrgSortKey, label: string, className = '') => {
+        const active = sortKey === k;
+        return (
+            <th className={`p-5 ${className}`} aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                <button type="button" onClick={() => sortBy(k)} className={`inline-flex items-center gap-1 uppercase font-bold tracking-wider hover:text-gray-800 ${active ? 'text-saffron-700' : ''}`} title={`Sort by ${label}`}>
+                    {label}
+                    {active ? (sortDir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={11} className="opacity-40" />}
+                </button>
+            </th>
+        );
+    };
 
     if (!isPinVerified) {
         return <SuperAdminPinGate onVerified={() => setIsPinVerified(true)} />;
@@ -584,26 +689,76 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                         <Building2 size={18} className="text-blue-600" />
                         Managed Organizations
                     </h2>
+
+                    {/* Search, filters and sort */}
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-4 md:p-5 space-y-3">
+                        <div className="flex flex-col md:flex-row gap-3">
+                            <label className="relative flex-1">
+                                <span className="sr-only">Search groups</span>
+                                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="search"
+                                    value={orgSearch}
+                                    onChange={e => setOrgSearch(e.target.value)}
+                                    placeholder="Search by group, Org ID, Captain, mobile, email, town, city or state"
+                                    className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-saffron-200"
+                                />
+                            </label>
+                            <div className="md:w-72 flex items-center gap-2">
+                                <ArrowUpDown size={16} className="shrink-0 text-gray-400" aria-hidden />
+                                <ThemedSelect
+                                    value={`${sortKey}:${sortDir}`}
+                                    onChange={v => { const [k, d] = v.split(':'); setSortKey(k as OrgSortKey); setSortDir(d as SortDir); }}
+                                    options={SORT_OPTIONS}
+                                    placeholder="Sort by"
+                                    title="Sort groups by"
+                                    clearable={false}
+                                    className={FILTER_FIELD}
+                                />
+                            </div>
+                        </div>
+                        <div className={`grid grid-cols-2 ${scope?.all ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3`}>
+                            {scope?.all && (
+                                <ThemedSelect value={platformFilter} onChange={setPlatformFilter} options={platformOptions} placeholder="All platforms" title="Platform" className={FILTER_FIELD} />
+                            )}
+                            <ThemedSelect value={stateFilter} onChange={setStateFilter} options={stateOptions} placeholder="All states" title="State" className={FILTER_FIELD} />
+                            <ThemedSelect value={cityFilter} onChange={setCityFilter} options={cityOptions} placeholder="All cities" title="City" className={FILTER_FIELD} />
+                            <ThemedSelect value={activityFilter} onChange={setActivityFilter} options={ACTIVITY_OPTIONS} placeholder="Any activity" title="Last Activity" className={FILTER_FIELD} />
+                        </div>
+                        <div className="flex items-center justify-between gap-3 text-xs text-gray-500">
+                            <span className="inline-flex items-center gap-1.5">
+                                <SlidersHorizontal size={13} />
+                                Showing <b className="text-gray-800">{visibleStats.length}</b> of {orgStats.length} groups
+                            </span>
+                            {activeFilterCount > 0 && (
+                                <button type="button" onClick={clearOrgFilters} className="font-bold text-saffron-700 hover:underline underline-offset-2">
+                                    Clear filters ({activeFilterCount})
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-gray-50 text-gray-500 text-[10px] uppercase font-bold tracking-wider">
                                     <tr>
-                                        <th className="p-5 w-16">Org ID</th>
-                                        <th className="p-5">Group Name</th>
+                                        {sortHeader('serial', 'Org ID', 'w-16')}
+                                        {sortHeader('name', 'Group Name')}
                                         <th className="p-5">Captain</th>
                                         <th className="p-5">Mobile</th>
+                                        <th className="p-5">Email ID</th>
                                         <th className="p-5">Town</th>
                                         <th className="p-5">City</th>
                                         <th className="p-5">State</th>
-                                        <th className="p-5 text-center">Sevaks</th>
-                                        <th className="p-5 text-center">Vihars</th>
-                                        <th className="p-5 text-right">Last Activity</th>
+                                        {sortHeader('sevaks', 'Sevaks', 'text-center')}
+                                        {sortHeader('vihars', 'Vihars', 'text-center')}
+                                        {sortHeader('activity', 'Last Activity', 'text-right')}
                                         <th className="p-5 text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {orgStats.length > 0 ? sortedStats
+                                    {visibleStats.length > 0 ? visibleStats
                                         .map((stat) => {
                                         const admin = orgAdmins[stat.org_id];
                                         return (
@@ -624,6 +779,11 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                                 </td>
                                                 <td className="p-5 text-sm text-gray-600 font-mono">
                                                     {admin?.mobile || '-'}
+                                                </td>
+                                                <td className="p-5 text-sm text-gray-600">
+                                                    {admin?.email ? (
+                                                        <a href={`mailto:${admin.email}`} className="hover:text-saffron-700 hover:underline underline-offset-2 break-all">{admin.email}</a>
+                                                    ) : '-'}
                                                 </td>
                                                 <td className="p-5 text-sm text-gray-600">
                                                     {admin?.town || '-'}
@@ -689,7 +849,7 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                         );
                                     }) : (
                                         <tr>
-                                            <td colSpan={10} className="p-20 text-center">
+                                            <td colSpan={12} className="p-20 text-center">
                                                 {statsLoading ? (
                                                     <div className="flex flex-col items-center gap-3">
                                                         <Loader2 className="animate-spin text-blue-600" size={32} />
@@ -697,6 +857,11 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                                     </div>
                                                 ) : statsError ? (
                                                     <StatusScreen variant={statsError} onRetry={fetchStats} compact bare />
+                                                ) : orgStats.length > 0 ? (
+                                                    <div className="space-y-2">
+                                                        <p className="text-gray-500 font-medium">No groups match these filters.</p>
+                                                        <button type="button" onClick={clearOrgFilters} className="text-sm font-bold text-saffron-700 hover:underline underline-offset-2">Clear filters</button>
+                                                    </div>
                                                 ) : "No active groups found"}
                                             </td>
                                         </tr>

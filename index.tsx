@@ -8,9 +8,7 @@ import { LanguageProvider } from './context/LanguageContext';
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Failed to find the root element');
 
-const root = ReactDOM.createRoot(rootElement);
-
-root.render(
+const tree = (
   <React.StrictMode>
     <LanguageProvider>
       <ToastProvider>
@@ -19,6 +17,21 @@ root.render(
     </LanguageProvider>
   </React.StrictMode>
 );
+
+// The public website pages are prerendered into the HTML at build time (scripts/prerender.mjs) and marked with
+// the path they were rendered for. When this is that page for a signed-out visitor, React takes over the existing
+// HTML. Otherwise (a signed-in or installed app, or any other route served the same HTML) the inline script in
+// <head> has already hidden it with .app-shell, and the app renders fresh exactly as before.
+const prerenderedFor = rootElement.getAttribute('data-prerendered');
+const here = (window.location.pathname.replace(/\/+$/, '') || '/').toLowerCase();
+const html = document.documentElement;
+if (prerenderedFor && prerenderedFor === here && !html.classList.contains('app-shell')) {
+  ReactDOM.hydrateRoot(rootElement, tree);
+} else {
+  if (prerenderedFor) rootElement.replaceChildren();
+  html.classList.remove('app-shell');
+  ReactDOM.createRoot(rootElement).render(tree);
+}
 
 // Catch beforeinstallprompt early before lazy-loaded components mount
 (window as any).deferredPWAPrompt = null;
