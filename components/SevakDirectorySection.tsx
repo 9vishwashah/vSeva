@@ -105,7 +105,7 @@ const SevakDirectorySection: React.FC<SevakDirectorySectionProps> = ({ currentUs
                         <div key={s.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/80 transition-colors">
                             <Avatar name={s.full_name} url={s.avatar_url} size={40} className="text-xs" />
                             <p className="flex-1 min-w-0 text-sm font-semibold text-gray-800 truncate">{s.full_name}</p>
-                            <ContactActionButtons phone={s.mobile} name={s.full_name} whatsappFirst />
+                            <ContactActionButtons phone={s.mobile} name={s.full_name} logos />
                         </div>
                     ))}
                 </div>

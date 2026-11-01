@@ -13,7 +13,7 @@ import { requireAdmin, errorResponse, HttpError, scopeQuery, inScope } from './_
 //                                      Sevak's profile, Vihar entries and Sankalps (brand-scoped)
 
 const PROFILE_COLUMNS =
-    'id, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at';
+    'id, full_name, username, mobile, gender, date_of_birth, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at';
 const ENTRY_COLUMNS =
     'id, vihar_date, vihar_from, vihar_to, sevaks, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, wheelchair, samuday, distance_km, vihar_type, status, notes, created_at';
 const MAX_ENTRIES = 20000;

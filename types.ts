@@ -21,7 +21,7 @@ export interface UserProfile {
   username: string;
   mobile: string;
   gender?: string;
-  age?: number;
+  date_of_birth?: string | null; // 'YYYY-MM-DD'; age is worked out from it (services/dateOfBirth.ts)
   blood_group?: string;
   emergency_number?: string;
   emergency_contact_name?: string | null; // whose number the Family Emergency Number is
@@ -113,7 +113,7 @@ export interface UserNotification {
   id: string;
   user_id: string;
   organization_id?: string;
-  type: 'password_reset' | 'info' | 'alert' | 'alert_upcoming' | 'inactivity' | 'channel_message' | 'sos';
+  type: 'password_reset' | 'info' | 'alert' | 'alert_upcoming' | 'inactivity' | 'channel_message' | 'sos' | 'birthday';
   title: string;
   message: string;
   payload?: any;

@@ -26,7 +26,13 @@ export interface CardAssets {
   logo: { img: HTMLImageElement; sx: number; sy: number; sw: number; sh: number; opaque: boolean } | null;
   icons: Partial<Record<CardIcon, HTMLImageElement>>;
   avatar: HTMLImageElement | null;
+  // the dawn-road photo behind the card (null = the plain ivory card)
+  background: HTMLImageElement | null;
 }
+
+// Made from assets/seva card.png (cover-fitted to 1080x1920). Hazy and light up top for the logo and the
+// number, the Vihar on the road at the bottom.
+export const CARD_BACKGROUND = '/share/seva-card-bg.jpg';
 
 // The app's own palette (Tailwind saffron + the Dashboard's ink/muted text colours).
 const C = {
@@ -106,16 +112,17 @@ async function waitForFonts() {
   await Promise.race([Promise.all(loads), new Promise(r => window.setTimeout(r, 2500))]);
 }
 
-export async function loadCardAssets(logoUrl: string, avatarUrl?: string | null): Promise<CardAssets> {
+export async function loadCardAssets(logoUrl: string, avatarUrl?: string | null, backgroundUrl: string | null = CARD_BACKGROUND): Promise<CardAssets> {
   const iconEntries = Object.entries(ICONS).map(async ([key, Icon]) => {
     const svg = renderToStaticMarkup(createElement(Icon, { size: 96, color: C.deep, strokeWidth: 2 }));
     const img = await loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
     return [key, img] as const;
   });
-  const [logoImg, avatarImg, icons] = await Promise.all([
+  const [logoImg, avatarImg, icons, bgImg] = await Promise.all([
     loadImage(logoUrl),
     avatarUrl ? loadImage(avatarUrl, true) : Promise.resolve(null),
     Promise.all(iconEntries),
+    backgroundUrl ? loadImage(backgroundUrl) : Promise.resolve(null),
     waitForFonts(),
   ]);
   const iconMap: CardAssets['icons'] = {};
@@ -124,6 +131,7 @@ export async function loadCardAssets(logoUrl: string, avatarUrl?: string | null)
     logo: logoImg ? trimmedBounds(logoImg) : null,
     icons: iconMap,
     avatar: avatarImg && canExport(avatarImg) ? avatarImg : null,
+    background: bgImg,
   };
 }
 
@@ -179,6 +187,27 @@ function wrap(ctx: Ctx, text: string, maxWidth: number, maxLines: number): strin
   // Too many lines: everything left over joins the last allowed line, which then ends in an ellipsis.
   if (lines.length > maxLines) lines.splice(maxLines - 1, lines.length, lines.slice(maxLines - 1).join(' ') + '…');
   return lines.map(l => ellipsize(ctx, l, maxWidth));
+}
+
+// A soft ivory haze (an ellipse that fades out) so text stays readable on the photo, as on the reminder art.
+function haze(ctx: Ctx, x: number, y: number, rx: number, ry: number, alpha: number) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(rx, ry);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+  g.addColorStop(0, `rgba(255,249,242,${alpha})`);
+  g.addColorStop(0.55, `rgba(255,249,242,${alpha * 0.82})`);
+  g.addColorStop(1, 'rgba(255,249,242,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(-1, -1, 2, 2);
+  ctx.restore();
+}
+
+// Cover-fit the photo. The square card keeps the lower part, so the walkers stay in it.
+function drawCover(ctx: Ctx, img: HTMLImageElement, W: number, H: number, anchorY: number) {
+  const k = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+  const dw = img.naturalWidth * k, dh = img.naturalHeight * k;
+  ctx.drawImage(img, (W - dw) / 2, -(dh - H) * anchorY, dw, dh);
 }
 
 function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {
@@ -342,13 +371,16 @@ export function renderAchievementCard(
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
 
-  // Background: warm ivory, lighter towards the bottom
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#FFF1E4');
-  bg.addColorStop(0.55, '#FFF8F1');
-  bg.addColorStop(1, '#FFFCF8');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
+  // Background: the dawn-road photo goes in last, underneath everything (see the end); without it, warm ivory
+  const photo = assets.background;
+  if (!photo) {
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#FFF1E4');
+    bg.addColorStop(0.55, '#FFF8F1');
+    bg.addColorStop(1, '#FFFCF8');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+  }
 
   // ---- Top: logo + badge
   let y = (compact ? 60 : 108) * s;
@@ -499,28 +531,45 @@ export function renderAchievementCard(
   }
   const heroTop = topEnd + (bottomStart - topEnd - heroH) / 2;
 
-  // Soft glow + a dotted Vihar route behind the hero (drawn first so they stay underneath)
-  const glowY = heroTop + heroH * 0.42;
-  const glow = ctx.createRadialGradient(cx, glowY, 0, cx, glowY, W * 0.7);
-  glow.addColorStop(0, 'rgba(255,153,71,0.16)');
-  glow.addColorStop(1, 'rgba(255,153,71,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, H);
-  // (not on the summary card, where it would run through the numbers)
-  if (a.hero.type !== 'summary') {
-  ctx.save();
-  ctx.setLineDash([0.1, 26 * s]);
-  ctx.lineCap = 'round';
-  ctx.lineWidth = 9 * s;
-  ctx.strokeStyle = 'rgba(222,107,56,0.16)';
-  ctx.beginPath();
-  ctx.moveTo(-40 * s, heroTop + heroH * 1.16);
-  ctx.bezierCurveTo(W * 0.36, heroTop + heroH * 1.02, W * 0.74, heroTop + heroH * 0.98, W + 40 * s, heroTop + heroH * 0.3);
-  ctx.stroke();
-  ctx.restore();
+  // Soft glow + a dotted Vihar route behind the hero (drawn first so they stay underneath).
+  // The photo has its own light and dotted route, so it gets neither.
+  if (!photo) {
+    const glowY = heroTop + heroH * 0.42;
+    const glow = ctx.createRadialGradient(cx, glowY, 0, cx, glowY, W * 0.7);
+    glow.addColorStop(0, 'rgba(255,153,71,0.16)');
+    glow.addColorStop(1, 'rgba(255,153,71,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+    // (not on the summary card, where it would run through the numbers)
+    if (a.hero.type !== 'summary') {
+      ctx.save();
+      ctx.setLineDash([0.1, 26 * s]);
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 9 * s;
+      ctx.strokeStyle = 'rgba(222,107,56,0.16)';
+      ctx.beginPath();
+      ctx.moveTo(-40 * s, heroTop + heroH * 1.16);
+      ctx.bezierCurveTo(W * 0.36, heroTop + heroH * 1.02, W * 0.74, heroTop + heroH * 0.98, W + 40 * s, heroTop + heroH * 0.3);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   layoutHero(h, a, heroTop, true, captionLines, captionPx);
+
+  // The photo, slid in underneath what is already drawn ('destination-over'): first the hazes behind the
+  // three text blocks, then the photo behind them.
+  if (photo) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-over';
+    haze(ctx, cx, topEnd * 0.55, W * 0.42, topEnd * 0.7, 0.55);
+    haze(ctx, cx, heroTop + heroH / 2, W * 0.6, heroH * (compact ? 0.95 : 0.78), compact ? 0.82 : 0.72);
+    haze(ctx, cx, bottomStart + (H - bottomStart) * 0.52, W * 0.64, (H - bottomStart) * 0.72, 0.9);
+    drawCover(ctx, photo, W, H, compact ? 0.85 : 0.5);
+    ctx.fillStyle = '#FFF8F1'; // behind the photo, in case it has any transparent edge
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
 }
 
 export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {

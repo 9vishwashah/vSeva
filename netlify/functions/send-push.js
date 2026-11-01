@@ -125,6 +125,23 @@ export async function handler(event, context) {
       web_url: webUrl // Open app on click (web only)
     };
 
+    // Branded look, like delivery apps: the brand colour on the small icon and app name (instead of the phone's
+    // default tint), the brand picture on the right, and for Vihar reminders a wide picture when expanded.
+    // Pictures come from the brand's own site: public/notify/ (vSeva), brands/<id>/public/notify/ (others),
+    // made by scripts/notify-images.mjs. Colours are ARGB; SOS keeps an urgent red.
+    const ACCENTS = { SSG: 'FFE8730C' };
+    const brandAccent = (brandKey && (process.env[`NOTIFY_ACCENT_${brandKey}`] || ACCENTS[brandKey])) || 'FFDE6B38';
+    requestBody.android_accent_color = isSos ? 'FFDC2626' : brandAccent;
+    requestBody.large_icon = `${webUrl}/notify/large-icon.png`;
+    requestBody.chrome_web_icon = `${webUrl}/notify/large-icon.png`;
+    if (notification.type === 'inactivity') {
+      // the picture the Captain chose (stored on the reminder by the daily job); older reminders use the default
+      const banner = String(notification.payload?.banner || '');
+      const picture = /^[a-z0-9-]{1,30}$/.test(banner) ? `${webUrl}/notify/reminder-${banner}.jpg` : `${webUrl}/notify/reminder.jpg`;
+      requestBody.big_picture = picture;
+      requestBody.chrome_web_image = picture;
+    }
+
     if (isSos) {
       // Best-effort urgent delivery within what OneSignal's REST API exposes
       // directly (no dashboard step needed for these): max FCM priority and

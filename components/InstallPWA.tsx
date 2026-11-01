@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Download, X, Share, Plus, Copy } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,9 +7,17 @@ import { BRAND } from '@brand';
 interface InstallPWAProps {
     // Lets a page move its own floating buttons out of the way while the banner is up.
     onDismiss?: () => void;
+    // 'light': a white banner for the vSeva website's orange-and-white theme; the default stays dark.
+    variant?: 'dark' | 'light';
+    // When set, Install on an Android phone opens this store page instead of the browser's install prompt.
+    androidStoreUrl?: string;
 }
 
-export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss }) => {
+// Opens the iPhone "Add to Home Screen" guide from anywhere on the page (e.g. the website's iPhone button)
+export const IOS_GUIDE_EVENT = 'vs:ios-guide';
+
+export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss, variant = 'dark', androidStoreUrl }) => {
+    const light = variant === 'light';
     const { install, isAndroidInstallable, isIOS, isIOSSafari, isAndroid } = usePWAInstall();
     const { t } = useLanguage();
     const [showIOSGuide, setShowIOSGuide] = useState(false);
@@ -17,8 +25,14 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss }) => {
     const [tip, setTip] = useState<'desktop' | 'android' | null>(null);
     const [linkCopied, setLinkCopied] = useState(false);
 
+    useEffect(() => {
+        const open = () => setShowIOSGuide(true);
+        window.addEventListener(IOS_GUIDE_EVENT, open);
+        return () => window.removeEventListener(IOS_GUIDE_EVENT, open);
+    }, []);
+
     // Always show the banner — even if installed (user may want to reinstall / guide others)
-    if (dismissed) return null;
+    if (dismissed && !showIOSGuide) return null;
 
     const flashTip = (which: 'desktop' | 'android') => {
         setTip(which);
@@ -26,7 +40,9 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss }) => {
     };
 
     const handleInstallClick = () => {
-        if (isAndroidInstallable) {
+        if (isAndroid && androidStoreUrl) {
+            window.open(androidStoreUrl, '_blank', 'noopener');
+        } else if (isAndroidInstallable) {
             install();
         } else if (isIOS) {
             // iPhone / iPad can't be prompted — walk the user through Add to Home Screen
@@ -105,16 +121,16 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss }) => {
             {/* Narrow phones: keep the banner to a compact two-line title */}
             <style>{'.pwa-title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}@media (max-width:399px){.pwa-sub{display:none}}'}</style>
             {/* ── Sticky Footer Banner ── */}
-            <div
+            {!dismissed && <div
                 style={{
                     position: 'fixed',
                     bottom: 0,
                     left: 0,
                     right: 0,
                     zIndex: 9999,
-                    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-                    borderTop: '2px solid #EA580C',
-                    boxShadow: '0 -4px 24px rgba(234,88,12,0.18)',
+                    background: light ? '#FFFFFF' : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                    borderTop: light ? '1px solid #EADFD3' : '2px solid #EA580C',
+                    boxShadow: light ? '0 -6px 24px rgba(140,60,20,0.12)' : '0 -4px 24px rgba(234,88,12,0.18)',
                     padding: '10px 16px',
                     display: 'flex',
                     alignItems: 'center',
@@ -133,10 +149,10 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss }) => {
                         style={{ height: '34px', width: '34px', objectFit: 'contain', flexShrink: 0, borderRadius: '8px', background: BRAND.logoPadded ? undefined : '#fff', transform: BRAND.logoPadded ? 'scale(1.5)' : undefined }}
                     />
                     <div style={{ minWidth: 0 }}>
-                        <p className="pwa-title" style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: 0, lineHeight: 1.2 }}>
+                        <p className="pwa-title" style={{ color: light ? '#1c1714' : '#fff', fontWeight: 700, fontSize: '14px', margin: 0, lineHeight: 1.2 }}>
                             {t('install.bannerTitle', { name: BRAND.name })}
                         </p>
-                        <p className="pwa-sub" style={{ color: '#94a3b8', fontSize: '11px', margin: 0, lineHeight: 1.3, marginTop: '1px' }}>
+                        <p className="pwa-sub" style={{ color: light ? '#76675c' : '#94a3b8', fontSize: '11px', margin: 0, lineHeight: 1.3, marginTop: '1px' }}>
                             {isIOS ? t('install.bannerSubIOS') : t('install.bannerSub')}
                         </p>
                     </div>
@@ -148,7 +164,7 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss }) => {
                         id="pwa-install-btn"
                         onClick={handleInstallClick}
                         style={{
-                            background: 'linear-gradient(135deg, #EA580C, #F97316)',
+                            background: light ? '#B9532A' : 'linear-gradient(135deg, #EA580C, #F97316)',
                             color: '#fff',
                             border: 'none',
                             borderRadius: '20px',
@@ -177,7 +193,7 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss }) => {
                         style={{
                             background: 'transparent',
                             border: 'none',
-                            color: '#64748b',
+                            color: light ? '#76675c' : '#64748b',
                             cursor: 'pointer',
                             padding: '4px',
                             display: 'flex',
@@ -188,7 +204,7 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss }) => {
                         <X size={16} />
                     </button>
                 </div>
-            </div>
+            </div>}
 
             {/* ── iOS Instructions Modal ── */}
             {showIOSGuide && (

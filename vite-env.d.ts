@@ -19,3 +19,6 @@ interface ImportMetaEnv {
   readonly VITE_INSTAGRAM_URL?: string;
   readonly VITE_DEMO_CONTACT?: string;
 }
+
+// UTC yyyymmddhhmm stamp of this web build (vite.config.ts); used by services/liveUpdate.ts
+declare const __APP_BUILD__: string;

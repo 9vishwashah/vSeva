@@ -21,6 +21,17 @@ if (!(brand in BRANDS)) {
 const config: CapacitorConfig = {
   ...BRANDS[brand as keyof typeof BRANDS],
   webDir: 'dist',
+  plugins: {
+    // Live updates, self-hosted: the app itself decides when to download and switch (services/liveUpdate.ts),
+    // from the bundles our own site publishes (scripts/app-update-bundle.mjs). Capgo's cloud is never contacted.
+    CapacitorUpdater: {
+      autoUpdate: false,
+      updateUrl: '',
+      statsUrl: '',
+      channelUrl: '',
+      appReadyTimeout: 15000, // a bundle that does not report "started" within 15 s is rolled back
+    },
+  },
 };
 
 export default config;

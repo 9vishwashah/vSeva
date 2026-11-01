@@ -41,6 +41,9 @@ export function getNotificationTarget(
   }
 
   switch (n.type) {
+    case 'birthday':
+      // the person themself just reads it; everyone else is taken to Contacts to call or WhatsApp their wishes
+      return p.self ? null : { page: 'contacts', label: 'Send wishes' };
     case 'inactivity':
       return { page: isCaptain ? 'dashboard' : 'analytics', label: 'Open Home' };
     case 'password_reset':

@@ -33,6 +33,9 @@ if (prerenderedFor && prerenderedFor === here && !html.classList.contains('app-s
   ReactDOM.createRoot(rootElement).render(tree);
 }
 
+// Android app: confirm this bundle started, then look for a newer one (services/liveUpdate.ts). No-op on the web.
+import('./services/liveUpdate').then(m => m.initLiveUpdates());
+
 // Catch beforeinstallprompt early before lazy-loaded components mount
 (window as any).deferredPWAPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {

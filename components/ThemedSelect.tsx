@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown, Search } from 'lucide-react';
 
-interface Option { value: string; label: string }
+// hint: a short extra label shown beside the option and matched by the search (e.g. a place alias "SP")
+interface Option { value: string; label: string; hint?: string }
 
 interface Props {
   value: string;
@@ -30,10 +31,15 @@ const ThemedSelect: React.FC<Props> = ({ value, onChange, options, placeholder, 
   useEffect(() => { if (open) setQuery(''); }, [open]);
   const opts: Option[] = options.map(o => (typeof o === 'string' ? { value: o, label: o } : o));
   const current = opts.find(o => o.value === value);
-  // long lists (areas) get a search box
-  const searchable = opts.length > 8;
+  // long lists (areas) get a search box, and so does any list with hints (aliases) to search by
+  const searchable = opts.length > 8 || opts.some(o => o.hint);
   const q = query.trim().toLowerCase();
-  const shown = q ? opts.filter(o => o.label.toLowerCase().includes(q)) : opts;
+  // an exact hint match (typing an alias) comes first
+  const shown = q
+    ? opts
+        .filter(o => o.label.toLowerCase().includes(q) || (o.hint || '').toLowerCase().includes(q))
+        .sort((a, b) => Number((b.hint || '').toLowerCase() === q) - Number((a.hint || '').toLowerCase() === q))
+    : opts;
 
   useEffect(() => {
     if (!open) return;
@@ -52,7 +58,8 @@ const ThemedSelect: React.FC<Props> = ({ value, onChange, options, placeholder, 
         {!hideChevron && <ChevronDown size={16} className="shrink-0 text-[#8A6A57]" />}
       </button>
       {open && createPortal(
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center" onClick={() => setOpen(false)}>
+        // z-[150]: above every modal and sheet (Modal 100, BottomSheet 110, 120) it may be opened from; below toasts (200)
+        <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/40 app-modal-backdrop" />
           <div
             role="listbox"
@@ -66,7 +73,7 @@ const ThemedSelect: React.FC<Props> = ({ value, onChange, options, placeholder, 
             {searchable && (
               <div className="relative mb-2">
                 <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A6A57] pointer-events-none" />
-                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search…" className="w-full h-11 pl-10 pr-3 rounded-2xl bg-white/70 border border-white text-sm font-semibold text-[#241C17] outline-none focus:ring-2 focus:ring-saffron-300" />
+                <input value={query} onChange={e => setQuery(e.target.value)} placeholder={opts.some(o => o.hint) ? "Search by name or short form…" : "Search…"} className="w-full h-11 pl-10 pr-3 rounded-2xl bg-white/70 border border-white text-sm font-semibold text-[#241C17] outline-none focus:ring-2 focus:ring-saffron-300" />
               </div>
             )}
             <div className="space-y-2">
@@ -82,8 +89,13 @@ const ThemedSelect: React.FC<Props> = ({ value, onChange, options, placeholder, 
                     onClick={() => pick(o.value)}
                     className={`w-full flex items-center justify-between gap-3 p-3.5 rounded-2xl text-sm font-bold transition-colors active:scale-[0.98] ${on ? 'bg-[#DE6B38] text-white' : 'bg-white/75 text-[#5C3A24] hover:bg-white'}`}
                   >
-                    {o.label}
-                    {on && <Check size={18} />}
+                    <span className="flex min-w-0 items-center gap-2 text-left">
+                      <span className="min-w-0">{o.label}</span>
+                      {o.hint && (
+                        <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide ${on ? 'bg-white/25 text-white' : 'bg-[#FBE8D9] text-[#B5602C]'}`}>{o.hint}</span>
+                      )}
+                    </span>
+                    {on && <Check size={18} className="shrink-0" />}
                   </button>
                 );
               })}

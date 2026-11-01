@@ -32,6 +32,9 @@ const formatRelativeTime = (iso: string): string => {
 const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, organizationId, onBack }) => {
   const { showToast } = useToast();
   const isOwnOrg = organizationId === currentUser.organization_id;
+  // The Captain moderates their own group's VChat: they can delete anyone's message for everyone
+  const canModerate = isOwnOrg && currentUser.role === UserRole.ORG_ADMIN;
+  const canDeletePost = (p: { author_user_id: string }) => p.author_user_id === currentUser.id || canModerate;
 
   const [profile, setProfile] = useState<ChannelOrgProfile | null>(null);
   const [recentVihars, setRecentVihars] = useState<ChannelRecentVihar[]>([]);
@@ -114,6 +117,9 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
       if (seenPostIds.current.has(post.id)) return; // dedupe vs. optimistic insert
       seenPostIds.current.add(post.id);
       setPosts(prev => [...prev, post]);
+    }, (postId) => {
+      setPosts(prev => prev.filter(p => p.id !== postId));
+      setActionPost(a => (a && a.id === postId ? null : a));
     });
     return unsubscribe;
   }, [organizationId]);
@@ -270,6 +276,12 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
   };
 
   const handleDelete = async (postId: string) => {
+    const target = posts.find(p => p.id === postId);
+    // someone else's message: the Captain confirms deleting it for everyone
+    if (target && target.author_user_id !== currentUser.id) {
+      const who = target.author_name || 'this member';
+      if (!window.confirm(`Delete ${who}'s message for everyone? It will be removed from VChat for all members.`)) return;
+    }
     const prevPosts = posts;
     setPosts(prev => prev.filter(p => p.id !== postId));
     try {
@@ -382,6 +394,7 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
                     key={post.id}
                     post={post}
                     isMine={post.author_user_id === currentUser.id}
+                    canDelete={canDeletePost(post)}
                     canReply={canPost}
                     highlighted={highlightId === post.id}
                     formatTime={formatRelativeTime}
@@ -518,12 +531,12 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
               <button onClick={() => copyMessage(actionPost)} className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-[#241C17] transition-colors active:scale-[0.98] hover:bg-gray-50">
                 <Copy size={18} className="text-[#8A6A57]" /> Copy
               </button>
-              {actionPost.author_user_id === currentUser.id && (
+              {canDeletePost(actionPost) && (
                 <button
                   onClick={() => { const id = actionPost.id; setActionPost(null); handleDelete(id); }}
                   className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-red-600 transition-colors active:scale-[0.98] hover:bg-red-50"
                 >
-                  <Trash2 size={18} /> Delete
+                  <Trash2 size={18} /> {actionPost.author_user_id === currentUser.id ? 'Delete' : 'Delete for everyone'}
                 </button>
               )}
             </div>

@@ -49,7 +49,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'login.signIn': 'Sign In',
     'login.signingIn': 'Signing In...',
     'login.forgotPassword': 'Forgot Password?',
-    'login.noAccount': "Don't have an organization account?",
+    'login.noAccount': "Don't have a Captain Account?",
     'login.registerOrg': 'Register your Organization',
     'login.createCaptain': 'Create Captain Account',
 
@@ -93,7 +93,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Install-as-app banner and iOS "Add to Home Screen" guide
     'install.bannerTitle': "Install {name} App",
     'install.bannerSubIOS': "Add to Home Screen for the best experience",
-    'install.bannerSub': "Get the full app experience — works offline too",
+    'install.bannerSub': "Get the full app experience — opens even without internet",
     'install.button': "Install App",
     'install.dismiss': "Dismiss",
     'install.tipDesktopBefore': "Look for the",
@@ -176,7 +176,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'login.signIn': 'સાઇન ઇન',
     'login.signingIn': 'સાઇન ઇન થઈ રહ્યું છે...',
     'login.forgotPassword': 'પાસવર્ડ ભૂલી ગયા?',
-    'login.noAccount': 'શું તમારી પાસે સંસ્થાનું ખાતું નથી?',
+    'login.noAccount': 'શું તમારી પાસે કેપ્ટન એકાઉન્ટ નથી?',
     'login.registerOrg': 'તમારી સંસ્થા નોંધાવો',
     'login.createCaptain': 'કૅપ્ટન એકાઉન્ટ બનાવો',
 
@@ -219,7 +219,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Install-as-app banner and iOS "Add to Home Screen" guide
     'install.bannerTitle': "{name} એપ ઇન્સ્ટોલ કરો",
     'install.bannerSubIOS': "શ્રેષ્ઠ અનુભવ માટે હોમ સ્ક્રીન પર ઉમેરો",
-    'install.bannerSub': "સંપૂર્ણ એપ અનુભવ મેળવો — ઑફલાઇન પણ ચાલે છે",
+    'install.bannerSub': "સંપૂર્ણ એપ અનુભવ મેળવો — ઇન્ટરનેટ વગર પણ ખુલે છે",
     'install.button': "એપ ઇન્સ્ટોલ કરો",
     'install.dismiss': "બંધ કરો",
     'install.tipDesktopBefore': "તમારા બ્રાઉઝરની એડ્રેસ બારમાં",
@@ -302,7 +302,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'login.signIn': 'साइन इन',
     'login.signingIn': 'साइन इन हो रहा है...',
     'login.forgotPassword': 'पासवर्ड भूल गए?',
-    'login.noAccount': 'क्या आपके पास संगठन खाता नहीं है?',
+    'login.noAccount': 'क्या आपके पास कैप्टन अकाउंट नहीं है?',
     'login.registerOrg': 'अपना संगठन पंजीकृत करें',
     'login.createCaptain': 'कैप्टन अकाउंट बनाएँ',
 
@@ -345,7 +345,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Install-as-app banner and iOS "Add to Home Screen" guide
     'install.bannerTitle': "{name} ऐप इंस्टॉल करें",
     'install.bannerSubIOS': "बेहतरीन अनुभव के लिए होम स्क्रीन पर जोड़ें",
-    'install.bannerSub': "पूरा ऐप अनुभव पाएँ — ऑफ़लाइन भी चलता है",
+    'install.bannerSub': "पूरा ऐप अनुभव पाएँ — इंटरनेट के बिना भी खुलता है",
     'install.button': "ऐप इंस्टॉल करें",
     'install.dismiss': "बंद करें",
     'install.tipDesktopBefore': "अपने ब्राउज़र की एड्रेस बार में",

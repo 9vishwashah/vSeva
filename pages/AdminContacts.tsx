@@ -188,7 +188,7 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                         {contacts.map((contact) => (
                             <div
                                 key={contact.id}
-                                className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50/80 transition-colors group"
+                                className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/80 transition-colors group"
                             >
                                 {/* Avatar */}
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-saffron-400 to-saffron-600 flex items-center justify-center shrink-0 shadow-sm">
@@ -205,14 +205,13 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                                     )}
                                 </div>
 
-                                <ContactActionButtons phone={contact.phone} name={contact.label} size="sm" />
-
-                                {/* Delete */}
+                                {/* Delete — before the logos so they stay flush right; phones have no hover, so it is always shown there */}
                                 <button
                                     onClick={() => handleDeleteContact(contact.id)}
                                     disabled={deletingContactId === contact.id}
-                                    className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
+                                    className="shrink-0 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
                                     title="Remove contact"
+                                    aria-label={`Remove ${contact.label}`}
                                 >
                                     {deletingContactId === contact.id ? (
                                         <Loader2 size={15} className="animate-spin" />
@@ -220,6 +219,8 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                                         <Trash2 size={15} />
                                     )}
                                 </button>
+
+                                <ContactActionButtons phone={contact.phone} name={contact.label} logos />
                             </div>
                         ))}
                     </div>

@@ -1,14 +1,14 @@
 // Per-page metadata for the public website. Used by the pages (document.title on client visits) and by
 // scripts/prerender.mjs, which writes it into each page's static HTML along with the structured data.
-import { CONTACT, SITE_URL } from './content';
+import { CONTACT, PLAY_STORE_URL, SITE_URL } from './content';
 
 export type PublicPath = '/' | '/documentation' | '/contact' | '/support-us';
 
 export const PAGE_META: Record<PublicPath, { title: string; description: string; crumb?: string }> = {
   '/': {
-    title: 'vSeva – Vihar Seva management app for Jain Vihar Seva groups',
+    title: 'vSeva – Vihar Seva app for Jain Vihar Seva groups | Android app on Google Play',
     description:
-      'vSeva helps Jain Vihar Seva groups record Vihars, manage Sevaks, approve entries and follow kilometres, Sankalp and statistics through the Vihar Year.',
+      'vSeva helps Jain Vihar Seva groups record Vihars, manage Sevaks, approve entries and follow kilometres, Sankalp and statistics. Get the Android app on Google Play, or install it on iPhone and use it on the web.',
   },
   '/documentation': {
     title: 'vSeva Documentation – Vihar Seva app guide for Captains and Sevaks',
@@ -39,7 +39,7 @@ const organization = {
   alternateName: 'vSeva - VJAS',
   url: `${SITE_URL}/`,
   logo: `${SITE_URL}/vseva-og-preview.png`,
-  sameAs: [CONTACT.instagramUrl, CONTACT.youtubeUrl],
+  sameAs: [CONTACT.instagramUrl, CONTACT.youtubeUrl, PLAY_STORE_URL],
   contactPoint: {
     '@type': 'ContactPoint',
     contactType: 'customer support',
@@ -64,11 +64,17 @@ export const structuredData = (path: PublicPath) => {
     graph.push(
       { '@type': 'WebSite', '@id': `${SITE_URL}/#website`, url: `${SITE_URL}/`, name: 'vSeva', publisher: { '@id': `${SITE_URL}/#organization` }, inLanguage: 'en-IN' },
       {
-        '@type': 'SoftwareApplication',
+        // The Android app on Google Play (the same app also runs on iPhone and in any browser as a web app)
+        '@type': 'MobileApplication',
+        '@id': `${SITE_URL}/#app`,
         name: 'vSeva',
         url: `${SITE_URL}/`,
+        sameAs: PLAY_STORE_URL,
+        installUrl: PLAY_STORE_URL,
+        downloadUrl: PLAY_STORE_URL,
         applicationCategory: 'BusinessApplication',
-        operatingSystem: 'Android, Web',
+        operatingSystem: 'Android, iOS, Web',
+        screenshot: `${SITE_URL}/vseva-site/screens/62-sevak-home-760.webp`,
         description: PAGE_META['/'].description,
         publisher: { '@id': `${SITE_URL}/#organization` },
       },

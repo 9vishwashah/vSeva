@@ -4,13 +4,13 @@ import type { UserProfile } from '../types';
 // The fields a Sevak fills in from Profile & Settings, used for the completion ring, the Captain's
 // "Still to fill" list and the completion percentage. Occupation "Other" also needs its details.
 // Brands with sevakViharPreferences (Shraman Seva Group) also ask Vihar Type and Seva preferences.
-type Fillable = Pick<UserProfile, 'age' | 'blood_group' | 'emergency_number' | 'emergency_contact_name' | 'occupation' | 'occupation_details' | 'address' | 'vihar_scope' | 'seva_preferences'>;
+type Fillable = Pick<UserProfile, 'date_of_birth' | 'blood_group' | 'emergency_number' | 'emergency_contact_name' | 'occupation' | 'occupation_details' | 'address' | 'vihar_scope' | 'seva_preferences'>;
 
 const filled = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== '';
 
 export function getMissingProfileFields(p: Fillable): string[] {
   const missing: string[] = [];
-  if (!filled(p.age)) missing.push('Age');
+  if (!filled(p.date_of_birth)) missing.push('Date of birth');
   if (!filled(p.blood_group)) missing.push('Blood group');
   if (!filled(p.emergency_number)) missing.push('Family emergency number');
   if (!filled(p.emergency_contact_name)) missing.push('Emergency contact name');

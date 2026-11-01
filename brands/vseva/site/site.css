@@ -40,10 +40,10 @@
   --line: #eadfd3;
   --line-strong: #d9c8b8;
   --saffron: #de6b38;
-  --saffron-deep: #b0502a;
+  --saffron-deep: #b9532a;
   --saffron-tint: #fcebdd;
-  --night: #1c1714;
-  --header-h: 64px;
+  --night: #b9532a;
+  --header-h: 72px;
   --display: 'Schibsted Grotesk', 'Helvetica Neue', Arial, sans-serif;
   --text: 'Instrument Sans', 'Segoe UI', Roboto, Arial, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -56,6 +56,8 @@
   text-rendering: optimizeLegibility;
 }
 .vs *, .vs *::before, .vs *::after { box-sizing: border-box; }
+/* Nothing may widen the page on phones (decorative glows, long buttons); clip keeps the sticky header working */
+.vs { overflow-x: clip; }
 
 /* Smooth in-page scrolling, only for people who have not asked for reduced motion */
 @media (prefers-reduced-motion: no-preference) {
@@ -115,8 +117,8 @@
   transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 .vs-btn:active { transform: translateY(1px); }
-.vs-btn-primary { background: var(--ink); color: #fff; }
-.vs-btn-primary:hover { background: #3a302a; }
+.vs-btn-primary { background: var(--saffron-deep); color: #fff; }
+.vs-btn-primary:hover { background: #9c4422; }
 .vs-btn-saffron { background: var(--saffron-deep); color: #fff; }
 .vs-btn-saffron:hover { background: #973f1f; }
 .vs-btn-ghost { border: 1px solid var(--line-strong); color: var(--ink); background: transparent; }
@@ -124,6 +126,40 @@
 .vs-btn-light { background: #fff; color: var(--ink); }
 .vs-btn-light:hover { background: var(--saffron-tint); }
 .vs-btn-sm { min-height: 40px; padding: 0 1rem; font-size: 0.9rem; }
+
+/* Store badges (Google Play / iPhone) */
+.vs-store-dark { background: #1c1714; color: #fff; border: 1px solid #1c1714; }
+.vs-store-dark:hover { background: #3a302a; }
+.vs-store {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 56px;
+  padding: 0 1.3rem 0 1rem;
+  border-radius: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: var(--display);
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.vs-store:active { transform: translateY(1px); }
+.vs-store-light { background: #fff; color: var(--ink); border: 1px solid var(--line-strong); }
+.vs-store-light:hover { border-color: var(--ink); }
+.vs-store-text { display: flex; flex-direction: column; align-items: flex-start; font-size: 1.08rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
+.vs-store-cap { font-family: var(--text); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75; }
+.vs-store, .vs-store-text { white-space: nowrap; }
+@media (max-width: 400px) {
+  .vs-store { gap: 0.55rem; padding: 0 0.9rem 0 0.75rem; }
+  .vs-store-text { font-size: 0.98rem; }
+}
+
+/* India map */
+.vs-map-state { fill: #efe5da; stroke: #fff; stroke-width: 0.7; transition: fill 200ms ease; }
+.vs-map-state[data-active='true'] { fill: #f3b48c; }
+.vs-map-state[data-active='true']:hover, .vs-map-state[data-focus='true'] { fill: var(--saffron); }
+.vs-map-pulse { transform-box: fill-box; transform-origin: center; animation: vs-pulse 2.4s ease-out infinite; }
+@keyframes vs-pulse { 0% { transform: scale(0.6); opacity: 0.55; } 100% { transform: scale(2.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .vs-map-pulse { animation: none; opacity: 0.25; } }
 
 .vs-link {
   color: var(--ink);
@@ -178,34 +214,32 @@
   background: var(--saffron);
 }
 
-/* Phone frame around real screenshots: a slim, flat Android bezel */
-.vs-phone {
+/* Every phone on the site: the iPhone 17 Pro frame art laid over a real screenshot (see IPhoneShot in ui.tsx) */
+.vs-iphone {
   position: relative;
-  border-radius: 34px;
-  background: #1c1714;
-  padding: 7px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 30px 60px -30px rgba(60, 30, 10, 0.35), 0 12px 24px -16px rgba(60, 30, 10, 0.25);
+  aspect-ratio: 448 / 916;
+  filter: drop-shadow(0 30px 36px rgba(90, 38, 12, 0.28)) drop-shadow(0 10px 14px rgba(20, 16, 13, 0.18));
 }
-.vs-phone::before {
+.vs-iphone-screen {
+  position: absolute;
+  left: 5.357%;
+  top: 2.293%;
+  width: 89.732%;
+  height: 95.415%;
+  overflow: hidden;
+  border-radius: 14% / 6.5%;
+  background: #fff;
+}
+.vs-iphone-screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.vs-iphone-partial img { height: auto; padding-top: 14%; } /* below the Dynamic Island */
+.vs-iphone-screen::after {
   content: '';
   position: absolute;
-  top: 15px;
-  left: 50%;
-  width: 9px;
-  height: 9px;
-  margin-left: -4.5px;
-  border-radius: 50%;
-  background: #0b0908;
-  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 26%, rgba(255, 255, 255, 0) 44%);
 }
-.vs-phone-screen {
-  position: relative;
-  overflow: hidden;
-  border-radius: 27px;
-  background: #fff;
-  aspect-ratio: 760 / 1553;
-}
-.vs-phone-screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.vs-iphone-frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
 /* Indian highway milestone: the stats are counted the way a road counts kilometres */
 .vs-milestone {
@@ -250,7 +284,7 @@
 .vs-road {
   height: 10px;
   border-radius: 999px;
-  background: #2b2420;
+  background: var(--saffron-deep);
   background-image: repeating-linear-gradient(90deg, transparent 0 22px, rgba(255, 255, 255, 0.55) 22px 40px);
   background-size: 100% 2px;
   background-position: 0 50%;
@@ -258,7 +292,7 @@
 }
 
 /* Ticker */
-.vs-ticker { overflow: hidden; background: var(--night); color: #f3e9de; }
+.vs-ticker { overflow: hidden; background: var(--saffron-deep); color: #fff; }
 .vs-ticker-track {
   display: flex;
   width: max-content;
@@ -276,7 +310,7 @@
   letter-spacing: -0.005em;
   white-space: nowrap;
 }
-.vs-ticker-item::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--saffron); }
+.vs-ticker-item::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.75); }
 @keyframes vs-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) {
   .vs-ticker-track { animation: none; flex-wrap: wrap; width: auto; justify-content: center; row-gap: 0.4rem; }
@@ -371,9 +405,19 @@
 }
 .vs-fab:active { transform: scale(0.95); }
 
-.vs-skip { position: absolute; left: 1rem; top: -60px; z-index: 60; background: var(--ink); color: #fff; padding: 0.6rem 1rem; border-radius: 8px; text-decoration: none; }
+.vs-skip { position: absolute; left: 1rem; top: -60px; z-index: 60; background: var(--saffron-deep); color: #fff; padding: 0.6rem 1rem; border-radius: 8px; text-decoration: none; }
 .vs-skip:focus { top: 0.75rem; }
 
 @media (max-width: 640px) {
   .vs { font-size: 16px; }
+}
+
+/* Hero scene: the sun behind the phones, and two cards drifting gently (off for reduced motion) */
+.vs-sun {
+  background: radial-gradient(circle at 50% 50%, #ffd2b0 0%, #fcc39a 46%, rgba(252, 195, 154, 0.55) 60%, rgba(252, 195, 154, 0) 71%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .vs-float { animation: vs-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) backwards, vs-float 7s ease-in-out 1s infinite; animation-delay: calc(var(--d, 0) * 110ms), 1.2s; }
+  .vs-float-late { animation-delay: calc(var(--d, 0) * 110ms), 2.6s; }
+  @keyframes vs-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 }

@@ -71,10 +71,8 @@ export const initOneSignal = async () => {
         }
         const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
         await OneSignal.initialize(appId);
-        // Push notifications need explicit runtime permission on Android 13+
-        // (API 33+, which this app's minSdk/targetSdk cover) — silently no-op
-        // on older Android versions where permission is implicit.
-        await OneSignal.Notifications.requestPermission(false);
+        // The notification permission is asked later, once someone is signed in and the app is on screen
+        // (askNativePushPermission, from loginToOneSignal), never during start-up: see there.
         console.log('OneSignal: Native SDK initialized');
       } catch (err) {
         console.error('OneSignal: Native initialization failed', err);
@@ -123,6 +121,30 @@ export const initOneSignal = async () => {
   return initPromise;
 };
 
+// Android 13+ needs the user's permission for notifications. Asked once someone is signed in and the app is on
+// screen, by the app itself (services/notificationPermission.ts). Never through OneSignal's requestPermission():
+// its separate permission screen was seen staying, invisible, on top of the app so no tap reached the login form.
+// Asked automatically once per install; after that the Profile notification switch is the way to turn it on.
+const PERMISSION_ASKED_KEY = 'pushPermissionAsked';
+const askNativePushPermission = async (OneSignal: any) => {
+  try {
+    if (localStorage.getItem(PERMISSION_ASKED_KEY)) return;
+    if (await OneSignal.Notifications.hasPermission()) return;
+    localStorage.setItem(PERMISSION_ASKED_KEY, '1');
+    if (document.visibilityState !== 'visible') {
+      await new Promise<void>(resolve => {
+        const onShow = () => { if (document.visibilityState === 'visible') { document.removeEventListener('visibilitychange', onShow); resolve(); } };
+        document.addEventListener('visibilitychange', onShow);
+      });
+    }
+    await new Promise(r => setTimeout(r, 1500)); // let the signed-in screen settle first
+    const { NotificationPermission } = await import('./notificationPermission');
+    await NotificationPermission.request();
+  } catch (err) {
+    console.warn('OneSignal: could not ask for notification permission', err);
+  }
+};
+
 export const loginToOneSignal = async (username: string, retries = 3) => {
   if (!username || !PUSH_ENABLED) return;
 
@@ -135,6 +157,7 @@ export const loginToOneSignal = async (username: string, retries = 3) => {
       // (see the Web SDK path below — both associate on this externalId).
       await OneSignal.login(username);
       console.log(`OneSignal: Native login successful as ${username}`);
+      askNativePushPermission(OneSignal);
     } catch (err) {
       console.warn('OneSignal: Native login failed — push notifications may not be targeted correctly until the next app open', err);
     }

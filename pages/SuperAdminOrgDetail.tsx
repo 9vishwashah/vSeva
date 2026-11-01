@@ -10,10 +10,11 @@ import StatusScreen from '../components/StatusScreen';
 import ThemedSelect from '../components/ThemedSelect';
 import SuperAdminPinGate, { isSuperAdminPinVerified, clearSuperAdminPin } from '../components/SuperAdminPinGate';
 import { deliverPdf } from '../services/pdfDelivery';
+import { ageFromDob, formatDob } from '../services/dateOfBirth';
 import { getViharYearStartYear, getViharYearBoundsForStartYear, isDateInViharYear } from '../services/viharYear';
 
 interface SevakRow {
-  id: string; full_name: string; username: string; mobile: string; gender?: string | null; age?: number | null;
+  id: string; full_name: string; username: string; mobile: string; gender?: string | null; date_of_birth?: string | null;
   blood_group?: string | null; emergency_number?: string | null; emergency_contact_name?: string | null;
   occupation?: string | null; occupation_details?: string | null; address?: string | null;
   is_active: boolean; last_login_at?: string | null; created_at?: string | null;
@@ -44,7 +45,7 @@ const monthIndex = (dateStr: string) => (parseInt(dateStr.slice(5, 7), 10) + 2) 
 // The fields a Sevak fills in from Profile & Settings (same rule as the Captain's Manage Sevaks screen).
 const missingFields = (s: SevakRow): string[] => {
   const m: string[] = [];
-  if (!has(s.age)) m.push('Age');
+  if (!has(s.date_of_birth)) m.push('Date of birth');
   if (!has(s.blood_group)) m.push('Blood group');
   if (!has(s.emergency_number)) m.push('Emergency number');
   if (!has(s.emergency_contact_name)) m.push('Emergency contact name');
@@ -220,10 +221,10 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
 
   const exportSevaksCsv = () => {
     downloadCsv(`${safeName}_sevaks.csv`, [
-      ['Sr', 'Name', 'Username', 'Mobile', 'Gender', 'Age', 'Blood Group', 'Occupation', 'Family Emergency Contact', 'Family Emergency Number', 'Address', 'Active', 'Joined', 'Last Login', `Vihars ${vy.label}`, 'Vihars (All Time)', 'Last Vihar', `Sankalp ${vy.label}`, 'Profile %'],
+      ['Sr', 'Name', 'Username', 'Mobile', 'Gender', 'Date of Birth', 'Age', 'Blood Group', 'Occupation', 'Family Emergency Contact', 'Family Emergency Number', 'Address', 'Active', 'Joined', 'Last Login', `Vihars ${vy.label}`, 'Vihars (All Time)', 'Last Vihar', `Sankalp ${vy.label}`, 'Profile %'],
       ...data.sevaks.map((s, i) => {
         const p = calc.perSevak.get(s.username);
-        return [i + 1, s.full_name, s.username, s.mobile, s.gender || '', s.age ?? '', s.blood_group || '', occupationText(s), s.emergency_contact_name || '', s.emergency_number || '', (s.address || '').replace(/\s*\n\s*/g, ', '), s.is_active ? 'Yes' : 'No', fmtDate(s.created_at), fmtDate(s.last_login_at), p?.vy ?? 0, p?.total ?? 0, p?.last ? fmtDay(p.last) : '', calc.sevakSankalp.get(s.id) ?? '', completion(s)];
+        return [i + 1, s.full_name, s.username, s.mobile, s.gender || '', formatDob(s.date_of_birth), ageFromDob(s.date_of_birth) ?? '', s.blood_group || '', occupationText(s), s.emergency_contact_name || '', s.emergency_number || '', (s.address || '').replace(/\s*\n\s*/g, ', '), s.is_active ? 'Yes' : 'No', fmtDate(s.created_at), fmtDate(s.last_login_at), p?.vy ?? 0, p?.total ?? 0, p?.last ? fmtDay(p.last) : '', calc.sevakSankalp.get(s.id) ?? '', completion(s)];
       }),
     ]);
   };
@@ -284,7 +285,7 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
         head: [['#', 'Sevak', 'Mobile', 'Age', 'Blood', 'Occupation', 'Vihars (VY)', 'Total', 'Last Vihar', 'Sankalp', 'Profile']],
         body: data.sevaks.map((s, i) => {
           const p = calc.perSevak.get(s.username);
-          return [i + 1, s.full_name + (s.is_active ? '' : ' (inactive)'), s.mobile, s.age ?? '-', s.blood_group || '-', occupationText(s) || '-', p?.vy ?? 0, p?.total ?? 0, p?.last ? fmtDay(p.last) : '-', calc.sevakSankalp.get(s.id) ?? '-', `${completion(s)}%`];
+          return [i + 1, s.full_name + (s.is_active ? '' : ' (inactive)'), s.mobile, ageFromDob(s.date_of_birth) ?? '-', s.blood_group || '-', occupationText(s) || '-', p?.vy ?? 0, p?.total ?? 0, p?.last ? fmtDay(p.last) : '-', calc.sevakSankalp.get(s.id) ?? '-', `${completion(s)}%`];
         }),
       });
       const pages = doc.getNumberOfPages();
@@ -445,7 +446,7 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
                           <p className="text-[11px] text-gray-400 font-mono truncate">{s.username}</p>
                         </td>
                         <td className="p-3 font-mono text-gray-700">{s.mobile}</td>
-                        <td className="p-3 text-gray-700 whitespace-nowrap">{s.age ?? '-'} · {s.blood_group || '-'}<span className={`ml-1.5 text-[11px] font-bold ${s.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>{s.gender ? s.gender[0] : ''}</span></td>
+                        <td className="p-3 text-gray-700 whitespace-nowrap">{ageFromDob(s.date_of_birth) ?? '-'} · {s.blood_group || '-'}<span className={`ml-1.5 text-[11px] font-bold ${s.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>{s.gender ? s.gender[0] : ''}</span></td>
                         <td className="p-3 text-gray-700 min-w-[140px]">{occupationText(s) || '-'}</td>
                         <td className="p-3 text-gray-700 min-w-[150px]">{s.emergency_number ? <>{s.emergency_contact_name && <span className="block text-xs text-gray-500">{s.emergency_contact_name}</span>}<span className="font-mono">{s.emergency_number}</span></> : '-'}</td>
                         <td className="p-3 text-gray-500 whitespace-nowrap">{fmtDate(s.created_at)}</td>

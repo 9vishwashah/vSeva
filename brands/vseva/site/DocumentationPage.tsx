@@ -382,11 +382,11 @@ const DocumentationPage: React.FC = () => {
               <p>Members of your own group see the Sevak contact directory so they can call or message each other. Your ID card’s verification page shows your emergency details.</p>
             </details>
 
-            <div className="mt-14 rounded-2xl bg-[color:var(--night)] p-6 text-[#f3e9de] sm:p-8">
+            <div className="mt-14 rounded-2xl bg-[color:var(--night)] p-6 text-white sm:p-8">
               <p className="font-[family-name:var(--display)] text-[1.5rem] font-extrabold tracking-[-0.02em] !text-white">Still have a question?</p>
-              <p className="!text-[#cdbfb2]">Message the vSeva team on WhatsApp, or watch the step-by-step videos on YouTube.</p>
+              <p className="!text-white">Message the vSeva team on WhatsApp, or watch the step-by-step videos on YouTube.</p>
               <div className="mt-5 flex flex-wrap gap-3">
-                <a href="/contact" className="vs-btn vs-btn-saffron">Contact us</a>
+                <a href="/contact" className="vs-btn vs-btn-light">Contact us</a>
                 <a href={CONTACT.youtubeUrl} target="_blank" rel="noopener noreferrer" className="vs-btn vs-btn-light"><Youtube size={16} aria-hidden /> Watch on YouTube</a>
                 <a href="/vseva-site/vSeva-App-Guide.pdf" className="vs-btn border border-white/25 text-white hover:border-white/60" download><Download size={16} aria-hidden /> App Guide PDF</a>
               </div>

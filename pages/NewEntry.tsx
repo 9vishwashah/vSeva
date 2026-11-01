@@ -6,6 +6,7 @@ import { BRAND } from '@brand';
 import { useToast } from '../context/ToastContext';
 import Avatar from '../components/Avatar';
 import ThemedSelect from '../components/ThemedSelect';
+import { placeOptions, type PlaceAliases } from '../services/placeAliases';
 import { toLocalDateKey } from '../services/dateUtils';
 
 
@@ -79,6 +80,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
   const [carSearch, setCarSearch] = useState('');
   const [availableRoutes, setAvailableRoutes] = useState<AreaRoute[]>([]);
   const [uniqueAreas, setUniqueAreas] = useState<string[]>([]);
+  const [placeAliases, setPlaceAliases] = useState<PlaceAliases>({});
   const [distanceInfo, setDistanceInfo] = useState<string | null>(null);
 
   // Load Data on Mount
@@ -94,6 +96,8 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
             : dataService.getAllOrgUsers(currentUser.organization_id),
           dataService.getRoutes(currentUser.organization_id),
         ]);
+        // short forms for long place names, so From / To can be searched by them (never blocks the form)
+        dataService.getPlaceAliases(currentUser.organization_id).then(setPlaceAliases).catch(() => {});
 
         // only Sevaks can be assigned; a Captain (admin) account is never a Vihar Sevak
         setOrgSevaks((sevaks as UserProfile[]).filter(s => s.role !== UserRole.ORG_ADMIN));
@@ -587,7 +591,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                   <ThemedSelect
                     value={formData.vihar_from || ''}
                     onChange={v => setFormData({ ...formData, vihar_from: v, vihar_to: '' })}
-                    options={uniqueAreas}
+                    options={placeOptions(uniqueAreas, placeAliases)}
                     placeholder="From"
                     title="Vihar From"
                     clearable={false}
@@ -601,7 +605,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                   <ThemedSelect
                     value={formData.vihar_to || ''}
                     onChange={v => setFormData({ ...formData, vihar_to: v })}
-                    options={uniqueAreas.filter(a => a !== formData.vihar_from)}
+                    options={placeOptions(uniqueAreas.filter(a => a !== formData.vihar_from), placeAliases)}
                     placeholder="To"
                     title="Vihar To"
                     disabled={!formData.vihar_from}

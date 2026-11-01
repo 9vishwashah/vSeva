@@ -11,6 +11,7 @@ import Modal from '../components/Modal';
 import StatusScreen from '../components/StatusScreen';
 import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X, Plus, Handshake, Medal, Crown, Shield, Flame, Calendar, SlidersHorizontal, Loader2, Share2, ChevronRight, Route } from 'lucide-react';
 import ThemedSelect from '../components/ThemedSelect';
+import { placeOptions, type PlaceAliases } from '../services/placeAliases';
 import { BRAND } from '@brand';
 import { useToast } from '../context/ToastContext';
 import { useViharYear } from '../context/ViharYearContext';
@@ -20,6 +21,7 @@ import { getViharYearBounds, getViharYearForDate, isDateInViharYear } from '../s
 import { toLocalDateKey } from '../services/dateUtils';
 import { deliverPdf, deliverFile } from '../services/pdfDelivery';
 import { buildAchievements } from '../services/achievements';
+import { REMINDER_DEFAULTS, firstName, useReminderSettings } from '../services/reminderSettings';
 
 // The share sheet (and its card renderer) is only downloaded when someone opens it.
 const ShareAchievementSheet = lazy(() => import('../components/ShareAchievementSheet'));
@@ -59,6 +61,8 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, navigateToNotifications, navigateToEntries, onAddVihar, orgDetails: orgDetailsProp }) => {
   const { showToast } = useToast();
   const { t, n } = useLanguage();
+  // The group's "No Vihar Since N Days" settings (on/off, days, message), set by the Captain
+  const reminders = useReminderSettings(currentUser.organization_id);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
   const [sevakMap, setSevakMap] = useState<Record<string, string>>({}); // Add this state
@@ -133,6 +137,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [availableRoutes, setAvailableRoutes] = useState<AreaRoute[]>([]);
   const [uniqueAreas, setUniqueAreas] = useState<string[]>([]);
+  const [placeAliases, setPlaceAliases] = useState<PlaceAliases>({});
 
   const [alertData, setAlertData] = useState({ date: toLocalDateKey(new Date()), time: '06:00', from: '', to: '', type: 'morning', routeKind: 'internal' as 'internal' | 'highway', sadhu: 0, sadhvi: 0, samuday: '', names: '', wheelchair: false, wheelchairCount: 1, carSeva: false, contactName: '', contactPhone: '', police: false });
 
@@ -238,6 +243,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           areas.add(r.to_name);
         });
         setUniqueAreas(Array.from(areas).sort());
+        // short forms for long place names (Alert Vihar's From / To search by them)
+        dataService.getPlaceAliases(currentUser.organization_id).then(setPlaceAliases).catch(() => {});
 
         // Create username -> fullname map for Synergy display
         // (the roster above already includes inactive members, so it covers every name the old
@@ -294,10 +301,6 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         }
 
         setData({ entries: myEntries, stats, leaderboard: { male: [], female: [] } });
-
-        // Fire-and-forget — the Captain's dashboard scans the whole org, a
-        // Sevak's dashboard only checks themselves.
-        dataService.checkInactivity(currentUser.organization_id, isAdmin ? undefined : currentUser.username);
       } catch (e) {
         console.error("Failed to load dashboard data", e);
         if (!silent) setLoadError(navigator.onLine ? 'error' : 'offline');
@@ -807,13 +810,30 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   // Counted from the later of that Vihar and the start of the current Vihar Year, and not at all before the
   // Vihar Year has begun (Chaturmas, Jul 14 - Oct 13) — Vihar isn't happening then, so there is nothing to nudge about.
   const daysSinceLastVihar = (() => {
-    if (currentUser.role !== UserRole.SEVAK || data.entries.length === 0) return null;
+    if (currentUser.role !== UserRole.SEVAK) return null;
     const todayMs = new Date().setHours(0, 0, 0, 0);
     const vyStartMs = getViharYearBounds().start.getTime();
     if (todayMs < vyStartMs) return null;
-    const sinceMs = Math.max(new Date(`${data.entries[0].vihar_date}T00:00:00`).getTime(), vyStartMs);
+    const lastMs = data.entries.length > 0
+      ? new Date(`${data.entries[0].vihar_date}T00:00:00`).getTime()
+      : currentUser.created_at ? new Date(currentUser.created_at).setHours(0, 0, 0, 0) : null;
+    if (lastMs === null) return null;
+    const sinceMs = Math.max(lastMs, vyStartMs);
     return Math.floor((todayMs - sinceMs) / 86400000);
   })();
+
+  // Which reminder day has been reached (null: none yet, or reminders are off); the colour deepens with each one
+  const reminderDays = reminders?.days ?? REMINDER_DEFAULTS.days;
+  const reminderLevel = (() => {
+    if (daysSinceLastVihar === null || reminders?.enabled === false) return null;
+    const reached = reminderDays.filter(d => daysSinceLastVihar >= d).length;
+    if (reached === 0) return null;
+    if (reminderDays.length === 1) return 'mid';
+    return reached === reminderDays.length ? 'high' : reached === 1 ? 'low' : 'mid';
+  })();
+  // A Captain's own message is shown as written; the default one follows the app language
+  const reminderMessage = reminders && reminders.message !== REMINDER_DEFAULTS.message ? reminders.message : t('dashboard.kindlyJoinSeva');
+  const reminderName = firstName(currentUser.full_name);
 
   const formatRelativeDate = (dateStr: string) => {
     const d = new Date(`${dateStr}T00:00:00`);
@@ -938,11 +958,11 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">From</label>
-                  <ThemedSelect value={alertData.from} onChange={v => setAlertData({ ...alertData, from: v, to: '' })} options={uniqueAreas} placeholder="Start Location" title="Vihar From" clearable={false} className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm" />
+                  <ThemedSelect value={alertData.from} onChange={v => setAlertData({ ...alertData, from: v, to: '' })} options={placeOptions(uniqueAreas, placeAliases)} placeholder="Start Location" title="Vihar From" clearable={false} className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">To</label>
-                  <ThemedSelect value={alertData.to} onChange={v => setAlertData({ ...alertData, to: v })} options={uniqueAreas.filter(a => a !== alertData.from)} placeholder="End Location" title="Vihar To" disabled={!alertData.from} clearable={false} className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm" />
+                  <ThemedSelect value={alertData.to} onChange={v => setAlertData({ ...alertData, to: v })} options={placeOptions(uniqueAreas.filter(a => a !== alertData.from), placeAliases)} placeholder="End Location" title="Vihar To" disabled={!alertData.from} clearable={false} className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm" />
                 </div>
               </div>
 
@@ -1245,13 +1265,13 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       </div>
 
       {/* No Vihar Since... — a personal nudge once a Sevak has gone quiet for a while */}
-      {!isLoading && daysSinceLastVihar !== null && daysSinceLastVihar >= 5 && (
+      {!isLoading && daysSinceLastVihar !== null && reminderLevel && (
         <div
           className="rounded-[22px] p-5 flex items-center gap-4 text-white"
           style={{
-            background: daysSinceLastVihar >= 15
+            background: reminderLevel === 'high'
               ? 'linear-gradient(150deg,#DC2626,#991B1B)'
-              : daysSinceLastVihar >= 7
+              : reminderLevel === 'mid'
                 ? 'linear-gradient(150deg,#EA580C,#C2410C)'
                 : 'linear-gradient(150deg,#F59E0B,#D97706)',
           }}
@@ -1260,8 +1280,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             <AlertCircle size={22} />
           </div>
           <div>
-            <p className="m-0 font-extrabold text-base">No Vihar Since {n(daysSinceLastVihar)} Days</p>
-            <p className="m-0 text-sm text-white/90 mt-0.5">{t('dashboard.kindlyJoinSeva')}</p>
+            <p className="m-0 font-extrabold text-base">{reminderName ? `${reminderName}, ` : ''}No Vihar Since {n(daysSinceLastVihar)} Days</p>
+            <p className="m-0 text-sm text-white/90 mt-0.5">{reminderMessage}</p>
           </div>
         </div>
       )}

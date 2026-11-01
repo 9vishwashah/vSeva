@@ -38,8 +38,13 @@ export default defineConfig(({ mode }) => {
     }
   }
 
+  // Build stamp (UTC yyyymmddhhmm). The installed Android app compares its own stamp with the one the site
+  // publishes in /app-update/<brand>.json and quietly installs a newer web bundle (services/liveUpdate.ts).
+  const appBuild = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
+  const buildDefine = { ...pushDefine, __APP_BUILD__: JSON.stringify(appBuild) };
+
   return {
-    define: pushDefine,
+    define: buildDefine,
     publicDir: prepareBrandPublicDir(__dirname, brand),
     server: {
       port: 3000,
@@ -329,34 +334,6 @@ export default defineConfig(({ mode }) => {
                 res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
               }
               return;
-            } else if (req.url && req.url.startsWith('/.netlify/functions/check-inactivity')) {
-              try {
-                const { handler } = await import('./netlify/functions/check-inactivity.js');
-
-                let body = '';
-                req.on('data', chunk => { body += chunk.toString(); });
-                await new Promise(resolve => req.on('end', resolve));
-
-                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
-                process.env.SUPABASE_SERVICE_ROLE_KEY = _env.SUPABASE_SERVICE_ROLE_KEY || _env.VITE_SUPABASE_ANON_KEY || '';
-
-                const event = {
-                  httpMethod: req.method,
-                  body,
-                  headers: req.headers,
-                };
-
-                const result = await handler(event, {});
-
-                res.statusCode = result.statusCode || 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(result.body);
-              } catch (e: any) {
-                console.error("Local mock error check-inactivity:", e);
-                res.statusCode = 500;
-                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
-              }
-              return;
             } else if (req.url && req.url.startsWith('/.netlify/functions/resolve-location')) {
               try {
                 const { handler } = await import('./netlify/functions/resolve-location.js');
@@ -421,6 +398,8 @@ export default defineConfig(({ mode }) => {
           closeBundle() {
             const index = path.join(outDir, 'index.html');
             if (fs.existsSync(index)) fs.copyFileSync(index, path.join(outDir, 'app.html'));
+            // which build this is, for scripts/app-update-bundle.mjs
+            fs.writeFileSync(path.join(outDir, 'app-build.json'), JSON.stringify({ build: appBuild, brand: brand.id }));
           },
         };
       })(),
@@ -432,6 +411,10 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         injectManifest: {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
+          // the app's own images too (logo, icons, the share-card photo) so screens look right offline;
+          // not the website's screenshots / guide PDF, the notification art, or the social preview
+          globPatterns: ['**/*.{js,css,html,png,jpg,svg,webp,woff2,webmanifest}'],
+          globIgnores: ['vseva-site/screens/**', 'vseva-site/*.pdf', 'notify/**', '*-og-preview.png'],
         },
         devOptions: {
           enabled: false,
@@ -446,6 +429,8 @@ export default defineConfig(({ mode }) => {
           background_color: brand.backgroundColor,
           display: 'standalone',
           start_url: '/',
+          // Tells Chrome and search engines the Android app exists; the web app stays installable too
+          ...(brand.id === 'vseva' ? { related_applications: [{ platform: 'play', url: 'https://play.google.com/store/apps/details?id=in.vjas.vseva', id: 'in.vjas.vseva' }], prefer_related_applications: false } : {}),
           icons: [
             {
               src: '/pwa-192x192.png',

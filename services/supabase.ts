@@ -31,3 +31,17 @@ export const supabase = createClient(
   supabaseAnonKey,
   isNativePlatform() ? { auth: { lock: processLock } } : undefined
 );
+
+// The signed-in user saved on this device, read without the network. Opened offline more than an hour after
+// the last token refresh, getSession() returns no session (it cannot refresh) but keeps the saved one, which is
+// still good to resume from: the app opens on the user's last-synced data and refreshes once back online.
+export function storedSessionUserId(): string | null {
+  try {
+    const key = (supabase.auth as unknown as { storageKey?: string }).storageKey;
+    const raw = key ? localStorage.getItem(key) : null;
+    const saved = raw ? JSON.parse(raw) : null;
+    return typeof saved?.user?.id === 'string' ? saved.user.id : null;
+  } catch {
+    return null;
+  }
+}

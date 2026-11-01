@@ -54,6 +54,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const { showToast } = useToast();
   const { t } = useLanguage();
 
+  // No answer in 20 s (a dead or stalled connection, common on the road): stop the spinner and say so.
+  const withTimeout = <T,>(p: Promise<T>) => Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error("No internet connection. Please check your network and try again.")), 20000))]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -82,7 +85,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       let authData: any = null;
       let authError: any = null;
       for (const candidate of emailCandidates) {
-        const result = await supabase.auth.signInWithPassword({ email: candidate, password });
+        const result = await withTimeout(supabase.auth.signInWithPassword({ email: candidate, password }));
         if (!result.error && result.data.user) {
           authData = result.data;
           break;
@@ -101,7 +104,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           });
           if (lookup?.ambiguous) throw new Error('More than one Sevak matches that name and number. Please type your full name.');
           for (const candidate of lookup?.emails ?? []) {
-            const result = await supabase.auth.signInWithPassword({ email: candidate, password });
+            const result = await withTimeout(supabase.auth.signInWithPassword({ email: candidate, password }));
             if (!result.error && result.data.user) { authData = result.data; break; }
           }
         } catch (lookupErr: any) {
@@ -113,7 +116,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       if (!authData?.user) throw authError ?? new Error('Invalid credentials.');
 
       // 2. Fetch Profile to get Role
-      const profile = await dataService.getProfile(authData.user.id);
+      const profile = await withTimeout(dataService.getProfile(authData.user.id));
 
       if (!profile) {
         throw new Error("Profile not found. Contact your Captain.");
@@ -124,7 +127,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       }
 
       // This site only admits its own platform's accounts (see services/brandAccess.ts)
-      const blocked = await brandAccessError(profile.organization_id);
+      const blocked = await withTimeout(brandAccessError(profile.organization_id));
       if (blocked) {
         await supabase.auth.signOut();
         throw new Error(blocked);
@@ -144,7 +147,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     } catch (err: any) {
       console.error(err);
-      const msg = err.message || "Login failed. Please check credentials.";
+      const msg = /failed to fetch|network|load failed/i.test(err?.message || '')
+        ? 'No internet connection. Please check your network and try again.'
+        : err.message || "Login failed. Please check credentials.";
       setErrorMsg(msg);
       showToast(msg, 'error');
     } finally {

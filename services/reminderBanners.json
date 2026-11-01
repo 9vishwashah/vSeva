@@ -1,0 +1,12 @@
+{
+  "_comment": "Vihar reminder pictures: the line printed on the wide notification picture. scripts/notify-images.mjs draws public/notify/reminder-<key>.jpg for each (on assets/Pilgrims Walking Toward Sunrise.png) (and the SSG versions); the Captain picks one in Profile & Settings. Keys must stay lowercase-and-dashes; add a line here, then run node scripts/notify-images.mjs.",
+  "default": "walks-on",
+  "banners": [
+    { "key": "walks-on", "line": "Your group walks on. Add your next Vihar." },
+    { "key": "chalo", "line": "Chalo, agla Vihar aapka intezaar kar raha hai!" },
+    { "key": "sankalp", "line": "Sankalp yaad hai na? Ek Vihar, ek kadam." },
+    { "key": "maharaj", "line": "Maharaj Saheb ke saath agla Vihar kab?" },
+    { "key": "seva-bulaye", "line": "Seva bula rahi hai. Kab chal rahe ho?" },
+    { "key": "har-kadam", "line": "Har kadam ginta hai. Aaj ka kadam kahan hai?" }
+  ]
+}

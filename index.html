@@ -44,12 +44,26 @@
   <meta name="apple-mobile-web-app-title" content="{{SHORT_NAME}}">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="mask-icon" href="{{ICON}}?v=2" color="{{THEME_COLOR}}">
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <!-- Neither of these may hold up the app: on a slow or stalled connection (or offline) a blocking CDN request
+       kept the app on a blank screen until it timed out. The OneSignal web SDK loads in the background
+       (services/oneSignalService.ts queues on OneSignalDeferred) and not at all in the Android app, which uses the
+       native OneSignal plugin. The fonts stylesheet is applied once loaded; until then text uses the system font. -->
+  <script>
+    (function () {
+      var cap = window.Capacitor;
+      if (cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) return;
+      var s = document.createElement('script');
+      s.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+      s.async = true;
+      document.head.appendChild(s);
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="{{FONTS_HREF}}"
-    rel="stylesheet">
+    rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="{{FONTS_HREF}}" rel="stylesheet"></noscript>
   <!-- Font Awesome removed — replaced with inline SVGs to save ~80KB per load -->
   <!-- Tailwind theme.extend now lives in tailwind.config.js (build-time compiled) -->
   <style>

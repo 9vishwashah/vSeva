@@ -117,7 +117,7 @@ const Contacts: React.FC<ContactsProps> = ({ currentUser }) => {
                                         )}
                                     </div>
 
-                                    <ContactActionButtons phone={contact.phone} name={contact.label} />
+                                    <ContactActionButtons phone={contact.phone} name={contact.label} logos />
                                 </div>
                             );
                         })}

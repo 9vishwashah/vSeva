@@ -58,7 +58,7 @@ const BulkSevakImport: React.FC<Props> = ({ open, onClose, orgId, onCreated }) =
       try {
         const creds = await dataService.createSevak(orgId, {
           fullName: r.fullName, mobile: r.mobile, gender: r.gender, alias: r.alias,
-          age: undefined as unknown as number, bloodGroup: undefined, emergencyNumber: '', address: '',
+          bloodGroup: undefined, emergencyNumber: '', address: '',
         });
         out.push({ line: r.line, fullName: r.fullName, status: 'created', username: creds.username, password: creds.password });
       } catch (e: any) {

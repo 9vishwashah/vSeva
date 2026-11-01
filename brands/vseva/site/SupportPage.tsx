@@ -1,10 +1,8 @@
 import React from 'react';
-import { QrCode } from 'lucide-react';
-import { SUPPORT } from './content';
 import { Section, SiteShell } from './ui';
 import { PAGE_META } from './seo';
 
-// Support Us. The QR stays a labelled placeholder until SUPPORT.upiQrImage (content.ts) points at the real image.
+// Support Us: why support matters and the other ways to help (no payment details on the site).
 
 const SupportPage: React.FC = () => {
   const meta = PAGE_META['/support-us'];
@@ -19,51 +17,25 @@ const SupportPage: React.FC = () => {
           </ol>
         </nav>
 
-        <div className="grid items-center gap-14 lg:grid-cols-12">
-          <div className="lg:col-span-7">
-            <p className="vs-eyebrow">Support us</p>
-            <h1 className="vs-display mt-4 max-w-[13ch] text-[clamp(2.8rem,7.5vw,5.6rem)]">
-              Support the journey of Seva<span className="vs-accent">.</span>
-            </h1>
-            <div className="mt-8 max-w-[54ch] space-y-4 text-[1.08rem] leading-relaxed text-[color:var(--ink-2)]">
-              <p>
-                vSeva is built to help Vihar Seva groups organize their records, coordinate their efforts and preserve the journey
-                of Seva in a more structured way.
-              </p>
-              <p>
-                If you find vSeva useful, your voluntary support can help us continue improving the platform, maintaining its
-                services and building tools that better serve the community.
-              </p>
-              <p className="font-semibold text-[color:var(--ink)]">Every contribution is appreciated. Thank you for being part of the journey.</p>
-            </div>
-            <p className="mt-8 max-w-[54ch] border-l-2 border-[color:var(--saffron)] pl-4 text-[0.92rem] text-[color:var(--muted)]">
-              Support is entirely voluntary.
+        <div className="max-w-[860px]">
+          <p className="vs-eyebrow">Support us</p>
+          <h1 className="vs-display mt-4 max-w-[13ch] text-[clamp(2.8rem,7.5vw,5.6rem)]">
+            Support the journey of Seva<span className="vs-accent">.</span>
+          </h1>
+          <div className="mt-8 max-w-[58ch] space-y-4 text-[1.08rem] leading-relaxed text-[color:var(--ink-2)]">
+            <p>
+              vSeva is built to help Vihar Seva groups organize their records, coordinate their efforts and preserve the journey
+              of Seva in a more structured way.
             </p>
+            <p>
+              If you find vSeva useful, your voluntary support can help us continue improving the platform, maintaining its
+              services and building tools that better serve the community.
+            </p>
+            <p className="font-semibold text-[color:var(--ink)]">Every contribution is appreciated. Thank you for being part of the journey.</p>
           </div>
-
-          <div className="lg:col-span-5">
-            <figure className="mx-auto max-w-[360px] rounded-[28px] border border-[color:var(--line-strong)] bg-white p-6 text-center sm:p-8" data-reveal>
-              <div className="flex items-center justify-center gap-2">
-                <img src="/vseva-site/logo-96.webp" srcSet="/vseva-site/logo-96.webp 1x, /vseva-site/logo-192.webp 2x" alt="" width={28} height={28} className="h-7 w-7 scale-[1.45] object-contain" />
-                <span className="vs-display text-[1.3rem]">vSeva</span>
-              </div>
-              <div className="mx-auto mt-6 aspect-square w-full max-w-[260px]">
-                {SUPPORT.upiQrImage ? (
-                  <img src={SUPPORT.upiQrImage} alt={SUPPORT.upiQrAlt} width={520} height={520} className="h-full w-full rounded-xl object-contain" />
-                ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[color:var(--line-strong)] bg-[color:var(--paper)] p-6">
-                    <QrCode size={40} className="text-[color:var(--muted)]" aria-hidden />
-                    <p className="vs-mono text-[0.72rem] font-medium uppercase tracking-[0.14em] text-[color:var(--muted)]">UPI QR code placeholder</p>
-                  </div>
-                )}
-              </div>
-              <figcaption className="mt-6">
-                <p className="font-[family-name:var(--display)] text-[1.15rem] font-bold">Scan to support vSeva.</p>
-                <p className="mt-1 text-[0.88rem] text-[color:var(--muted)]">
-                  {SUPPORT.upiQrImage ? 'Use any UPI app.' : 'The UPI code will appear here soon.'}
-                </p>
-              </figcaption>
-            </figure>
+          <div className="mt-9 flex flex-wrap items-center gap-3">
+            <a href="/contact" className="vs-btn vs-btn-saffron">Contact us to support</a>
+            <span className="text-[0.92rem] text-[color:var(--muted)]">Support is entirely voluntary.</span>
           </div>
         </div>
       </Section>

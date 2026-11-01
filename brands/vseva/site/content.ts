@@ -3,6 +3,23 @@
 
 export const SITE_URL = 'https://vseva.vjas.in';
 
+// The Android app on Google Play. iPhone users install the web app (Add to Home Screen).
+export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=in.vjas.vseva';
+
+// Vihar Seva groups on vSeva shown on the India map (the "Where vSeva walks" section).
+// Coordinates are approximate town centres; add a row when a new group joins.
+export type MapGroup = { name: string; place: string; region: string; lat: number; lon: number };
+export const MAP_GROUPS: MapGroup[] = [
+  { name: 'Navkar Vihar Group', place: 'Vambori', region: 'Ahilyanagar, Maharashtra', lat: 19.283, lon: 74.733 },
+  { name: 'Vihar Seva Group', place: 'Vashi', region: 'Navi Mumbai, Maharashtra', lat: 19.077, lon: 72.999 },
+  { name: 'Vihar Seva Group', place: 'Raipur', region: 'Chhattisgarh', lat: 21.251, lon: 81.63 },
+  { name: 'Parel Vihar Seva Group', place: 'Parel', region: 'Mumbai, Maharashtra', lat: 19.001, lon: 72.841 },
+  { name: 'Kandivali Achalgach Vihar Seva Group', place: 'Charkop', region: 'Mumbai, Maharashtra', lat: 19.207, lon: 72.828 },
+  { name: 'Shitalnath Vihar Seva Group', place: 'Adai', region: 'Raigad, Maharashtra', lat: 18.968, lon: 73.128 },
+  { name: 'Vihar Seva Group', place: 'Kandivali West', region: 'Mumbai, Maharashtra', lat: 19.205, lon: 72.845 },
+  { name: 'Vande Savvy Vihar Seva Group', place: 'Digvijaynagar', region: 'Ahmedabad, Gujarat', lat: 23.073, lon: 72.588 },
+];
+
 // Approved marketing figures (shown exactly as written; not read from the database)
 export const STATS = [
   { value: '500+', label: 'Active Sevaks' },
@@ -27,8 +44,9 @@ export const whatsappWithText = (text: string) => `${CONTACT.supportWhatsAppUrl}
 export const ONBOARDING_MESSAGE =
   'Jai Jinendra, vSeva team.\n\nWe would like to bring our Vihar Seva group onto vSeva.\n\nGroup name: \nCaptain: \nCity: \n\nPlease guide us with the next steps.';
 
-// Related public tools on the same site
-export const COMMUNITY_LINKS = [
+// Related community destinations: two tools on this site, and Tirtham on Instagram
+export type CommunityLink = { href: string; title: string; body: string; tagline?: string; image?: string; external?: boolean };
+export const COMMUNITY_LINKS: CommunityLink[] = [
   {
     href: '/nearby-derasar',
     title: 'Nearby Derasar',
@@ -39,7 +57,15 @@ export const COMMUNITY_LINKS = [
     title: 'Jain Directory',
     body: 'Temples, Upashrays and Vihar groups, listed by the community. Anyone can suggest a listing.',
   },
-] as const;
+  {
+    href: 'https://www.instagram.com/tirtham.official_/',
+    title: 'Tirtham',
+    body: 'Connecting generations with the Prachin Jain Tirths of India.',
+    tagline: 'Explore • Preserve • Inspire',
+    image: '/vseva-site/tirtham',
+    external: true,
+  },
+];
 
 export const NAV = [
   { href: '/#features', label: 'Features' },
@@ -66,13 +92,6 @@ export const TICKER = [
 
 export const FOUNDERS = ['Vishwa Alpesh Shah', 'Alpesh Shah'] as const;
 export const TEAM = ['Namya Mehta', 'Aagam Jain', 'Divya Mehta'] as const;
-
-// Support Us: put the real UPI QR image in public/vseva-site/ and set its path here (e.g. '/vseva-site/upi-qr.png').
-// While it is null the page shows a labelled placeholder.
-export const SUPPORT = {
-  upiQrImage: null as string | null,
-  upiQrAlt: 'UPI QR code to support vSeva',
-};
 
 // Screens used on the site: public/vseva-site/screens/<name>-400.webp and -760.webp (see scripts/site-images.mjs)
 export type Screen = { name: string; alt: string; width: number; height: number };
@@ -101,4 +120,7 @@ export const SCREENS = {
   profileRing: s('43-profile-ring', 'Profile and Settings with the 100% profile completion ring'),
   completePrompt: s('45-complete-prompt', 'Kindly Complete Your Profile prompt with Later and Complete Now', 466, 575),
   sevakMore: s('65-sevak-more', 'More menu for Sevaks: Add Vihar, Group Analytics, VChat, Contacts and more'),
+  shareSheet: s('53-share-sheet', 'Share your Seva sheet with the Vihars card on a dawn-road photo, Story and Square formats and five cards', 1652),
+  reminderSettings: s('55-reminder-settings', 'Vihar reminders settings: remind after 7, 8 and 15 days, the message and suggested lines', 958, 432),
+  upcomingVihar: s('56-upcoming-vihar', 'Announce Upcoming Vihar form with date, time, Morning or Evening, route and Send Alert to All', 914),
 } satisfies Record<string, Screen>;

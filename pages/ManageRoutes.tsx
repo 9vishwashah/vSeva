@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import { UserProfile, AreaRoute } from '../types';
-import { Plus, Trash2, Save, Map, Search, ArrowRight, Table, Pencil, X, Check, Navigation } from 'lucide-react';
+import { Plus, Trash2, Save, Map, Search, ArrowRight, Table, Pencil, X, Check, Navigation, Tag } from 'lucide-react';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { shareTextToWhatsApp } from '../services/shareImage';
 import { extractMapsUrl, routeWhatsAppMessage } from '../services/routeShare';
 import { useToast } from '../context/ToastContext';
 import Skeleton from '../components/Skeleton';
 import StatusScreen from '../components/StatusScreen';
+import { placeMatches, type PlaceAliases } from '../services/placeAliases';
 
 interface ManageRoutesProps {
     currentUser: UserProfile;
@@ -29,7 +30,7 @@ const cleanMapsInput = (v: string): string | null => (v.trim() ? extractMapsUrl(
 
 const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
     const { showToast } = useToast();
-    const [activeTab, setActiveTab] = useState<'add' | 'list'>('add');
+    const [activeTab, setActiveTab] = useState<'add' | 'list' | 'aliases'>('add');
 
     // List State
     const [existingRoutes, setExistingRoutes] = useState<AreaRoute[]>([]);
@@ -41,6 +42,11 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
     // Add State
     const [tempRoutes, setTempRoutes] = useState<TempRoute[]>([newRow()]);
     const [knownAreas, setKnownAreas] = useState<string[]>([]);
+
+    // Short forms (aliases) for long place names, searchable in every From / To picker
+    const [aliases, setAliases] = useState<PlaceAliases>({});
+    const [aliasDrafts, setAliasDrafts] = useState<Record<string, string>>({});
+    const [savingAlias, setSavingAlias] = useState<string | null>(null);
 
     // Edit State
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -61,6 +67,9 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                 areas.add(r.to_name);
             });
             setKnownAreas(Array.from(areas).sort());
+            const a = await dataService.getPlaceAliases(currentUser.organization_id);
+            setAliases(a);
+            setAliasDrafts(a);
         } catch (err) {
             showToast("Failed to load routes", "error");
             setLoadError(navigator.onLine ? 'error' : 'offline');
@@ -224,12 +233,35 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
         }
     };
 
-    // Filtered List
+    const ALIAS_MAX = 12;
+    const saveAlias = async (place: string) => {
+        const draft = (aliasDrafts[place] || '').trim().toUpperCase();
+        if (draft.length > ALIAS_MAX) { showToast(`Keep the short form to ${ALIAS_MAX} characters`, 'warning'); return; }
+        const clash = Object.entries(aliases).find(([p, a]) => p !== place && a === draft);
+        if (draft && clash) { showToast(`${draft} is already the short form of ${clash[0]}`, 'warning'); return; }
+        setSavingAlias(place);
+        try {
+            await dataService.setPlaceAlias(currentUser.organization_id, place, draft);
+            setAliases(prev => { const next = { ...prev }; if (draft) next[place] = draft; else delete next[place]; return next; });
+            setAliasDrafts(prev => ({ ...prev, [place]: draft }));
+            showToast(draft ? `Saved: ${draft} = ${place}` : 'Short form removed', 'success');
+        } catch (err) {
+            console.error(err);
+            showToast('Could not save the short form', 'error');
+        } finally {
+            setSavingAlias(null);
+        }
+    };
+
+    // Filtered List (a place's short form matches too)
     const filteredRoutes = existingRoutes.filter(r =>
-        r.from_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.to_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.via || '').toLowerCase().includes(searchTerm.toLowerCase())
+        placeMatches(r.from_name, aliases, searchTerm) ||
+        placeMatches(r.to_name, aliases, searchTerm) ||
+        placeMatches(r.via, aliases, searchTerm)
     );
+    const aliasChip = (place: string) =>
+        aliases[place] ? <span className="ml-1.5 shrink-0 rounded-md bg-saffron-50 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-saffron-700">{aliases[place]}</span> : null;
+    const filteredPlaces = knownAreas.filter(p => placeMatches(p, aliases, searchTerm));
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -250,15 +282,21 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                 <div className="flex bg-gray-100 p-1 rounded-xl shrink-0">
                     <button
                         onClick={() => setActiveTab('add')}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'add' ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'add' ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         <div className="flex items-center gap-2"><Plus size={16} /> Add Routes</div>
                     </button>
                     <button
                         onClick={() => setActiveTab('list')}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'list' ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'list' ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         <div className="flex items-center gap-2"><Table size={16} /> View All</div>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('aliases')}
+                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'aliases' ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <div className="flex items-center gap-2"><Tag size={16} /> Short Forms</div>
                     </button>
                 </div>
             </div>
@@ -415,7 +453,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                             <Search className="absolute left-3 top-3 text-gray-400" size={18} />
                             <input
                                 type="text"
-                                placeholder="Search routes..."
+                                placeholder="Search routes or short forms..."
                                 className="w-full pl-10 p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
@@ -497,11 +535,11 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2 text-gray-800 font-medium">
                                                     <MapPin size={16} className="text-saffron-500" />
-                                                    <span>{route.from_name}</span>
+                                                    <span className="inline-flex items-center">{route.from_name}{aliasChip(route.from_name)}</span>
                                                 </div>
                                                 <ArrowRight size={14} className="text-gray-300" />
                                                 <div className="flex items-center gap-2 text-gray-800 font-medium">
-                                                    <span>{route.to_name}</span>
+                                                    <span className="inline-flex items-center">{route.to_name}{aliasChip(route.to_name)}</span>
                                                 </div>
                                             </div>
                                             {route.via && <p className="-mt-1.5 text-xs font-semibold text-[#8A6A57]">via {route.via}</p>}
@@ -613,8 +651,8 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                             </>
                                         ) : (
                                             <>
-                                                <td className="p-4 font-medium text-gray-800">{route.from_name}</td>
-                                                <td className="p-4 font-medium text-gray-800">{route.to_name}</td>
+                                                <td className="p-4 font-medium text-gray-800">{route.from_name}{aliasChip(route.from_name)}</td>
+                                                <td className="p-4 font-medium text-gray-800">{route.to_name}{aliasChip(route.to_name)}</td>
                                                 <td className="p-4 text-sm font-semibold text-[#8A6A57]">{route.via || '-'}</td>
                                                 <td className="p-4 text-center">
                                                     <span className="bg-saffron-50 text-saffron-700 px-3 py-1 rounded-full text-xs font-bold">
@@ -664,6 +702,69 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                             </tbody>
                         </table>
                     </div>
+                    )}
+                </div>
+            )}
+
+            {/* Short forms: one alias per place, used to search From / To everywhere */}
+            {activeTab === 'aliases' && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="p-4 border-b border-gray-100 space-y-3">
+                        <p className="text-sm text-[#8A6A57]">
+                            Give long place names a short form, like <b className="text-[#241C17]">SP</b> for <b className="text-[#241C17]">SHREE PARSHWANATH ROAD</b>.
+                            Typing it in any From / To search (New Entry, Alert Vihar) finds the place. Up to {ALIAS_MAX} characters.
+                        </p>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Search places or short forms..."
+                                className="w-full pl-10 p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    {loading ? (
+                        <div className="p-4 space-y-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}</div>
+                    ) : loadError ? (
+                        <div className="p-4"><StatusScreen variant={loadError} onRetry={loadRoutes} compact /></div>
+                    ) : filteredPlaces.length === 0 ? (
+                        <p className="p-8 text-center text-sm text-gray-400">{knownAreas.length ? 'No place matches your search.' : 'Add routes first; their places appear here.'}</p>
+                    ) : (
+                        <ul className="divide-y divide-gray-100">
+                            {filteredPlaces.map(place => {
+                                const draft = aliasDrafts[place] ?? '';
+                                const changed = draft.trim().toUpperCase() !== (aliases[place] || '');
+                                return (
+                                    <li key={place} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <span className="flex min-w-0 items-center gap-2 font-semibold text-[#241C17]">
+                                            <MapPin size={15} className="shrink-0 text-saffron-600" />
+                                            <span className="break-words">{place}</span>
+                                        </span>
+                                        <div className="flex items-center gap-2 sm:shrink-0">
+                                            <input
+                                                aria-label={`Short form for ${place}`}
+                                                className="w-full sm:w-36 p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold uppercase tracking-wide focus:ring-2 focus:ring-saffron-500 outline-none"
+                                                placeholder="e.g. SP"
+                                                maxLength={ALIAS_MAX}
+                                                value={draft}
+                                                onChange={e => setAliasDrafts(prev => ({ ...prev, [place]: e.target.value.toUpperCase() }))}
+                                                onKeyDown={e => { if (e.key === 'Enter' && changed) saveAlias(place); }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => saveAlias(place)}
+                                                disabled={!changed || savingAlias === place}
+                                                className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-[#DE6B38] text-white text-sm font-bold disabled:opacity-40 transition-opacity"
+                                            >
+                                                <Check size={15} /> {savingAlias === place ? 'Saving' : 'Save'}
+                                            </button>
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
                     )}
                 </div>
             )}

@@ -46,18 +46,22 @@ export const dataService = {
 
   async getProfile(userId: string): Promise<UserProfile | null> {
     return getCached(`profile:${userId}`, async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at, alias, vihar_scope, seva_preferences')
-        .eq('id', userId)
-        .single();
+      const cols = 'id, organization_id, role, full_name, username, mobile, gender, date_of_birth, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at, alias, vihar_scope, seva_preferences';
+      let { data, error } = await supabase.from('profiles').select(cols).eq('id', userId).single();
+      // date_of_birth needs scripts/date_of_birth_birthdays.sql run first; until then sign in without it
+      if (error?.code === '42703') {
+        ({ data, error } = await supabase.from('profiles').select(cols.replace(', date_of_birth', '')).eq('id', userId).single());
+      }
 
       if (error) {
+        // No connection: throw, so the copy kept on this device is used instead (an app opened offline).
+        // A real "no such profile" answer from the server still returns null.
+        if (!navigator.onLine || (!error.code && /fetch|network|load failed/i.test(error.message || ''))) throw error;
         console.error('Error fetching profile:', error);
         return null;
       }
       return data as UserProfile;
-    }, 30_000);
+    }, 30_000, { persist: true });
   },
 
   // Fetched separately from getProfile (not on the login-critical path) since it
@@ -190,39 +194,22 @@ export const dataService = {
     clearAll(); // no orgId in scope here — this is a rare admin action, a full clear is cheap
   },
 
-  // Fire-and-forget: scans for sevaks with no Vihar in 5/7/15+ days and creates
-  // a "No Vihar Since..." notification for them (deduped per tier). Pass
-  // `username` to check just one sevak (their own dashboard), omit it to scan
-  // the whole org (the Captain's dashboard).
-  // At most once every 6 hours per device for the same org/person: it runs on every Dashboard open, the
-  // reminders are day-based and deduped server-side, so repeating it sooner only costs a server call.
-  checkInactivity(orgId: string, username?: string): void {
-    const key = `inactivityCheckedAt:${orgId}:${username || 'org'}`;
-    try {
-      const last = Number(localStorage.getItem(key) || 0);
-      if (Date.now() - last < 6 * 60 * 60 * 1000) return;
-      localStorage.setItem(key, String(Date.now()));
-    } catch { /* storage unavailable: just run the check */ }
-    callFn('check-inactivity', { body: { orgId, username } })
-      .catch(e => console.warn('Inactivity check failed:', e));
-  },
-
   async getOrgSevaks(orgId: string): Promise<UserProfile[]> {
     return getCached(`orgSevaks:${orgId}`, async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at, avatar_url, alias, vihar_scope, seva_preferences')
+        .select('id, organization_id, role, full_name, username, mobile, gender, date_of_birth, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at, avatar_url, alias, vihar_scope, seva_preferences')
         .eq('organization_id', orgId)
         .eq('role', 'sevak')
         .eq('is_active', true);
 
       if (!error) return data as UserProfile[];
 
-      // avatar_url needs scripts/add_avatar_url.sql run first — fall back to the
+      // avatar_url / date_of_birth need their scripts run first — fall back to the
       // original select rather than breaking the whole Organization Members list.
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('profiles')
-        .select('id, organization_id, role, full_name, username, mobile, gender, age, blood_group, emergency_number, address, is_active, last_login_at, created_at')
+        .select('id, organization_id, role, full_name, username, mobile, gender, blood_group, emergency_number, address, is_active, last_login_at, created_at')
         .eq('organization_id', orgId)
         .eq('role', 'sevak')
         .eq('is_active', true);
@@ -397,7 +384,7 @@ export const dataService = {
 
   async createSevak(
     adminOrgId: string,
-    sevakData: { fullName: string; mobile: string; gender: string; age: number; bloodGroup?: string; emergencyNumber?: string; address?: string; alias?: string }
+    sevakData: { fullName: string; mobile: string; gender: string; bloodGroup?: string; emergencyNumber?: string; address?: string; alias?: string }
   ) {
     // 1. Username = the name in lowercase letters/digits. Both apps (vSeva and Shraman Seva Group) share one
     // login system, so two different people can have the same name: the server then picks the next free
@@ -458,7 +445,6 @@ export const dataService = {
         username: username,
         mobile: sevakData.mobile,
         gender: sevakData.gender,
-        age: sevakData.age,
         blood_group: sevakData.bloodGroup,
         emergency_number: sevakData.emergencyNumber,
         address: sevakData.address,
@@ -504,7 +490,7 @@ export const dataService = {
     return true;
   },
 
-  async updateSevakDetails(userId: string, updates: { mobile?: string; age?: number; bloodGroup?: string; emergencyNumber?: string; emergencyContactName?: string; address?: string; gender?: string; occupation?: string; occupationDetails?: string; alias?: string; viharScope?: string; sevaPreferences?: string[] }) {
+  async updateSevakDetails(userId: string, updates: { mobile?: string; dateOfBirth?: string; bloodGroup?: string; emergencyNumber?: string; emergencyContactName?: string; address?: string; gender?: string; occupation?: string; occupationDetails?: string; alias?: string; viharScope?: string; sevaPreferences?: string[] }) {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
@@ -528,7 +514,8 @@ export const dataService = {
     const { error: rpcError } = await supabase.rpc('update_sevak_profile_by_admin', {
       p_target_user_id: userId,
       p_mobile: updates.mobile !== undefined ? updates.mobile : null,
-      p_age: updates.age !== undefined && updates.age !== null && !isNaN(updates.age as number) ? updates.age : null,
+      p_age: null,
+      p_date_of_birth: updates.dateOfBirth || null,
       p_blood_group: updates.bloodGroup !== undefined ? updates.bloodGroup : null,
       p_emergency_number: updates.emergencyNumber !== undefined ? updates.emergencyNumber : null,
       p_address: updates.address !== undefined ? updates.address : null,
@@ -550,7 +537,7 @@ export const dataService = {
 
         const directUpdates: Record<string, any> = {};
         if (updates.mobile !== undefined)          directUpdates.mobile           = updates.mobile;
-        if (updates.age !== undefined)             directUpdates.age              = updates.age;
+        if (updates.dateOfBirth)                   directUpdates.date_of_birth    = updates.dateOfBirth;
         if (updates.bloodGroup !== undefined)      directUpdates.blood_group      = updates.bloodGroup;
         if (updates.emergencyNumber !== undefined) directUpdates.emergency_number = updates.emergencyNumber;
         if (updates.address !== undefined)         directUpdates.address          = updates.address;
@@ -583,24 +570,24 @@ export const dataService = {
     return true;
   },
 
-  async updateOwnProfile(updates: { age?: number; bloodGroup?: string; emergencyNumber?: string; emergencyContactName?: string; address?: string; occupation?: string; occupationDetails?: string; yearlyGoal?: number; viharScope?: string; sevaPreferences?: string[] }) {
+  async updateOwnProfile(updates: { dateOfBirth?: string | null; bloodGroup?: string; emergencyNumber?: string; emergencyContactName?: string; address?: string; occupation?: string; occupationDetails?: string; yearlyGoal?: number; viharScope?: string; sevaPreferences?: string[] }) {
     const { data: { session } } = await supabase.auth.getSession();
     const selfId = session?.user?.id;
 
-    // Update age directly (not covered by the existing RPC)
-    if (updates.age !== undefined && selfId) {
-      const { error: ageError } = await supabase
+    // Date of birth directly (not covered by the existing RPC); null clears it
+    if (updates.dateOfBirth !== undefined && selfId) {
+      const { error: dobError } = await supabase
         .from('profiles')
-        .update({ age: updates.age })
+        .update({ date_of_birth: updates.dateOfBirth || null })
         .eq('id', selfId);
-      if (ageError) {
-        console.error('updateOwnProfile age error:', ageError);
-        throw ageError;
+      if (dobError) {
+        console.error('updateOwnProfile date_of_birth error:', dobError);
+        throw dobError;
       }
     }
 
     // yearly_goal is a separate call: needs scripts/add_yearly_goal.sql run first,
-    // and its failure (column not yet migrated) must not block age/blood group/etc.
+    // and its failure (column not yet migrated) must not block date of birth/blood group/etc.
     if (updates.yearlyGoal !== undefined && selfId) {
       const { error: goalError } = await supabase
         .from('profiles')
@@ -663,6 +650,30 @@ export const dataService = {
       if (error) throw error;
       return data || [];
     }, 60_000, { persist: true });
+  },
+
+  // Short forms for long place names (e.g. "SP" for "SHREE PARSHWANATH ROAD"), one per place per group, so place
+  // pickers can be searched by them. Returns { placeName: alias }; an empty map if none (or the table is missing).
+  async getPlaceAliases(orgId: string): Promise<Record<string, string>> {
+    return getCached(`placeAliases:${orgId}`, async () => {
+      const { data, error } = await supabase.from('place_aliases').select('place_name, alias').eq('organization_id', orgId);
+      if (error) { console.warn('Could not load place aliases:', error.message); return {}; }
+      return Object.fromEntries((data || []).map((r: { place_name: string; alias: string }) => [r.place_name, r.alias]));
+    }, 60_000, { persist: true });
+  },
+
+  // Captain only (RLS). An empty alias removes it.
+  async setPlaceAlias(orgId: string, placeName: string, alias: string) {
+    const clean = alias.trim().toUpperCase();
+    const { error } = clean
+      ? await supabase.from('place_aliases').upsert(
+          { organization_id: orgId, place_name: placeName, alias: clean },
+          { onConflict: 'organization_id,place_name' },
+        )
+      : await supabase.from('place_aliases').delete().eq('organization_id', orgId).eq('place_name', placeName);
+    if (error) throw error;
+    invalidate(orgId);
+    return clean;
   },
 
   async getDistance(from: string, to: string, orgId?: string): Promise<number> {

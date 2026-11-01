@@ -50,6 +50,19 @@
   [headers.values]
     Cache-Control = "no-cache"
 
+# Live updates for the Android app (scripts/app-update-bundle.mjs, services/liveUpdate.ts): the app runs on
+# https://localhost, so the manifest needs CORS; it must never be cached, the zips are versioned by name.
+[[headers]]
+  for = "/app-update/*.json"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Access-Control-Allow-Origin = "*"
+[[headers]]
+  for = "/app-update/*.zip"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    Access-Control-Allow-Origin = "*"
+
 [[headers]]
   for = "/registerSW.js"
   [headers.values]

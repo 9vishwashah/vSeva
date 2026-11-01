@@ -11,7 +11,12 @@ const out = path.join(root, 'public/vseva-site/screens');
 fs.mkdirSync(out, { recursive: true });
 
 // Extra screens that live outside the guide (captured for the website)
-const extra = { 'request-submitted': path.join(root, 'scripts/site-sources/request-submitted.jpg') };
+const extra = {
+  'request-submitted': path.join(root, 'scripts/site-sources/request-submitted.jpg'),
+  '53-share-sheet': path.join(root, 'scripts/site-sources/share-sheet.png'),
+  '55-reminder-settings': path.join(root, 'scripts/site-sources/reminder-settings.png'),
+  '56-upcoming-vihar': path.join(root, 'scripts/site-sources/upcoming-vihar.png'),
+};
 
 const files = fs.readdirSync(src).filter(f => f.endsWith('.jpg')).map(f => [f.replace(/\.jpg$/, ''), path.join(src, f)]);
 for (const [name, file] of Object.entries(extra)) if (fs.existsSync(file)) files.push([name, file]);
@@ -23,4 +28,16 @@ for (const [name, file] of files) {
   }
   const { width, height } = await sharp(path.join(out, `${name}-760.webp`)).metadata();
   console.log(`${name} ${width}x${height}`);
+}
+
+// Pictures that are not phone screens (shown on their own): public/vseva-site/<name>-<width>.webp
+const pictures = {
+  'share-card-square': ['share-card-square.png', [400, 800]],
+  'reminder-preview': ['reminder-preview.jpg', [360]],
+};
+for (const [name, [file, widths]] of Object.entries(pictures)) {
+  for (const width of widths) {
+    await sharp(path.join(root, 'scripts/site-sources', file)).resize({ width, withoutEnlargement: true }).webp({ quality: 82 }).toFile(path.join(root, 'public/vseva-site', `${name}-${width}.webp`));
+  }
+  console.log(name, widths.join(', '));
 }

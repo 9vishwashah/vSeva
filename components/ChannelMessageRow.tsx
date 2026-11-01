@@ -6,6 +6,8 @@ import { ChannelPost } from '../types';
 interface ChannelMessageRowProps {
   post: ChannelPost;
   isMine: boolean;
+  // the viewer may delete it: their own message, or any message in their group's VChat if they are the Captain
+  canDelete?: boolean;
   /** Whether the viewer can post here (so can reply). Copy / delete via the long-press menu work regardless. */
   canReply: boolean;
   /** Briefly true after jumping to this message from a quote. */
@@ -28,7 +30,7 @@ const tick = (ms: number) => { try { (navigator as any).vibrate?.(ms); } catch {
 //   * long-press / right-click -> menu (Reply, Copy, Delete)
 //   * a reply shows the message it answers as a quote; tap the quote to jump to the original
 const ChannelMessageRow: React.FC<ChannelMessageRowProps> = ({
-  post, isMine, canReply, highlighted, formatTime, onReply, onOpenActions, onOpenProfile, onJumpTo, onDelete,
+  post, isMine, canDelete = isMine, canReply, highlighted, formatTime, onReply, onOpenActions, onOpenProfile, onJumpTo, onDelete,
 }) => {
   const isOptimistic = post.id.startsWith('optimistic-');
   const slideRef = useRef<HTMLDivElement>(null);
@@ -140,8 +142,8 @@ const ChannelMessageRow: React.FC<ChannelMessageRowProps> = ({
                 <Reply size={13} />
               </button>
             )}
-            {isMine && !isOptimistic && (
-              <button onClick={() => onDelete(post.id)} className="text-gray-400 hover:text-red-500 shrink-0" aria-label="Delete message">
+            {canDelete && !isOptimistic && (
+              <button onClick={() => onDelete(post.id)} className="text-gray-400 hover:text-red-500 shrink-0" aria-label={isMine ? 'Delete message' : 'Delete for everyone'}>
                 <Trash2 size={13} />
               </button>
             )}

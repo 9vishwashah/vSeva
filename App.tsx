@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { supabase } from './services/supabase';
+import { isAuthRetryableFetchError } from '@supabase/supabase-js';
+import { supabase, storedSessionUserId } from './services/supabase';
 import { UserRole, UserProfile, ViharEntry, Organization, UserNotification } from './types';
 import { getNotificationTarget } from './services/notificationRouting';
 import { dataService } from './services/dataService';
@@ -20,6 +21,7 @@ const Layout = React.lazy(() => import('./components/Layout'));
 const OnboardingWalkthrough = React.lazy(() => import('./components/OnboardingWalkthrough'));
 const SankalpGate = React.lazy(() => import('./components/SankalpGate'));
 const UpdateAppBanner = React.lazy(() => import('./components/UpdateAppBanner'));
+const StoreUpdatePrompt = React.lazy(() => import('./components/StoreUpdatePrompt'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const NewEntry = React.lazy(() => import('./pages/NewEntry'));
 const AddSevak = React.lazy(() => import('./pages/AddSevak'));
@@ -355,9 +357,14 @@ const App: React.FC = () => {
         const sessionTimeout = new Promise<never>((_, reject) => {
           setTimeout(() => reject(new Error('Session restore timed out')), 15000);
         });
-        const { data: { session } } = await Promise.race([supabase.auth.getSession(), sessionTimeout]);
-        if (session?.user) {
-          let profile = await dataService.getProfile(session.user.id);
+        const { data: { session }, error: sessionErr } = await Promise.race([supabase.auth.getSession(), sessionTimeout]);
+        // Offline with an expired access token: no session comes back, but the saved one is kept. Open on it.
+        const userId = session?.user?.id ?? (sessionErr && isAuthRetryableFetchError(sessionErr) ? storedSessionUserId() : null);
+        if (userId) {
+          setCacheScope(userId); // so the profile and data kept on this device can be read before `user` is set
+          let profile = await dataService.getProfile(userId);
+          // Offline on a device that has never kept this profile: show the offline screen, not the login page
+          if (!profile && !navigator.onLine) throw new Error('Offline and no saved profile');
           if (profile) {
             // A session from another platform (e.g. a vSeva account opened on the SSG site) is not admitted.
             const blocked = await brandAccessError(profile.organization_id);
@@ -403,7 +410,7 @@ const App: React.FC = () => {
             supabase
               .from('profiles')
               .update({ last_login_at: new Date().toISOString() })
-              .eq('id', session.user.id)
+              .eq('id', userId)
               .then(({ error }) => {
                 if (error) console.warn('Could not update last_login_at:', error.message);
               });
@@ -655,8 +662,10 @@ const App: React.FC = () => {
         )}
       </Layout>
       </ViharYearProvider>
-      {/* When OneSignal registers the worker (web push on), it must be the only registrar: see oneSignalService */}
-      {!ONESIGNAL_OWNS_SERVICE_WORKER && <UpdateAppBanner />}
+      {/* When OneSignal registers the worker (web push on), it must be the only registrar: see oneSignalService.
+          The Android app has no service worker (it updates itself, see services/liveUpdate.ts); it asks for Play Store updates instead. */}
+      {!ONESIGNAL_OWNS_SERVICE_WORKER && !isNativeApp && <UpdateAppBanner />}
+      {isNativeApp && <StoreUpdatePrompt />}
     </React.Suspense>
   );
 };

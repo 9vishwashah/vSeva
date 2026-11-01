@@ -11,6 +11,8 @@ import { dataService } from '../services/dataService';
 import { OCCUPATIONS } from '../services/occupations';
 import { UserPlus, Loader2, CheckCircle, Users, Copy, Check, Trash2, AlertTriangle, Search, Clock, Edit2, X, Download, Printer, ArrowLeft, Footprints, KeyRound, Upload, FileText, Table } from 'lucide-react';
 import ThemedSelect from '../components/ThemedSelect';
+import DateOfBirthField from '../components/DateOfBirthField';
+import { ageFromDob, dobWithAge, formatDob, isValidDob } from '../services/dateOfBirth';
 import IDCardBadge from '../components/IDCardBadge';
 import { useToast } from '../context/ToastContext';
 import CircularProgressBar from '../components/CircularProgressBar';
@@ -105,7 +107,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   const [showDeleteModal, setShowDeleteModal] = useState<{ id: string, name: string } | null>(null);
 
   const [selectedSevak, setSelectedSevak] = useState<UserProfile | null>(null);
-  const [editForm, setEditForm] = useState<{ mobile: string; age: string; bloodGroup: string; emergencyNumber: string; emergencyContactName: string; occupation: string; occupationDetails: string; address: string; gender: string; alias: string; viharScope: string; sevaPreferences: SevaPreference[] }>({ mobile: '', age: '', bloodGroup: '', emergencyNumber: '', emergencyContactName: '', occupation: '', occupationDetails: '', address: '', gender: 'Male', alias: '', viharScope: '', sevaPreferences: [] });
+  const [editForm, setEditForm] = useState<{ mobile: string; dateOfBirth: string; bloodGroup: string; emergencyNumber: string; emergencyContactName: string; occupation: string; occupationDetails: string; address: string; gender: string; alias: string; viharScope: string; sevaPreferences: SevaPreference[] }>({ mobile: '', dateOfBirth: '', bloodGroup: '', emergencyNumber: '', emergencyContactName: '', occupation: '', occupationDetails: '', address: '', gender: 'Male', alias: '', viharScope: '', sevaPreferences: [] });
   const [showIdCard, setShowIdCard] = useState(false);
 
   // Search State
@@ -157,7 +159,6 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         fullName: formData.fullName,
         mobile: formData.mobile,
         gender: formData.gender,
-        age: undefined,
         bloodGroup: undefined,
         emergencyNumber: '',
         address: '',
@@ -221,7 +222,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     setEditingId(sevak.id);
     setEditForm({
       mobile: sevak.mobile || '',
-      age: sevak.age?.toString() || '',
+      dateOfBirth: sevak.date_of_birth || '',
       bloodGroup: sevak.blood_group || 'O+',
       emergencyNumber: sevak.emergency_number || '',
       emergencyContactName: sevak.emergency_contact_name || '',
@@ -241,13 +242,15 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       showToast('Please specify the occupation', 'error');
       return;
     }
+    if (editForm.dateOfBirth && !isValidDob(editForm.dateOfBirth)) {
+      showToast('Please pick a valid date of birth', 'error');
+      return;
+    }
     setSavingId(selectedSevak.id);
-    
-    const newAge = editForm.age ? parseInt(editForm.age) : undefined;
-    
+
     try {
       await dataService.updateSevakDetails(selectedSevak.id, {
-        age: isNaN(newAge as number) ? undefined : newAge,
+        dateOfBirth: editForm.dateOfBirth || undefined,
         bloodGroup: editForm.bloodGroup,
         emergencyNumber: editForm.emergencyNumber,
         emergencyContactName: editForm.emergencyNumber ? editForm.emergencyContactName : '',
@@ -259,7 +262,7 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
         ...(BRAND.sevakViharPreferences ? { viharScope: editForm.viharScope, sevaPreferences: editForm.sevaPreferences } : {}),
       });
       // update local
-      const updated = { ...selectedSevak, age: newAge, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, emergency_contact_name: editForm.emergencyNumber ? editForm.emergencyContactName.trim() || null : null, occupation: editForm.occupation || null, occupation_details: editForm.occupation ? editForm.occupationDetails.trim() || null : null, address: editForm.address, gender: editForm.gender, alias: editForm.alias.trim() || null,
+      const updated = { ...selectedSevak, date_of_birth: editForm.dateOfBirth || selectedSevak.date_of_birth || null, blood_group: editForm.bloodGroup, emergency_number: editForm.emergencyNumber, emergency_contact_name: editForm.emergencyNumber ? editForm.emergencyContactName.trim() || null : null, occupation: editForm.occupation || null, occupation_details: editForm.occupation ? editForm.occupationDetails.trim() || null : null, address: editForm.address, gender: editForm.gender, alias: editForm.alias.trim() || null,
         ...(BRAND.sevakViharPreferences ? { vihar_scope: (editForm.viharScope || null) as UserProfile['vihar_scope'], seva_preferences: editForm.sevaPreferences.length ? editForm.sevaPreferences : null } : {}) };
       setSevaks(prev => prev.map(s => s.id === selectedSevak.id ? updated : s));
       setSelectedSevak(updated);
@@ -323,7 +326,8 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       Username: s.username,
       Mobile: s.mobile,
       Gender: s.gender || '',
-      Age: s.age ? String(s.age) : '',
+      'Date of Birth': formatDob(s.date_of_birth),
+      Age: ageFromDob(s.date_of_birth)?.toString() ?? '',
       ...(BRAND.sevakViharPreferences ? { 'Vihar Type': s.vihar_scope || '', 'Seva Preference': formatSevaPreferences(s.seva_preferences) } : {}),
     }));
 
@@ -512,7 +516,7 @@ Kindly do Vihar and continue your Seva.`;
                   setFormData({ ...formData, mobile: val });
                 }}
               />
-              <p className="text-xs text-gray-400 mt-1 md:hidden">Additional details (age, address, etc.) can be filled by the sevak on their profile.</p>
+              <p className="text-xs text-gray-400 mt-1 md:hidden">Additional details (date of birth, address, etc.) can be filled by the sevak on their profile.</p>
             </div>
 
             <div>
@@ -811,11 +815,11 @@ Kindly do Vihar and continue your Seva.`;
                       <span className="text-sm font-mono font-semibold text-gray-800">{selectedSevak.mobile}</span>
                     </DetailField>
 
-                    <DetailField label="Age">
+                    <DetailField label="Date of Birth" wide={editing}>
                       {editing ? (
-                        <input type="number" min={1} max={120} value={editForm.age} onChange={e => setEditForm({ ...editForm, age: e.target.value })} className={inp} />
+                        <DateOfBirthField value={editForm.dateOfBirth} onChange={v => setEditForm({ ...editForm, dateOfBirth: v })} className={inp} />
                       ) : (
-                        <span className="text-sm font-semibold text-gray-900">{selectedSevak.age || '-'}</span>
+                        <span className="text-sm font-semibold text-gray-900">{dobWithAge(selectedSevak.date_of_birth)}</span>
                       )}
                     </DetailField>
 

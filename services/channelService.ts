@@ -156,7 +156,8 @@ export const channelService = {
   // this does not open one connection per organization. Subscribe only
   // while a Channel screen for that org is open; unsubscribe on unmount
   // (see pages/ChannelOrganization.tsx).
-  subscribeToOrgPosts(organizationId: string, onInsert: (post: ChannelPost) => void) {
+  // onDelete: a message was deleted (by its author, or for everyone by the Captain); see scripts/vchat_captain_delete.sql
+  subscribeToOrgPosts(organizationId: string, onInsert: (post: ChannelPost) => void, onDelete?: (postId: string) => void) {
     const channel = supabase
       .channel(`channel:org:${organizationId}`, { config: { private: true } })
       .on('broadcast', { event: 'INSERT' }, (payload: any) => {
@@ -164,6 +165,10 @@ export const channelService = {
         // .record — that nesting is specific to broadcast_changes()).
         const post = payload?.payload;
         if (post?.id) onInsert(post as ChannelPost);
+      })
+      .on('broadcast', { event: 'DELETE' }, (payload: any) => {
+        const id = payload?.payload?.id;
+        if (id && onDelete) onDelete(String(id));
       })
       .subscribe();
     return () => {

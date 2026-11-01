@@ -52,10 +52,10 @@ const ContactPage: React.FC = () => {
       <Section className="pb-20">
         <div className="grid gap-6 lg:grid-cols-12">
           {/* WhatsApp: vSeva support */}
-          <div className="rounded-[24px] bg-[color:var(--night)] p-7 text-[#f3e9de] md:p-9 lg:col-span-7" data-reveal>
-            <p className="vs-eyebrow !text-[#f0a37c]">vSeva support · WhatsApp</p>
+          <div className="rounded-[24px] bg-[color:var(--night)] p-7 text-white md:p-9 lg:col-span-7" data-reveal>
+            <p className="vs-eyebrow !text-white">vSeva support · WhatsApp</p>
             <p className="vs-display mt-4 text-[clamp(2rem,4.5vw,3.2rem)] text-white">{CONTACT.supportWhatsAppDisplay}</p>
-            <p className="mt-3 max-w-[46ch] text-[#cdbfb2]">For group onboarding, Sevak setup, sign-in trouble and questions about any feature.</p>
+            <p className="mt-3 max-w-[46ch] text-white">For group onboarding, Sevak setup, sign-in trouble and questions about any feature.</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <a href={CONTACT.supportWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="vs-btn bg-[#13843f] text-white hover:bg-[#0f6f34]">
                 <WhatsAppIcon size={18} /> Chat on WhatsApp

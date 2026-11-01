@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ThemedSelect from './ThemedSelect';
+import DateOfBirthField from './DateOfBirthField';
+import { isValidDob } from '../services/dateOfBirth';
 import { BRAND } from '@brand';
 import { UserProfile, UserRole, Organization, SevaPreference } from '../types';
 import { getMissingProfileFields, getProfileCompletion } from '../services/profileCompletion';
@@ -14,6 +16,7 @@ import { getViharYearBounds } from '../services/viharYear';
 import SosButton from './SosButton';
 import ChangePasswordCard from './ChangePasswordCard';
 import SankalpSettingsCard from './SankalpSettingsCard';
+import ReminderSettingsCard from './ReminderSettingsCard';
 import { PUSH_ENABLED } from '../services/oneSignalService';
 import { OCCUPATIONS } from '../services/occupations';
 import { getAccountBadge } from '../services/specialAccounts';
@@ -91,7 +94,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
     // "ask your captain" case: an admin has no one above them to ask, so this is
     // editable for every role, not just sevaks.
     const [editForm, setEditForm] = useState({
-        age: user.age !== undefined && user.age !== null ? String(user.age) : '',
+        date_of_birth: user.date_of_birth || '',
         blood_group: user.blood_group || '',
         emergency_number: user.emergency_number || '',
         emergency_contact_name: user.emergency_contact_name || '',
@@ -104,7 +107,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
     useEffect(() => {
         setEditForm({
-            age: user.age !== undefined && user.age !== null ? String(user.age) : '',
+            date_of_birth: user.date_of_birth || '',
             blood_group: user.blood_group || '',
             emergency_number: user.emergency_number || '',
             emergency_contact_name: user.emergency_contact_name || '',
@@ -118,7 +121,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
     // Captain (ORG_ADMIN) fields — this profile represents the org's leadership,
     // not a personal sevak, so it edits captain/vice-captain names instead of
-    // age/blood group/etc.
+    // date of birth/blood group/etc.
     const [captainName, setCaptainName] = useState(user.full_name);
     const [viceCaptainName, setViceCaptainName] = useState(orgDetails?.vice_captain_name || '');
 
@@ -140,15 +143,15 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             showToast('Please specify your occupation', 'error');
             return;
         }
-        const ageNum = editForm.age ? parseInt(editForm.age, 10) : undefined;
-        if (editForm.age && (isNaN(ageNum!) || ageNum! < 1 || ageNum! > 120)) {
-            showToast('Please enter a valid age (1–120)', 'error');
+        if (editForm.date_of_birth && !isValidDob(editForm.date_of_birth)) {
+            showToast('Please pick a valid date of birth', 'error');
             return;
         }
         setIsSaving(true);
         try {
             await dataService.updateOwnProfile({
-                age: ageNum,
+                // only sent when changed; picking a complete date sets it, clearing it removes it
+                ...(editForm.date_of_birth !== (user.date_of_birth || '') ? { dateOfBirth: editForm.date_of_birth || null } : {}),
                 bloodGroup: editForm.blood_group,
                 emergencyNumber: editForm.emergency_number,
                 // the name belongs to the number: clearing the number clears the name too
@@ -169,7 +172,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
     // Save stays grey until something actually differs from what is stored.
     const hasChanges = user.role === UserRole.SEVAK
-        ? (editForm.age.trim() !== (user.age !== undefined && user.age !== null ? String(user.age) : '')
+        ? (editForm.date_of_birth !== (user.date_of_birth || '')
             || editForm.blood_group !== (user.blood_group || '')
             || editForm.emergency_number !== (user.emergency_number || '')
             || editForm.emergency_contact_name.trim() !== (user.emergency_contact_name || '')
@@ -268,9 +271,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
         try {
             if (isNativePlatform()) {
                 const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
-                // true = fall back to Android's system settings screen if the
-                // user already denied it once and the OS won't re-prompt.
-                const granted = await OneSignal.Notifications.requestPermission(true);
+                const { NotificationPermission } = await import('../services/notificationPermission');
+                // asked by the app itself (not OneSignal's permission screen, see notificationPermission.ts); if
+                // Android won't ask again (declined before), open the app's notification settings instead
+                const { granted } = await NotificationPermission.request();
+                if (!granted) await NotificationPermission.openSettings();
                 if (granted && user.username) {
                     await OneSignal.login(user.username);
                 }
@@ -404,8 +409,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             {/* Sankalp: a Sevak's own target / the Captain's Group Sankalp + "Sevaks can edit" switch */}
             <SankalpSettingsCard user={user} />
 
+            {/* Captain: the group's "No Vihar Since N Days" reminders (on/off, days, message) */}
+            {user.role === UserRole.ORG_ADMIN && <ReminderSettingsCard user={user} />}
+
             {/* Profile Incomplete nudge */}
-            {isSevak && missingFields.some(f => f !== 'Age') && (
+            {isSevak && missingFields.some(f => f !== 'Date of birth') && (
                 <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
                     <div className="mt-0.5 text-blue-600 shrink-0">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -441,18 +449,10 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                             <ThemedSelect value={editForm.blood_group} onChange={v => setEditForm({ ...editForm, blood_group: v })} options={[...BLOOD_GROUPS]} placeholder="— Select —" title="Blood Group" className={fieldInputClass} />
                         </div>
 
-                        {/* Age */}
+                        {/* Date of Birth: age is worked out from it */}
                         <div>
-                            <label className={fieldLabelClass}>Age</label>
-                            <input
-                                type="number"
-                                min={1}
-                                max={120}
-                                value={editForm.age}
-                                onChange={e => setEditForm({ ...editForm, age: e.target.value })}
-                                placeholder="Your age"
-                                className={fieldInputClass}
-                            />
+                            <label className={fieldLabelClass}>Date of Birth</label>
+                            <DateOfBirthField value={editForm.date_of_birth} onChange={v => setEditForm({ ...editForm, date_of_birth: v })} className={fieldInputClass} />
                         </div>
 
                         {/* Family Emergency Number + whose number it is */}
@@ -628,7 +628,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 </button>
             </div>
 
-            {/* Vihar Seva ID Card */}
+            {/* Vihar Seva ID Card (Sevaks only; a Captain account has no card) */}
+            {user.role !== UserRole.ORG_ADMIN && (
             <div className="bg-white rounded-[22px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
                 <div className="flex items-center gap-3">
                     <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#FFF0E5' }}>
@@ -646,6 +647,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     <Printer size={16} /> View Card
                 </button>
             </div>
+            )}
 
             {/* App Settings */}
             <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
@@ -739,6 +741,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     Sign Out
                 </button>
             )}
+
+            {/* which web build is running (the Android app updates itself; this shows that it did) */}
+            <p className="text-center text-[11px] text-gray-400">{BRAND.shortName} · build {__APP_BUILD__}</p>
 
             {/* Avatar Crop Modal */}
             {cropFile && (
