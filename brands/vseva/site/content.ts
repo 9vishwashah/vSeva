@@ -33,8 +33,8 @@ export const CONTACT = {
   vjasPhoneDisplay: '+91 93245 03214',
   vjasPhoneUrl: 'tel:+919324503214',
   email: '9vishwashah@gmail.com',
-  instagramUrl: 'https://www.instagram.com/the.vseva/',
-  instagramHandle: '@the.vseva',
+  instagramUrl: 'https://www.instagram.com/vseva.app',
+  instagramHandle: '@vseva.app',
   youtubeUrl: 'https://www.youtube.com/@VJASTECH',
 } as const;
 

@@ -39,7 +39,7 @@ export function renderHtml(html: string, m: BrandMeta): string {
     // Link-preview crawlers need an absolute image URL; without a site URL the tag is
     // omitted rather than emitted broken.
     OG_IMAGE_TAGS: m.siteUrl
-      ? `<meta property="og:image" content="${abs(m.ogImagePath)}" />\n  <meta property="og:image:width" content="${w}" />\n  <meta property="og:image:height" content="${h}" />`
+      ? `<meta property="og:image" content="${abs(m.ogImagePath)}" />\n  <meta property="og:image:width" content="${w}" />\n  <meta property="og:image:height" content="${h}" />\n  <meta property="og:image:alt" content="${esc(m.ogTitle)}" />`
       : '',
     TWITTER_IMAGE_TAG: m.siteUrl ? `<meta name="twitter:image" content="${abs(m.ogImagePath)}" />` : '',
     GOOGLE_VERIFICATION: m.googleVerification

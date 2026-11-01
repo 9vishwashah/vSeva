@@ -397,7 +397,13 @@ export default defineConfig(({ mode }) => {
           configResolved(c: { root: string; build: { outDir: string } }) { outDir = path.resolve(c.root, c.build.outDir); },
           closeBundle() {
             const index = path.join(outDir, 'index.html');
-            if (fs.existsSync(index)) fs.copyFileSync(index, path.join(outDir, 'app.html'));
+            if (fs.existsSync(index)) {
+              // app.html serves many routes (/directory, /nearby-derasar, …): a fixed canonical of "/" would tell
+              // search engines they are all copies of the home page, so each route points at its own address.
+              const selfUrl = `<script>(function(){var u=${JSON.stringify(brand.siteUrl || '')}||location.origin;u+=location.pathname.replace(/\\/+$/,'')||'/';var l=document.createElement('link');l.rel='canonical';l.href=u;document.head.appendChild(l);var m=document.querySelector('meta[property="og:url"]');if(m)m.setAttribute('content',u);})();</script>`;
+              const html = fs.readFileSync(index, 'utf8').replace(/<link rel="canonical"[^>]*>/, selfUrl);
+              fs.writeFileSync(path.join(outDir, 'app.html'), html);
+            }
             // which build this is, for scripts/app-update-bundle.mjs
             fs.writeFileSync(path.join(outDir, 'app-build.json'), JSON.stringify({ build: appBuild, brand: brand.id }));
           },

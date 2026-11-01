@@ -1,3 +1,7 @@
-/robots.txt  /robots.txt  200
-/sitemap.xml /sitemap.xml 200
-/*           /app.html    200
+# Netlify reads this file before netlify.toml, so every rule that must win over the catch-all lives here.
+# The default Netlify address would otherwise serve a duplicate copy of the site to search engines.
+https://jcohckudoyd.netlify.app/*  https://vseva.vjas.in/:splat  301!
+/robots.txt             /robots.txt                              200
+/sitemap.xml            /sitemap.xml                             200
+/directory-sitemap.xml  /.netlify/functions/directory-sitemap    200!
+/*                      /app.html                                200

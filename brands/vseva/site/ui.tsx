@@ -100,11 +100,34 @@ export const SiteShell: React.FC<ShellProps> = ({ page, title, description, onLo
       <main id="main" className="pb-10">{children}</main>
       <SiteFooter />
       <FloatingActions raised={mounted && bannerOpen} />
-      {/* The existing install banner (Android prompt / iPhone guide), unchanged */}
-      {mounted && <InstallPWA variant="light" androidStoreUrl={PLAY_STORE_URL} onDismiss={() => setBannerOpen(false)} />}
+      {mounted && bannerOpen && <AppBar onDismiss={() => setBannerOpen(false)} />}
+      {/* Only for the iPhone "Add to Home Screen" guide (opened by the iPhone buttons); its own banner is replaced by AppBar */}
+      {mounted && <InstallPWA variant="light" guideOnly />}
     </div>
   );
 };
+
+/* Get-the-app bar: Android (Google Play) and iPhone (web app), fixed at the bottom until closed */
+const AppBar: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
+  <div
+    className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--line)] bg-white/95 shadow-[0_-6px_24px_rgba(140,60,20,0.12)] backdrop-blur"
+    style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    role="region"
+    aria-label="Get the vSeva app"
+  >
+    <div className="mx-auto flex min-h-[64px] max-w-[1240px] items-center gap-3 px-3 sm:px-6">
+      <img src="/vseva-site/logo-96.webp" alt="" width={36} height={36} className="hidden h-9 w-9 shrink-0 scale-[1.4] object-contain min-[400px]:block" />
+      <p className="hidden min-w-0 flex-1 leading-tight sm:block">
+        <span className="block font-[family-name:var(--display)] text-[1rem] font-bold text-[color:var(--ink)]">Get the vSeva app</span>
+        <span className="block text-[0.8rem] text-[color:var(--muted)]">Android on Google Play · iPhone as a web app · opens even offline</span>
+      </p>
+      <StoreButtons compact className="!flex-nowrap max-sm:flex-1 max-sm:[&>*]:flex-1 max-sm:[&>*]:px-2" />
+      <button type="button" onClick={onDismiss} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--paper)]" aria-label="Close">
+        <X size={17} aria-hidden />
+      </button>
+    </div>
+  </div>
+);
 
 /* ───────────── Header ───────────── */
 
@@ -300,11 +323,11 @@ export const SiteFooter: React.FC = () => {
   );
 };
 
-/* ───────────── Floating actions (phones) ───────────── */
+/* ───────────── Floating actions ───────────── */
 
 export const FloatingActions: React.FC<{ raised: boolean }> = ({ raised }) => (
   <div
-    className="fixed right-3 z-30 flex flex-col gap-2.5 md:hidden"
+    className="fixed right-3 z-30 flex flex-col gap-2.5 sm:right-5"
     style={{ bottom: raised ? 'calc(80px + env(safe-area-inset-bottom))' : 'calc(16px + env(safe-area-inset-bottom))', transition: 'bottom 200ms ease' }}
     aria-label="Quick contact"
     role="group"

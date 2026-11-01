@@ -11,12 +11,14 @@ interface InstallPWAProps {
     variant?: 'dark' | 'light';
     // When set, Install on an Android phone opens this store page instead of the browser's install prompt.
     androidStoreUrl?: string;
+    // No banner: only the iPhone guide, opened with IOS_GUIDE_EVENT (the website has its own app bar).
+    guideOnly?: boolean;
 }
 
 // Opens the iPhone "Add to Home Screen" guide from anywhere on the page (e.g. the website's iPhone button)
 export const IOS_GUIDE_EVENT = 'vs:ios-guide';
 
-export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss, variant = 'dark', androidStoreUrl }) => {
+export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss, variant = 'dark', androidStoreUrl, guideOnly }) => {
     const light = variant === 'light';
     const { install, isAndroidInstallable, isIOS, isIOSSafari, isAndroid } = usePWAInstall();
     const { t } = useLanguage();
@@ -32,7 +34,8 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss, variant = 'da
     }, []);
 
     // Always show the banner — even if installed (user may want to reinstall / guide others)
-    if (dismissed && !showIOSGuide) return null;
+    const hideBanner = dismissed || !!guideOnly;
+    if (hideBanner && !showIOSGuide) return null;
 
     const flashTip = (which: 'desktop' | 'android') => {
         setTip(which);
@@ -121,7 +124,7 @@ export const InstallPWA: React.FC<InstallPWAProps> = ({ onDismiss, variant = 'da
             {/* Narrow phones: keep the banner to a compact two-line title */}
             <style>{'.pwa-title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}@media (max-width:399px){.pwa-sub{display:none}}'}</style>
             {/* ── Sticky Footer Banner ── */}
-            {!dismissed && <div
+            {!hideBanner && <div
                 style={{
                     position: 'fixed',
                     bottom: 0,

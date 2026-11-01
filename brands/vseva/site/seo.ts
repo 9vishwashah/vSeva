@@ -38,7 +38,7 @@ const organization = {
   name: 'vSeva',
   alternateName: 'vSeva - VJAS',
   url: `${SITE_URL}/`,
-  logo: `${SITE_URL}/vseva-og-preview.png`,
+  logo: `${SITE_URL}/vseva-logo-full.png`, // square logo (the 1200x630 banner is for link previews)
   sameAs: [CONTACT.instagramUrl, CONTACT.youtubeUrl, PLAY_STORE_URL],
   contactPoint: {
     '@type': 'ContactPoint',
