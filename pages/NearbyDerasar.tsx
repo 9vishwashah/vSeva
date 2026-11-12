@@ -142,6 +142,12 @@ const NearbyDerasar: React.FC = () => {
     setMeta('og:image', `${BRAND.siteUrl}${BRAND.ogImagePath}`, true);
     setMeta('og:url', `${BRAND.siteUrl || window.location.origin}${path}`, true);
     setMeta('og:type', 'website', true);
+    // The city variants are the same finder with a different heading: point search engines at the one main
+    // page so they aren't judged as near-duplicate (doorway) pages.
+    const canonicalUrl = `${BRAND.siteUrl || window.location.origin}/nearby-derasar`;
+    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
+    canonical.href = canonicalUrl;
 
     // Dynamic FAQ Data
     const faqData = {

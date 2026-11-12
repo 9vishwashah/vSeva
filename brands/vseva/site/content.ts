@@ -3,6 +3,13 @@
 
 export const SITE_URL = 'https://vseva.vjas.in';
 
+// The downloadable guides. These addresses never change: docs/platform-guide/build_guides.py overwrites the files
+// in public/vseva-site/ each time the guides are rebuilt, so shared links always get the latest version.
+export const GUIDES = [
+  { href: '/vseva-site/vSeva-Captain-Guide.pdf', title: 'Captain Guide', body: 'Set up your group, add Sevaks and routes, approve Vihars and run reports.' },
+  { href: '/vseva-site/vSeva-Sevak-Guide.pdf', title: 'Sevak Guide', body: 'Install the app, sign in, complete your profile and submit Vihars for approval.' },
+] as const;
+
 // The Android app on Google Play. iPhone users install the web app (Add to Home Screen).
 export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=in.vjas.vseva';
 
@@ -32,7 +39,7 @@ export const CONTACT = {
   supportWhatsAppUrl: 'https://wa.me/919594503214',
   vjasPhoneDisplay: '+91 93245 03214',
   vjasPhoneUrl: 'tel:+919324503214',
-  email: '9vishwashah@gmail.com',
+  email: 'contact@vjas.in',
   instagramUrl: 'https://www.instagram.com/vseva.app',
   instagramHandle: '@vseva.app',
   youtubeUrl: 'https://www.youtube.com/@VJASTECH',

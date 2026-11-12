@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Youtube } from 'lucide-react';
-import { CONTACT, SCREENS, type Screen } from './content';
+import { CONTACT, GUIDES, SCREENS, type Screen } from './content';
 import { PageIntro, Section, Shot, SiteShell } from './ui';
 import { PAGE_META } from './seo';
 
@@ -91,9 +91,11 @@ const DocumentationPage: React.FC = () => {
                 {TOC.map(t => <a key={t.id} href={`#${t.id}`} aria-current={active === t.id ? 'true' : undefined}>{t.label}</a>)}
               </nav>
               <div className="mt-8 space-y-3 text-[0.9rem]">
-                <a href="/vseva-site/vSeva-App-Guide.pdf" className="vs-link inline-flex items-center gap-2" download>
-                  <Download size={15} aria-hidden /> App Guide (PDF)
-                </a>
+                {GUIDES.map(g => (
+                  <a key={g.href} href={g.href} className="vs-link flex items-center gap-2" download>
+                    <Download size={15} aria-hidden /> {g.title} (PDF)
+                  </a>
+                ))}
                 <a href={CONTACT.youtubeUrl} target="_blank" rel="noopener noreferrer" className="vs-link flex items-center gap-2">
                   <Youtube size={15} aria-hidden /> Video guides on YouTube
                 </a>
@@ -388,7 +390,9 @@ const DocumentationPage: React.FC = () => {
               <div className="mt-5 flex flex-wrap gap-3">
                 <a href="/contact" className="vs-btn vs-btn-light">Contact us</a>
                 <a href={CONTACT.youtubeUrl} target="_blank" rel="noopener noreferrer" className="vs-btn vs-btn-light"><Youtube size={16} aria-hidden /> Watch on YouTube</a>
-                <a href="/vseva-site/vSeva-App-Guide.pdf" className="vs-btn border border-white/25 text-white hover:border-white/60" download><Download size={16} aria-hidden /> App Guide PDF</a>
+                {GUIDES.map(g => (
+                  <a key={g.href} href={g.href} className="vs-btn border border-white/25 text-white hover:border-white/60" download><Download size={16} aria-hidden /> {g.title} PDF</a>
+                ))}
               </div>
             </div>
           </article>

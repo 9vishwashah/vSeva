@@ -2,7 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { ArrowUpRight, Instagram, LogIn, Menu, Phone, X, Youtube } from 'lucide-react';
 import WhatsAppIcon from '../../../components/WhatsAppIcon';
 import { InstallPWA, IOS_GUIDE_EVENT } from '../../../components/InstallPWA';
-import { CONTACT, COMMUNITY_LINKS, NAV, PLAY_STORE_URL, type Screen } from './content';
+import { CONTACT, COMMUNITY_LINKS, GUIDES, NAV, PLAY_STORE_URL, type Screen } from './content';
 import './site.css';
 
 export type SitePage = 'home' | 'docs' | 'contact' | 'support';
@@ -296,6 +296,7 @@ export const SiteFooter: React.FC = () => {
             <p className="vs-eyebrow">Help</p>
             <a className={link} href="/documentation">Documentation</a>
             <a className={link} href="/documentation#faq">FAQ</a>
+            {GUIDES.map(g => <a key={g.href} className={link} href={g.href} download>{g.title} (PDF)</a>)}
             <a className={link} href="/contact">Contact</a>
             <a className={link} href="/support-us">Support us</a>
             <a className={link} href="/privacy">Privacy Policy</a>

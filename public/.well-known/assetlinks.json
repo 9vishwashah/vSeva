@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "in.vjas.vseva",
+      "sha256_cert_fingerprints": [
+        "4A:20:7A:53:C3:AA:F0:C0:A4:E8:92:1F:1B:3C:FB:8B:7D:9A:DF:79:75:65:5C:E0:6C:DB:18:B7:6B:20:19:E2"
+      ]
+    }
+  }
+]

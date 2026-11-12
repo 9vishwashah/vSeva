@@ -3,5 +3,6 @@
 https://jcohckudoyd.netlify.app/*  https://vseva.vjas.in/:splat  301!
 /robots.txt             /robots.txt                              200
 /sitemap.xml            /sitemap.xml                             200
+/.well-known/assetlinks.json  /.well-known/assetlinks.json         200
 /directory-sitemap.xml  /.netlify/functions/directory-sitemap    200!
 /*                      /app.html                                200

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UserProfile } from '../types';
-import { Loader2, Instagram, MapPin, User, Lock, Eye, EyeOff, UserPlus, Phone } from 'lucide-react';
+import { Loader2, Instagram, MapPin, User, Lock, Eye, EyeOff, UserPlus, Phone, ArrowLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageDropdown from '../components/LanguageDropdown';
@@ -157,8 +157,20 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  // Back to the website's home page. Not inside the installed app (Android app or home-screen web app),
+  // where "/" is the app itself and would just bring the user back here.
+  const inBrowser = !(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true || !!(window as any).Capacitor?.isNativePlatform?.());
+
   const topLinks = (
     <div className="flex items-center gap-2">
+      {inBrowser && (
+        <a
+          href="/"
+          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white/90 text-saffron-700 text-xs sm:text-sm font-bold shadow-sm ring-1 ring-saffron-100 hover:bg-saffron-50 transition-colors no-underline"
+        >
+          <ArrowLeft size={15} /> <span>Home</span>
+        </a>
+      )}
       <button
         type="button"
         onClick={() => { window.location.href = '/nearby-derasar'; }}

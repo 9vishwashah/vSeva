@@ -312,15 +312,22 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
 
             showToast("Organization Approved & Created!", "success");
 
+            const siteUrl = `${BRAND.siteUrl || window.location.origin}/`;
+            // Android users get the Play Store app; iPhone and laptop users open the web app
+            const install = BRAND.playStoreUrl
+                ? `Android App ~ ${BRAND.playStoreUrl}\niPhone / Laptop ~ ${siteUrl}`
+                : `Install App ~ ${siteUrl}`;
             const message =
 `Pranam ${req.captain_name} 🙏
 Your ${BRAND.name} Captain account has been approved ✅
 
-Install App ~ ${BRAND.siteUrl || window.location.origin}/
+${install}
 
 Username: ${req.email}
 Password: ${req.mobile}
-
+${BRAND.docsUrl ? `
+How to use ${BRAND.name} ~ ${BRAND.docsUrl}
+` : ''}
 For Demo & Guide : ${BRAND.contact.demoContact}${BRAND.instagram ? `
 
 Connect on Instagram ${BRAND.instagram.url}` : ''}`;

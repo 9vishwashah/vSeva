@@ -62,7 +62,8 @@ export const structuredData = (path: PublicPath) => {
   const graph: object[] = [organization];
   if (path === '/') {
     graph.push(
-      { '@type': 'WebSite', '@id': `${SITE_URL}/#website`, url: `${SITE_URL}/`, name: 'vSeva', publisher: { '@id': `${SITE_URL}/#organization` }, inLanguage: 'en-IN' },
+      // name + alternateName: what Google shows as the site name in results
+      { '@type': 'WebSite', '@id': `${SITE_URL}/#website`, url: `${SITE_URL}/`, name: 'vSeva', alternateName: ['vSeva App', 'vSeva Vihar Seva'], publisher: { '@id': `${SITE_URL}/#organization` }, inLanguage: 'en-IN' },
       {
         // The Android app on Google Play (the same app also runs on iPhone and in any browser as a web app)
         '@type': 'MobileApplication',

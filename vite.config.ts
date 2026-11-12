@@ -435,8 +435,10 @@ export default defineConfig(({ mode }) => {
           background_color: brand.backgroundColor,
           display: 'standalone',
           start_url: '/',
-          // Tells Chrome and search engines the Android app exists; the web app stays installable too
-          ...(brand.id === 'vseva' ? { related_applications: [{ platform: 'play', url: 'https://play.google.com/store/apps/details?id=in.vjas.vseva', id: 'in.vjas.vseva' }], prefer_related_applications: false } : {}),
+          // The Android app is on Google Play: Chrome on Android offers it instead of installing the website as an app
+          // (an installed web app takes over every vseva.vjas.in link, so shared links skipped the landing page).
+          // iPhone and desktop installs of the web app are unaffected.
+          ...(brand.id === 'vseva' ? { related_applications: [{ platform: 'play', url: 'https://play.google.com/store/apps/details?id=in.vjas.vseva', id: 'in.vjas.vseva' }], prefer_related_applications: true } : {}),
           icons: [
             {
               src: '/pwa-192x192.png',

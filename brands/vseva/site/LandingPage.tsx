@@ -1,8 +1,8 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, ArrowUpRight, MapPin, BookOpen, Instagram, BellRing, Cake } from 'lucide-react';
-import { COMMUNITY_LINKS, FOUNDERS, SCREENS, STATS, TEAM, TICKER, type Screen } from './content';
-import { Eyebrow, IPhoneShot, Section, SiteShell, StoreButtons } from './ui';
+import { ArrowRight, ArrowUpRight, MapPin, BookOpen, Instagram, BellRing, Cake, Download, FileText, Star } from 'lucide-react';
+import { COMMUNITY_LINKS, FOUNDERS, GUIDES, PLAY_STORE_URL, SCREENS, STATS, TEAM, TICKER, type Screen } from './content';
+import { Eyebrow, GooglePlayIcon, IPhoneShot, Section, SiteShell, StoreButtons } from './ui';
 import { PAGE_META } from './seo';
 
 // The map's state outlines are large, so they load only once the section is close to the screen
@@ -23,9 +23,12 @@ const Hero: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
       <Section className="pb-16 pt-10 md:pb-24 md:pt-16">
         <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-7">
-            <p className="vs-eyebrow vs-rise" style={{ ['--d' as string]: 0 }}>A digital platform for Vihar Seva</p>
-            <h1 className="vs-display vs-rise mt-5 text-[clamp(3.4rem,10.5vw,8.4rem)]" style={{ ['--d' as string]: 1 }}>
-              Every Step<br />Counts<span className="vs-accent">.</span>
+            {/* The brand name sits inside the H1 (styled as the small eyebrow) so searches for "vSeva" match the page's main heading */}
+            <h1>
+              <span className="vs-eyebrow vs-rise block" style={{ ['--d' as string]: 0 }}>vSeva · The Vihar Seva app</span>
+              <span className="vs-display vs-rise mt-5 block text-[clamp(3.4rem,10.5vw,8.4rem)]" style={{ ['--d' as string]: 1 }}>
+                Every Step<br />Counts<span className="vs-accent">.</span>
+              </span>
             </h1>
             <p className="vs-rise mt-7 max-w-[30ch] font-[family-name:var(--display)] text-[clamp(1.35rem,2.4vw,1.75rem)] font-bold leading-[1.2] tracking-[-0.015em] text-[color:var(--ink)]" style={{ ['--d' as string]: 2 }}>
               A more organized way to record, manage and understand your Vihar Seva journey.
@@ -642,6 +645,31 @@ const GetStarted: React.FC = () => (
       </div>
       <StepList steps={SEVAK_STEPS} />
     </div>
+
+    {/* The two PDF guides (fixed addresses, see GUIDES in content.ts) */}
+    <div id="guides" className="mt-6 rounded-[28px] bg-[color:var(--saffron-tint)] p-6 sm:p-8 md:p-12">
+      <div className="max-w-[640px]" data-reveal>
+        <p className="vs-eyebrow">Guides · PDF</p>
+        <h3 className="vs-h2 mt-4 !text-[clamp(1.9rem,3.6vw,2.9rem)]">Download the step-by-step guides.</h3>
+        <p className="mt-4 text-[color:var(--ink-2)]">Phone-sized PDFs with screenshots, easy to read and to forward on WhatsApp.</p>
+      </div>
+      <ul className="mt-8 grid gap-4 md:grid-cols-2">
+        {GUIDES.map((g, i) => (
+          <li key={g.href} data-reveal style={{ ['--d' as string]: i }}>
+            <a href={g.href} download className="group flex h-full items-center gap-5 rounded-2xl bg-white p-5 no-underline transition-colors hover:bg-[color:var(--paper)] md:p-6">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[color:var(--saffron-tint)]">
+                <FileText size={26} className="text-[color:var(--saffron-deep)]" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-[family-name:var(--display)] text-[1.35rem] font-extrabold tracking-[-0.02em] text-[color:var(--ink)]">vSeva {g.title}</span>
+                <span className="mt-1 block text-[0.92rem] text-[color:var(--ink-2)]">{g.body}</span>
+              </span>
+              <span className="vs-btn vs-btn-primary vs-btn-sm shrink-0" aria-hidden><Download size={16} /> PDF</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   </Section>
 );
 
@@ -670,6 +698,35 @@ const People: React.FC = () => (
             <li key={n} className="font-[family-name:var(--display)] text-[1.5rem] font-bold tracking-[-0.015em]" data-reveal style={{ ['--d' as string]: i }}>{n}</li>
           ))}
         </ul>
+      </div>
+    </div>
+  </Section>
+);
+
+/* ───────────── Rate on Google Play ───────────── */
+
+// Opens the Play listing at its reviews; the review itself is written in the Play Store app.
+const PLAY_REVIEWS_URL = `${PLAY_STORE_URL}&showAllReviews=true`;
+
+const RateUs: React.FC = () => (
+  <Section id="rate" className="pb-6" labelledBy="rate-title">
+    <div className="grid items-center gap-8 rounded-[28px] border border-[color:var(--line-strong)] bg-white p-6 sm:p-8 md:grid-cols-12 md:p-12" data-reveal>
+      <div className="md:col-span-8">
+        <div className="flex gap-1 text-[#F5A623]" aria-hidden>
+          {[0, 1, 2, 3, 4].map(i => <Star key={i} size={26} fill="currentColor" strokeWidth={0} />)}
+        </div>
+        <h2 id="rate-title" className="vs-h2 mt-4">Using vSeva? Rate us on Google Play.</h2>
+        <p className="mt-4 max-w-[56ch] text-[color:var(--ink-2)]">
+          A few words and a star rating help more Vihar Seva groups find vSeva, and tell us what to build next.
+          It takes less than a minute.
+        </p>
+      </div>
+      <div className="flex flex-col gap-3 md:col-span-4 md:items-end">
+        <a href={PLAY_REVIEWS_URL} target="_blank" rel="noopener noreferrer" className="vs-store vs-store-dark">
+          <GooglePlayIcon size={24} />
+          <span className="vs-store-text"><span className="vs-store-cap">Write a review on</span>Google Play</span>
+        </a>
+        <p className="text-[0.82rem] text-[color:var(--muted)] md:text-right">Open the page, then tap the stars under “Rate this app”.</p>
       </div>
     </div>
   </Section>
@@ -746,6 +803,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => (
     <HowItWorks />
     <GetStarted />
     <People />
+    <RateUs />
     <Community />
   </SiteShell>
 );

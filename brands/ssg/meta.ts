@@ -41,7 +41,7 @@ export const getMeta = (env: Env): BrandMeta => {
 
     contact: {
       whatsapp: (env.VITE_CONTACT_WHATSAPP || '919824112292').replace(/\D/g, ''),
-      email: env.VITE_CONTACT_EMAIL || '9vishwashah@gmail.com',
+      email: env.VITE_CONTACT_EMAIL || 'contact@vjas.in',
       demoContact: env.VITE_DEMO_CONTACT || 'the Shraman Seva Group team',
     },
     supportContacts: [

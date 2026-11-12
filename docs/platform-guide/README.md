@@ -13,6 +13,20 @@ The external guide for Vihar Seva groups, Captains and Sevaks.
 | `assets/qr-instagram.png` | Instagram QR with the vSeva logo, supplied by the owner (decodes to https://www.instagram.com/the.vseva) |
 | `CONTENT_AUDIT.md` | What was verified in the app, what was left out, and the open points |
 
+## Captain and Sevak guides
+
+`vSeva Captain Guide.pdf` (19 pages) and `vSeva Sevak Guide.pdf` (17 pages) are built from `guide.html` by
+`python build_guides.py`. That script picks each guide's pages by id, adds the "Install the vSeva app" page
+(Google Play first, QR in `assets/qr-play-store.svg`), the Captain "Approve Vihars" page and the Sevak "Submit
+for approval" page, and applies the text fixes (Play Store instead of web app, date of birth, Instagram
+@vseva.app in `assets/qr-instagram-vseva-app.svg`). Edit `guide.html` or the script, then run it again.
+
+The script also publishes both PDFs to the website at fixed addresses, overwriting the old files:
+`public/vseva-site/vSeva-Captain-Guide.pdf` and `public/vseva-site/vSeva-Sevak-Guide.pdf` (linked from the
+landing page, the Documentation page and the footer through `GUIDES` in `brands/vseva/site/content.ts`). The old
+address `vSeva-App-Guide.pdf` now serves the Captain Guide, so links shared earlier keep working. Rebuild, then
+push: the links stay the same and visitors get the new version.
+
 ## Editing and regenerating
 
 1. Edit `guide.html`. Each page is a `<section class="page">`; the colours and fonts are the CSS tokens at the top of the file.

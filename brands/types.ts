@@ -59,6 +59,9 @@ export interface BrandMeta {
   // Vihar entry forms also ask Internal / Highway, a Mumukshu count and the Mukhya Sadhu / Sadhviji Bhagwant.
   viharEntryExtras: boolean;
   instagram: { url: string; handle: string } | null;
+  // Used in the Captain approval message when set (Android install link; the Captain/Sevak guide)
+  playStoreUrl?: string;
+  docsUrl?: string;
   operator: string;      // who runs the service, for the legal pages
   // Show the shared Directory moderation panel inside Super Admin
   // (platform-owner scope only, whatever this says).

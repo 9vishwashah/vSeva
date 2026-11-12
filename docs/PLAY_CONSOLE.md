@@ -14,7 +14,7 @@ No real accounts, passwords, or personal data belong in this file.
 | Upload-key SHA-256 | `4A:20:7A:53:C3:AA:F0:C0:A4:E8:92:1F:1B:3C:FB:8B:7D:9A:DF:79:75:65:5C:E0:6C:DB:18:B7:6B:20:19:E2` |
 | Privacy policy URL | `https://vseva.vjas.in/privacy` |
 | Account-deletion URL | `https://vseva.vjas.in/delete-account` |
-| Support contact | 9vishwashah@gmail.com (shown in the policy) · WhatsApp +91 95945 03214. Use the same email as the Play Console developer email |
+| Support contact | contact@vjas.in (shown in the policy) · WhatsApp +91 95945 03214. Use the same email as the Play Console developer email |
 
 **Account type matters for the timeline.** Personal developer accounts created after
 Nov 2023 must run a *closed test with at least 12 opted-in testers for 14 continuous
