@@ -1,0 +1,68 @@
+{
+  "info": {
+    "name": "vSeva – WhatsApp Cloud API",
+    "description": "VSeva Meta assets only (never Little Bunnies). Set the collection variables; never paste a real token into a saved request. Sending a template sends a REAL WhatsApp message: use only an allow-listed test number, and only with the owner's approval.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "graph", "value": "https://graph.facebook.com" },
+    { "key": "version", "value": "v25.0" },
+    { "key": "waba_id", "value": "1691237689298935" },
+    { "key": "phone_number_id", "value": "1452234317984360" },
+    { "key": "access_token", "value": "" },
+    { "key": "test_recipient", "value": "" },
+    { "key": "webhook_url", "value": "https://<project-ref>.supabase.co/functions/v1/whatsapp-webhook" },
+    { "key": "verify_token", "value": "" }
+  ],
+  "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+  "item": [
+    {
+      "name": "1. WABA details",
+      "request": { "method": "GET", "url": "{{graph}}/{{version}}/{{waba_id}}?fields=id,name,currency,message_template_namespace" }
+    },
+    {
+      "name": "2. Phone numbers (sender readiness: name_status)",
+      "request": { "method": "GET", "url": "{{graph}}/{{version}}/{{waba_id}}/phone_numbers?fields=id,display_phone_number,verified_name,name_status,code_verification_status,quality_rating,platform_type,throughput" }
+    },
+    {
+      "name": "2b. The VSeva sender",
+      "request": { "method": "GET", "url": "{{graph}}/{{version}}/{{phone_number_id}}?fields=display_phone_number,verified_name,name_status,quality_rating,code_verification_status,platform_type" }
+    },
+    {
+      "name": "3. Message templates (vihar_reminder)",
+      "request": { "method": "GET", "url": "{{graph}}/{{version}}/{{waba_id}}/message_templates?name=vihar_reminder&fields=id,name,status,category,language,components" }
+    },
+    {
+      "name": "4. Send vihar_reminder (REAL message – test number only)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{graph}}/{{version}}/{{phone_number_id}}/messages",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": \"{{test_recipient}}\",\n  \"type\": \"template\",\n  \"template\": {\n    \"name\": \"vihar_reminder\",\n    \"language\": { \"code\": \"hi\" },\n    \"components\": [\n      { \"type\": \"body\", \"parameters\": [ { \"type\": \"text\", \"text\": \"Ramesh Shah\" }, { \"type\": \"text\", \"text\": \"7\" } ] }\n    ]\n  }\n}"
+        },
+        "description": "HTTP 200 with message_status \"accepted\" means Meta took the message. It is NOT delivery: watch the webhook for sent / delivered / read / failed."
+      }
+    },
+    {
+      "name": "5. Webhook verification handshake (our Edge Function)",
+      "request": {
+        "method": "GET",
+        "auth": { "type": "noauth" },
+        "url": "{{webhook_url}}?hub.mode=subscribe&hub.verify_token={{verify_token}}&hub.challenge=12345",
+        "description": "Should return 12345. A wrong verify_token returns 403."
+      }
+    },
+    {
+      "name": "6. Error example: wrong template name (expect error 132001)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{graph}}/{{version}}/{{phone_number_id}}/messages",
+        "body": { "mode": "raw", "raw": "{\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{test_recipient}}\",\n  \"type\": \"template\",\n  \"template\": { \"name\": \"no_such_template\", \"language\": { \"code\": \"hi\" } }\n}" },
+        "description": "Shows Meta's error shape: { error: { code, message, error_subcode, error_data } }. Nothing is delivered."
+      }
+    }
+  ]
+}

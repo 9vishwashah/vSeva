@@ -255,6 +255,39 @@ export const dataService = {
     return superAdminCall('org_detail', { orgId }, true);
   },
 
+  // Super Admin → "Open as Captain": signs this browser into the Captain's account with a one-time token from the
+  // server (checked and recorded there). The Super Admin session is replaced; the page then reloads into the app.
+  async openAsCaptain(userId: string): Promise<{ name: string; orgName: string }> {
+    const res = await superAdminCall<{ tokenHash: string; email: string; name: string; orgName: string }>('open_as', { userId });
+    const { data: { session } } = await supabase.auth.getSession();
+    const adminEmail = session?.user?.email || '';
+    let { error } = await supabase.auth.verifyOtp({ token_hash: res.tokenHash, type: 'magiclink' });
+    if (error) ({ error } = await supabase.auth.verifyOtp({ token_hash: res.tokenHash, type: 'email' }));
+    if (error) throw error;
+    try {
+      sessionStorage.setItem('openedAs', JSON.stringify({ name: res.name, orgName: res.orgName, adminEmail }));
+    } catch { /* optional: only drives the "viewing as" banner */ }
+    clearAll();
+    return { name: res.name, orgName: res.orgName };
+  },
+
+  // Super Admin → WhatsApp reminders (platform owner only; see netlify/functions/_shared/whatsappAdmin.js)
+  async superAdminWhatsApp<T = any>(action: string, params: Record<string, unknown> = {}): Promise<T> {
+    return superAdminCall<T>(action, params);
+  },
+
+  // A Sevak's own WhatsApp opt-in. null when WhatsApp reminders are not set up (not migrated / not offered).
+  async getMyWhatsAppStatus(): Promise<{ org_enabled: boolean; opted_in: boolean; consent_at: string | null } | null> {
+    const { data, error } = await supabase.rpc('get_my_whatsapp_status');
+    if (error) return null;
+    return (Array.isArray(data) ? data[0] : data) ?? null;
+  },
+
+  async setMyWhatsAppOptIn(optIn: boolean): Promise<void> {
+    const { error } = await supabase.rpc('set_my_whatsapp_opt_in', { p_opt_in: optIn });
+    if (error) throw new Error(error.message || 'Could not save your WhatsApp choice');
+  },
+
   async getOrgActivityStats(): Promise<{ org_id: string; org_name: string; city: string; created_at: string; total_sevaks: number; total_entries: number; last_updated: string | null; brand?: string }[]> {
     return getCached('orgActivityStats', async () => {
       try {

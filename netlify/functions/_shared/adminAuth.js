@@ -58,7 +58,14 @@ export async function requireAdmin(event) {
     const { data, error } = await sb.auth.getUser(token);
     if (error || !data?.user) throw new HttpError(401, 'Your session has expired. Please sign in again.');
 
-    const scope = scopeForEmail(data.user.email);
+    let scope = scopeForEmail(data.user.email);
+    // Platform owners can also be listed in the database (public.platform_admins, scripts/platform_admins.sql),
+    // which is what lets a dedicated Super Admin login, with no Captain profile, in without a Netlify change.
+    // A platform admin also outranks a brand-only listing (e.g. the same email in BRAND_ADMIN_EMAILS_SSG).
+    if (!scope?.all) {
+        const { data: row } = await sb.from('platform_admins').select('user_id').eq('user_id', data.user.id).maybeSingle();
+        if (row) scope = { all: true, brands: [] };
+    }
     if (!scope) throw new HttpError(403, 'This account is not authorised for Super Admin access.');
     return { sb, user: data.user, scope };
 }

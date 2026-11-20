@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft, Building2, Users, Footprints, MapPin, Phone, Download, FileText, MessageCircle,
-  Search, RefreshCw, Loader2, Lock, Target, Route, Calendar, Clock,
+  Search, RefreshCw, Loader2, Lock, Target, Route, Calendar, Clock, LogIn,
 } from 'lucide-react';
 import { BRAND } from '@brand';
 import { dataService } from '../services/dataService';
@@ -9,6 +9,7 @@ import { useToast } from '../context/ToastContext';
 import StatusScreen from '../components/StatusScreen';
 import ThemedSelect from '../components/ThemedSelect';
 import SuperAdminPinGate, { isSuperAdminPinVerified, clearSuperAdminPin } from '../components/SuperAdminPinGate';
+import WhatsAppAdminPanel from '../components/WhatsAppAdminPanel';
 import { deliverPdf } from '../services/pdfDelivery';
 import { ageFromDob, formatDob } from '../services/dateOfBirth';
 import { getViharYearStartYear, getViharYearBoundsForStartYear, isDateInViharYear } from '../services/viharYear';
@@ -94,6 +95,9 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
   const [pinOk, setPinOk] = useState(isSuperAdminPinVerified());
   const [data, setData] = useState<OrgDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  // "Open as Captain": ask first (in the page, not a browser dialog), then sign this browser into the Captain's account
+  const [confirmOpenAs, setConfirmOpenAs] = useState(false);
+  const [openingAs, setOpeningAs] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
   const [vyYear, setVyYear] = useState(getViharYearStartYear());
@@ -365,6 +369,41 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
                 <a href={`tel:+91${captain.mobile}`} className={`${btn} bg-gray-100 text-gray-700 hover:bg-gray-200`}><Phone size={15} /> Call</a>
               </div>
             )}
+            {captain?.id && (
+              <div className="pt-1 border-t border-gray-100">
+                {!confirmOpenAs ? (
+                  <button onClick={() => setConfirmOpenAs(true)} className={`${btn} mt-3 bg-saffron-50 text-saffron-700 hover:bg-saffron-100`}>
+                    <LogIn size={15} /> Open as Captain
+                  </button>
+                ) : (
+                  <div className="mt-3 rounded-2xl bg-saffron-50 border border-saffron-100 p-3 space-y-2">
+                    <p className="text-xs text-gray-700 leading-relaxed">
+                      You will be signed in as <b>{captain.full_name}</b> ({org.name}) in this browser and leave Super Admin.
+                      Their password is not changed. This is recorded. To come back, sign out and open /super-admin.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={openingAs}
+                        onClick={async () => {
+                          setOpeningAs(true);
+                          try {
+                            await dataService.openAsCaptain(captain.id);
+                            window.location.href = '/';
+                          } catch (e: any) {
+                            showToast(e?.message || 'Could not open this account', 'error');
+                            setOpeningAs(false);
+                          }
+                        }}
+                        className={`${btn} bg-saffron-600 text-white hover:bg-saffron-700 disabled:opacity-60`}
+                      >
+                        {openingAs ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />} Open account
+                      </button>
+                      <button disabled={openingAs} onClick={() => setConfirmOpenAs(false)} className={`${btn} bg-white text-gray-700 border border-gray-200 hover:bg-gray-50`}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Group stats */}
@@ -408,6 +447,9 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
             </div>
           </div>
         </div>
+
+        {/* WhatsApp reminders: platform owner only, vSeva groups only (the Meta sender and template say "vSeva") */}
+        {data.org.brand === 'vseva' && <WhatsAppAdminPanel orgId={data.org.id} />}
 
         {/* Sevaks */}
         <div className="space-y-3">

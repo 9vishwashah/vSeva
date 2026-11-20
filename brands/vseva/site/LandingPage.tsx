@@ -653,7 +653,7 @@ const GetStarted: React.FC = () => (
         <h3 className="vs-h2 mt-4 !text-[clamp(1.9rem,3.6vw,2.9rem)]">Download the step-by-step guides.</h3>
         <p className="mt-4 text-[color:var(--ink-2)]">Phone-sized PDFs with screenshots, easy to read and to forward on WhatsApp.</p>
       </div>
-      <ul className="mt-8 grid gap-4 md:grid-cols-2">
+      <ul className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {GUIDES.map((g, i) => (
           <li key={g.href} data-reveal style={{ ['--d' as string]: i }}>
             <a href={g.href} download className="group flex h-full items-center gap-5 rounded-2xl bg-white p-5 no-underline transition-colors hover:bg-[color:var(--paper)] md:p-6">

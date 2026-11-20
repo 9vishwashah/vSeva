@@ -1,5 +1,6 @@
 import { withCors } from './_shared/cors.js';
-import { requireAdmin, errorResponse, HttpError, scopeQuery, inScope } from './_shared/adminAuth.js';
+import { requireAdmin, errorResponse, HttpError, scopeQuery, inScope, scopeForEmail } from './_shared/adminAuth.js';
+import { whatsappAdmin } from './_shared/whatsappAdmin.js';
 
 // Single authenticated entry point for the Super Admin dashboard's reads and the
 // reject action (approval lives in approve-org.js). Every result is narrowed to
@@ -11,6 +12,9 @@ import { requireAdmin, errorResponse, HttpError, scopeQuery, inScope } from './_
 //   { action: 'reject', id }        -> marks a pending request rejected
 //   { action: 'org_detail', orgId } -> everything about ONE organisation: group + Captain details, every
 //                                      Sevak's profile, Vihar entries and Sankalps (brand-scoped)
+//   { action: 'open_as', userId }   -> one-time sign-in token for that Captain's account ("Open as Captain"):
+//                                      Captains only, brand-scoped, never another Super Admin, recorded in
+//                                      admin_audit_log; the Captain's password is never read or changed
 
 const PROFILE_COLUMNS =
     'id, full_name, username, mobile, gender, date_of_birth, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at';
@@ -42,9 +46,42 @@ async function rawHandler(event) {
         const body = JSON.parse(event.body || '{}');
         const { sb, user, scope } = await requireAdmin(event);
 
+        // WhatsApp reminders (platform owner only): see _shared/whatsappAdmin.js
+        if (typeof body.action === 'string' && body.action.startsWith('wa_')) return ok(await whatsappAdmin(sb, user, scope, body));
+
         switch (body.action) {
             case 'whoami':
                 return ok({ email: user.email, all: scope.all, brands: scope.brands });
+
+            case 'open_as': {
+                if (!body.userId) throw new HttpError(400, 'userId is required');
+                const { data: target, error: targetError } = await sb
+                    .from('profiles').select('id, full_name, role, organization_id, is_active').eq('id', body.userId).maybeSingle();
+                if (targetError) throw targetError;
+                if (!target) throw new HttpError(404, 'Account not found.');
+                if (target.role !== 'admin') throw new HttpError(400, 'Only Captain accounts can be opened.');
+                if (target.is_active === false) throw new HttpError(400, 'This Captain account is inactive.');
+                const { data: org } = await sb.from('organizations').select('id, name, brand').eq('id', target.organization_id).maybeSingle();
+                if (!org) throw new HttpError(404, 'This Captain has no group.');
+                if (!inScope(scope, org.brand)) throw new HttpError(403, 'This group belongs to a different brand.');
+                const { data: pa } = await sb.from('platform_admins').select('user_id').eq('user_id', target.id).maybeSingle();
+                const { data: au, error: auError } = await sb.auth.admin.getUserById(target.id);
+                if (auError || !au?.user?.email) throw new HttpError(404, 'This Captain has no login.');
+                const email = au.user.email;
+                if (pa || scopeForEmail(email)) throw new HttpError(403, 'A Super Admin account cannot be opened this way.');
+
+                // record first: no audit row, no sign-in
+                const { error: auditError } = await sb.from('admin_audit_log').insert({
+                    actor_id: user.id, actor_email: user.email, action: 'open_as_captain',
+                    target_user_id: target.id, target_email: email, organization_id: org.id,
+                    detail: { org_name: org.name, captain: target.full_name },
+                });
+                if (auditError) throw new Error('Could not record this action, so the account was not opened: ' + auditError.message);
+
+                const { data: link, error: linkError } = await sb.auth.admin.generateLink({ type: 'magiclink', email });
+                if (linkError || !link?.properties?.hashed_token) throw new Error('Could not open the account: ' + (linkError?.message || 'no token'));
+                return ok({ tokenHash: link.properties.hashed_token, email, name: target.full_name, orgName: org.name });
+            }
 
             case 'pending': {
                 // `brand` is selected separately so this still works if the column

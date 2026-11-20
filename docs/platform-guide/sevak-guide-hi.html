@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>vSeva सेवक गाइड (हिंदी)</title>
+<meta name="author" content="vSeva">
+<meta name="description" content="A practical guide for Vihar Seva organizations, Captains and Sevaks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@600;700;800;900&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: phone-shaped pages (135 x 240 mm, 9:16) read in one column on a phone; one idea per page,
+   large type, thin bordered cards, screenshots in a slim Android frame. */
+:root {
+  --ink: #1F1A17;
+  --ink-2: #4A3F38;
+  --muted: #857669;
+  --line: #EADFD4;
+  --card-line: #F0C9AE;
+  --paper: #FBF7F2;
+  --white: #FFFFFF;
+  --saffron: #DE6B38;
+  --saffron-deep: #B5542A;
+  --saffron-soft: #FCEBDD;
+  --amber: #8A5A00; --amber-soft: #FFF2D2;
+  --display: "Schibsted Grotesk", "Segoe UI", Arial, sans-serif;
+  --body: "Instrument Sans", "Segoe UI", Arial, sans-serif;
+  --mono: "JetBrains Mono", Consolas, monospace;
+}
+@page { size: 135mm 240mm; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #d9d2c9; }
+body { font-family: var(--body); color: var(--ink); font-size: 10.2pt; line-height: 1.5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+h1, h2, h3, p { margin: 0; }
+.page { width: 135mm; height: 240mm; position: relative; overflow: hidden; background: var(--paper); padding: 10mm 9mm 23mm; display: flex; flex-direction: column; gap: 5mm; break-after: page; page-break-after: always; margin: 0 auto; }
+@media screen { .page { margin: 8mm auto; box-shadow: 0 2px 14px rgba(0,0,0,.12); } }
+
+.run { display: flex; align-items: center; gap: 3mm; font-family: var(--mono); font-size: 6.6pt; letter-spacing: .12em; text-transform: uppercase; color: var(--saffron-deep); font-weight: 700; }
+.run::after { content: ""; flex: 1; height: 1px; background: var(--line); order: 1; }
+.run .pg { order: 2; color: var(--muted); }
+.foot { position: absolute; left: 9mm; right: 9mm; bottom: 7mm; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 3mm; }
+.foot img.vjas { height: 7.5mm; mix-blend-mode: multiply; }
+.foot img.vseva { height: 11mm; }
+.foot span { font-family: var(--mono); font-size: 6.4pt; color: var(--muted); letter-spacing: .06em; }
+
+h1 { font-family: var(--display); font-weight: 900; font-size: 21pt; line-height: 1.02; letter-spacing: -.02em; text-transform: uppercase; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--saffron); display: block; }
+.intro { font-size: 10.2pt; color: var(--ink-2); line-height: 1.5; }
+h3 { font-family: var(--display); font-weight: 800; font-size: 11pt; line-height: 1.25; }
+p { color: var(--ink-2); }
+.small { font-size: 8.6pt; color: var(--ink-2); line-height: 1.45; }
+.ui { font-weight: 700; color: var(--ink); }
+.tag { display: inline-block; align-self: flex-start; font-family: var(--mono); font-size: 6pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: .9mm 2.2mm; border-radius: 99px; background: var(--saffron); color: #fff; white-space: nowrap; }
+.tag.soft { background: var(--saffron-soft); color: var(--saffron-deep); }
+.tag.amber { background: var(--amber-soft); color: var(--amber); }
+
+.card { background: var(--white); border: 1px solid var(--card-line); border-radius: 3mm; padding: 3.2mm 4mm; display: flex; flex-direction: column; gap: 1.2mm; }
+.card .row { display: flex; justify-content: space-between; align-items: center; gap: 3mm; }
+.stack { display: flex; flex-direction: column; gap: 2.6mm; }
+.num-row { display: grid; grid-template-columns: 9mm 1fr; gap: 2mm; align-items: start; }
+.num-row .n { font-family: var(--display); font-weight: 900; font-size: 13pt; color: var(--saffron); line-height: 1.1; }
+.dot { width: 6.6mm; height: 6.6mm; border-radius: 50%; background: var(--saffron); color: #fff; font-family: var(--mono); font-weight: 700; font-size: 8pt; display: flex; align-items: center; justify-content: center; flex: none; }
+.step { display: grid; grid-template-columns: 7mm 1fr; gap: 2.6mm; align-items: start; }
+.step p { font-size: 9.6pt; }
+.note { border-left: 2px solid var(--saffron); padding: .5mm 0 .5mm 3.5mm; font-size: 9pt; color: var(--ink-2); }
+.note b { color: var(--ink); }
+
+/* iPhone 17 Pro (Cosmic Orange) mockup, the same frame as the vseva.vjas.in landing page. Each phone keeps the
+   height set on it and takes the frame's width from that; the frame art (448 x 916) has a see-through screen at
+   x 24, y 21, 402 x 874. */
+.droid { position: relative; flex: none; width: auto !important; aspect-ratio: 448 / 916; }  /* no CSS shadow: Chrome turns filtered elements into large bitmaps in the PDF */
+.droid img { position: absolute; left: 5.357%; top: 2.293%; width: 89.732%; height: 95.415%; display: block; object-fit: cover; object-position: top; padding-top: 9%; background: #fff; border-radius: 11% / 5.4%; }
+.droid::after { content: ""; position: absolute; inset: 0; background: url(assets/iphone-17-pro-448.webp) center / 100% 100% no-repeat; pointer-events: none; }
+/* Android phone (only for the Google Play screenshot): slim dark frame, rounded corners, punch-hole camera */
+.android { position: relative; flex: none; aspect-ratio: 720 / 1570; background: #fff; border: 1.3mm solid #2A2420; border-radius: 4.2mm; overflow: hidden; box-shadow: 0 3mm 7mm -5mm rgba(60,30,10,.35); }
+.android::before { content: ""; position: absolute; top: 1.4mm; left: 50%; width: 1.8mm; height: 1.8mm; margin-left: -.9mm; border-radius: 50%; background: #2A2420; z-index: 2; }
+.android img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.cap { font-size: 7.8pt; color: var(--muted); margin-top: 2mm; line-height: 1.35; text-align: center; }
+.cap b { color: var(--ink); font-weight: 600; }
+.fig { display: flex; flex-direction: column; align-items: center; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; justify-items: center; }
+
+table { width: 100%; border-collapse: collapse; font-size: 8.8pt; }
+th { text-align: left; font-family: var(--mono); font-size: 6.2pt; letter-spacing: .1em; text-transform: uppercase; color: #fff; font-weight: 700; padding: 2mm 2.5mm; background: var(--ink); }
+th:first-child { border-radius: 2mm 0 0 0; } th:last-child { border-radius: 0 2mm 0 0; }
+td { padding: 2mm 2.5mm; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-2); background: var(--white); }
+tr:nth-child(even) td { background: #FDF9F5; }
+td:first-child { color: var(--ink); font-weight: 600; }
+.path { position: absolute; pointer-events: none; }
+.toc a { display: grid; grid-template-columns: 8mm 1fr 7mm; gap: 1mm; align-items: baseline; text-decoration: none; color: var(--ink); font-size: 9.6pt; padding: 1.8mm 0; border-bottom: 1px solid var(--line); }
+.toc a span:first-child { font-family: var(--mono); font-size: 7pt; color: var(--saffron-deep); font-weight: 700; }
+.toc a span:last-child { font-family: var(--mono); font-size: 7pt; color: var(--muted); text-align: right; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@600;700;800&family=Hind:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>:root { --display: "Schibsted Grotesk", "Mukta", sans-serif; --body: "Instrument Sans", "Hind", sans-serif; --mono: "JetBrains Mono", "Hind", monospace; }
+* { letter-spacing: 0 !important; } body { line-height: 1.6; } h1 { line-height: 1.22 !important; } h3 { line-height: 1.35; }</style>
+</head>
+<body>
+
+<section class="page" id="cover" style="padding:12mm 10mm 9mm; gap:0; align-items:center; text-align:center;">
+  <!-- faint geometric lines behind the page -->
+  <svg class="path" style="left:0; top:0; width:135mm; height:240mm" viewBox="0 0 135 240" fill="none" aria-hidden="true">
+    <g stroke="#DE6B38" stroke-opacity=".13" stroke-width=".35">
+      <path d="M-5 8 L 46 52 L -5 92"/><path d="M58 -4 L 86 40"/><path d="M140 118 L 92 168 L 140 214"/>
+      <path d="M118 128 L 70 244"/><path d="M-6 196 L 54 168 L 30 246"/><path d="M128 -6 L 141 60"/>
+    </g>
+  </svg>
+  <img src="assets/vseva-logo.png" alt="vSeva" style="width:52mm; height:52mm; object-fit:contain; position:relative;">
+  <p style="position:relative; margin-top:5mm; font-family:var(--display); font-weight:800; font-size:10.5pt; letter-spacing:.26em; color:var(--ink);">VSEVA · सेवक गाइड</p>
+  <p style="position:relative; margin-top:2mm; font-family:var(--display); font-weight:800; font-size:7pt; letter-spacing:.24em; color:var(--saffron);">सेवक और सेविकाओं के लिए</p>
+  <h1 style="position:relative; margin-top:9mm; font-size:31pt; line-height:1; letter-spacing:-.025em;">अपनी सेवा के<br>आँकड़े देखें और<br>प्रेरणा बनें<span style="color:var(--saffron)">।</span><em style="font-size:21pt; line-height:1.35; margin-top:2mm;">हर कदम मायने रखता है।</em></h1>
+  <p style="position:relative; margin-top:6mm; max-width:104mm; font-size:11.4pt; line-height:1.5; color:var(--ink-2); font-weight:400;">अपने फ़ोन से विहार दर्ज करें, अपना संकल्प पूरा करें और अपनी सेवा साझा करके दूसरों को प्रेरित करें।</p>
+  <div style="position:relative; margin-top:auto; width:100%; text-align:left; background:#fff; border:1.2px solid #EBA27C; border-radius:3.6mm; padding:4.5mm 5.5mm; display:grid; grid-template-columns:1fr auto; gap:2.5mm 4mm; align-items:center;">
+    <div style="grid-column:1 / -1"><p style="font-family:var(--display); font-weight:800; font-size:6.8pt; letter-spacing:.22em; color:var(--saffron-deep);">किसके लिए</p>
+    <p style="font-family:var(--display); font-weight:800; font-size:14pt; color:var(--ink); margin-top:1mm;">विहार सेवक</p></div>
+    <div style="display:flex; align-items:center; gap:4mm;"><p style="font-family:var(--display); font-weight:800; font-size:6.8pt; letter-spacing:.22em; color:var(--saffron-deep);">प्रस्तुतकर्ता</p><img src="assets/vjas-wordmark.jpg" alt="VJAS" style="height:9mm; mix-blend-mode:multiply;"></div>
+    <p style="font-size:9.6pt; color:var(--ink-2);">नवंबर 2026</p>
+  </div>
+  <div style="position:relative; width:100%; height:1px; background:#3A302A; margin:6mm 0 5mm;"></div>
+  <p style="position:relative; font-family:var(--display); font-weight:800; font-size:8.4pt; letter-spacing:.22em; color:var(--ink);">दर्ज करें <span style="color:var(--saffron)">✱</span> देखें <span style="color:var(--saffron)">✱</span> सेवा करें <span style="color:var(--saffron)">✱</span> साझा करें</p>
+  <p style="position:relative; margin-top:3mm; font-family:var(--display); font-weight:800; font-size:7pt; letter-spacing:.22em; color:var(--saffron);">GOOGLE PLAY पर ANDROID ऐप · VSEVA.VJAS.IN</p>
+  <p style="position:relative; margin-top:4mm; font-size:8.4pt; color:var(--ink-2); line-height:1.6;">Alpesh Shah +91 93245 03214 · Vishwa Shah +91 95945 03214<br>contact@vjas.in</p>
+</section>
+
+<section class="page" id="welcome">
+  <div class="run"><span>स्वागत</span><span class="pg">02 / 18</span></div>
+  <h1>हर विहार का<em>एक रिकॉर्ड।</em></h1>
+  <p class="intro">vSeva जैन विहार सेवा ग्रुप के लिए ऐप है। सेवक हर विहार एक मिनट में दर्ज करते हैं; कैप्टन पूरा ग्रुप देखते हैं: किसने सेवा की, कौन-से रूट, कितने किलोमीटर, और साल कैसा चल रहा है।</p>
+  <div class="toc"><a href="#install"><span>03</span><span>vSeva ऐप इंस्टॉल करें</span><span>3</span></a><a href="#glance"><span>04</span><span>vSeva क्या करता है</span><span>4</span></a><a href="#sevak"><span>05</span><span>आपका पहला साइन-इन</span><span>5</span></a><a href="#profile"><span>06</span><span>अपनी प्रोफ़ाइल पूरी करें</span><span>6</span></a><a href="#sevak-nav"><span>07</span><span>ऐप में कहाँ क्या है</span><span>7</span></a><a href="#record"><span>08</span><span>विहार भेजें</span><span>8</span></a><a href="#record-2"><span>09</span><span>विहार भेजें (3–4)</span><span>9</span></a><a href="#submit"><span>10</span><span>भेजने के बाद</span><span>10</span></a><a href="#stats"><span>11</span><span>अपनी सेवा देखें</span><span>11</span></a><a href="#sankalp"><span>12</span><span>संकल्प और विहार वर्ष</span><span>12</span></a><a href="#notify"><span>13</span><span>नोटिफ़िकेशन से अपडेट पाएँ</span><span>13</span></a><a href="#contact"><span>14</span><span>आसान संपर्क</span><span>14</span></a><a href="#sharing"><span>15</span><span>रिकॉर्ड और शेयरिंग</span><span>15</span></a><a href="#community"><span>16</span><span>कम्युनिटी</span><span>16</span></a><a href="#faq"><span>17</span><span>अक्सर पूछे जाने वाले सवाल</span><span>17</span></a><a href="#support"><span>18</span><span>सहायता</span><span>18</span></a></div>
+  <p class="small" style="color:var(--muted)">हर स्क्रीनशॉट में नाम और फ़ोन नंबर छिपाए गए हैं।</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="install">
+  <div class="run"><span>यहाँ से शुरू करें</span><span class="pg">03 / 18</span></div>
+  <h1>vSeva ऐप<em>इंस्टॉल करें।</em></h1>
+  <p class="intro">शुरुआत <b>Google Play Store</b> से vSeva ऐप इंस्टॉल करके करें।</p>
+  <div class="card" style="flex-direction:row; align-items:center; gap:3mm;">
+    <svg viewBox="0 0 24 24" style="width:8mm;height:8mm;flex:none" aria-hidden="true"><path fill="#00A0FF" d="M1.337.924a1.486 1.486 0 0 0-.112.568v21.017c0 .217.045.419.124.6l11.155-11.087L1.337.924z"/><path fill="#00D26A" d="M13.544 10.989l3.258-3.238L3.45.195a1.466 1.466 0 0 0-.946-.179l11.04 10.973z"/><path fill="#FFC107" d="M22.018 13.298l-3.919 2.218-3.515-3.493 3.543-3.521 3.891 2.202a1.49 1.49 0 0 1 0 2.594z"/><path fill="#F4433A" d="M13.544 13.056l-11 10.933c.298.036.612-.016.906-.183l13.324-7.54-3.23-3.21z"/></svg>
+    <div style="flex:1"><p class="small" style="font-family:var(--mono); font-size:6.4pt; letter-spacing:.1em; color:var(--muted)">GOOGLE PLAY पर उपलब्ध</p>
+    <h3>vSeva – Vihar Seva Management</h3><p class="small" style="color:var(--muted)">खोलने के लिए QR स्कैन करें</p></div>
+    <img src="assets/qr-play-store.svg" alt="QR code for vSeva on Google Play" style="width:19mm; height:19mm; flex:none">
+  </div>
+  <div style="display:grid; grid-template-columns: 1fr auto; gap:4mm; align-items:start;">
+    <div class="stack" style="gap:2.6mm">
+      <div class="step"><span class="dot">1</span><div><h3>Play Store खोलें</h3><p>अपने Android फ़ोन में <b>Google Play Store</b> खोलें।</p></div></div>
+      <div class="step"><span class="dot">2</span><div><h3>“vSeva” खोजें</h3><p>या QR स्कैन करें। <b>vSeva – Vihar Seva Management</b> चुनें।</p></div></div>
+      <div class="step"><span class="dot">3</span><div><h3>Install करें, फिर Open</h3><p><span class="ui">Install</span> दबाएँ, फिर <span class="ui">Open</span>। नोटिफ़िकेशन की अनुमति दें।</p></div></div>
+      <div class="step"><span class="dot">4</span><div><h3>साइन इन करें</h3><p>कैप्टन द्वारा WhatsApp पर भेजा गया <b>यूज़रनेम</b> डालें, और पासवर्ड में अपना <b>मोबाइल नंबर</b>।</p></div></div>
+    </div>
+    <div class="fig"><div class="android" style="height:72mm"><img src="assets/play-store-listing.png" alt="vSeva on the Google Play Store"></div><p class="cap">Google Play पर <b>vSeva</b></p></div>
+  </div>
+  <div class="card" style="gap:2mm;">
+    <div class="row"><h3>iPhone है? Safari से</h3><span class="tag soft">iPhone / iPad</span></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:2mm 4mm;">
+      <div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">1</span><p class="small"><b>Safari</b> में <b>vseva.vjas.in</b> खोलें</p></div>
+      <div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">2</span><p class="small"><b>Share</b> (तीर ↑ वाला चौकोर) दबाएँ</p></div>
+      <div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">3</span><p class="small"><b>Add to Home Screen</b> दबाएँ, फिर <b>Add</b></p></div>
+      <div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">4</span><p class="small">होम स्क्रीन से <b>vSeva</b> खोलें</p></div>
+    </div>
+  </div>
+  <p class="note"><b>नोटिफ़िकेशन चालू रखें:</b> आने वाले विहार, अप्रूवल, रिमाइंडर और जन्मदिन की शुभकामनाएँ इन्हीं से मिलती हैं।</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="glance">
+  <div class="run"><span>प्लेटफ़ॉर्म</span><span class="pg">04 / 18</span></div>
+  <h1>vSeva क्या<em>करता है।</em></h1>
+  <div class="stack">
+    <div class="card"><div class="num-row"><span class="n">01</span><div><h3>विहार दर्ज करें</h3><p class="small">चार चरणों का फ़ॉर्म। दूरी ग्रुप के रूट से अपने-आप आती है।</p></div></div></div>
+    <div class="card"><div class="num-row"><span class="n">02</span><div><h3>कैप्टन अप्रूवल</h3><p class="small">सेवकों के विहार कैप्टन के अप्रूवल का इंतज़ार करते हैं।</p></div></div></div>
+    <div class="card"><div class="num-row"><span class="n">03</span><div><h3>आँकड़े और संकल्प</h3><p class="small">किलोमीटर, लगातार दिन, रैंक, लीडरबोर्ड और सालाना लक्ष्य।</p></div></div></div>
+    <div class="card"><div class="num-row"><span class="n">04</span><div><h3>सदस्य और रूट</h3><p class="small">कैप्टन लॉगिन बनाते हैं और रूट की सूची रखते हैं।</p></div></div></div>
+    <div class="card"><div class="num-row"><span class="n">05</span><div><h3>अलर्ट, VChat, संपर्क</h3><p class="small">आने वाले विहार के अलर्ट, ग्रुप चैट, कॉल और WhatsApp।</p></div></div></div>
+    <div class="card"><div class="num-row"><span class="n">06</span><div><h3>रिपोर्ट और शेयरिंग</h3><p class="small">PDF / Excel रिपोर्ट, सेवा कार्ड और विहार सेवा ID कार्ड।</p></div></div></div>
+    <div class="card"><div class="num-row"><span class="n">07</span><div><h3>डायरेक्टरी और देरासर</h3><p class="small">सार्वजनिक डायरेक्टरी और पास के देरासर खोजने की सुविधा।</p></div></div></div>
+  </div>
+  <p class="small" style="color:var(--muted)">English, ગુજરાતી और हिंदी में: किसी भी स्क्रीन पर ऊपर EN दबाकर भाषा बदलें।</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="sevak">
+  <div class="run"><span>सेवक गाइड</span><span class="pg">05 / 18</span></div>
+  <h1>आपका पहला<em>साइन-इन।</em></h1>
+  <div style="display:grid; grid-template-columns: 1fr 44mm; gap:5mm; align-items:start;">
+    <div class="stack" style="gap:3.6mm">
+      <div class="step"><span class="dot">1</span><div><h3>ऐप खोलें</h3><p>Google Play से इंस्टॉल किया <b>vSeva</b> खोलें।</p></div></div>
+      <div class="step"><span class="dot">2</span><div><h3>साइन इन करें</h3><p>कैप्टन से मिला <b>यूज़रनेम</b>, और पासवर्ड में <b>मोबाइल नंबर</b>।</p></div></div>
+      <div class="step"><span class="dot">3</span><div><h3>सबसे पहले अपना विहार संकल्प सेट करें</h3><p>अपनी फ़ोटो → <span class="ui">My Sankalp</span> → <span class="ui">Edit</span> दबाएँ। इस विहार वर्ष में कितने विहार करेंगे, वह लिखकर सेव करें। Home पर रिंग आपकी प्रगति दिखाती है।</p></div></div>
+      <div class="step"><span class="dot">4</span><div><h3>अपनी प्रोफ़ाइल पूरी करें</h3><p>अपनी फ़ोटो और जानकारी भरें (अगला पेज)।</p></div></div>
+    </div>
+    <div class="fig"><div class="droid" style="width:44mm; height:90mm"><img src="assets/screens/01-login.jpg" alt="Sign in"></div><p class="cap"><b>साइन इन</b></p></div>
+  </div>
+  <p class="note"><b>पासवर्ड भूल गए?</b> <b>Forgot Password?</b> दबाकर यूज़रनेम डालें। कैप्टन को सूचना जाती है और वे पासवर्ड फिर से आपका मोबाइल नंबर कर देते हैं।</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="profile">
+  <div class="run"><span>सेवक गाइड</span><span class="pg">06 / 18</span></div>
+  <h1>प्रोफ़ाइल<em>100% पूरी करें।</em></h1>
+  <div style="display:grid; grid-template-columns: 48mm 1fr; gap:5mm; align-items:center;">
+    <img src="assets/screens/45-complete-prompt.jpg" alt="Kindly Complete Your Profile" style="width:48mm; border-radius:3.2mm; box-shadow:0 1.5mm 4mm rgba(120,60,20,.12)">
+    <p class="small">साइन इन के बाद, जब तक हर जानकारी न भरी जाए, vSeva आपसे <b>प्रोफ़ाइल पूरी करने</b> को कहता है। <span class="ui">Complete Now</span> दबाएँ, या <b>Later</b> दबाएँ तो अगली बार फिर याद दिलाया जाएगा।</p>
+  </div>
+  <div class="pair">
+    <div class="fig"><div class="droid" style="width:44mm; height:58mm"><img src="assets/screens/43-profile-ring.jpg" alt="Profile completion ring"></div><p class="cap">फ़ोटो के चारों ओर की <b>रिंग</b> बताती है कि प्रोफ़ाइल कितनी पूरी है</p></div>
+    <div class="fig"><div class="droid" style="width:44mm; height:58mm"><img src="assets/screens/44-profile-save.jpg" alt="Save Changes"></div><p class="cap"><b>Your Details</b> भरें, फिर <b>Save Changes</b></p></div>
+  </div>
+  <div class="card">
+    <h3>ये सब भरें</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.4mm 4mm; font-size:8.8pt; color:var(--ink-2); margin-top:.8mm;">
+      <span>☐ <b>प्रोफ़ाइल फ़ोटो</b> (फ़ोटो पर कैमरा दबाएँ)</span><span>☐ <b>जन्म तिथि</b> (दिन, महीना, वर्ष)</span>
+      <span>☐ <b>ब्लड ग्रुप</b></span><span>☐ <b>परिवार के इमरजेंसी संपर्क का नाम</b></span>
+      <span>☐ <b>परिवार का इमरजेंसी नंबर</b></span><span>☐ <b>व्यवसाय</b> (<b>Other</b> हो तो विवरण)</span>
+      <span>☐ <b>पता</b></span>
+    </div>
+  </div>
+  <p class="note"><b>क्यों ज़रूरी है:</b> किसी घटना के समय ग्रुप आपके परिवार तक जल्दी पहुँचकर मदद कर सके। कैप्टन हर सेवक की <b>बाकी जानकारी</b> देख सकते हैं।</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="sevak-nav">
+  <div class="run"><span>सेवक गाइड</span><span class="pg">07 / 18</span></div>
+  <h1>ऐप में<em>कहाँ क्या है।</em></h1>
+  <div class="pair">
+    <div class="fig"><div class="droid" style="width:50mm; height:98mm"><img src="assets/screens/62-sevak-home.jpg" alt="Sevak Home"></div><p class="cap"><b>Home</b>: आपका संकल्प और आँकड़े</p></div>
+    <div class="fig"><div class="droid" style="width:50mm; height:98mm"><img src="assets/screens/65-sevak-more.jpg" alt="More menu" style="object-position:bottom"></div><p class="cap"><b>More</b>: बाकी सभी सुविधाएँ</p></div>
+  </div>
+  <table>
+    <tbody>
+      <tr><td style="width:24mm">Home</td><td>आँकड़े, संकल्प, हाल की गतिविधि</td></tr>
+      <tr><td>My Vihars</td><td>वे सभी विहार जिनमें आप शामिल थे</td></tr>
+      <tr><td>More</td><td>Add Vihar, Group Analytics, VChat, Contacts, Notifications, Incidents</td></tr>
+      <tr><td>आपकी फ़ोटो</td><td>प्रोफ़ाइल, संकल्प, ID कार्ड</td></tr>
+    </tbody>
+  </table>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="record">
+  <div class="run"><span>विहार भेजें</span><span class="pg">08 / 18</span></div>
+  <h1>विहार भेजें<em>चरण 1–2</em></h1>
+  <p class="intro">Home पर <span class="ui">Add Vihar</span> दबाएँ और चार छोटे चरण भरें। फिर यह अप्रूवल के लिए कैप्टन के पास जाता है।</p>
+  <div class="pair">
+    <div class="fig"><div class="droid" style="width:50mm; height:92mm"><img src="assets/screens/30-entry-step1.jpg" alt="Step 1"></div><p class="cap"><b>1 · तारीख और प्रकार</b></p></div>
+    <div class="fig"><div class="droid" style="width:50mm; height:92mm"><img src="assets/screens/33-entry-step2-filled.jpg" alt="Step 2"></div><p class="cap"><b>2 · किसका विहार और रूट</b></p></div>
+  </div>
+  <div class="stack">
+    <div class="card"><h3>1 · तारीख और प्रकार</h3><p class="small"><b>तारीख</b> (पहले से आज की) और <b>विहार का समय</b>: सुबह (Morning) या शाम (Evening)।</p></div>
+    <div class="card"><h3>2 · किसका विहार और रूट</h3><p class="small"><b>Sadhubhagwan</b> और/या <b>Sadhvijibhagwan</b> दबाकर संख्या लिखें। <b>From</b> और <b>To</b> चुनें; दूरी अपने-आप आ जाती है।</p></div>
+  </div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="record-2">
+  <div class="run"><span>विहार भेजें</span><span class="pg">09 / 18</span></div>
+  <h1>विहार भेजें<em>चरण 3–4</em></h1>
+  <div class="pair">
+    <div class="fig"><div class="droid" style="width:50mm; height:92mm"><img src="assets/screens/35-entry-step3-selected.jpg" alt="Step 3"></div><p class="cap"><b>3 · सेवा की ज़रूरतें</b></p></div>
+    <div class="fig"><div class="droid" style="width:50mm; height:92mm"><img src="assets/screens/36-entry-step4.jpg" alt="Step 4"></div><p class="cap"><b>4 · निर्देश और जाँच</b></p></div>
+  </div>
+  <div class="stack">
+    <div class="card"><h3>3 · सेवा की ज़रूरतें</h3><p class="small">साथ चले <b>हर सेवक</b> को जोड़ें (कम से कम एक)। <b>Wheelchair</b> और <b>Car Seva (Updhi)</b> का जवाब दें; Yes हो तो किसने की, वह चुनें।</p></div>
+    <div class="card"><h3>4 · निर्देश और जाँच</h3><p class="small"><b>समुदाय</b> और <b>नोट्स</b> (वैकल्पिक), फिर <span class="ui">Submit Entry</span>।</p></div>
+  </div>
+  <p class="note"><b>हर विहार एक ही सेवक दर्ज करता है</b>, सभी साथियों के लिए। बाकी लोग उसे दोबारा न भरें।</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="submit">
+  <div class="run"><span>भेजने के बाद</span><span class="pg">10 / 18</span></div>
+  <h1>भेजने के<em>बाद।</em></h1>
+  <p class="intro">सेवक का दर्ज किया हर विहार पहले कैप्टन के पास जाता है। कैप्टन के अप्रूव करने पर ही वह आपके आँकड़ों में जुड़ता है।</p>
+  <div style="display:grid; grid-template-columns: 1fr 42mm; gap:5mm; align-items:start;">
+    <div class="stack" style="gap:3.2mm">
+      <div class="step"><span class="dot">1</span><div><h3>Submit Entry दबाएँ</h3><p>चारों चरण भरें और <span class="ui">Submit Entry</span> दबाएँ। साथ चलने वाले सभी के लिए एक ही सेवक भेजता है।</p></div></div>
+      <div class="step"><span class="dot">2</span><div><h3>कैप्टन के पास पहुँचा</h3><p><span class="ui">My Vihars</span> में यह <span class="tag amber">Pending captain approval</span> दिखता है।</p></div></div>
+      <div class="step"><span class="dot">3</span><div><h3>कैप्टन ने अप्रूव किया</h3><p>अब यह उसमें शामिल हर सेवक के <b>आँकड़ों</b>, <b>संकल्प</b> और रैंक में जुड़ जाता है।</p></div></div>
+      <div class="step"><span class="dot">4</span><div><h3>अगर रिजेक्ट हो जाए</h3><p>आपको सूचना मिलती है। कैप्टन से जानकारी की पुष्टि करें।</p></div></div>
+    </div>
+    <div class="fig"><div class="droid" style="width:42mm; height:84mm"><img src="assets/screens/64-my-vihars.jpg" alt="My Vihars with a pending entry"></div><p class="cap">पेंडिंग एंट्री के साथ <b>My Vihars</b></p></div>
+  </div>
+  <p class="note"><b>अभी भी पेंडिंग?</b> कैप्टन को याद दिलाएँ। कृपया वही विहार दोबारा न भेजें।</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="stats">
+  <div class="run"><span>अपनी सेवा देखें</span><span class="pg">11 / 18</span></div>
+  <h1>अपनी सेवा<em>देखें।</em></h1>
+  <p class="intro">चुने गए विहार वर्ष के अप्रूव हुए विहारों से गिने जाते हैं। वर्ष बदलने के लिए <span class="ui">VY</span> मेनू।</p>
+  <div style="display:grid; grid-template-columns: 1fr 42mm; gap:5mm; align-items:start;">
+    <table style="font-size:8.4pt">
+      <tbody>
+        <tr><td>Total KM</td><td>चले हुए किलोमीटर</td></tr>
+        <tr><td>Vihars</td><td>विहारों की संख्या</td></tr>
+        <tr><td>Sadhu / Sadhvi</td><td>जिन भगवंत की सेवा की</td></tr>
+        <tr><td>Co-Sevak</td><td>जिनके साथ सबसे ज़्यादा चले</td></tr>
+        <tr><td>Rank in Org</td><td>विहारों से, फिर किलोमीटर से</td></tr>
+        <tr><td>Day Streak</td><td>लगातार दिन</td></tr>
+        <tr><td>Total Sevaks</td><td>सदस्य, पुरुष / महिला</td></tr>
+        <tr><td>Active Sevaks</td><td>इस साल विहार किया</td></tr>
+        <tr><td>Consistency</td><td>इस हफ़्ते, दिन-ब-दिन</td></tr>
+      </tbody>
+    </table>
+    <div class="fig"><div class="droid" style="width:42mm; height:84mm"><img src="assets/screens/21-group-analytics.jpg" alt="Group Analytics"></div><p class="cap"><b>Group Analytics</b></p></div>
+  </div>
+  <div class="card"><h3>Group Analytics</h3><p class="small"><span class="ui">More → Group Analytics</span>: कुल आँकड़े, सबसे लंबा विहार, टॉप सेवक-सेविकाएँ, पिछले 7 दिन और मासिक कैलेंडर।</p></div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="sankalp">
+  <div class="run"><span>संकल्प और विहार वर्ष</span><span class="pg">12 / 18</span></div>
+  <h1>आपका वर्ष,<em>आपका संकल्प।</em></h1>
+  <p class="intro"><b>विहार वर्ष</b> <b>14 अक्टूबर – 13 जुलाई</b> तक चलता है। बीच के महीने चातुर्मास हैं।</p>
+  <svg viewBox="0 0 117 16" style="width:117mm; height:16mm" aria-label="VY 2026-27 from 14 Oct 2026 to 13 Jul 2027, then Chaturmas">
+    <g font-family="JetBrains Mono, monospace" font-size="2.5" fill="#857669">
+      <text x="0" y="4">14 OCT 2026</text><text x="88" y="4" text-anchor="end">13 JUL 2027</text><text x="117" y="4" text-anchor="end">13 OCT</text>
+      <rect x="0" y="6" width="88" height="8" rx="4" fill="#DE6B38"/><rect x="88" y="6" width="29" height="8" rx="4" fill="#EADFD4"/>
+      <text x="4" y="11.3" fill="#fff" font-weight="700">VY 2026-27</text><text x="91" y="11.3" font-weight="700">चातुर्मास</text>
+    </g>
+  </svg>
+  <div class="stack">
+    <div class="card"><h3>My Sankalp</h3><p class="small">साल भर का आपका विहार लक्ष्य, जो <b>5</b> से शुरू होता है। <span class="ui">Profile → My Sankalp → Edit</span> में बदलें। Home पर रिंग प्रगति दिखाती है, जैसे <b>1/5 · 20% complete</b>।</p></div>
+    <div class="card"><h3>Group Sankalp</h3><p class="small">कैप्टन पूरे ग्रुप के लिए सेट करते हैं। कैप्टन <span class="ui">Allow Sevaks to edit their Sankalp</span> बंद करके सबका लक्ष्य लॉक कर सकते हैं।</p></div>
+  </div>
+  <div class="fig"><div class="droid" style="width:48mm; height:66mm"><img src="assets/screens/40-profile.jpg" alt="Profile with Sankalp"></div><p class="cap"><b>Profile &amp; Settings</b>: Group Sankalp</p></div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="notify">
+  <div class="run"><span>नोटिफ़िकेशन</span><span class="pg">13 / 18</span></div>
+  <h1>नोटिफ़िकेशन से<em>अपडेट पाएँ।</em></h1>
+  <p class="intro">vSeva आपके ग्रुप की हर ज़रूरी बात सीधे आपके फ़ोन पर बताता है, ऐप बंद होने पर भी।</p>
+  <div class="fig"><img src="assets/reminder-preview.jpg" alt="A Vihar reminder notification on an Android phone" style="width:66mm; border-radius:4mm; box-shadow:0 2mm 5mm rgba(60,30,10,.18)"><p class="cap">फ़ोन पर आया <b>विहार रिमाइंडर</b></p></div>
+  <div class="stack" style="gap:1.8mm">
+    <div class="card"><div class="row"><h3>आने वाले विहार के अलर्ट</h3><span class="tag soft">तुरंत</span></div><p class="small">कैप्टन तारीख, समय और रूट बताते हैं। जुड़ने के लिए <b>I'm Interested</b> दबाएँ।</p></div>
+    <div class="card"><div class="row"><h3>विहार रिमाइंडर</h3><span class="tag soft">सुबह 9 बजे</span></div><p class="small">कुछ दिनों से विहार न किया हो तो एक याद दिलाने वाला संदेश।</p></div>
+    <div class="card"><div class="row"><h3>जन्मदिन की शुभकामनाएँ</h3><span class="tag soft">सुबह 8 बजे</span></div><p class="small">आज ग्रुप में किसका जन्मदिन है, ताकि आप शुभकामनाएँ भेज सकें।</p></div>
+    <div class="card"><div class="row"><h3>आपके विहार और VChat</h3><span class="tag soft">उसी समय</span></div><p class="small">जब कैप्टन ऐसा विहार दर्ज करें जिसमें आप हों, आपकी एंट्री अप्रूव न हो, या VChat में नया संदेश आए।</p></div>
+  </div>
+  <p class="note"><b>चालू करें:</b> Profile → Push Notifications → Enable, और फ़ोन सेटिंग में vSeva की अनुमति दें। नोटिफ़िकेशन दबाने पर सही स्क्रीन खुलती है।</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="contact">
+  <div class="run"><span>आसान संपर्क</span><span class="pg">14 / 18</span></div>
+  <h1>आसान<em>संपर्क।</em></h1>
+  <div style="display:grid; grid-template-columns: 62mm 1fr; gap:5mm; align-items:start;">
+    <div class="fig"><div class="droid" style="height:126mm"><img src="assets/screens/69-sevak-contacts.jpg" alt="Contacts"></div><p class="cap"><b>More → Contacts</b></p></div>
+    <div class="stack">
+      <div class="card"><h3>इमरजेंसी संपर्क</h3><p class="small">कैप्टन जोड़ते हैं, हर सेवक को दिखते हैं।</p></div>
+      <div class="card"><h3>सेवक डायरेक्टरी</h3><p class="small">नाम खोजें, फिर <b>Call</b> या <b>WhatsApp</b> दबाएँ।</p></div>
+      <div class="card"><h3>नोटिफ़िकेशन</h3><p class="small">घंटी में अलर्ट दिखते हैं। किन बातों की सूचना मिलती है, यह पिछले पेज पर है।</p></div>
+    </div>
+  </div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="sharing">
+  <div class="run"><span>रिकॉर्ड और शेयरिंग</span><span class="pg">15 / 18</span></div>
+  <h1>आपकी सेवा,<em>साझा करने लायक।</em></h1>
+  <div class="pair">
+    <div class="fig"><div class="droid" style="width:50mm; height:92mm"><img src="assets/screens/52-share.jpg" alt="Share your Seva"></div><p class="cap"><b>Share your Seva</b></p></div>
+    <div class="fig"><div class="droid" style="width:50mm; height:92mm"><img src="assets/screens/42-idcard.jpg" alt="ID card"></div><p class="cap"><b>विहार सेवा ID कार्ड</b> (QR धुंधला किया गया)</p></div>
+  </div>
+  <div class="stack">
+    <div class="card"><h3>पिछले विहार</h3><p class="small"><span class="ui">My Vihars</span> या <span class="ui">View Entries</span>। हर कार्ड पर <b>Save</b> और <b>WhatsApp</b> है।</p></div>
+    <div class="card"><h3>सेवा कार्ड</h3><p class="small">Your Stats के पास शेयर बटन: कार्ड चुनें, Story या Square, फिर सेव करें या WhatsApp / Instagram पर शेयर करें।</p></div>
+    <div class="card"><h3>ID कार्ड</h3><p class="small">Profile → <b>Vihar Seva ID Card</b>। इसका QR इमरजेंसी जानकारी के साथ आपका वेरिफ़िकेशन पेज खोलता है।</p></div>
+  </div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="community">
+  <div class="run"><span>कम्युनिटी</span><span class="pg">16 / 18</span></div>
+  <h1>अपने ग्रुप<em>से आगे।</em></h1>
+  <div class="pair">
+    <div class="fig"><div class="droid" style="width:50mm; height:92mm"><img src="assets/screens/24-vchat.jpg" alt="VChat"></div><p class="cap"><b>More → VChat</b></p></div>
+    <div class="fig"><div class="droid" style="width:50mm; height:92mm"><img src="assets/screens/05-directory.jpg" alt="Directory"></div><p class="cap"><b>Community Directory</b></p></div>
+  </div>
+  <div class="stack">
+    <div class="card"><h3>VChat</h3><p class="small">आपके ग्रुप की चैट। कैप्टन दूसरे ग्रुप को फ़ॉलो कर सकते हैं ताकि सदस्य उनकी अपडेट पढ़ सकें। संदेश 30 दिन रहते हैं।</p></div>
+    <div class="card"><h3>डायरेक्टरी और देरासर खोजें</h3><p class="small">ग्रुप, मंदिर और उपाश्रय की सार्वजनिक सूची; कोई भी नई लिस्टिंग जोड़ सकता है (पहले जाँच होती है)। <b>Find Derasar</b> 100 किमी तक के पास के मंदिर दिखाता है।</p></div>
+  </div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="faq">
+  <div class="run"><span>अक्सर पूछे जाने वाले सवाल</span><span class="pg">17 / 18</span></div>
+  <h1>अक्सर पूछे जाने वाले सवाल</h1>
+  <div class="stack" style="gap:2.3mm">
+    <div class="card"><h3>साइन इन नहीं हो रहा।</h3><p class="small">कैप्टन से मिला यूज़रनेम और अपना मोबाइल नंबर डालें। फिर भी दिक्कत? <b>Forgot Password?</b> दबाएँ।</p></div>
+    <div class="card"><h3>"Your session has ended."</h3><p class="small">फिर से साइन इन करें। आपका सेव किया कुछ भी नहीं खोता।</p></div>
+    <div class="card"><h3>मेरा विहार आँकड़ों में नहीं है।</h3><p class="small">शायद पेंडिंग है। My Vihars देखें और कैप्टन को याद दिलाएँ।</p></div>
+    <div class="card"><h3>कोई रूट नहीं मिल रहा।</h3><p class="small">कैप्टन से Manage Routes में जोड़ने को कहें।</p></div>
+    <div class="card"><h3>मेरे आँकड़े बदल गए।</h3><p class="small">VY मेनू में विहार वर्ष देखें।</p></div>
+    <div class="card"><h3>Save या Export से कुछ नहीं होता।</h3><p class="small">जो शेयर विंडो खुलती है, उसमें चुनें कि फ़ाइल कहाँ भेजनी है।</p></div>
+    <div class="card"><h3>नोटिफ़िकेशन नहीं आ रहे।</h3><p class="small">Profile → Push Notifications → Enable करें, और फ़ोन सेटिंग में vSeva की अनुमति दें।</p></div>
+    <div class="card"><h3>iPhone है?</h3><p class="small"><b>Safari</b> में vseva.vjas.in खोलें → Share → Add to Home Screen।</p></div>
+  </div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · सेवक गाइड</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="support" style="background:#1F1A17; color:#fff; gap:4.5mm;">
+  <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:3mm; margin-top:2mm;">
+    <img src="assets/vseva-logo.png" alt="vSeva" style="width:22mm; height:22mm; object-fit:contain; background:#fff; border-radius:5mm; padding:2mm;">
+    <h1 style="color:#fff; font-size:19pt">आपकी सेवा यात्रा,<em>और व्यवस्थित।</em></h1>
+    <p style="color:#E8DFD5; font-size:9.6pt; max-width:104mm">कोई सवाल, शुरुआत में मदद, या अपना ग्रुप vSeva पर लाना है? हम मदद के लिए हैं।</p>
+  </div>
+  <div class="stack" style="gap:2.4mm">
+    <div class="card" style="background:#2A2420; border-color:#4A3F38"><span class="tag">गाइड और डेमो</span><p style="color:#fff; font-family:var(--display); font-weight:800; font-size:12pt">Alpesh Shah</p><p style="color:#E8DFD5; font-family:var(--mono); font-size:9pt">+91 93245 03214</p></div>
+    <div class="card" style="background:#2A2420; border-color:#4A3F38"><span class="tag">टेक्निकल सहायता</span><p style="color:#fff; font-family:var(--display); font-weight:800; font-size:12pt">Vishwa Shah</p><p style="color:#E8DFD5; font-family:var(--mono); font-size:9pt">+91 95945 03214 · WhatsApp</p></div>
+    <div class="card" style="background:#2A2420; border-color:#4A3F38"><span class="tag">ईमेल</span><a href="mailto:contact@vjas.in" style="color:#fff; font-family:var(--mono); font-size:9.4pt; text-decoration:none">contact@vjas.in</a></div>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:5mm; margin-top:auto; margin-bottom:6mm;">
+    <a href="https://play.google.com/store/apps/details?id=in.vjas.vseva" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:2mm;">
+      <div style="background:#fff; border-radius:3mm; padding:2.5mm; width:34mm; height:34mm;"><img src="assets/qr-play-store.svg" alt="QR code for vSeva on Google Play" style="width:29mm; height:29mm; display:block"></div>
+      <span style="font-family:var(--mono); font-size:7.4pt; color:#E8DFD5">Android ऐप · Google Play</span>
+    </a>
+    <a href="https://www.instagram.com/vseva.app" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:2mm;">
+      <div style="background:#fff; border-radius:3mm; padding:2.5mm; width:34mm; height:34mm;"><img src="assets/qr-instagram-vseva-app.svg" alt="QR code for Instagram @vseva.app" style="width:29mm; height:29mm; display:block; object-fit:contain"></div>
+      <span style="font-family:var(--mono); font-size:7.4pt; color:#E8DFD5">Instagram · @vseva.app</span>
+    </a>
+  </div>
+  <div class="foot" style="border-top-color:#4A3F38;"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS" style="mix-blend-mode:normal; background:#fff; border-radius:1.5mm; padding:.6mm 1.2mm;"><span style="color:#B3A79C">vSeva · सेवक गाइड · 18 / 18</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva" style="background:#fff; border-radius:2mm; padding:.6mm;"></div>
+</section>
+
+</body>
+</html>

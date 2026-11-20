@@ -7,7 +7,8 @@ export const SITE_URL = 'https://vseva.vjas.in';
 // in public/vseva-site/ each time the guides are rebuilt, so shared links always get the latest version.
 export const GUIDES = [
   { href: '/vseva-site/vSeva-Captain-Guide.pdf', title: 'Captain Guide', body: 'Set up your group, add Sevaks and routes, approve Vihars and run reports.' },
-  { href: '/vseva-site/vSeva-Sevak-Guide.pdf', title: 'Sevak Guide', body: 'Install the app, sign in, complete your profile and submit Vihars for approval.' },
+  { href: '/vseva-site/vSeva-Sevak-Guide.pdf', title: 'Sevak Quick Guide', body: 'Install, profile, Sankalp, submit a Vihar, notifications, contacts and your Seva card.' },
+  { href: '/vseva-site/vSeva-Sevak-Guide-Hinglish.pdf', title: 'Sevak Quick Guide (Hinglish)', body: 'Hinglish mein: install, profile, Sankalp, Vihar submit, notifications, contacts aur Seva card.' },
 ] as const;
 
 // The Android app on Google Play. iPhone users install the web app (Add to Home Screen).
@@ -117,7 +118,7 @@ export const SCREENS = {
   entryStep3: s('35-entry-step3-selected', 'New Vihar Entry, step 3: Sevaks who walked, wheelchair and car Seva'),
   entryStep4: s('36-entry-step4', 'New Vihar Entry, step 4: instructions, notes and Submit Entry'),
   myVihars: s('64-my-vihars', 'My Vihars list showing an entry pending Captain approval'),
-  contacts: s('69-sevak-contacts', 'Important Contacts with the emergency list and the Sevak contact directory'),
+  contacts: s('69-sevak-contacts', 'Important Contacts with the emergency list and the Sevak contact directory, each with WhatsApp and Call', 964, 435),
   share: s('52-share', 'Share your Seva sheet with Story and Square achievement cards'),
   idCard: s('42-idcard', 'Vihar Seva ID card with a QR code for verification (QR blurred)', 1026),
   alert: s('50-alert-vihar', 'Announce Upcoming Vihar form for alerting every Sevak'),

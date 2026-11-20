@@ -33,9 +33,11 @@ const AuthShell: React.FC<{ children: React.ReactNode; maxWidth?: string; topLef
 
 interface LoginProps {
   onLoginSuccess: (profile: UserProfile) => void;
+  // Only on /super-admin: a login with no Captain/Sevak profile is let in when the server confirms it is a Super Admin.
+  onAdminLogin?: (account: { id: string; email: string }) => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+const Login: React.FC<LoginProps> = ({ onLoginSuccess, onAdminLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -119,6 +121,17 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       const profile = await withTimeout(dataService.getProfile(authData.user.id));
 
       if (!profile) {
+        if (onAdminLogin) {
+          try {
+            await withTimeout(dataService.getSuperAdminScope()); // the server decides; throws if not a Super Admin
+            showToast('Welcome, Super Admin', 'success');
+            onAdminLogin({ id: authData.user.id, email: authData.user.email || '' });
+            return;
+          } catch {
+            await supabase.auth.signOut();
+            throw new Error('This account is not authorised for Super Admin access.');
+          }
+        }
         throw new Error("Profile not found. Contact your Captain.");
       }
 
@@ -128,6 +141,18 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
       // This site only admits its own platform's accounts (see services/brandAccess.ts)
       const blocked = await withTimeout(brandAccessError(profile.organization_id));
+      if (blocked && onAdminLogin) {
+        // On /super-admin, a Captain of the other platform may still be a Super Admin (the server decides)
+        try {
+          await withTimeout(dataService.getSuperAdminScope());
+          showToast('Welcome, Super Admin', 'success');
+          onAdminLogin({ id: authData.user.id, email: authData.user.email || '' });
+          return;
+        } catch {
+          await supabase.auth.signOut();
+          throw new Error(blocked);
+        }
+      }
       if (blocked) {
         await supabase.auth.signOut();
         throw new Error(blocked);

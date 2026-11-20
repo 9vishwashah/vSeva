@@ -4,8 +4,10 @@ import {
     Check, X, MessageCircle, RefreshCw, Loader2,
     ChevronDown, ChevronUp, Users, PieChart, 
     ShieldCheck, Building2, LayoutDashboard, Lock,
-    Download, FileText, Search, ArrowUpDown, SlidersHorizontal
+    Download, FileText, Search, ArrowUpDown, SlidersHorizontal, LogOut
 } from 'lucide-react';
+import { supabase } from '../services/supabase';
+import { clearAll as clearRequestCache } from '../services/requestCache';
 import ThemedSelect from '../components/ThemedSelect';
 import { useToast } from '../context/ToastContext';
 import { BRAND } from '@brand';
@@ -493,6 +495,14 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                             title="Lock Dashboard"
                         >
                             <Lock size={20} />
+                        </button>
+                        <button
+                            onClick={async () => { clearSuperAdminPin(); await supabase.auth.signOut(); clearRequestCache(); window.location.href = '/super-admin'; }}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                            title={scope?.email ? `Sign out (${scope.email})` : 'Sign out'}
+                            aria-label="Sign out"
+                        >
+                            <LogOut size={20} />
                         </button>
                     </div>
                 </div>

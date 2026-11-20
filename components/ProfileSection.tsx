@@ -17,6 +17,7 @@ import SosButton from './SosButton';
 import ChangePasswordCard from './ChangePasswordCard';
 import SankalpSettingsCard from './SankalpSettingsCard';
 import ReminderSettingsCard from './ReminderSettingsCard';
+import WhatsAppOptInCard from './WhatsAppOptInCard';
 import { PUSH_ENABLED } from '../services/oneSignalService';
 import { OCCUPATIONS } from '../services/occupations';
 import { getAccountBadge } from '../services/specialAccounts';
@@ -411,6 +412,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
             {/* Captain: the group's "No Vihar Since N Days" reminders (on/off, days, message) */}
             {user.role === UserRole.ORG_ADMIN && <ReminderSettingsCard user={user} />}
+
+            {/* Sevak: WhatsApp reminder opt-in (only appears once the super-admin switches WhatsApp on for this group) */}
+            {isSevak && <WhatsAppOptInCard />}
 
             {/* Profile Incomplete nudge */}
             {isSevak && missingFields.some(f => f !== 'Date of birth') && (

@@ -1,0 +1,10 @@
+# Supabase CLI settings for the Edge Functions in supabase/functions (WhatsApp reminders).
+# Both functions do their own authentication, so the gateway's JWT check is off:
+#   whatsapp-webhook  Meta signs every POST (X-Hub-Signature-256) and the GET handshake uses the verify token
+#   whatsapp-worker   requires the x-whatsapp-cron-secret header (WHATSAPP_CRON_SECRET)
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.whatsapp-worker]
+verify_jwt = false

@@ -24,7 +24,9 @@ for approval" page, and applies the text fixes (Play Store instead of web app, d
 The script also publishes both PDFs to the website at fixed addresses, overwriting the old files:
 `public/vseva-site/vSeva-Captain-Guide.pdf` and `public/vseva-site/vSeva-Sevak-Guide.pdf` (linked from the
 landing page, the Documentation page and the footer through `GUIDES` in `brands/vseva/site/content.ts`). The old
-address `vSeva-App-Guide.pdf` now serves the Captain Guide, so links shared earlier keep working. Rebuild, then
+address `vSeva-App-Guide.pdf` now serves the Captain Guide. The Sevak guide is now a short quick guide (cover + 7 pages, no contents page) in English and Hinglish, from
+`quick_guide.py`: `vSeva Sevak Quick Guide.pdf` is published as `public/vseva-site/vSeva-Sevak-Guide.pdf` and the
+Hinglish one as `public/vseva-site/vSeva-Sevak-Guide-Hinglish.pdf`. Links shared earlier keep working. Rebuild, then
 push: the links stay the same and visitors get the new version.
 
 ## Editing and regenerating

@@ -6,6 +6,7 @@ import { getNotificationTarget } from './services/notificationRouting';
 import { dataService } from './services/dataService';
 import { brandAccessError } from './services/brandAccess';
 import { clearAll as clearRequestCache, setCacheScope } from './services/requestCache';
+import OpenedAsBanner from './components/OpenedAsBanner';
 import Login from './pages/Login';
 import Landing from '@brand/Landing';
 import { PUBLIC_PATHS } from '@brand/publicPaths';
@@ -75,6 +76,8 @@ const App: React.FC = () => {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true || isNativeApp;
 
   const [user, setUser] = useState<UserProfile | null>(null);
+  // A Super Admin login with no Captain profile (only ever set on /super-admin; access is decided by the server)
+  const [adminAccount, setAdminAccount] = useState<{ id: string; email: string } | null>(null);
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionError, setSessionError] = useState<'offline' | 'error' | null>(null);
@@ -363,12 +366,18 @@ const App: React.FC = () => {
         if (userId) {
           setCacheScope(userId); // so the profile and data kept on this device can be read before `user` is set
           let profile = await dataService.getProfile(userId);
+          if (!profile && isSuperAdmin && session?.user) setAdminAccount({ id: session.user.id, email: session.user.email || '' });
           // Offline on a device that has never kept this profile: show the offline screen, not the login page
           if (!profile && !navigator.onLine) throw new Error('Offline and no saved profile');
           if (profile) {
             // A session from another platform (e.g. a vSeva account opened on the SSG site) is not admitted.
             const blocked = await brandAccessError(profile.organization_id);
-            if (blocked) {
+            if (blocked && isSuperAdmin && session?.user) {
+              // e.g. the platform owner's SSG Captain login opening vSeva's /super-admin: keep the session, but only
+              // as a Super Admin (no Captain app). The dashboard asks the server, which refuses anyone else.
+              setAdminAccount({ id: session.user.id, email: session.user.email || '' });
+              profile = null;
+            } else if (blocked) {
               try { sessionStorage.setItem('brandBlock', blocked); } catch { /* optional */ }
               await supabase.auth.signOut();
               clearRequestCache();
@@ -478,7 +487,7 @@ const App: React.FC = () => {
 
   // Route: Super Admin (Protected)
   if (isSuperAdmin) {
-    if (!user && !loading) return <Login onLoginSuccess={handleLoginSuccess} />;
+    if (!user && !adminAccount && !loading) return <Login onLoginSuccess={handleLoginSuccess} onAdminLogin={setAdminAccount} />;
     if (user && user.role !== UserRole.ORG_ADMIN) {
       // Not an admin? Send them to their default dashboard
       setCurrentPage(user.role === UserRole.SEVAK ? 'analytics' : 'dashboard');
@@ -487,7 +496,7 @@ const App: React.FC = () => {
     }
     return (
       <React.Suspense fallback={<BrandSplash />}>
-        {superAdminOrgId ? <SuperAdminOrgDetail orgId={superAdminOrgId} /> : <SuperAdminDashboard currentUser={user} />}
+        {superAdminOrgId ? <SuperAdminOrgDetail orgId={superAdminOrgId} /> : <SuperAdminDashboard currentUser={user ?? (adminAccount && { id: adminAccount.id, full_name: adminAccount.email })} />}
       </React.Suspense>
     );
   }
@@ -517,6 +526,7 @@ const App: React.FC = () => {
         />
       )}
       {user && !showOnboarding && <SankalpGate key={user.id} user={user} />}
+      <OpenedAsBanner />
       <ViharYearProvider>
       <Layout
         role={user.role}

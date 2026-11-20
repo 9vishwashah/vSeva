@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>vSeva Sevak Quick Guide</title>
+<meta name="author" content="vSeva">
+<meta name="description" content="A practical guide for Vihar Seva organizations, Captains and Sevaks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@600;700;800;900&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: phone-shaped pages (135 x 240 mm, 9:16) read in one column on a phone; one idea per page,
+   large type, thin bordered cards, screenshots in a slim Android frame. */
+:root {
+  --ink: #1F1A17;
+  --ink-2: #4A3F38;
+  --muted: #857669;
+  --line: #EADFD4;
+  --card-line: #F0C9AE;
+  --paper: #FBF7F2;
+  --white: #FFFFFF;
+  --saffron: #DE6B38;
+  --saffron-deep: #B5542A;
+  --saffron-soft: #FCEBDD;
+  --amber: #8A5A00; --amber-soft: #FFF2D2;
+  --display: "Schibsted Grotesk", "Segoe UI", Arial, sans-serif;
+  --body: "Instrument Sans", "Segoe UI", Arial, sans-serif;
+  --mono: "JetBrains Mono", Consolas, monospace;
+}
+@page { size: 135mm 240mm; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #d9d2c9; }
+body { font-family: var(--body); color: var(--ink); font-size: 10.2pt; line-height: 1.5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+h1, h2, h3, p { margin: 0; }
+.page { width: 135mm; height: 240mm; position: relative; overflow: hidden; background: var(--paper); padding: 10mm 9mm 23mm; display: flex; flex-direction: column; gap: 5mm; break-after: page; page-break-after: always; margin: 0 auto; }
+@media screen { .page { margin: 8mm auto; box-shadow: 0 2px 14px rgba(0,0,0,.12); } }
+
+.run { display: flex; align-items: center; gap: 3mm; font-family: var(--mono); font-size: 6.6pt; letter-spacing: .12em; text-transform: uppercase; color: var(--saffron-deep); font-weight: 700; }
+.run::after { content: ""; flex: 1; height: 1px; background: var(--line); order: 1; }
+.run .pg { order: 2; color: var(--muted); }
+.foot { position: absolute; left: 9mm; right: 9mm; bottom: 7mm; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 3mm; }
+.foot img.vjas { height: 7.5mm; mix-blend-mode: multiply; }
+.foot img.vseva { height: 11mm; }
+.foot span { font-family: var(--mono); font-size: 6.4pt; color: var(--muted); letter-spacing: .06em; }
+
+h1 { font-family: var(--display); font-weight: 900; font-size: 21pt; line-height: 1.02; letter-spacing: -.02em; text-transform: uppercase; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--saffron); display: block; }
+.intro { font-size: 10.2pt; color: var(--ink-2); line-height: 1.5; }
+h3 { font-family: var(--display); font-weight: 800; font-size: 11pt; line-height: 1.25; }
+p { color: var(--ink-2); }
+.small { font-size: 8.6pt; color: var(--ink-2); line-height: 1.45; }
+.ui { font-weight: 700; color: var(--ink); }
+.tag { display: inline-block; align-self: flex-start; font-family: var(--mono); font-size: 6pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: .9mm 2.2mm; border-radius: 99px; background: var(--saffron); color: #fff; white-space: nowrap; }
+.tag.soft { background: var(--saffron-soft); color: var(--saffron-deep); }
+.tag.amber { background: var(--amber-soft); color: var(--amber); }
+
+.card { background: var(--white); border: 1px solid var(--card-line); border-radius: 3mm; padding: 3.2mm 4mm; display: flex; flex-direction: column; gap: 1.2mm; }
+.card .row { display: flex; justify-content: space-between; align-items: center; gap: 3mm; }
+.stack { display: flex; flex-direction: column; gap: 2.6mm; }
+.num-row { display: grid; grid-template-columns: 9mm 1fr; gap: 2mm; align-items: start; }
+.num-row .n { font-family: var(--display); font-weight: 900; font-size: 13pt; color: var(--saffron); line-height: 1.1; }
+.dot { width: 6.6mm; height: 6.6mm; border-radius: 50%; background: var(--saffron); color: #fff; font-family: var(--mono); font-weight: 700; font-size: 8pt; display: flex; align-items: center; justify-content: center; flex: none; }
+.step { display: grid; grid-template-columns: 7mm 1fr; gap: 2.6mm; align-items: start; }
+.step p { font-size: 9.6pt; }
+.note { border-left: 2px solid var(--saffron); padding: .5mm 0 .5mm 3.5mm; font-size: 9pt; color: var(--ink-2); }
+.note b { color: var(--ink); }
+
+/* iPhone 17 Pro (Cosmic Orange) mockup, the same frame as the vseva.vjas.in landing page. Each phone keeps the
+   height set on it and takes the frame's width from that; the frame art (448 x 916) has a see-through screen at
+   x 24, y 21, 402 x 874. */
+.droid { position: relative; flex: none; width: auto !important; aspect-ratio: 448 / 916; }  /* no CSS shadow: Chrome turns filtered elements into large bitmaps in the PDF */
+.droid img { position: absolute; left: 5.357%; top: 2.293%; width: 89.732%; height: 95.415%; display: block; object-fit: cover; object-position: top; padding-top: 9%; background: #fff; border-radius: 11% / 5.4%; }
+.droid::after { content: ""; position: absolute; inset: 0; background: url(assets/iphone-17-pro-448.webp) center / 100% 100% no-repeat; pointer-events: none; }
+/* Android phone (only for the Google Play screenshot): slim dark frame, rounded corners, punch-hole camera */
+.android { position: relative; flex: none; aspect-ratio: 720 / 1570; background: #fff; border: 1.3mm solid #2A2420; border-radius: 4.2mm; overflow: hidden; box-shadow: 0 3mm 7mm -5mm rgba(60,30,10,.35); }
+.android::before { content: ""; position: absolute; top: 1.4mm; left: 50%; width: 1.8mm; height: 1.8mm; margin-left: -.9mm; border-radius: 50%; background: #2A2420; z-index: 2; }
+.android img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.cap { font-size: 7.8pt; color: var(--muted); margin-top: 2mm; line-height: 1.35; text-align: center; }
+.cap b { color: var(--ink); font-weight: 600; }
+.fig { display: flex; flex-direction: column; align-items: center; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; justify-items: center; }
+
+table { width: 100%; border-collapse: collapse; font-size: 8.8pt; }
+th { text-align: left; font-family: var(--mono); font-size: 6.2pt; letter-spacing: .1em; text-transform: uppercase; color: #fff; font-weight: 700; padding: 2mm 2.5mm; background: var(--ink); }
+th:first-child { border-radius: 2mm 0 0 0; } th:last-child { border-radius: 0 2mm 0 0; }
+td { padding: 2mm 2.5mm; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-2); background: var(--white); }
+tr:nth-child(even) td { background: #FDF9F5; }
+td:first-child { color: var(--ink); font-weight: 600; }
+.path { position: absolute; pointer-events: none; }
+.toc a { display: grid; grid-template-columns: 8mm 1fr 7mm; gap: 1mm; align-items: baseline; text-decoration: none; color: var(--ink); font-size: 9.6pt; padding: 1.8mm 0; border-bottom: 1px solid var(--line); }
+.toc a span:first-child { font-family: var(--mono); font-size: 7pt; color: var(--saffron-deep); font-weight: 700; }
+.toc a span:last-child { font-family: var(--mono); font-size: 7pt; color: var(--muted); text-align: right; }
+</style>
+</head>
+<body>
+
+<section class="page" id="cover" style="padding:12mm 10mm 9mm; gap:0; align-items:center; text-align:center;">
+  <!-- faint geometric lines behind the page -->
+  <svg class="path" style="left:0; top:0; width:135mm; height:240mm" viewBox="0 0 135 240" fill="none" aria-hidden="true">
+    <g stroke="#DE6B38" stroke-opacity=".13" stroke-width=".35">
+      <path d="M-5 8 L 46 52 L -5 92"/><path d="M58 -4 L 86 40"/><path d="M140 118 L 92 168 L 140 214"/>
+      <path d="M118 128 L 70 244"/><path d="M-6 196 L 54 168 L 30 246"/><path d="M128 -6 L 141 60"/>
+    </g>
+  </svg>
+  <img src="assets/vseva-logo.png" alt="vSeva" style="width:52mm; height:52mm; object-fit:contain; position:relative;">
+  <p style="position:relative; margin-top:5mm; font-family:var(--display); font-weight:800; font-size:10.5pt; letter-spacing:.26em; color:var(--ink);">VSEVA · SEVAK QUICK GUIDE</p>
+  <p style="position:relative; margin-top:2mm; font-family:var(--display); font-weight:800; font-size:7pt; letter-spacing:.24em; color:var(--saffron);">FOR SEVAKS &amp; SEVIKAS · SIMPLE STEPS</p>
+  <h1 style="position:relative; margin-top:9mm; font-size:31pt; line-height:1; letter-spacing:-.025em;">See Your<br>Seva Stats &amp;<br>Inspire More<span style="color:var(--saffron)">.</span><em style="font-size:22pt; line-height:1.15; margin-top:2mm;">Every Step Counts.</em></h1>
+  <p style="position:relative; margin-top:6mm; max-width:104mm; font-size:11.4pt; line-height:1.5; color:var(--ink-2); font-weight:400;">Install the app, complete your profile, set your Sankalp, submit Vihars and share your Seva.</p>
+  <div style="position:relative; margin-top:auto; width:100%; text-align:left; background:#fff; border:1.2px solid #EBA27C; border-radius:3.6mm; padding:4.5mm 5.5mm; display:grid; grid-template-columns:1fr auto; gap:2.5mm 4mm; align-items:center;">
+    <div style="grid-column:1 / -1"><p style="font-family:var(--display); font-weight:800; font-size:6.8pt; letter-spacing:.22em; color:var(--saffron-deep);">PREPARED FOR</p>
+    <p style="font-family:var(--display); font-weight:800; font-size:14pt; color:var(--ink); margin-top:1mm;">Vihar Sevaks</p></div>
+    <div style="display:flex; align-items:center; gap:4mm;"><p style="font-family:var(--display); font-weight:800; font-size:6.8pt; letter-spacing:.22em; color:var(--saffron-deep);">PREPARED BY</p><img src="assets/vjas-wordmark.jpg" alt="VJAS" style="height:9mm; mix-blend-mode:multiply;"></div>
+    <p style="font-size:9.6pt; color:var(--ink-2);">November 2026</p>
+  </div>
+  <div style="position:relative; width:100%; height:1px; background:#3A302A; margin:6mm 0 5mm;"></div>
+  <p style="position:relative; font-family:var(--display); font-weight:800; font-size:8.4pt; letter-spacing:.22em; color:var(--ink);">RECORD <span style="color:var(--saffron)">✱</span> TRACK <span style="color:var(--saffron)">✱</span> SERVE <span style="color:var(--saffron)">✱</span> SHARE</p>
+  <p style="position:relative; margin-top:3mm; font-family:var(--display); font-weight:800; font-size:7pt; letter-spacing:.22em; color:var(--saffron);">ANDROID APP ON GOOGLE PLAY · VSEVA.VJAS.IN</p>
+  <p style="position:relative; margin-top:4mm; font-size:8.4pt; color:var(--ink-2); line-height:1.6;">Alpesh Shah +91 93245 03214 · Vishwa Shah +91 95945 03214<br>contact@vjas.in</p>
+</section>
+
+<section class="page" id="q-install">
+  <div class="run"><span>Step 1</span><span class="pg">02 / 08</span></div>
+  <h1>Install &amp;<em>sign in.</em></h1>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:3mm;">
+    <div class="card" style="border-color:#1F1A17; gap:2mm;">
+      <div style="display:flex; align-items:center; gap:2mm;"><svg viewBox="0 0 24 24" style="width:6mm;height:6mm;flex:none" aria-hidden="true"><path fill="#00A0FF" d="M1.337.924a1.486 1.486 0 0 0-.112.568v21.017c0 .217.045.419.124.6l11.155-11.087L1.337.924z"/><path fill="#00D26A" d="M13.544 10.989l3.258-3.238L3.45.195a1.466 1.466 0 0 0-.946-.179l11.04 10.973z"/><path fill="#FFC107" d="M22.018 13.298l-3.919 2.218-3.515-3.493 3.543-3.521 3.891 2.202a1.49 1.49 0 0 1 0 2.594z"/><path fill="#F4433A" d="M13.544 13.056l-11 10.933c.298.036.612-.016.906-.183l13.324-7.54-3.23-3.21z"/></svg><h3>Android phone</h3></div>
+      <div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">1</span><p class="small">Open <b>Google Play Store</b>, search <b>vSeva</b></p></div><div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">2</span><p class="small">Tap <span class="ui">Install</span>, then <span class="ui">Open</span></p></div><div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">3</span><p class="small">Allow notifications when asked</p></div>
+      <div style="display:flex; align-items:center; gap:2mm; margin-top:auto;"><img src="assets/qr-play-store.svg" alt="QR code for vSeva on Google Play" style="width:17mm;height:17mm"><p class="small" style="font-size:7.4pt">Scan to install</p></div>
+    </div>
+    <div class="card" style="gap:2mm; background:#F6F3EF; border-color:#D9D2C9;">
+      <div style="display:flex; align-items:center; gap:2mm;"><svg viewBox="0 0 24 24" style="width:6mm;height:6mm;flex:none" fill="#1F1A17" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><h3>iPhone / iPad</h3></div>
+      <div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">1</span><p class="small">Open <b>vseva.vjas.in</b> in <b>Safari</b></p></div><div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">2</span><p class="small">Tap <b>Share ↑</b> → <b>Add to Home Screen</b></p></div><div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">3</span><p class="small">Open <b>vSeva</b> from your Home Screen</p></div>
+      <div style="display:flex; align-items:center; gap:2mm; margin-top:auto;"><img src="assets/qr-play-store.svg" alt="QR code for vSeva on Google Play" style="width:17mm;height:17mm"><p class="small" style="font-size:7.4pt">Scan to open vseva.vjas.in</p></div>
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr auto; gap:4mm; align-items:center;">
+    <div class="card" style="gap:2.2mm;"><h3>Sign in</h3><div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">1</span><p class="small"><b>Username:</b> sent by your Captain on WhatsApp</p></div><div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">2</span><p class="small"><b>Password:</b> your mobile number</p></div><div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">3</span><p class="small">Forgot it? Tap <b>Forgot Password?</b> Your Captain resets it.</p></div></div>
+    <div class="fig"><div class="droid" style="height:70mm"><img src="assets/screens/01-login.jpg" alt="Sign in screen"></div><p class="cap"><b>Sign in</b> screen</p></div>
+  </div>
+  <p class="note"><b>Said “Don’t allow” to notifications?</b> Phone Settings → Apps → vSeva → Notifications → On.</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · Sevak Quick Guide</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="q-profile">
+  <div class="run"><span>Steps 2 &amp; 3</span><span class="pg">03 / 08</span></div>
+  <h1>Profile &amp;<em>Sankalp.</em></h1>
+  <h3 style="color:var(--saffron-deep)">2 · Complete your profile</h3>
+  <div style="display:grid; grid-template-columns:1fr auto; gap:4mm; align-items:center;">
+    <div class="card"><div style="display:flex; flex-direction:column; gap:1.5mm; font-size:8.6pt; color:var(--ink-2);"><span>☐ <b>Profile photo</b> (tap the camera on your photo)</span><span>☐ <b>Date of birth</b></span><span>☐ <b>Blood group</b></span><span>☐ <b>Family emergency contact name</b></span><span>☐ <b>Family emergency number</b></span><span>☐ <b>Occupation</b></span><span>☐ <b>Address</b></span></div></div>
+    <div class="fig"><div class="droid" style="height:58mm"><img src="assets/screens/43-profile-ring.jpg" alt="Profile with completion ring"></div><p class="cap">The <b>ring</b> fills to 100%</p></div>
+  </div>
+  <p class="note"><b>Why it matters:</b> in an emergency, your group can call your family quickly.</p>
+  <h3 style="color:var(--saffron-deep); margin-top:1mm">3 · Set your yearly Sankalp</h3>
+  <div style="display:grid; grid-template-columns:1fr 50mm; gap:4mm; align-items:center;">
+    <div class="stack" style="gap:2.4mm"><div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">1</span><p class="small">Right after you sign in, vSeva asks: <b>Set your Sankalp</b></p></div><div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">2</span><p class="small">Enter how many Vihars you pledge this Vihar Year, or tap <b>5, 12, 25</b> or <b>50</b></p></div><div class="step" style="grid-template-columns:5.5mm 1fr; gap:2mm"><span class="dot" style="width:5.5mm;height:5.5mm;font-size:7pt">3</span><p class="small">Tap <span class="ui">Save Sankalp</span>. The ring on Home shows your progress</p></div></div>
+    <div class="fig"><img src="assets/sankalp-popup.png" alt="Set your Sankalp pop-up" style="width:50mm; border-radius:3mm; box-shadow:0 1.5mm 4mm rgba(60,30,10,.18)"><p class="cap">The <b>Sankalp</b> pop-up</p></div>
+  </div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · Sevak Quick Guide</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="q-vihar">
+  <div class="run"><span>Step 4</span><span class="pg">04 / 08</span></div>
+  <h1>Submit a<em>Vihar entry.</em></h1>
+  <p class="intro">After a Vihar, tap <span class="ui">Add Vihar</span> on Home and fill four short steps.</p>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:3mm 4mm; justify-items:center;"><div class="fig" style="gap:0"><div class="droid" style="height:62mm"><img src="assets/screens/30-entry-step1.jpg" alt="Step 1"></div><p class="cap" style="margin-top:1.5mm; max-width:52mm"><b><span style="color:var(--saffron)">1 ·</span> Date &amp; type</b><br>Today by default; Morning or Evening.</p></div><div class="fig" style="gap:0"><div class="droid" style="height:62mm"><img src="assets/screens/33-entry-step2-filled.jpg" alt="Step 2"></div><p class="cap" style="margin-top:1.5mm; max-width:52mm"><b><span style="color:var(--saffron)">2 ·</span> Vihar of &amp; route</b><br>Sadhu / Sadhvi count, From and To. Distance fills itself.</p></div><div class="fig" style="gap:0"><div class="droid" style="height:62mm"><img src="assets/screens/35-entry-step3-selected.jpg" alt="Step 3"></div><p class="cap" style="margin-top:1.5mm; max-width:52mm"><b><span style="color:var(--saffron)">3 ·</span> Sevaks</b><br>Add every Sevak who walked. Wheelchair / Car Seva if any.</p></div><div class="fig" style="gap:0"><div class="droid" style="height:62mm"><img src="assets/screens/36-entry-step4.jpg" alt="Step 4"></div><p class="cap" style="margin-top:1.5mm; max-width:52mm"><b><span style="color:var(--saffron)">4 ·</span> Submit</b><br>Samuday and notes if you like, then <span class="ui">Submit Entry</span>.</p></div></div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · Sevak Quick Guide</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="q-after">
+  <div class="run"><span>Step 4</span><span class="pg">05 / 08</span></div>
+  <h1>After you<em>submit.</em></h1>
+  <div class="card" style="background:var(--saffron); border-color:var(--saffron);"><h3 style="color:#fff">One Vihar = one entry</h3><p class="small" style="color:#fff">Only <b>one Sevak</b> submits it, for everyone who walked. Others should not submit it again.</p></div>
+  <svg viewBox="0 0 117 40" style="width:117mm; height:38mm" aria-label="Submitted, Pending, Approved / Rejected">
+    <g font-family="Schibsted Grotesk, Arial" font-weight="800" font-size="3.6">
+      <rect x="0" y="13" width="30" height="13" rx="2.4" fill="#fff" stroke="#1F1A17" stroke-width=".4"/><text x="15" y="21" text-anchor="middle" fill="#1F1A17">Submitted</text>
+      <line x1="30" y1="19.5" x2="36" y2="19.5" stroke="#DE6B38" stroke-width=".6"/><polygon points="36,18 39,19.5 36,21" fill="#DE6B38"/>
+      <rect x="39" y="13" width="38" height="13" rx="2.4" fill="#FFF2D2"/><text x="58" y="18.6" text-anchor="middle" fill="#8A5A00">Pending</text><text x="58" y="22.8" text-anchor="middle" font-family="Instrument Sans, Arial" font-weight="500" font-size="2.6" fill="#8A5A00">with Captain</text>
+      <line x1="77" y1="19.5" x2="83" y2="8" stroke="#DE6B38" stroke-width=".6"/><line x1="77" y1="19.5" x2="83" y2="31" stroke="#DE6B38" stroke-width=".6"/>
+      <rect x="83" y="1" width="34" height="13" rx="2.4" fill="#E5F3EA"/><text x="100" y="6.6" text-anchor="middle" fill="#2F7D4F">Approved</text><text x="100" y="10.8" text-anchor="middle" font-family="Instrument Sans, Arial" font-weight="500" font-size="2.6" fill="#2F7D4F">counts in stats</text>
+      <rect x="83" y="25" width="34" height="13" rx="2.4" fill="#FBE7E4"/><text x="100" y="30.6" text-anchor="middle" fill="#A93226">Rejected</text><text x="100" y="34.8" text-anchor="middle" font-family="Instrument Sans, Arial" font-weight="500" font-size="2.6" fill="#A93226">you are notified</text>
+    </g>
+  </svg>
+  <div style="display:grid; grid-template-columns:1fr auto; gap:4mm; align-items:center;">
+    <p class="small" style="font-size:9.4pt">Until your Captain approves it, <span class="ui">My Vihars</span> shows <span class="tag amber">Pending captain approval</span>.</p>
+    <div class="fig"><div class="droid" style="height:80mm"><img src="assets/screens/64-my-vihars.jpg" alt="My Vihars with a pending entry"></div><p class="cap"><b>My Vihars</b> with a pending entry</p></div>
+  </div>
+  <p class="note"><b>Wrong entry?</b> Tell your Captain; they can edit it. <b>Pending for long?</b> Remind your Captain.</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · Sevak Quick Guide</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="q-notify">
+  <div class="run"><span>Notifications</span><span class="pg">06 / 08</span></div>
+  <h1>Get updates<em>via notifications.</em></h1>
+  <p class="intro">vSeva tells you what is happening in your group, right on your phone, even when the app is closed.</p>
+  <div class="fig"><img src="assets/reminder-preview.jpg" alt="A Vihar reminder notification on an Android phone" style="width:66mm; border-radius:4mm; box-shadow:0 2mm 5mm rgba(60,30,10,.18)"><p class="cap"><b>A Vihar reminder</b> as it arrives on the phone</p></div>
+  <div class="stack" style="gap:1.8mm"><div class="card"><div class="row"><h3>Upcoming Vihar alerts</h3><span class="tag soft">Instantly</span></div><p class="small">Your Captain announces the date, time and route. Tap <b>I'm Interested</b> to join.</p></div><div class="card"><div class="row"><h3>Vihar reminders</h3><span class="tag soft">9 AM</span></div><p class="small">A gentle nudge when you have not done a Vihar for a few days.</p></div><div class="card"><div class="row"><h3>Birthday wishes</h3><span class="tag soft">8 AM</span></div><p class="small">Whose birthday it is today in your group, so you can send wishes.</p></div><div class="card"><div class="row"><h3>Your Vihars and VChat</h3><span class="tag soft">As it happens</span></div><p class="small">When your Captain records a Vihar with you in it, a submission is not approved, or a new VChat message arrives.</p></div></div>
+  <p class="note"><b>Turn them on:</b> Profile → Push Notifications → Enable, and allow vSeva in your phone settings. Tap a notification to open the right screen.</p>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · Sevak Quick Guide</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="q-contact">
+  <div class="run"><span>Contacts</span><span class="pg">07 / 08</span></div>
+  <h1>Connect with Sevaks,<em>reach out instantly.</em></h1>
+  <div style="display:grid; grid-template-columns:62mm 1fr; gap:5mm; align-items:start;">
+    <div class="fig"><div class="droid" style="height:124mm"><img src="assets/screens/69-sevak-contacts.jpg" alt="Contacts: emergency list and Sevak directory"></div><p class="cap"><b>More → Contacts</b></p></div>
+    <div class="stack">
+      <div class="card"><h3>Emergency contacts</h3><p class="small">Added by your Captain, shown to every Sevak.</p></div>
+      <div class="card"><h3>Sevak directory</h3><p class="small">Search a name, then tap <b>WhatsApp</b> or <b>Call</b>.</p></div>
+      <div class="card"><h3>One tap</h3><p class="small">Green <b>WhatsApp</b> on the left, blue <b>Call</b> on the right.</p></div>
+    </div>
+  </div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · Sevak Quick Guide</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+<section class="page" id="q-share">
+  <div class="run"><span>Step 5</span><span class="pg">08 / 08</span></div>
+  <h1>Share your<em>Seva card.</em></h1>
+  <p class="intro">Your Vihars, kilometres and Sankalp on a card: share it and inspire others.</p>
+  <div style="display:grid; grid-template-columns:auto 1fr; gap:4mm; align-items:start;">
+    <div class="fig"><div class="droid" style="height:84mm"><img src="assets/screens/share-sheet-new.png" alt="Share your Seva sheet" style="padding-top:0"></div><p class="cap"><b>Share your Seva</b></p></div>
+    <div class="stack" style="gap:2.8mm">
+      <div class="step"><span class="dot">1</span><div><p class="small">On Home, tap this badge next to <b>Your Stats</b>:</p><img src="assets/share-badge.png" alt="Share badge with WhatsApp and Instagram icons" style="height:8mm; margin-top:1.2mm"></div></div>
+      <div class="step"><span class="dot">2</span><div><p class="small">Choose a card: <b>Vihars, Distance, Sankalp</b> or <b>Year</b></p></div></div>
+      <div class="step"><span class="dot">3</span><div><p class="small"><b>Story 9:16</b> for Status, <b>Square 1:1</b> for posts</p></div></div>
+      <div class="step"><span class="dot">4</span><div><p class="small">Tap <span class="ui">Share</span> → <b>WhatsApp</b> → My Status or a group. Or ⬇ to save.</p></div></div>
+    </div>
+  </div>
+  <div class="card" style="background:#1F1A17; border-color:#1F1A17; flex-direction:row; align-items:center; gap:4mm;">
+    <div style="flex:1">
+      <p style="color:#fff; font-family:var(--display); font-weight:800; font-size:11pt;">Technical Support</p>
+      <p style="color:#25D366; font-family:var(--display); font-weight:800; font-size:14pt; margin-top:1mm;">+91 93245 03214</p>
+      <p style="color:#E8DFD5; font-size:8pt; margin-top:.8mm;">WhatsApp · Call · contact@vjas.in</p>
+    </div>
+    <div style="text-align:center; flex:none;"><div style="background:#fff; border-radius:2mm; padding:1.5mm; width:21mm; height:21mm;"><img src="assets/qr-play-store.svg" alt="QR code for vSeva on Google Play" style="width:100%;height:100%"></div><p style="color:#E8DFD5; font-size:6.8pt; margin-top:1mm; line-height:1.3">Get vSeva on<br><b>Google Play</b></p></div>
+  </div>
+  <div class="card" style="flex-direction:row; align-items:center; gap:3.5mm;">
+    <svg viewBox="0 0 24 24" style="width:7mm;height:7mm;flex:none" aria-hidden="true"><defs><radialGradient id="ig" cx="30%" cy="107%" r="150%"><stop offset="0" stop-color="#fdf497"/><stop offset=".45" stop-color="#fd5949"/><stop offset=".6" stop-color="#d6249f"/><stop offset=".9" stop-color="#285AEB"/></radialGradient></defs><rect width="24" height="24" rx="6" fill="url(#ig)"/><rect x="5" y="5" width="14" height="14" rx="4" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="16.6" cy="7.4" r="1.1" fill="#fff"/></svg>
+    <div style="flex:1"><h3>Follow us on Instagram</h3><p class="small"><b>@vseva.app</b> · Updates, Seva stories and new features.</p></div>
+    <img src="assets/qr-instagram-vseva-app.svg" alt="QR code for Instagram @vseva.app" style="width:17mm;height:17mm">
+  </div>
+  <div class="foot"><img class="vjas" src="assets/vjas-wordmark.jpg" alt="VJAS"><span>vSeva · Sevak Quick Guide</span><img class="vseva" src="assets/vseva-logo.png" alt="vSeva"></div>
+</section>
+
+</body>
+</html>
