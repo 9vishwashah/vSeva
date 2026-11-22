@@ -10,6 +10,11 @@
 //      to re-read (they then hit the now-fresh in-memory entry, so it is instant).
 //      This is what makes the app feel quick on a slow mobile connection.
 //
+//   4. "Nothing changed, don't download again" (services/dataSync.ts): the server keeps one tiny row per group
+//      saying when each kind of data last changed. When the device's saved copy is still current, it is used
+//      as-is with no request at all (setFreshnessGate); when something changed, only those entries are marked
+//      out of date (expireWhere) and refresh in the background while the old copy stays on screen.
+//
 // Safety: persisted entries are scoped to the signed-in user (setCacheScope) and
 // wiped on logout / any clearAll(); a write that calls invalidate() drops the
 // matching persisted entries too, so you never see your own edit "undone".
@@ -44,16 +49,27 @@ function storageKey(key: string): string | null {
   return scope ? `${PREFIX}${scope}:${key}` : null;
 }
 
-function readPersisted<T>(key: string): T | undefined {
+// v = value, t = saved at, s = marked out of date (the server said this kind of data changed since)
+interface Persisted<T> { v: T; t: number; s?: 1 }
+
+function readPersisted<T>(key: string): Persisted<T> | undefined {
   const sk = storageKey(key);
   if (!sk) return undefined;
   try {
     const raw = localStorage.getItem(sk);
     if (!raw) return undefined;
-    const parsed = JSON.parse(raw) as { v: T; t: number };
+    const parsed = JSON.parse(raw) as Persisted<T>;
     if (!parsed || Date.now() - parsed.t > MAX_STALE_MS) { localStorage.removeItem(sk); return undefined; }
-    return parsed.v;
+    return parsed;
   } catch { return undefined; }
+}
+
+// Decides whether a copy kept on the device is still current, without a request (services/dataSync.ts).
+// Resolves to null when that can't be told (offline, check failed): the cache then refreshes as before.
+export type FreshnessCheck = (key: string) => boolean;
+let freshnessGate: Promise<FreshnessCheck | null> | null = null;
+export function setFreshnessGate(gate: Promise<FreshnessCheck | null> | null): void {
+  freshnessGate = gate;
 }
 
 function writePersisted<T>(key: string, value: T): void {
@@ -96,9 +112,15 @@ export async function getCached<T>(
     if (existing.expiresAt > now) return existing.value as T; // fresh hit
   }
 
-  const stale = opts.persist ? readPersisted<T>(key) : undefined;
+  // The last good value: the expired in-memory one, else the copy kept on the device.
+  let stale: T | undefined;
+  let saved: Persisted<T> | undefined;
+  if (opts.persist) {
+    if (existing && existing.value !== undefined) stale = existing.value;
+    else { saved = readPersisted<T>(key); stale = saved?.v; }
+  }
 
-  const promise = fetcher()
+  const load = (): Promise<T> => fetcher()
     .then(value => {
       cache.set(key, { value, expiresAt: Date.now() + ttlMs });
       if (opts.persist) {
@@ -117,8 +139,51 @@ export async function getCached<T>(
       throw err;
     });
 
+  let promise: Promise<T>;
+  const gate = freshnessGate;
+  if (saved && !saved.s && gate) {
+    // Kept on the device and not marked out of date: once the change check answers, use it as-is
+    // (no request) if this kind of data hasn't changed on the server; otherwise fetch as usual.
+    const keep = saved.v;
+    promise = gate.then(
+      check => {
+        if (check && check(key)) {
+          cache.set(key, { value: keep, expiresAt: Date.now() + ttlMs });
+          return keep;
+        }
+        return load();
+      },
+      () => load(),
+    );
+  } else {
+    promise = load();
+  }
+
   cache.set(key, { expiresAt: 0, promise, stale });
   return stale !== undefined ? stale : promise;
+}
+
+// Marks entries out of date without throwing them away: screens keep showing them while a fresh copy loads
+// (the next read refreshes in the background and announces CACHE_REFRESHED_EVENT if it differs).
+export function expireWhere(test: (key: string) => boolean): void {
+  for (const [key, entry] of cache) {
+    if (!entry.promise && test(key)) entry.expiresAt = 0;
+  }
+  const base = scope ? `${PREFIX}${scope}:` : null;
+  if (!base) return;
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(base) && test(k.slice(base.length))) keys.push(k);
+    }
+    keys.forEach(k => {
+      const raw = localStorage.getItem(k);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Persisted<unknown>;
+      if (parsed && !parsed.s) localStorage.setItem(k, JSON.stringify({ ...parsed, s: 1 }));
+    });
+  } catch { /* storage unavailable: memory entries are already expired */ }
 }
 
 // Removes every cache entry whose key contains `match` as a substring.

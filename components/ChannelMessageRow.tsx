@@ -104,7 +104,7 @@ const ChannelMessageRow: React.FC<ChannelMessageRowProps> = ({
       className={`group relative -mx-1.5 rounded-2xl px-1.5 py-0.5 transition-colors duration-700 ${highlighted ? 'bg-saffron-300/40' : ''}`}
     >
       {/* the arrow that appears behind the row while swiping */}
-      <div ref={iconRef} className="pointer-events-none absolute left-2 top-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-saffron-100 text-saffron-700 opacity-0" style={{ transform: 'translateY(-50%) scale(0.6)' }}>
+      <div ref={iconRef} className="pointer-events-none absolute left-2 top-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-700 opacity-0" style={{ transform: 'translateY(-50%) scale(0.6)' }}>
         <Reply size={16} />
       </div>
 
@@ -127,45 +127,45 @@ const ChannelMessageRow: React.FC<ChannelMessageRowProps> = ({
         </button>
         <div className={`max-w-[78%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
           <div className={`flex items-center gap-2 ${isMine ? 'flex-row-reverse' : ''}`}>
-            <button type="button" onClick={() => onOpenProfile(post)} className="text-xs font-extrabold uppercase tracking-wide text-saffron-600 hover:opacity-80 transition-opacity truncate">
+            <button type="button" onClick={() => onOpenProfile(post)} className="text-xs font-extrabold uppercase tracking-wide text-brand-700 hover:opacity-80 transition-opacity truncate">
               {isMine ? 'You' : post.author_name}
             </button>
-            <p className="text-[10px] text-[#8A6A57] shrink-0">{formatTime(post.created_at)}</p>
+            <p className="text-[11px] text-ink-2 shrink-0">{formatTime(post.created_at)}</p>
             {canReply && !isOptimistic && (
               <button
                 type="button"
                 onClick={() => onReply(post)}
                 aria-label="Reply to this message"
                 title="Reply"
-                className="hidden md:inline-flex shrink-0 text-gray-300 opacity-0 transition-opacity hover:text-saffron-600 focus-visible:opacity-100 group-hover:opacity-100"
+                className="hidden md:inline-flex shrink-0 text-ink-3 opacity-0 transition-opacity hover:text-brand-700 focus-visible:opacity-100 group-hover:opacity-100"
               >
                 <Reply size={13} />
               </button>
             )}
             {canDelete && !isOptimistic && (
-              <button onClick={() => onDelete(post.id)} className="text-gray-400 hover:text-red-500 shrink-0" aria-label={isMine ? 'Delete message' : 'Delete for everyone'}>
+              <button onClick={() => onDelete(post.id)} className="text-ink-3 hover:text-err shrink-0" aria-label={isMine ? 'Delete message' : 'Delete for everyone'}>
                 <Trash2 size={13} />
               </button>
             )}
           </div>
           <div
             className={`chat-bubble mt-1 px-3.5 py-2 rounded-2xl text-sm break-words ${
-              isMine ? 'bg-[#FFDDBD] text-[#241C17] rounded-tr-sm shadow-[0_1px_1px_rgba(120,70,20,0.12)]' : 'bg-white text-[#241C17] rounded-tl-sm shadow-[0_1px_1px_rgba(120,70,20,0.10)]'
+              isMine ? 'bg-[#FFDDBD] text-ink rounded-tr-sm shadow-[0_1px_1px_rgba(120,70,20,0.12)]' : 'bg-surface text-ink rounded-tl-sm shadow-[0_1px_1px_rgba(120,70,20,0.10)]'
             }`}
           >
             {hasQuote && (
               quoteDeleted ? (
-                <div className="mb-1.5 rounded-lg border-l-4 border-gray-300 bg-black/[0.04] px-2.5 py-1.5">
-                  <span className="block text-[11px] font-extrabold text-gray-400 truncate">{post.reply_to_author}</span>
-                  <span className="block text-xs italic text-gray-400">Original message deleted</span>
+                <div className="mb-1.5 rounded-lg border-l-4 border-line bg-black/[0.04] px-2.5 py-1.5">
+                  <span className="block text-[11px] font-extrabold text-ink-3 truncate">{post.reply_to_author}</span>
+                  <span className="block text-xs italic text-ink-3">Original message deleted</span>
                 </div>
               ) : (
                 <button
                   type="button"
                   onClick={() => post.reply_to_id && onJumpTo(post.reply_to_id)}
-                  className="mb-1.5 block w-full rounded-lg border-l-4 border-saffron-500 bg-black/[0.05] px-2.5 py-1.5 text-left active:bg-black/10"
+                  className="mb-1.5 block w-full rounded-lg border-l-4 border-brand bg-black/[0.05] px-2.5 py-1.5 text-left active:bg-black/10"
                 >
-                  <span className="block text-[11px] font-extrabold text-saffron-700 truncate">{post.reply_to_author}</span>
+                  <span className="block text-[11px] font-extrabold text-brand-700 truncate">{post.reply_to_author}</span>
                   <span
                     className="block text-xs text-[#6B5B50] whitespace-pre-wrap"
                     style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}

@@ -63,48 +63,48 @@ const UpdatePassword: React.FC = () => {
         }
     };
 
-    const card = 'max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-5';
-    const input = 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:outline-none';
+    const card = 'max-w-md w-full bg-surface rounded-[32px] ring-1 ring-inset ring-line/80 shadow-[0_24px_64px_-28px_rgba(29,29,27,0.25)] p-6 sm:p-8 space-y-5';
+    const input = 'h-12 w-full rounded-field bg-white text-[16px] text-ink placeholder:text-ink-3/70 ring-1 ring-inset ring-line outline-none transition focus:ring-2 focus:ring-ink px-4';
 
     return (
-        <div className="min-h-screen bg-saffron-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-canvas font-sans text-ink flex items-center justify-center p-4">
             <div className={card}>
                 <div className="flex items-center gap-3">
                     <img src={BRAND.logo} alt={BRAND.name} className="h-10 w-10 object-contain" />
-                    <h1 className="text-2xl font-serif font-bold text-gray-800">Set a new password</h1>
+                    <h1 className="display text-[1.9rem] font-extrabold text-ink">Set a new password</h1>
                 </div>
 
                 {stage === 'checking' && (
-                    <div className="flex items-center gap-3 text-gray-600"><Loader2 className="animate-spin" size={20} /> Checking your reset link…</div>
+                    <div className="flex items-center gap-3 text-ink-2"><Loader2 className="animate-spin" size={20} /> Checking your reset link…</div>
                 )}
 
                 {stage === 'invalid' && (
                     <div className="space-y-4">
-                        <p className="text-gray-700">This reset link is invalid or has expired. Reset links work once and for a short time.</p>
-                        <a href="/login" className="inline-block px-5 py-2.5 rounded-lg bg-saffron-600 text-white font-medium">Back to login</a>
-                        <p className="text-sm text-gray-500">On the login page choose “Forgot password” to get a new link.</p>
+                        <p className="text-[15px] text-ink-2">This reset link is invalid or has expired. Reset links work once and for a short time.</p>
+                        <a href="/login" className="inline-flex items-center justify-center px-6 h-12 rounded-full bg-brand text-ink font-semibold">Back to login</a>
+                        <p className="text-sm text-ink-3">On the login page choose “Forgot password” to get a new link.</p>
                     </div>
                 )}
 
                 {stage === 'notCaptain' && (
                     <div className="space-y-4">
-                        <p className="text-gray-700">Password reset by email is only for Captain accounts. If you are a Sevak, ask your Captain to reset your password.</p>
-                        <a href="/login" className="inline-block px-5 py-2.5 rounded-lg bg-saffron-600 text-white font-medium">Back to login</a>
+                        <p className="text-[15px] text-ink-2">Password reset by email is only for Captain accounts. If you are a Sevak, ask your Captain to reset your password.</p>
+                        <a href="/login" className="inline-flex items-center justify-center px-6 h-12 rounded-full bg-brand text-ink font-semibold">Back to login</a>
                     </div>
                 )}
 
                 {stage === 'form' && (
                     <form onSubmit={submit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="up-new">New password</label>
+                            <label className="mb-1.5 block text-sm font-medium text-ink-2" htmlFor="up-new">New password</label>
                             <input id="up-new" type="password" autoComplete="new-password" required minLength={MIN_PASSWORD_LENGTH} className={input} value={next} onChange={e => setNext(e.target.value)} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="up-confirm">Confirm new password</label>
+                            <label className="mb-1.5 block text-sm font-medium text-ink-2" htmlFor="up-confirm">Confirm new password</label>
                             <input id="up-confirm" type="password" autoComplete="new-password" required className={input} value={confirm} onChange={e => setConfirm(e.target.value)} />
                         </div>
-                        {error && <p role="alert" className="p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">{error}</p>}
-                        <button type="submit" disabled={busy} className="w-full bg-saffron-600 hover:bg-saffron-700 text-white py-3 rounded-lg font-medium flex justify-center items-center disabled:opacity-60">
+                        {error && <p role="alert" className="px-4 py-3 bg-err-soft text-err text-sm font-medium rounded-2xl">{error}</p>}
+                        <button type="submit" disabled={busy} className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand text-[16px] font-semibold text-ink transition hover:bg-brand-600 active:translate-y-px disabled:opacity-60">
                             {busy ? <Loader2 className="animate-spin" size={20} /> : 'Save new password'}
                         </button>
                     </form>
@@ -112,8 +112,8 @@ const UpdatePassword: React.FC = () => {
 
                 {stage === 'done' && (
                     <div className="space-y-4">
-                        <p className="text-gray-700">Your password has been changed. Please sign in with the new password.</p>
-                        <a href="/login" className="inline-block px-5 py-2.5 rounded-lg bg-saffron-600 text-white font-medium">Go to login</a>
+                        <p className="text-[15px] text-ink-2">Your password has been changed. Please sign in with the new password.</p>
+                        <a href="/login" className="inline-flex items-center justify-center px-6 h-12 rounded-full bg-brand text-ink font-semibold">Go to login</a>
                     </div>
                 )}
             </div>

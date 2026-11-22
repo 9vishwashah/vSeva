@@ -121,21 +121,21 @@ const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, con
   return (
     <div
       id={`vihar-${vihar.id}`}
-      className={`rounded-2xl bg-white border shadow-[0_2px_12px_rgba(0,0,0,0.06)] p-5 space-y-4 transition-shadow ${isPast ? 'border-gray-100' : 'border-saffron-100'} ${highlighted ? 'ring-2 ring-saffron-500 ring-offset-2' : ''}`}
+      className={`rounded-card bg-surface ring-1 ring-inset ring-line p-4 sm:p-5 space-y-4 ${highlighted ? 'ring-2 ring-brand ring-offset-2 ring-offset-canvas' : ''}`}
     >
       <div className="flex items-center justify-between">
-        <div className={`flex items-center gap-2 font-bold ${isPast ? 'text-gray-500' : 'text-saffron-700'}`}>
+        <div className={`flex items-center gap-2 font-semibold text-[15px] ${isPast ? 'text-ink-3' : 'text-brand-700'}`}>
           <MapPin size={18} />
           <span>{isPast ? 'Past Vihar' : 'Upcoming Vihar'}</span>
         </div>
-        <span className={`text-xs font-semibold px-2 py-1 rounded-full capitalize ${isPast ? 'bg-gray-100 text-gray-500' : 'bg-saffron-100 text-saffron-700'}`}>
+        <span className={`text-xs font-semibold px-2.5 h-6 inline-flex items-center rounded-full capitalize ${isPast ? 'bg-sunken text-ink-3' : 'bg-brand-50 text-brand-700'}`}>
           {vihar.vihar_type}{vihar.route_kind ? ` · ${vihar.route_kind}` : ''}
         </span>
       </div>
 
-      <div className="text-sm text-gray-700">
-        <div className="font-semibold">{vihar.from_location} → {vihar.to_location}</div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-gray-500">
+      <div className="text-sm text-ink-2">
+        <div className="display text-[1.3rem] font-bold text-ink">{vihar.from_location} → {vihar.to_location}</div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-ink-2">
           <span className="flex items-center gap-1">
             <Clock size={14} />
             {new Date(`${vihar.vihar_date}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -160,7 +160,7 @@ const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, con
             onClick={toggleInterest}
             disabled={toggling || loading}
             className={`flex-1 py-2.5 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 ${
-              isInterested ? 'bg-green-600 text-white' : 'bg-saffron-600 hover:bg-saffron-700 text-white'
+              isInterested ? 'bg-block-tea text-block-seashell' : 'bg-brand hover:bg-brand-600 text-ink'
             }`}
           >
             <Check size={18} />
@@ -179,12 +179,12 @@ const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, con
       )}
 
       <div>
-        <div className="text-xs font-semibold text-gray-500 uppercase mb-2">
+        <div className="text-xs font-semibold text-ink-2 uppercase mb-2">
           {loading ? 'Loading…' : `${interested.length} Interested`}
         </div>
         {!loading && (
           interested.length === 0 ? (
-            <div className="text-sm text-gray-400">No one has responded yet.</div>
+            <div className="text-sm text-ink-3">No one has responded yet.</div>
           ) : (
             <div className="flex flex-wrap gap-2">
               {interested.map(i => {
@@ -196,7 +196,7 @@ const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, con
                   <div
                     key={i.user_id}
                     className={`flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full border text-xs font-medium ${
-                      isSelf ? 'bg-green-50 text-green-800 border-green-200' : 'bg-saffron-50 text-saffron-800 border-saffron-100'
+                      isSelf ? 'bg-ok-soft text-ok border-ok-soft' : 'bg-brand-50 text-brand-700 border-brand-100'
                     }`}
                   >
                     <span className="truncate max-w-[9rem]">{i.full_name}</span>
@@ -204,7 +204,7 @@ const ViharAlertCard: React.FC<ViharAlertCardProps> = ({ vihar, currentUser, con
                       <a
                         href={phoneHref}
                         title={`Call ${i.full_name}`}
-                        className="flex items-center justify-center w-5 h-5 rounded-full bg-green-100 hover:bg-green-500 text-green-700 hover:text-white transition-colors"
+                        className="flex items-center justify-center w-5 h-5 rounded-full bg-ok-soft hover:bg-green-500 text-ok hover:text-white transition-colors"
                       >
                         <Phone size={11} strokeWidth={2.5} />
                       </a>
@@ -240,29 +240,29 @@ const ViharAlertDetails: React.FC<{ vihar: UpcomingVihar }> = ({ vihar: v }) => 
   const hasText = v.sadhu_sadhvi_names || v.samuday || v.emergency_contact_name || v.emergency_contact_phone;
   if (!hasText && chips.length === 0) return null;
   return (
-    <div className="rounded-xl bg-[#FFF8F1] px-3.5 py-3 space-y-2 text-sm">
+    <div className="rounded-xl bg-surface px-3.5 py-3 space-y-2 text-sm">
       {v.sadhu_sadhvi_names && (
-        <p className="m-0 text-[#241C17]"><span className="text-[#8A6A57] font-semibold">Sadhu / Sadhvi: </span><span className="font-semibold whitespace-pre-wrap">{v.sadhu_sadhvi_names}</span></p>
+        <p className="m-0 text-ink"><span className="text-ink-2 font-semibold">Sadhu / Sadhvi: </span><span className="font-semibold whitespace-pre-wrap">{v.sadhu_sadhvi_names}</span></p>
       )}
       {v.samuday && (
-        <p className="m-0 text-[#241C17]"><span className="text-[#8A6A57] font-semibold">Samuday: </span><span className="font-semibold">{v.samuday}</span></p>
+        <p className="m-0 text-ink"><span className="text-ink-2 font-semibold">Samuday: </span><span className="font-semibold">{v.samuday}</span></p>
       )}
       {chips.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {chips.map(c => (
-            <span key={c.label} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-saffron-100 text-xs font-bold text-saffron-700">{c.icon}{c.label}</span>
+            <span key={c.label} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface border border-brand-100 text-xs font-bold text-brand-700">{c.icon}{c.label}</span>
           ))}
         </div>
       )}
       {(v.emergency_contact_name || v.emergency_contact_phone) && (
         <div className="flex items-center justify-between gap-2">
-          <p className="m-0 flex items-center gap-1.5 text-[#241C17] min-w-0">
-            <UserRound size={14} className="text-[#8A6A57] shrink-0" />
-            <span className="text-[#8A6A57] font-semibold shrink-0">Emergency:</span>
+          <p className="m-0 flex items-center gap-1.5 text-ink min-w-0">
+            <UserRound size={14} className="text-ink-2 shrink-0" />
+            <span className="text-ink-2 font-semibold shrink-0">Emergency:</span>
             <span className="font-semibold truncate">{[v.emergency_contact_name, v.emergency_contact_phone].filter(Boolean).join(', ')}</span>
           </p>
           {v.emergency_contact_phone && (
-            <a href={`tel:+91${v.emergency_contact_phone}`} aria-label={`Call ${v.emergency_contact_name || 'emergency contact'}`} className="shrink-0 w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center active:scale-95">
+            <a href={`tel:+91${v.emergency_contact_phone}`} aria-label={`Call ${v.emergency_contact_name || 'emergency contact'}`} className="shrink-0 w-8 h-8 rounded-full bg-ok-soft text-ok flex items-center justify-center active:scale-95">
               <Phone size={14} />
             </a>
           )}

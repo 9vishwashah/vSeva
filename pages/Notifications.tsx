@@ -1,3 +1,4 @@
+import { updateNotifications } from '../services/notificationsStore';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
@@ -60,12 +61,7 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
       setLoadError(null);
       try {
         const [viharsRes, contactsMap, notifRes] = await Promise.all([
-          supabase
-            .from('upcoming_vihars')
-            .select('*')
-            .eq('organization_id', currentUser.organization_id)
-            .order('vihar_date', { ascending: true })
-            .order('vihar_time', { ascending: true }),
+          dataService.getUpcomingVihars(currentUser.organization_id).then(data => ({ data, error: null }), error => ({ data: null, error })),
           dataService.getOrgSevakContacts(currentUser.organization_id),
           supabase
             .from('notifications')
@@ -111,6 +107,7 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
     try {
       await supabase.from('notifications').update({ is_read: true }).eq('id', id);
       setGeneral(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
+      updateNotifications(list => list.map(n => (n.id === id ? { ...n, is_read: true } : n))); // the bell's badge too
     } catch (err) {
       console.error('Failed to mark notification as read', err);
     }
@@ -122,6 +119,7 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
     try {
       await supabase.from('notifications').update({ is_read: true }).in('id', unreadIds);
       setGeneral(prev => prev.map(n => (unreadIds.includes(n.id) ? { ...n, is_read: true } : n)));
+      updateNotifications(list => list.map(n => (unreadIds.includes(n.id) ? { ...n, is_read: true } : n)));
     } catch (err) {
       console.error('Failed to mark all notifications as read', err);
     }
@@ -162,40 +160,40 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
       tabIndex={target ? 0 : undefined}
       onClick={target ? open : undefined}
       onKeyDown={target ? (e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }) : undefined}
-      className={`bg-white rounded-[18px] p-4 flex items-start gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${!n.is_read ? '' : 'opacity-80'} ${target ? 'cursor-pointer transition-transform active:scale-[0.99] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-saffron-300' : ''}`}
+      className={`bg-surface rounded-[18px] p-4 flex items-start gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${!n.is_read ? '' : 'opacity-80'} ${target ? 'cursor-pointer transition-transform active:scale-[0.99] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand' : ''}`}
     >
       <div className="shrink-0 w-[38px] h-[38px] rounded-xl flex items-center justify-center" style={{ background: '#FFF0E5' }}>
         <Bell size={17} style={{ color: '#DE6B38' }} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="m-0 text-[13.5px] font-bold text-[#241C17]">{n.title}</p>
-        <p className="mt-0.5 text-[12.5px] text-[#8A6A57] whitespace-pre-wrap">{n.message}</p>
+        <p className="m-0 text-[13.5px] font-bold text-ink">{n.title}</p>
+        <p className="mt-0.5 text-[12.5px] text-ink-2 whitespace-pre-wrap">{n.message}</p>
         {n.type === 'password_reset' && n.payload?.sevak_id && (
           resetDone.has(n.id) ? (
-            <p className="mt-2 text-[12px] font-bold text-green-700">Password reset — new number set</p>
+            <p className="mt-2 text-[12px] font-bold text-ok">Password reset — new number set</p>
           ) : (
             <button
               onClick={e => { e.stopPropagation(); setResetTarget(n); }}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-saffron-600 px-3 py-1.5 text-[12px] font-bold text-white hover:bg-saffron-700"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-[12px] font-bold text-ink hover:bg-brand-600"
             >
               <KeyRound size={13} />
               Reset password
             </button>
           )
         )}
-        {target && <p className="mt-1.5 text-[12px] font-bold text-saffron-600">{target.label} →</p>}
-        <p className="mt-1.5 text-[11px] font-semibold text-[#B7B7AF]">{new Date(n.created_at).toLocaleString()}</p>
+        {target && <p className="mt-1.5 text-[12px] font-bold text-brand-700">{target.label} →</p>}
+        <p className="mt-1.5 text-[11px] font-semibold text-ink-3">{new Date(n.created_at).toLocaleString()}</p>
       </div>
       {!n.is_read ? (
         <button
           onClick={e => { e.stopPropagation(); markAsRead(n.id); }}
           title="Mark as read"
-          className="shrink-0 mt-0.5 p-1 rounded-full text-saffron-600 hover:bg-saffron-50 transition-colors"
+          className="shrink-0 mt-0.5 p-1 rounded-full text-brand-700 hover:bg-brand-50 transition-colors"
         >
           <Check size={16} />
         </button>
       ) : target ? (
-        <ChevronRight size={16} className="shrink-0 mt-1 text-[#B7B7AF]" />
+        <ChevronRight size={16} className="shrink-0 mt-1 text-ink-3" />
       ) : (
         <div className="shrink-0 mt-1.5 w-2 h-2 rounded-full bg-transparent" />
       )}
@@ -226,10 +224,10 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17]">Notifications</h1>
+          <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink">Notifications</h1>
         </div>
         {hasUnread && (
-          <button onClick={markAllRead} className="text-[12.5px] font-bold text-saffron-600 hover:text-saffron-700">
+          <button onClick={markAllRead} className="text-[12.5px] font-bold text-brand-700 hover:text-brand-700">
             Mark all read
           </button>
         )}
@@ -251,30 +249,29 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
           {/* Featured Upcoming Vihar — gradient hero, same pattern as the Dashboard Sankalp card */}
           {featured && (
             <div
-              className="rounded-[22px] p-5 text-white space-y-3.5"
-              style={{ background: 'linear-gradient(150deg,#FF9947 0%,#DE6B38 100%)', boxShadow: '0 8px 20px -10px rgba(222,107,56,0.55)' }}
+              className="rounded-tile p-5 text-ink space-y-3.5 bg-brand"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-white/85">Upcoming Vihar</span>
+                <span className="text-[13px] font-semibold text-ink/75">Upcoming Vihar</span>
                 {relativeDaysAway(featured) >= 0 && (
-                  <span className="text-[10.5px] font-extrabold bg-white/20 px-2.5 py-1 rounded-full">
+                  <span className="text-[12px] font-semibold bg-ink/10 px-2.5 h-6 inline-flex items-center rounded-full">
                     {relativeDaysAway(featured) === 0 ? 'TODAY' : `IN ${relativeDaysAway(featured)} DAY${relativeDaysAway(featured) === 1 ? '' : 'S'}`}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <p className="m-0 text-lg font-extrabold">{featured.from_location}</p>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                <p className="m-0 text-lg font-extrabold">{featured.to_location}</p>
+                <p className="display m-0 text-[1.5rem] font-extrabold">{featured.from_location}</p>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(29,29,27,0.55)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                <p className="display m-0 text-[1.5rem] font-extrabold">{featured.to_location}</p>
               </div>
-              <p className="m-0 text-[13px] font-semibold text-white/85">
+              <p className="m-0 text-[14px] font-medium text-ink/75">
                 {new Date(`${featured.vihar_date}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
                 {featured.vihar_time ? ` · ${featured.vihar_time.slice(0, 5)}` : ''}
               </p>
               {(featured.sadhu_count > 0 || featured.sadhvi_count > 0) && (
-                <div className="flex items-center gap-2.5 bg-white/15 rounded-xl px-3.5 py-3">
+                <div className="flex items-center gap-2.5 bg-ink/10 rounded-2xl px-3.5 py-3">
                   <Users size={16} />
-                  <p className="m-0 text-[12.5px] font-bold">
+                  <p className="m-0 text-[14px] font-semibold">
                     {featured.sadhu_count > 0 && `${featured.sadhu_count} Sadhu`}
                     {featured.sadhu_count > 0 && featured.sadhvi_count > 0 && ' · '}
                     {featured.sadhvi_count > 0 && `${featured.sadhvi_count} Sadhvi`}
@@ -294,7 +291,7 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
           )}
 
           {!featured && (
-            <div className="text-center py-8 bg-white rounded-[22px] border border-dashed border-gray-200 text-gray-400 text-sm">
+            <div className="text-center py-8 bg-surface rounded-[22px] border border-dashed border-line text-ink-3 text-sm">
               No upcoming Vihar alerts right now.
             </div>
           )}
@@ -304,7 +301,7 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
             <div className="space-y-3">
               <button
                 onClick={() => setShowPast(s => !s)}
-                className="w-full flex items-center justify-between text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] py-1"
+                className="w-full flex items-center justify-between text-xs font-extrabold uppercase tracking-wide text-ink-2 py-1"
               >
                 <span>Past Alerts ({past.length})</span>
                 <ChevronDown size={16} className={`transition-transform ${showPast ? 'rotate-180' : ''}`} />
@@ -321,26 +318,26 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
 
           {/* General Notifications — grouped by day */}
           {general.length === 0 ? (
-            <div className="text-center py-8 bg-white rounded-[22px] border border-dashed border-gray-200 text-gray-400 text-sm">
+            <div className="text-center py-8 bg-surface rounded-[22px] border border-dashed border-line text-ink-3 text-sm">
               Nothing here yet.
             </div>
           ) : (
             <>
               {today.length > 0 && (
                 <div className="space-y-2.5">
-                  <p className="m-0 px-1 text-xs font-extrabold uppercase tracking-wide text-[#8A6A57]">Today</p>
+                  <p className="m-0 px-1 text-xs font-extrabold uppercase tracking-wide text-ink-2">Today</p>
                   {today.map(n => <NotificationRow key={n.id} n={n} />)}
                 </div>
               )}
               {yesterday.length > 0 && (
                 <div className="space-y-2.5">
-                  <p className="m-0 px-1 text-xs font-extrabold uppercase tracking-wide text-[#8A6A57]">Yesterday</p>
+                  <p className="m-0 px-1 text-xs font-extrabold uppercase tracking-wide text-ink-2">Yesterday</p>
                   {yesterday.map(n => <NotificationRow key={n.id} n={n} />)}
                 </div>
               )}
               {earlier.length > 0 && (
                 <div className="space-y-2.5">
-                  <p className="m-0 px-1 text-xs font-extrabold uppercase tracking-wide text-[#8A6A57]">Earlier</p>
+                  <p className="m-0 px-1 text-xs font-extrabold uppercase tracking-wide text-ink-2">Earlier</p>
                   {earlier.map(n => <NotificationRow key={n.id} n={n} />)}
                 </div>
               )}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PartyPopper, UserPlus, Map, FilePlus, CheckCircle2, Sparkles, Smartphone, Home, BarChart2, RefreshCw, Lightbulb } from 'lucide-react';
 import { BRAND } from '@brand';
 import { UserRole } from '../types';
 
@@ -9,8 +10,20 @@ const WhatsAppIcon = () => (
   </svg>
 );
 
+// Design Core: an icon on a solid colour tile instead of an emoji (docs/design-core.md)
+type Tone = 'saffron' | 'tea' | 'mustard' | 'sky' | 'lavender' | 'pink';
+const TONE_BG: Record<Tone, string> = {
+  saffron: 'bg-brand text-ink',
+  tea: 'bg-block-tea text-block-seashell',
+  mustard: 'bg-block-mustard text-ink',
+  sky: 'bg-block-sky text-ink',
+  lavender: 'bg-block-lavender text-ink',
+  pink: 'bg-block-pink text-ink',
+};
+
 interface Step {
-  emoji: string;
+  icon: React.ReactNode;
+  tone: Tone;
   title: string;
   description: string;
   highlight?: string; // optional bold/colored keyword
@@ -19,29 +32,29 @@ interface Step {
 
 const CAPTAIN_STEPS: Step[] = [
   {
-    emoji: '🎉',
+    icon: <PartyPopper />, tone: 'saffron',
     title: 'Welcome, Captain!',
     description: 'You\'re all set to manage your organization\'s Vihar Seva digitally. Let\'s take a quick tour so you can get started.',
   },
   {
-    emoji: '👥',
+    icon: <UserPlus />, tone: 'tea',
     title: 'Add Your Sevaks First',
     description: 'Go to the "Add Sevaks" tab to create accounts for each volunteer. After adding, tap the',
     highlight: 'WhatsApp button',
     tip: `This sends the sevak their login credentials directly on WhatsApp so they can log in to ${BRAND.name}.`,
   },
   {
-    emoji: '🗺️',
+    icon: <Map />, tone: 'mustard',
     title: 'Set Up Vihar Routes',
     description: 'Head to "Manage Routes" to define the paths your group walks. Setting distances ensures accurate km tracking for every entry.',
   },
   {
-    emoji: '📋',
+    icon: <FilePlus />, tone: 'sky',
     title: 'Log Vihar Entries',
     description: 'Use "New Entry" to record each Vihar your team completes — select the date, route, Sadhus, and participating Sevaks.',
   },
   {
-    emoji: '✅',
+    icon: <CheckCircle2 />, tone: 'tea',
     title: 'You\'re Ready!',
     description: 'Your dashboard will automatically show live stats, rankings, and activity for your entire organization. Jai Jinendra!',
   },
@@ -49,35 +62,35 @@ const CAPTAIN_STEPS: Step[] = [
 
 const SEVAK_STEPS: Step[] = [
   {
-    emoji: '🙏',
+    icon: <Sparkles />, tone: 'saffron',
     title: `Welcome to ${BRAND.name}!`,
     description: `Your Captain has added you to the team. ${BRAND.name} helps you track and celebrate your Vihar Seva contributions.`,
   },
   {
-    emoji: '📱',
+    icon: <Smartphone />, tone: 'sky',
     title: 'Get Your Login Details',
     description: 'Ask your Captain to tap the',
     highlight: 'WhatsApp button',
     tip: 'Your Captain will send your Username and Password directly to your WhatsApp, so you can log in anytime.',
   },
   {
-    emoji: '🏠',
+    icon: <Home />, tone: 'mustard',
     title: 'Your Profile',
     description: 'Your personal stats — total km, vihars, ranking, and more — live on the "Home" tab. Tap your avatar anytime to open Profile & Settings and update your blood group or emergency contact.',
   },
   {
-    emoji: '📊',
+    icon: <BarChart2 />, tone: 'lavender',
     title: 'View Your Analytics',
     description: 'The "My Dashboard" tab shows your contribution over time with beautiful charts and your organization rank.',
   },
   {
-    emoji: '🔄',
+    icon: <RefreshCw />, tone: 'pink',
     title: 'Vihar Entries Are Managed by Your Captain',
     description: 'You don\'t need to log entries yourself. Your Captain records each Vihar, and it automatically appears in your profile and stats.',
-    tip: 'Your Vihar history and km count will grow as your Captain keeps logging — just keep doing Seva! 🚶',
+    tip: 'Your Vihar history and km count will grow as your Captain keeps logging — just keep doing Seva!',
   },
   {
-    emoji: '✅',
+    icon: <CheckCircle2 />, tone: 'tea',
     title: 'You\'re All Set!',
     description: 'Start exploring the app. Every step you take in seva is captured here. Keep it up — Jai Jinendra!',
   },
@@ -86,15 +99,19 @@ const SEVAK_STEPS: Step[] = [
 interface OnboardingWalkthroughProps {
   role: UserRole;
   onDone: () => void;
+  /** Shown in the first step's greeting ("Welcome, Vijay!") instead of "Captain" / the app name */
+  name?: string;
 }
 
-const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onDone }) => {
+const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onDone, name }) => {
   const [step, setStep] = useState(0);
   const [exiting, setExiting] = useState(false);
 
   const steps = role === UserRole.ORG_ADMIN ? CAPTAIN_STEPS : SEVAK_STEPS;
   const current = steps[step];
   const isLast = step === steps.length - 1;
+  const firstName = (name || '').trim().split(/\s+/)[0];
+  const title = step === 0 && firstName ? `Welcome, ${firstName}!` : current.title;
 
   const handleNext = () => {
     if (isLast) {
@@ -117,38 +134,37 @@ const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onD
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-end sm:items-center justify-center transition-opacity duration-300 ${exiting ? 'opacity-0' : 'opacity-100'}`}
-      style={{ backgroundColor: 'rgba(15, 10, 5, 0.75)', backdropFilter: 'blur(6px)' }}
+      className={`fixed inset-0 z-[100] flex items-end sm:items-center justify-center font-sans transition-opacity duration-300 ${exiting ? 'opacity-0' : 'opacity-100'}`}
+      style={{ backgroundColor: 'rgba(29, 29, 27, 0.6)' }}
     >
       <div
-        className={`bg-white w-full sm:max-w-sm rounded-t-[32px] sm:rounded-[28px] shadow-2xl overflow-hidden transition-transform duration-300 ${exiting ? 'translate-y-full sm:scale-95' : 'translate-y-0 sm:scale-100'}`}
+        className={`bg-surface w-full sm:max-w-sm rounded-t-sheet sm:rounded-[32px] shadow-sheet overflow-y-auto transition-transform duration-300 ${exiting ? 'translate-y-full sm:scale-95' : 'translate-y-0 sm:scale-100'}`}
         style={{ maxHeight: '90vh' }}
       >
-        {/* Top color band */}
-        <div className="h-1.5 bg-gradient-to-r from-saffron-400 via-orange-500 to-amber-400" />
+        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-line sm:hidden" aria-hidden="true" />
 
         {/* Step counter pill */}
-        <div className="flex justify-center pt-5 pb-1">
-          <span className="text-[11px] font-bold text-saffron-600 bg-saffron-50 border border-saffron-100 px-3 py-1 rounded-full tracking-widest uppercase">
+        <div className="flex justify-center pt-4 pb-1">
+          <span className="num inline-flex h-7 items-center text-[13px] font-semibold text-ink-2 bg-sunken px-3.5 rounded-full">
             Step {step + 1} of {steps.length}
           </span>
         </div>
 
         {/* Content */}
         <div className="px-6 pt-4 pb-2 text-center">
-          {/* Emoji */}
-          <div className="text-6xl mb-4 leading-none select-none">{current.emoji}</div>
+          {/* Icon tile */}
+          <div className={`mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[26px] [&>svg]:h-9 [&>svg]:w-9 ${TONE_BG[current.tone]}`} aria-hidden="true">{current.icon}</div>
 
           {/* Title */}
-          <h2 className="text-xl font-bold text-gray-900 mb-3 leading-snug">{current.title}</h2>
+          <h2 className="display text-[1.85rem] font-extrabold text-ink mb-3">{title}</h2>
 
           {/* Description */}
-          <p className="text-sm text-gray-500 leading-relaxed">
+          <p className="text-[15px] text-ink-2 leading-relaxed">
             {current.description}
             {current.highlight && (
               <>
                 {' '}
-                <span className="inline-flex items-center gap-1 font-bold text-[#25D366]">
+                <span className="inline-flex items-center gap-1 font-semibold text-[#128C4B]">
                   <WhatsAppIcon />
                   {current.highlight}
                 </span>
@@ -159,9 +175,10 @@ const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onD
 
           {/* Optional tip box */}
           {current.tip && (
-            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-left">
-              <p className="text-[12px] text-amber-800 leading-relaxed">
-                💡 {current.tip}
+            <div className="mt-4 bg-warn-soft rounded-2xl px-4 py-3 text-left flex gap-2.5">
+              <Lightbulb size={18} className="shrink-0 mt-0.5 text-warn" aria-hidden="true" />
+              <p className="text-[14px] text-warn leading-relaxed">
+                {current.tip}
               </p>
             </div>
           )}
@@ -173,30 +190,31 @@ const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onD
             <button
               key={i}
               onClick={() => setStep(i)}
+              aria-label={`Step ${i + 1}`}
               className={`rounded-full transition-all duration-300 ${
                 i === step
-                  ? 'w-5 h-2 bg-saffron-500'
+                  ? 'w-6 h-2 bg-ink'
                   : i < step
-                  ? 'w-2 h-2 bg-saffron-300'
-                  : 'w-2 h-2 bg-gray-200'
+                  ? 'w-2 h-2 bg-ink/40'
+                  : 'w-2 h-2 bg-line'
               }`}
             />
           ))}
         </div>
 
         {/* Action buttons */}
-        <div className="px-6 pb-8 flex gap-3">
+        <div className="px-6 flex gap-3" style={{ paddingBottom: 'max(1.75rem, env(safe-area-inset-bottom))' }}>
           {step > 0 ? (
             <button
               onClick={handleBack}
-              className="flex-shrink-0 px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors text-sm"
+              className="flex-shrink-0 h-12 px-6 rounded-full bg-surface ring-1 ring-inset ring-line text-ink font-semibold text-[15px] hover:bg-white transition-colors"
             >
               Back
             </button>
           ) : (
             <button
               onClick={handleDone}
-              className="flex-shrink-0 px-5 py-3 text-gray-400 hover:text-gray-600 font-medium rounded-xl transition-colors text-sm"
+              className="flex-shrink-0 h-12 px-5 rounded-full text-ink-2 hover:bg-sunken font-semibold text-[15px] transition-colors"
             >
               Skip
             </button>
@@ -204,13 +222,13 @@ const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onD
 
           <button
             onClick={handleNext}
-            className={`flex-1 py-3 font-bold rounded-xl text-sm transition-all shadow-md ${
+            className={`flex-1 h-12 rounded-full font-semibold text-[15px] transition active:translate-y-px ${
               isLast
-                ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-200'
-                : 'bg-saffron-500 hover:bg-saffron-600 text-white shadow-saffron-200'
+                ? 'bg-block-tea hover:bg-[#1d4c45] text-block-seashell'
+                : 'bg-brand hover:bg-brand-600 text-ink'
             }`}
           >
-            {isLast ? '🎉 Let\'s Go!' : 'Next →'}
+            {isLast ? 'Let\'s Go!' : 'Next →'}
           </button>
         </div>
       </div>

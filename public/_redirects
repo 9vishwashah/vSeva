@@ -5,4 +5,24 @@ https://jcohckudoyd.netlify.app/*  https://vseva.vjas.in/:splat  301!
 /sitemap.xml            /sitemap.xml                             200
 /.well-known/assetlinks.json  /.well-known/assetlinks.json         200
 /directory-sitemap.xml  /.netlify/functions/directory-sitemap    200!
+# Scanner bots probing for secrets and other frameworks' files: a tiny 404, not the app page with a 200.
+/.env                   /gone.txt                                404!
+/.env.local             /gone.txt                                404!
+/.env.production        /gone.txt                                404!
+/.git/*                 /gone.txt                                404!
+/.git                   /gone.txt                                404!
+/wp-admin/*             /gone.txt                                404!
+/wp-content/*           /gone.txt                                404!
+/wp-includes/*          /gone.txt                                404!
+/wp-login.php           /gone.txt                                404!
+/_next/*                /gone.txt                                404!
+/_nuxt/*                /gone.txt                                404!
+/.vite/*                /gone.txt                                404!
+/@fs/*                  /gone.txt                                404!
+/cache/*                /gone.txt                                404!
+/vite.config.js         /gone.txt                                404!
+/webpack.json           /gone.txt                                404!
+/asset-manifest.json    /gone.txt                                404!
+/stats.json             /gone.txt                                404!
+/static/js/*            /gone.txt                                404!
 /*                      /app.html                                200

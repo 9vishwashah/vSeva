@@ -122,22 +122,22 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
 
     return (
         <Portal>
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/45 app-modal-backdrop">
+            <div className="bg-surface rounded-[28px] ring-1 ring-inset ring-line/70 w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-[0_24px_64px_rgb(29_29_27/0.2)] app-modal-card">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-saffron-50 to-orange-50">
+                <div className="px-5 py-4 border-b border-line flex justify-between items-center gap-3 bg-surface shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-saffron-100 rounded-xl text-saffron-600">
-                            <Footprints size={24} />
+                        <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 shrink-0">
+                            <Footprints size={18} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-800">Report Vihar Incident</h2>
-                            <p className="text-xs text-gray-500 font-medium">Please provide accurate details of the event</p>
+                            <h2 className="display text-[1.4rem] font-bold text-ink">Report Vihar Incident</h2>
+                            <p className="text-xs text-ink-2 font-medium">Please provide accurate details of the event</p>
                         </div>
                     </div>
                     <button 
                         onClick={onClose}
-                        className="p-2 hover:bg-white rounded-full transition-colors text-gray-400 hover:text-gray-600 shadow-sm border border-transparent hover:border-gray-100"
+                        aria-label="Close" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sunken text-ink hover:bg-line transition-colors shrink-0 disabled:opacity-40"
                     >
                         <X size={20} />
                     </button>
@@ -148,27 +148,27 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                     {/* Date & Time */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-                                <Calendar size={14} className="text-saffron-500" /> Date
+                            <label className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                                <Calendar size={14} className="text-brand-700" /> Date
                             </label>
                             <input
                                 type="date"
                                 required
                                 value={formData.report_date}
                                 onChange={e => setFormData({ ...formData, report_date: e.target.value })}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 focus:border-transparent outline-none transition-all font-medium text-gray-700"
+                                className="w-full px-4 py-3 bg-sunken/60 border border-line rounded-xl focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all font-medium text-ink"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-                                <Clock size={14} className="text-saffron-500" /> Time
+                            <label className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                                <Clock size={14} className="text-brand-700" /> Time
                             </label>
                             <input
                                 type="time"
                                 required
                                 value={formData.report_time}
                                 onChange={e => setFormData({ ...formData, report_time: e.target.value })}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 focus:border-transparent outline-none transition-all font-medium text-gray-700"
+                                className="w-full px-4 py-3 bg-sunken/60 border border-line rounded-xl focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all font-medium text-ink"
                             />
                         </div>
                     </div>
@@ -176,8 +176,8 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                     {/* From & To */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-                                <MapPin size={14} className="text-saffron-500" /> From
+                            <label className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                                <MapPin size={14} className="text-brand-700" /> From
                             </label>
                             <input
                                 type="text"
@@ -185,12 +185,12 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                                 placeholder="From location"
                                 value={formData.vihar_from}
                                 onChange={e => setFormData({ ...formData, vihar_from: e.target.value })}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 focus:border-transparent outline-none transition-all font-medium text-gray-700"
+                                className="w-full px-4 py-3 bg-sunken/60 border border-line rounded-xl focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all font-medium text-ink"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-                                <MapPin size={14} className="text-saffron-500" /> To
+                            <label className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                                <MapPin size={14} className="text-brand-700" /> To
                             </label>
                             <input
                                 type="text"
@@ -198,7 +198,7 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                                 placeholder="To location"
                                 value={formData.vihar_to}
                                 onChange={e => setFormData({ ...formData, vihar_to: e.target.value })}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 focus:border-transparent outline-none transition-all font-medium text-gray-700"
+                                className="w-full px-4 py-3 bg-sunken/60 border border-line rounded-xl focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all font-medium text-ink"
                             />
                         </div>
                     </div>
@@ -206,37 +206,37 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                     {/* Counts */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-                                <Users size={14} className="text-saffron-500" /> Sadhu Count
+                            <label className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                                <Users size={14} className="text-brand-700" /> Sadhu Count
                             </label>
                             <input
                                 type="number"
                                 min="0"
                                 value={formData.sadhu_count}
                                 onChange={e => setFormData({ ...formData, sadhu_count: parseInt(e.target.value) || 0 })}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 focus:border-transparent outline-none transition-all font-medium text-gray-700"
+                                className="w-full px-4 py-3 bg-sunken/60 border border-line rounded-xl focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all font-medium text-ink"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-                                <Users size={14} className="text-saffron-500" /> Sadhvi Count
+                            <label className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                                <Users size={14} className="text-brand-700" /> Sadhvi Count
                             </label>
                             <input
                                 type="number"
                                 min="0"
                                 value={formData.sadhvi_count}
                                 onChange={e => setFormData({ ...formData, sadhvi_count: parseInt(e.target.value) || 0 })}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 focus:border-transparent outline-none transition-all font-medium text-gray-700"
+                                className="w-full px-4 py-3 bg-sunken/60 border border-line rounded-xl focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all font-medium text-ink"
                             />
                         </div>
                     </div>
 
                     {/* Involved Sevaks */}
                     <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-                            <Users size={14} className="text-saffron-500" /> Other Sevaks with you
+                        <label className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                            <Users size={14} className="text-brand-700" /> Other Sevaks with you
                         </label>
-                        <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl min-h-[50px]">
+                        <div className="flex flex-wrap gap-2 p-3 bg-sunken/60 border border-line rounded-xl min-h-[50px]">
                             {orgSevaks.length > 0 ? (
                                 orgSevaks.map(sevak => (
                                     <button
@@ -245,23 +245,23 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                                         onClick={() => toggleSevak(sevak.username)}
                                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                                             formData.involved_sevaks.includes(sevak.username)
-                                                ? 'bg-saffron-500 text-white shadow-md'
-                                                : 'bg-white text-gray-600 border border-gray-200 hover:border-saffron-300'
+                                                ? 'bg-brand text-ink shadow-md'
+                                                : 'bg-surface text-ink-2 border border-line hover:border-brand-200'
                                         }`}
                                     >
                                         {sevak.full_name}
                                     </button>
                                 ))
                             ) : (
-                                <p className="text-xs text-gray-400 italic py-2 px-1">No other sevaks found in your organization</p>
+                                <p className="text-xs text-ink-3 italic py-2 px-1">No other sevaks found in your organization</p>
                             )}
                         </div>
                     </div>
 
                     {/* Description */}
                     <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-                            <FileText size={14} className="text-saffron-500" /> Detailed Description
+                        <label className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                            <FileText size={14} className="text-brand-700" /> Detailed Description
                         </label>
                         <textarea
                             required
@@ -269,19 +269,19 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                             placeholder="Describe what happened in detail..."
                             value={formData.description}
                             onChange={e => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 focus:border-transparent outline-none transition-all font-medium text-gray-700 resize-none"
+                            className="w-full px-4 py-3 bg-sunken/60 border border-line rounded-xl focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all font-medium text-ink resize-none"
                         ></textarea>
                     </div>
 
                     {/* Media Proof (Optional) */}
                     <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-                            <Upload size={14} className="text-saffron-500" /> Proof Photo (Optional)
+                        <label className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                            <Upload size={14} className="text-brand-700" /> Proof Photo (Optional)
                         </label>
                         <div className="flex flex-col gap-3">
                             <div className="flex items-center gap-4">
                                 <label className="flex-1 cursor-pointer">
-                                    <div className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-dashed border-gray-200 rounded-xl hover:border-saffron-300 transition-all text-gray-500 hover:text-saffron-600 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                                    <div className="flex items-center justify-center gap-2 px-4 py-3 bg-surface border-2 border-dashed border-line rounded-xl hover:border-brand-200 transition-all text-ink-2 hover:text-brand-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                                         <Upload size={18} />
                                         <span>{selectedFile ? selectedFile.name : 'Choose Photo'}</span>
                                     </div>
@@ -293,7 +293,7 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                                     />
                                 </label>
                                 {previewUrl && (
-                                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-100 flex-shrink-0 bg-gray-50 relative group">
+                                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-line flex-shrink-0 bg-sunken/60 relative group">
                                         <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                                         <button 
                                             type="button"
@@ -306,15 +306,15 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">OR</span>
-                                <div className="h-px flex-1 bg-gray-100"></div>
+                                <span className="text-[11px] text-ink-3 uppercase tracking-widest font-bold">OR</span>
+                                <div className="h-px flex-1 bg-sunken"></div>
                             </div>
                             <input
                                 type="text"
                                 placeholder="Paste media link instead"
                                 value={formData.proof_media_url}
                                 onChange={e => setFormData({ ...formData, proof_media_url: e.target.value })}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-saffron-500 focus:border-transparent outline-none transition-all font-medium text-gray-700"
+                                className="w-full px-4 py-3 bg-sunken/60 border border-line rounded-xl focus:ring-2 focus:ring-brand focus:border-transparent outline-none transition-all font-medium text-ink"
                             />
                         </div>
                     </div>
@@ -324,14 +324,14 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ isOpen, onClo
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-4 border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-colors active:scale-[0.98]"
+                            className="flex-1 px-4 py-4 border border-line text-ink-2 font-bold rounded-2xl hover:bg-sunken/60 transition-colors active:scale-[0.98]"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-[2] px-4 py-4 bg-gradient-to-r from-saffron-500 to-orange-500 text-white font-bold rounded-2xl shadow-lg shadow-saffron-200 hover:shadow-saffron-300 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
+                            className="flex-[2] px-4 py-4 bg-brand text-ink font-bold rounded-2xl shadow-lg shadow-black/5 hover:shadow-saffron-300 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
                         >
                             {loading ? (
                                 <>

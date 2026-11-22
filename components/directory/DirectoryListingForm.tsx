@@ -68,15 +68,15 @@ async function compressImage(file: File, maxDim = 1600, quality = 0.82): Promise
 }
 
 const SectionCard: React.FC<{ title: string; description?: string; children: React.ReactNode }> = ({ title, description, children }) => (
-  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-    <h3 className="text-[15px] font-bold text-[#241C17] mb-0.5">{title}</h3>
-    {description && <p className="text-xs text-gray-400 mb-4">{description}</p>}
+  <div className="bg-surface rounded-2xl border border-line shadow-sm p-5">
+    <h3 className="text-[15px] font-bold text-ink mb-0.5">{title}</h3>
+    {description && <p className="text-xs text-ink-3 mb-4">{description}</p>}
     <div className={description ? 'mt-4' : 'mt-3'}>{children}</div>
   </div>
 );
 
-const inputClass = "w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 text-sm text-[#241C17] transition-shadow placeholder:text-gray-400";
-const labelClass = "block text-xs font-bold text-gray-500 mb-1.5";
+const inputClass = "w-full py-2.5 px-3 rounded-xl bg-sunken/60 border-none outline-none focus:ring-2 focus:ring-brand text-sm text-ink transition-shadow placeholder:text-ink-3";
+const labelClass = "block text-xs font-bold text-ink-2 mb-1.5";
 
 interface DirectoryListingFormProps {
   // 'edit' = public "Suggest an Edit" (produces a change request needing
@@ -244,21 +244,21 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
 
   if (submitted) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center max-w-lg mx-auto">
-        <div className="w-14 h-14 rounded-full bg-green-50 text-green-600 flex items-center justify-center mx-auto mb-4">
+      <div className="bg-surface rounded-2xl border border-line shadow-sm p-10 text-center max-w-lg mx-auto">
+        <div className="w-14 h-14 rounded-full bg-ok-soft text-ok flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 size={28} />
         </div>
-        <h3 className="text-lg font-bold text-[#241C17] mb-2">
+        <h3 className="text-lg font-bold text-ink mb-2">
           {mode === 'add' ? 'Thank you for contributing!' : mode === 'admin-edit' ? 'Listing updated' : 'Thanks — your suggestion was submitted!'}
         </h3>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-ink-2 mb-6">
           {mode === 'add'
             ? `Your listing has been submitted for review. Once approved by the ${BRAND.name} team, it will appear in the public directory.`
             : mode === 'admin-edit'
               ? 'The public listing has been updated.'
               : 'Your change has been submitted for review. The public listing will update once approved.'}
         </p>
-        <button onClick={onSubmitted} className="px-6 py-2.5 bg-saffron-600 hover:bg-saffron-700 text-white font-bold rounded-xl shadow-sm transition-all active:scale-95 text-sm">
+        <button onClick={onSubmitted} className="px-6 py-2.5 bg-brand hover:bg-brand-600 text-ink font-bold rounded-xl shadow-sm transition-all active:scale-95 text-sm">
           Back to Directory
         </button>
       </div>
@@ -294,15 +294,15 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
             type="button"
             onClick={() => resolveLocation(mapsUrl)}
             disabled={resolving || !mapsUrl.trim()}
-            className="shrink-0 px-4 rounded-xl bg-saffron-600 hover:bg-saffron-700 text-white text-xs font-bold disabled:opacity-50 transition-colors"
+            className="shrink-0 px-4 rounded-xl bg-brand hover:bg-brand-600 text-ink text-xs font-bold disabled:opacity-50 transition-colors"
           >
             {resolving ? <Loader2 size={15} className="animate-spin" /> : 'Detect'}
           </button>
         </div>
 
-        {resolving && <p className="text-xs text-gray-400 mb-3">Detecting location…</p>}
+        {resolving && <p className="text-xs text-ink-3 mb-3">Detecting location…</p>}
         {resolveFailed && (
-          <div className="flex items-start gap-2 bg-amber-50 text-amber-700 text-xs font-medium p-3 rounded-xl mb-3">
+          <div className="flex items-start gap-2 bg-warn-soft text-warn text-xs font-medium p-3 rounded-xl mb-3">
             <AlertTriangle size={15} className="shrink-0 mt-0.5" />
             <span>
               Location could not be detected automatically from this link. On Google Maps, open the place, tap Share → Copy link
@@ -312,25 +312,25 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
           </div>
         )}
         {fields.latitude != null && fields.longitude != null && (
-          <div className="mb-3 rounded-xl overflow-hidden border border-gray-100">
-            <Suspense fallback={<div style={{ height: 180 }} className="bg-gray-50 animate-pulse" />}>
+          <div className="mb-3 rounded-xl overflow-hidden border border-line">
+            <Suspense fallback={<div style={{ height: 180 }} className="bg-sunken/60 animate-pulse" />}>
               <DirectoryMap
                 listings={[{ id: 'preview', slug: 'preview', latitude: fields.latitude, longitude: fields.longitude, status: 'approved', created_at: '', updated_at: '', name: fields.name || 'Location', trustees: [], member_contacts: [], routes: [], photos: [], contact_phone_public: false } as any]}
                 height={180}
               />
             </Suspense>
-            <p className="text-[11px] text-gray-400 px-3 py-1.5 bg-gray-50">
+            <p className="text-[11px] text-ink-3 px-3 py-1.5 bg-sunken/60">
               ✓ Location detected — Lat: {fields.latitude.toFixed(5)}, Lng: {fields.longitude.toFixed(5)}
             </p>
           </div>
         )}
 
         {duplicates.length > 0 && !duplicateAcknowledged && (
-          <div className="bg-blue-50 rounded-xl p-3 mb-3 text-xs text-blue-800">
+          <div className="bg-info-soft rounded-xl p-3 mb-3 text-xs text-info">
             <p className="font-bold mb-1">Similar listing already exists nearby</p>
             <p className="mb-2">{duplicates[0].name} — {duplicates[0].city}</p>
             <div className="flex gap-2">
-              <a href={`/directory/${duplicates[0].slug}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white rounded-lg font-bold border border-blue-200">View Existing</a>
+              <a href={`/directory/${duplicates[0].slug}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-surface rounded-lg font-bold border border-info-soft">View Existing</a>
               <button type="button" onClick={() => setDuplicateAcknowledged(true)} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold">Continue Anyway</button>
             </div>
           </div>
@@ -385,7 +385,7 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
           return (
             <div key={key} className="mb-4 last:mb-0">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-bold text-[#241C17]">{label} Available?</label>
+                <label className="text-sm font-bold text-ink">{label} Available?</label>
                 <button
                   type="button"
                   onClick={() => handleFacilityToggle(key, !facility)}
@@ -394,7 +394,7 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
                   style={{ backgroundColor: facility ? '#EA580C' : '#E5E7EB' }}
                 >
                   <span
-                    className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                    className="absolute top-0.5 w-5 h-5 bg-surface rounded-full shadow transition-transform"
                     style={{ transform: facility ? 'translateX(22px)' : 'translateX(2px)' }}
                   />
                 </button>
@@ -437,8 +437,8 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
           <div><label className={labelClass}>Contact Name</label><input className={inputClass} value={fields.contact_name || ''} onChange={(e) => set('contact_name', e.target.value)} /></div>
           <div><label className={labelClass}>Contact Phone</label><input type="tel" className={inputClass} value={fields.contact_phone || ''} onChange={(e) => set('contact_phone', e.target.value)} /></div>
           <div className="col-span-2">
-            <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-              <input type="checkbox" checked={fields.contact_phone_public} onChange={(e) => set('contact_phone_public', e.target.checked)} className="accent-saffron-600" />
+            <label className="flex items-center gap-2 text-xs font-semibold text-ink-2">
+              <input type="checkbox" checked={fields.contact_phone_public} onChange={(e) => set('contact_phone_public', e.target.checked)} className="accent-[#E8730C]" />
               Show Call/WhatsApp publicly
             </label>
           </div>
@@ -452,18 +452,18 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
       <SectionCard title="Photos" description="Optional — 1 cover photo + up to 4 more.">
         <div className="flex flex-wrap gap-2">
           {fields.photos.map((p) => (
-            <div key={p.url} className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-100">
+            <div key={p.url} className="relative w-20 h-20 rounded-xl overflow-hidden border border-line">
               <img src={p.url} alt="" className="w-full h-full object-cover" />
-              {p.is_cover && <span className="absolute top-1 left-1 text-[9px] font-bold bg-saffron-600 text-white px-1.5 py-0.5 rounded">COVER</span>}
+              {p.is_cover && <span className="absolute top-1 left-1 text-[11px] font-bold bg-brand text-ink px-1.5 py-0.5 rounded">COVER</span>}
               <button type="button" onClick={() => removePhoto(p.url)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center">
                 <X size={12} />
               </button>
             </div>
           ))}
           {fields.photos.length < 5 && (
-            <label className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:border-saffron-300 hover:text-saffron-500 transition-colors">
+            <label className="w-20 h-20 rounded-xl border-2 border-dashed border-line flex flex-col items-center justify-center text-ink-3 cursor-pointer hover:border-brand-200 hover:text-brand-700 transition-colors">
               {uploadingPhoto ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
-              <span className="text-[9px] font-bold mt-1">{fields.photos.length === 0 ? 'COVER' : 'ADD'}</span>
+              <span className="text-[11px] font-bold mt-1">{fields.photos.length === 0 ? 'COVER' : 'ADD'}</span>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -487,13 +487,13 @@ const DirectoryListingForm: React.FC<DirectoryListingFormProps> = ({ mode, initi
 
       <div className="flex gap-3">
         {onCancel && (
-          <button type="button" onClick={onCancel} className="flex-1 py-3 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl">Cancel</button>
+          <button type="button" onClick={onCancel} className="flex-1 py-3 bg-surface border border-line text-ink-2 font-bold rounded-xl">Cancel</button>
         )}
         <button
           type="submit"
           disabled={submitting || !isFormValid}
           title={!isFormValid ? 'Fill in the required fields marked with *' : undefined}
-          className="flex-1 flex items-center justify-center gap-2 py-3 bg-saffron-600 hover:bg-saffron-700 text-white font-extrabold rounded-xl shadow-lg shadow-saffron-100 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand hover:bg-brand-600 text-ink font-extrabold rounded-xl shadow-lg shadow-black/5 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
           {submitting ? <Loader2 size={18} className="animate-spin" /> : <MapPin size={18} />}
           {submitting ? (mode === 'admin-edit' ? 'Saving…' : 'Submitting…') : mode === 'admin-edit' ? 'Save Changes' : 'Submit for Review'}

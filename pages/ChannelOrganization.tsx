@@ -303,14 +303,14 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
   };
 
   if (loading) {
-    return <div className="flex justify-center py-16"><Loader2 className="animate-spin text-saffron-600" size={24} /></div>;
+    return <div className="flex justify-center py-16"><Loader2 className="animate-spin text-brand-700" size={24} /></div>;
   }
 
   if (!profile) {
     return (
       <div className="max-w-3xl mx-auto py-16 text-center">
-        <p className="text-sm text-[#8A6A57]">Organization not found.</p>
-        <button onClick={onBack} className="mt-3 text-sm font-bold text-saffron-600">Back to VChat</button>
+        <p className="text-sm text-ink-2">Organization not found.</p>
+        <button onClick={onBack} className="mt-3 text-sm font-bold text-brand-700">Back to VChat</button>
       </div>
     );
   }
@@ -319,45 +319,45 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
     <div className="max-w-3xl mx-auto space-y-5 pb-10">
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-extrabold text-[#241C17] truncate">{profile.name}</h1>
+          <h1 className="display text-[1.6rem] font-extrabold text-ink truncate">{profile.name}</h1>
           {isOwnOrg ? (
-            <p className="text-xs font-bold text-saffron-600">My Vihar Group Chat</p>
+            <p className="text-xs font-bold text-brand-700">My Vihar Group Chat</p>
           ) : (profile.town || profile.city) && (
-            <p className="text-xs text-[#8A6A57]">{[profile.town, profile.city].filter(Boolean).join(', ')}</p>
+            <p className="text-xs text-ink-2">{[profile.town, profile.city].filter(Boolean).join(', ')}</p>
           )}
         </div>
         {isOwnOrg && currentUser.role === UserRole.ORG_ADMIN ? (
-          <button onClick={() => setShowSettings(true)} className="w-9 h-9 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
-            <Settings size={16} className="text-[#241C17]" />
+          <button onClick={() => setShowSettings(true)} className="w-9 h-9 rounded-full bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
+            <Settings size={16} className="text-ink" />
           </button>
         ) : !isOwnOrg && currentUser.role === UserRole.ORG_ADMIN ? (
           <button
             onClick={() => (isFollowing ? setConfirmUnfollow(true) : handleFollow())}
             disabled={followBusy}
             className={`shrink-0 text-xs font-bold px-4 py-2 rounded-full transition-colors ${
-              isFollowing ? 'bg-gray-100 text-gray-500' : 'bg-saffron-600 text-white hover:bg-saffron-700'
+              isFollowing ? 'bg-sunken text-ink-2' : 'bg-brand text-ink hover:bg-brand-600'
             }`}
           >
             {isFollowing ? 'Following' : 'Follow'}
           </button>
         ) : (
           !isOwnOrg && isFollowing && (
-            <span className="shrink-0 text-xs font-bold px-4 py-2 rounded-full bg-gray-100 text-gray-500">Following</span>
+            <span className="shrink-0 text-xs font-bold px-4 py-2 rounded-full bg-sunken text-ink-2">Following</span>
           )
         )}
       </div>
 
       {!isOwnOrg && !isFollowing && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-6 py-10 text-center">
-          <div className="w-14 h-14 rounded-full bg-saffron-50 text-saffron-600 flex items-center justify-center mx-auto mb-3"><Lock size={24} /></div>
-          <p className="m-0 text-base font-extrabold text-[#241C17]">Follow to see this group</p>
-          <p className="m-0 mt-1 text-sm text-[#8A6A57] max-w-xs mx-auto">
+        <div className="bg-surface rounded-2xl border border-line shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-6 py-10 text-center">
+          <div className="w-14 h-14 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center mx-auto mb-3"><Lock size={24} /></div>
+          <p className="m-0 text-base font-extrabold text-ink">Follow to see this group</p>
+          <p className="m-0 mt-1 text-sm text-ink-2 max-w-xs mx-auto">
             {currentUser.role === UserRole.ORG_ADMIN
               ? 'Their VChat and recent Vihars open once your group follows them.'
               : 'Their VChat and recent Vihars open once your Captain follows this group.'}
           </p>
           {currentUser.role === UserRole.ORG_ADMIN && (
-            <button onClick={handleFollow} disabled={followBusy} className="mt-5 h-11 px-6 rounded-full bg-saffron-600 hover:bg-saffron-700 text-white text-sm font-extrabold disabled:opacity-60">
+            <button onClick={handleFollow} disabled={followBusy} className="mt-5 h-11 px-6 rounded-full bg-brand hover:bg-brand-600 text-ink text-sm font-extrabold disabled:opacity-60">
               {followBusy ? 'Following…' : 'Follow'}
             </button>
           )}
@@ -367,8 +367,8 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
       {(isOwnOrg || isFollowing) && (<>
       {/* Chat first — the primary reason to be on this screen — then Recent
           Vihars below it, not competing for the initial scroll position. */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 flex flex-col h-[65dvh]">
-        <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3 shrink-0">VChat</h2>
+      <div className="bg-surface rounded-2xl border border-line shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4 flex flex-col h-[65dvh]">
+        <h2 className="text-xs font-extrabold uppercase tracking-wide text-ink-2 mb-3 shrink-0">VChat</h2>
 
         {/* Only this box scrolls as messages grow — not the whole page.
             overscroll-contain stops the scroll gesture from "chaining" up to
@@ -376,14 +376,14 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
             made the whole page drag along with it. */}
         <div ref={messagesContainerRef} className="chat-wallpaper flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl px-3 py-3 ring-1 ring-inset ring-[#EADBC8]">
           {posts.length === 0 ? (
-            <p className="text-sm text-[#8A6A57] py-4">No messages yet.</p>
+            <p className="text-sm text-ink-2 py-4">No messages yet.</p>
           ) : (
             <>
               {hasMore && (
                 <button
                   onClick={loadMore}
                   disabled={loadingMore}
-                  className="w-full text-center text-xs font-bold text-saffron-600 py-2 shrink-0"
+                  className="w-full text-center text-xs font-bold text-brand-700 py-2 shrink-0"
                 >
                   {loadingMore ? 'Loading...' : 'Load earlier'}
                 </button>
@@ -411,17 +411,17 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         </div>
 
         {canPost && (
-          <div className="mt-4 pt-4 border-t border-gray-100 shrink-0">
+          <div className="mt-4 pt-4 border-t border-line shrink-0">
             {replyTo && (
-              <div className="mb-2 flex items-start gap-2 rounded-xl border-l-4 border-saffron-500 bg-[#F7F4F0] px-3 py-2">
-                <Reply size={15} className="mt-0.5 shrink-0 text-saffron-600" />
+              <div className="mb-2 flex items-start gap-2 rounded-xl border-l-4 border-brand bg-sunken/60 px-3 py-2">
+                <Reply size={15} className="mt-0.5 shrink-0 text-brand-700" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11px] font-extrabold text-saffron-700">
+                  <p className="truncate text-[11px] font-extrabold text-brand-700">
                     Replying to {replyTo.author_user_id === currentUser.id ? 'yourself' : replyTo.author_name}
                   </p>
                   <p className="truncate text-xs text-[#6B5B50]">{replyTo.message}</p>
                 </div>
-                <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancel reply" className="shrink-0 rounded-full p-1 text-gray-400 hover:bg-black/5 hover:text-gray-600">
+                <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancel reply" className="shrink-0 rounded-full p-1 text-ink-3 hover:bg-black/5 hover:text-ink-2">
                   <X size={16} />
                 </button>
               </div>
@@ -438,12 +438,12 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
                 }}
                 maxLength={4000}
                 placeholder={replyTo ? 'Write your reply...' : 'Write a message...'}
-                className="flex-1 px-3.5 py-2.5 rounded-full bg-[#F9FAFB] border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-200"
+                className="flex-1 px-3.5 py-2.5 rounded-full bg-[#F9FAFB] border border-line text-sm focus:outline-none focus:ring-2 focus:ring-brand-100"
               />
               <button
                 onClick={handleSend}
                 disabled={!draft.trim() || sending}
-                className="w-10 h-10 rounded-full bg-saffron-600 hover:bg-saffron-700 disabled:opacity-50 text-white flex items-center justify-center shrink-0"
+                className="w-10 h-10 rounded-full bg-brand hover:bg-brand-600 disabled:opacity-50 text-ink flex items-center justify-center shrink-0"
               >
                 <Send size={16} />
               </button>
@@ -453,13 +453,13 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
       </div>
 
       {recentVihars.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
-          <h2 className="text-xs font-extrabold uppercase tracking-wide text-[#8A6A57] mb-3">Recent Vihars</h2>
+        <div className="bg-surface rounded-2xl border border-line shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-4">
+          <h2 className="text-xs font-extrabold uppercase tracking-wide text-ink-2 mb-3">Recent Vihars</h2>
           <div className="space-y-2.5">
             {recentVihars.map((v, i) => (
               <div key={i} className="text-sm">
-                <p className="font-bold text-[#241C17]">{v.vihar_from} → {v.vihar_to}</p>
-                <p className="text-xs text-[#8A6A57]">
+                <p className="font-bold text-ink">{v.vihar_from} → {v.vihar_to}</p>
+                <p className="text-xs text-ink-2">
                   {new Date(v.vihar_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                   {' · '}{v.vihar_type === 'morning' ? 'Morning' : 'Evening'}
                   {' · '}{v.sevak_count} {v.sevak_count === 1 ? 'Sevak' : 'Sevaks'}
@@ -474,36 +474,36 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
 
       <Modal open={confirmUnfollow} onClose={() => setConfirmUnfollow(false)} maxWidth="max-w-sm">
         <div className="p-6">
-          <h3 className="text-base font-bold text-[#241C17]">Unfollow {profile.name}?</h3>
-          <p className="text-sm text-[#8A6A57] mt-1.5">Your organization will no longer receive their VChat updates.</p>
+          <h3 className="display text-[1.6rem] font-bold text-ink">Unfollow {profile.name}?</h3>
+          <p className="text-sm text-ink-2 mt-1.5">Your organization will no longer receive their VChat updates.</p>
           <div className="flex gap-3 mt-5">
-            <button onClick={() => setConfirmUnfollow(false)} className="flex-1 py-2.5 rounded-xl bg-gray-100 text-sm font-bold text-[#241C17]">Cancel</button>
-            <button onClick={handleUnfollow} disabled={followBusy} className="flex-1 py-2.5 rounded-xl bg-red-500 text-sm font-bold text-white disabled:opacity-50">Unfollow</button>
+            <button onClick={() => setConfirmUnfollow(false)} className="flex-1 h-12 rounded-full text-[15px] font-semibold bg-surface ring-1 ring-inset ring-line text-ink">Cancel</button>
+            <button onClick={handleUnfollow} disabled={followBusy} className="flex-1 h-12 rounded-full text-[15px] font-semibold bg-err-solid text-white disabled:opacity-50">Unfollow</button>
           </div>
         </div>
       </Modal>
 
       <Modal open={showSettings} onClose={() => setShowSettings(false)} maxWidth="max-w-sm">
         <div className="p-6">
-          <h3 className="text-base font-bold text-[#241C17]">VChat Settings</h3>
-          <p className="text-sm text-[#8A6A57] mt-1">Who can send messages?</p>
+          <h3 className="display text-[1.6rem] font-bold text-ink">VChat Settings</h3>
+          <p className="text-sm text-ink-2 mt-1">Who can send messages?</p>
           <div className="mt-4 space-y-2">
             {(['captain_only', 'all_members'] as ChannelPostingPermission[]).map(option => (
-              <label key={option} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 cursor-pointer">
+              <label key={option} className="flex items-center gap-3 min-h-[52px] px-4 py-3 rounded-[20px] bg-white ring-1 ring-inset ring-line cursor-pointer">
                 <input
                   type="radio"
                   name="posting_permission"
                   checked={postingPermission === option}
                   onChange={() => handlePermissionChange(option)}
-                  className="accent-saffron-600"
+                  className="accent-[#E8730C]"
                 />
-                <span className="text-sm font-semibold text-[#241C17]">
+                <span className="text-sm font-semibold text-ink">
                   {option === 'captain_only' ? 'Captain / Organization Head only' : 'Captain + Sevaks'}
                 </span>
               </label>
             ))}
           </div>
-          <button onClick={() => setShowSettings(false)} className="w-full mt-5 py-2.5 rounded-xl bg-saffron-600 text-sm font-bold text-white">Done</button>
+          <button onClick={() => setShowSettings(false)} className="w-full mt-5 py-2.5 rounded-xl bg-brand text-sm font-bold text-ink">Done</button>
         </div>
       </Modal>
 
@@ -511,8 +511,8 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
       <BottomSheet open={!!actionPost} onClose={() => setActionPost(null)}>
         {actionPost && (
           <div className="px-4 pb-4 pt-3">
-            <div className="mb-3 rounded-xl border-l-4 border-saffron-500 bg-[#F7F4F0] px-3 py-2">
-              <p className="truncate text-[11px] font-extrabold text-saffron-700">
+            <div className="mb-3 rounded-xl border-l-4 border-brand bg-sunken/60 px-3 py-2">
+              <p className="truncate text-[11px] font-extrabold text-brand-700">
                 {actionPost.author_user_id === currentUser.id ? 'You' : actionPost.author_name}
               </p>
               <p
@@ -524,17 +524,17 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
             </div>
             <div className="space-y-1">
               {canPost && (
-                <button onClick={() => handleReply(actionPost)} className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-[#241C17] transition-colors active:scale-[0.98] hover:bg-gray-50">
-                  <Reply size={18} className="text-saffron-600" /> Reply
+                <button onClick={() => handleReply(actionPost)} className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-ink transition-colors active:scale-[0.98] hover:bg-sunken/60">
+                  <Reply size={18} className="text-brand-700" /> Reply
                 </button>
               )}
-              <button onClick={() => copyMessage(actionPost)} className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-[#241C17] transition-colors active:scale-[0.98] hover:bg-gray-50">
-                <Copy size={18} className="text-[#8A6A57]" /> Copy
+              <button onClick={() => copyMessage(actionPost)} className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-ink transition-colors active:scale-[0.98] hover:bg-sunken/60">
+                <Copy size={18} className="text-ink-2" /> Copy
               </button>
               {canDeletePost(actionPost) && (
                 <button
                   onClick={() => { const id = actionPost.id; setActionPost(null); handleDelete(id); }}
-                  className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-red-600 transition-colors active:scale-[0.98] hover:bg-red-50"
+                  className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left text-sm font-bold text-err transition-colors active:scale-[0.98] hover:bg-err-soft"
                 >
                   <Trash2 size={18} /> {actionPost.author_user_id === currentUser.id ? 'Delete' : 'Delete for everyone'}
                 </button>
@@ -552,15 +552,15 @@ const ChannelOrganization: React.FC<ChannelOrganizationProps> = ({ currentUser, 
         {profilePost && (
           <div className="p-6 flex flex-col items-center text-center">
             <Avatar name={profilePost.author_name} url={profilePost.author_avatar_url} size={64} />
-            <p className="mt-3 text-base font-extrabold text-[#241C17]">{profilePost.author_name}</p>
-            <p className="text-xs font-bold text-saffron-600 mt-0.5">{roleLabel(profilePost.author_role)}</p>
-            <div className="w-full mt-4 pt-4 border-t border-gray-100 space-y-1">
-              <p className="text-sm font-semibold text-[#241C17]">{profile.name}</p>
+            <p className="mt-3 text-base font-extrabold text-ink">{profilePost.author_name}</p>
+            <p className="text-xs font-bold text-brand-700 mt-0.5">{roleLabel(profilePost.author_role)}</p>
+            <div className="w-full mt-4 pt-4 border-t border-line space-y-1">
+              <p className="text-sm font-semibold text-ink">{profile.name}</p>
               {(profile.town || profile.city) && (
-                <p className="text-xs text-[#8A6A57]">{[profile.town, profile.city].filter(Boolean).join(', ')}</p>
+                <p className="text-xs text-ink-2">{[profile.town, profile.city].filter(Boolean).join(', ')}</p>
               )}
             </div>
-            <button onClick={() => setProfilePost(null)} className="w-full mt-5 py-2.5 rounded-xl bg-gray-100 text-sm font-bold text-[#241C17]">Close</button>
+            <button onClick={() => setProfilePost(null)} className="w-full mt-5 py-2.5 rounded-xl bg-sunken text-sm font-bold text-ink">Close</button>
           </div>
         )}
       </Modal>

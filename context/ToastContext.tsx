@@ -34,19 +34,19 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const getIcon = (type: ToastType) => {
     switch (type) {
-      case 'success': return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'error': return <AlertCircle className="w-5 h-5 text-red-500" />;
-      case 'warning': return <AlertTriangle className="w-5 h-5 text-orange-500" />;
-      default: return <Info className="w-5 h-5 text-blue-500" />;
+      case 'success': return <CheckCircle className="w-5 h-5 text-[#8fd3c4]" />;
+      case 'error': return <AlertCircle className="w-5 h-5 text-[#f2a3a2]" />;
+      case 'warning': return <AlertTriangle className="w-5 h-5 text-block-mustard" />;
+      default: return <Info className="w-5 h-5 text-block-sky" />;
     }
   };
 
   const getStyles = (type: ToastType) => {
     switch (type) {
-      case 'success': return 'border-green-500 bg-white shadow-green-100';
-      case 'error': return 'border-red-500 bg-white shadow-red-100';
-      case 'warning': return 'border-orange-500 bg-white shadow-orange-100';
-      default: return 'border-blue-500 bg-white shadow-blue-100';
+      case 'success': return 'border-[#8fd3c4]';
+      case 'error': return 'border-[#f2a3a2]';
+      case 'warning': return 'border-block-mustard';
+      default: return 'border-block-sky';
     }
   };
 
@@ -54,24 +54,24 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ showToast }}>
       {children}
       {/* z-[200] — above Modal's z-[100], so a validation toast is never hidden behind an open modal (e.g. Suggest an Edit) */}
-      <div className="fixed top-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none">
+      <div className="fixed top-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none" style={{ top: 'max(1.25rem, env(safe-area-inset-top))' }}>
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-start w-80 p-4 rounded-xl border-l-4 shadow-xl transform transition-all duration-500 ease-in-out animate-fade-in-down ${getStyles(toast.type)}`}
+            className={`pointer-events-auto flex items-start w-[min(20rem,calc(100vw-2.5rem))] p-4 rounded-[18px] border-l-4 bg-ink text-surface shadow-nav font-sans transform transition-all duration-500 ease-in-out animate-fade-in-down ${getStyles(toast.type)}`}
             role="alert"
           >
             <div className="flex-shrink-0 mt-0.5">
                {getIcon(toast.type)}
             </div>
             <div className="ml-3 w-full">
-              <p className={`text-sm font-medium ${toast.type === 'error' ? 'text-red-800' : 'text-gray-800'}`}>
+              <p className="text-[15px] font-medium text-surface">
                 {toast.message}
               </p>
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="ml-auto -mx-1.5 -my-1.5 bg-transparent text-gray-400 hover:text-gray-900 rounded-lg p-1.5 inline-flex h-8 w-8"
+              aria-label="Close" className="ml-auto -mx-1.5 -my-1.5 bg-transparent text-block-seashell/60 hover:text-surface rounded-full p-1.5 inline-flex h-8 w-8"
             >
               <X className="w-4 h-4" />
             </button>

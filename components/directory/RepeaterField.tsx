@@ -48,14 +48,14 @@ const RepeaterField: React.FC<RepeaterFieldProps> = ({ columns, rows, onChange, 
                 value={row[col.key] || ''}
                 onChange={(e) => updateRow(i, col.key, e.target.value)}
                 placeholder={col.placeholder || col.label}
-                className={`${col.span === 2 ? 'col-span-2' : ''} w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 text-sm text-[#241C17] transition-shadow`}
+                className={`${col.span === 2 ? 'col-span-2' : ''} w-full py-2.5 px-3 rounded-xl bg-sunken/60 border-none outline-none focus:ring-2 focus:ring-brand text-sm text-ink transition-shadow`}
               />
             ))}
           </div>
           <button
             type="button"
             onClick={() => removeRow(i)}
-            className="mt-1 shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            className="mt-1 shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-ink-3 hover:text-err hover:bg-err-soft transition-colors"
             title="Remove"
           >
             <X size={16} />
@@ -65,7 +65,7 @@ const RepeaterField: React.FC<RepeaterFieldProps> = ({ columns, rows, onChange, 
       <button
         type="button"
         onClick={addRow}
-        className="flex items-center gap-1.5 text-sm font-semibold text-saffron-700 hover:text-saffron-800 px-1"
+        className="flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-brand-700 px-1"
       >
         <Plus size={15} /> {addLabel}
       </button>

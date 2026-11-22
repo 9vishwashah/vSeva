@@ -57,7 +57,7 @@ export const reminderSettingsService = {
         message: data.message || REMINDER_DEFAULTS.message,
         banner: data.banner || REMINDER_DEFAULTS.banner,
       };
-    }, 5 * 60_000, { persist: true });
+    }, 30 * 60_000, { persist: true }); // changes are picked up sooner by services/dataSync.ts
   },
 
   // Captain only (checked by the database function)

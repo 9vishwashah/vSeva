@@ -32,13 +32,13 @@ const SuperAdminPinGate: React.FC<{ onVerified: () => void }> = ({ onVerified })
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-slate-900 to-black p-6">
+    <div className="h-screen w-full flex items-center justify-center to-black p-6">
       <div className="max-w-md w-full bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl text-center">
         <div className="w-20 h-20 bg-saffron-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-saffron-500/30">
-          <Lock className="text-saffron-500" size={40} />
+          <Lock className="text-brand-700" size={40} />
         </div>
         <h1 className="text-2xl font-bold text-white mb-2">Super Admin Access</h1>
-        <p className="text-gray-400 mb-8">Enter the secure PIN to access the global dashboard</p>
+        <p className="text-ink-3 mb-8">Enter the secure PIN to access the global dashboard</p>
 
         <form onSubmit={submit} className="space-y-6">
           <div className="relative">
@@ -49,20 +49,20 @@ const SuperAdminPinGate: React.FC<{ onVerified: () => void }> = ({ onVerified })
               value={pinEntry}
               onChange={(e) => setPinEntry(e.target.value)}
               className={`w-full bg-white/5 border-2 text-center text-3xl tracking-[1.5em] font-mono py-4 rounded-2xl text-white focus:outline-none transition-all ${
-                pinError ? 'border-red-500 animate-shake' : 'border-white/10 focus:border-saffron-500'
+                pinError ? 'border-red-500 animate-shake' : 'border-white/10 focus:border-brand'
               }`}
               autoFocus
             />
-            {pinError && <p className="text-red-500 text-sm mt-2 font-medium">Incorrect PIN. Please try again.</p>}
+            {pinError && <p className="text-err text-sm mt-2 font-medium">Incorrect PIN. Please try again.</p>}
           </div>
           <button
             type="submit"
-            className="w-full bg-saffron-600 hover:bg-saffron-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-saffron-900/20 active:scale-[0.98] transition-all"
+            className="w-full bg-brand hover:bg-brand-600 text-ink font-bold py-4 rounded-2xl shadow-lg shadow-saffron-900/20 active:scale-[0.98] transition-all"
           >
             Authorize Access
           </button>
         </form>
-        <p className="mt-8 text-xs text-gray-500 uppercase tracking-widest font-bold">Secure Environment</p>
+        <p className="mt-8 text-xs text-ink-2 uppercase tracking-widest font-bold">Secure Environment</p>
       </div>
     </div>
   );

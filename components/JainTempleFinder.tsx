@@ -101,7 +101,7 @@ export const JainTempleFinder: React.FC = () => {
         <div className="w-full">
             <button
                 onClick={handleOpen}
-                className="w-full relative overflow-hidden group bg-gradient-to-r from-saffron-500 to-orange-600 text-white rounded-2xl p-4 shadow-lg shadow-saffron-500/20 hover:shadow-xl hover:shadow-saffron-500/30 hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-3 font-bold text-lg"
+                className="w-full relative overflow-hidden group bg-brand text-ink rounded-2xl p-4 shadow-lg shadow-saffron-500/20 hover:shadow-xl hover:shadow-saffron-500/30 hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-3 font-bold text-lg"
             >
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                 <span>Nearby Jain Derasar</span>
@@ -110,14 +110,14 @@ export const JainTempleFinder: React.FC = () => {
             {/* Modal */}
             {isOpen && (
                 <Portal>
-                <div ref={swipe.backdropRef} onClick={swipe.close} className="fixed inset-0 z-[120] flex flex-col md:items-center justify-end md:justify-center bg-black/60 backdrop-blur-sm p-4 app-modal-backdrop">
-                    <div ref={swipe.sheetRef} {...swipe.handlers} onClick={e => e.stopPropagation()} style={{ overscrollBehavior: 'contain' }} className="bg-gray-50 w-full max-w-lg rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] app-sheet-up">
-                        <div className="bg-gradient-to-r from-saffron-500 to-saffron-700 text-white p-5 flex items-center justify-between shrink-0">
+                <div ref={swipe.backdropRef} onClick={swipe.close} className="fixed inset-0 z-[120] flex flex-col md:items-center justify-end md:justify-center bg-ink/45 p-4 app-modal-backdrop">
+                    <div ref={swipe.sheetRef} {...swipe.handlers} onClick={e => e.stopPropagation()} style={{ overscrollBehavior: 'contain' }} className="bg-sunken/60 w-full max-w-lg rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] app-sheet-up">
+                        <div className="bg-brand text-ink p-5 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/20 p-2 rounded-full">
                                     <MapPin size={20} />
                                 </div>
-                                <h2 className="text-xl font-bold font-serif">Nearby Jain Temples</h2>
+                                <h2 className="text-xl font-bold display">Nearby Jain Temples</h2>
                             </div>
                             <button
                                 onClick={swipe.close}
@@ -130,39 +130,39 @@ export const JainTempleFinder: React.FC = () => {
                         <div className="p-5 overflow-y-auto flex-1">
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-12 gap-4">
-                                    <Loader2 className="animate-spin text-saffron-500" size={40} />
-                                    <p className="text-gray-600 font-medium font-serif">Searching for Derasars...</p>
-                                    <p className="text-xs text-gray-400 text-center px-4">Finding sacred places within 10km of your location...</p>
+                                    <Loader2 className="animate-spin text-brand-700" size={40} />
+                                    <p className="text-ink-2 font-medium display">Searching for Derasars...</p>
+                                    <p className="text-xs text-ink-3 text-center px-4">Finding sacred places within 10km of your location...</p>
                                 </div>
                             ) : error ? (
-                                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-center space-y-2 py-8">
+                                <div className="bg-err-soft border border-err-soft text-err p-4 rounded-xl text-center space-y-2 py-8">
                                     <MapPin className="mx-auto text-red-400" size={32} />
                                     <p className="font-semibold">{error}</p>
                                     <button
                                         onClick={handleOpen}
-                                        className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer"
+                                        className="mt-2 text-sm bg-err-soft hover:bg-red-200 px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer"
                                     >
                                         Try Again
                                     </button>
                                 </div>
                             ) : temples.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                                    <Search className="text-gray-300 mb-3" size={48} />
-                                    <p className="text-gray-500 font-medium">No temples found nearby.</p>
-                                    <p className="text-xs text-gray-400 mt-1">Try expanding your search or ensuring GPS is on.</p>
+                                    <Search className="text-ink-3 mb-3" size={48} />
+                                    <p className="text-ink-2 font-medium">No temples found nearby.</p>
+                                    <p className="text-xs text-ink-3 mt-1">Try expanding your search or ensuring GPS is on.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                     {temples.map((temple, index) => (
-                                        <div key={index} className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                                        <div key={index} className="bg-surface border border-line rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                                             <div className="p-3 pb-2">
                                                 <div className="flex gap-3 mb-2">
                                                     {/* Title & Distance */}
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-start justify-between gap-2">
-                                                            <h4 className="font-bold text-gray-800 font-serif text-base leading-tight">{temple.name}</h4>
+                                                            <h4 className="font-bold text-ink display text-base leading-tight">{temple.name}</h4>
                                                             {temple.distance !== undefined && (
-                                                                <span className="shrink-0 bg-saffron-50 text-saffron-600 text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full font-bold border border-saffron-100">
+                                                                <span className="shrink-0 bg-brand-50 text-brand-700 text-[11px] uppercase tracking-wide px-1.5 py-0.5 rounded-full font-bold border border-brand-100">
                                                                     {temple.distance.toFixed(1)} km
                                                                 </span>
                                                             )}
@@ -171,7 +171,7 @@ export const JainTempleFinder: React.FC = () => {
 
                                                     {/* Small Photo Thumb */}
                                                     {temple.photo ? (
-                                                        <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-gray-100 shadow-inner bg-gray-50 mt-0.5">
+                                                        <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-line shadow-inner bg-sunken/60 mt-0.5">
                                                             <img 
                                                                 src={temple.photo} 
                                                                 alt={temple.name} 
@@ -182,15 +182,15 @@ export const JainTempleFinder: React.FC = () => {
                                                             />
                                                         </div>
                                                     ) : temple.icon && (
-                                                        <div className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-orange-50 p-1 border border-orange-100">
+                                                        <div className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-brand-50 p-1 border border-brand-100">
                                                             <img src={temple.icon} alt="Icon" className="w-full h-full object-contain opacity-50 grayscale" />
                                                         </div>
                                                     )}
                                                 </div>
 
                                                 {/* Full Width Address - Tight spacing */}
-                                                <div className="flex items-start gap-1.5 text-gray-500 text-[11px] leading-snug">
-                                                    <MapPin size={12} className="shrink-0 mt-0.5 text-saffron-400" />
+                                                <div className="flex items-start gap-1.5 text-ink-2 text-[11px] leading-snug">
+                                                    <MapPin size={12} className="shrink-0 mt-0.5 text-brand" />
                                                     <span>{temple.address}</span>
                                                 </div>
                                             </div>
@@ -200,7 +200,7 @@ export const JainTempleFinder: React.FC = () => {
                                                 {temple.phone && (
                                                     <a
                                                         href={`tel:${temple.phone.replace(/\D/g, '')}`}
-                                                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all bg-green-50 text-green-600 hover:bg-green-100 border border-green-100 active:scale-95"
+                                                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all bg-ok-soft text-ok hover:bg-ok-soft border border-ok-soft active:scale-95"
                                                     >
                                                         <Phone size={12} />
                                                         Call
@@ -208,7 +208,7 @@ export const JainTempleFinder: React.FC = () => {
                                                 )}
                                                 <button
                                                     onClick={() => openDirections(temple.lat, temple.lng)}
-                                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all bg-saffron-50 text-saffron-600 hover:bg-saffron-100 border border-saffron-100 active:scale-95"
+                                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-100 active:scale-95"
                                                 >
                                                     <img src="/google-maps.svg" alt="Maps" className="w-[14px] h-[14px] drop-shadow-sm" />
                                                     Directions
@@ -216,7 +216,7 @@ export const JainTempleFinder: React.FC = () => {
                                             </div>
                                         </div>
                                     ))}
-                                    <p className="text-[10px] text-gray-400 text-center pt-4 italic">
+                                    <p className="text-[11px] text-ink-3 text-center pt-4 italic">
                                         * Photos and data provided by Google Places API
                                     </p>
                                 </div>

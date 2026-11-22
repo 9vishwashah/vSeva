@@ -15,7 +15,7 @@ import {
 const same = (a: ReminderSettings, b: ReminderSettings) =>
   a.enabled === b.enabled && a.message === b.message && a.banner === b.banner && a.days.join(',') === b.days.join(',');
 
-const label = 'text-xs font-bold uppercase tracking-wider text-[#8A6A57]';
+const label = 'text-xs font-bold uppercase tracking-wider text-ink-2';
 
 const ReminderSettingsCard: React.FC<{ user: UserProfile }> = ({ user }) => {
   const { showToast } = useToast();
@@ -63,15 +63,15 @@ const ReminderSettingsCard: React.FC<{ user: UserProfile }> = ({ user }) => {
   const message = draft.message.trim() || '…';
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: '#FFF0E5' }}>
             <BellRing size={18} style={{ color: '#DE6B38' }} />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-[#241C17]">Vihar reminders</p>
-            <p className="mt-0.5 text-xs text-[#8A6A57]">A daily nudge, at 9 AM, for Sevaks who haven’t done a Vihar for a while</p>
+            <p className="text-sm font-bold text-ink">Vihar reminders</p>
+            <p className="mt-0.5 text-xs text-ink-2">A daily nudge, at 9 AM, for Sevaks who haven’t done a Vihar for a while</p>
           </div>
         </div>
         <button
@@ -83,20 +83,20 @@ const ReminderSettingsCard: React.FC<{ user: UserProfile }> = ({ user }) => {
           disabled={!saved || busy}
           className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-60 ${draft.enabled ? 'bg-green-500' : 'bg-gray-300'}`}
         >
-          <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${draft.enabled ? 'left-[1.4rem]' : 'left-0.5'}`} />
+          <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-surface shadow transition-all ${draft.enabled ? 'left-[1.4rem]' : 'left-0.5'}`} />
         </button>
       </div>
 
       {draft.enabled && (
-        <div className="mt-4 space-y-5 border-t border-gray-100 pt-4">
+        <div className="mt-4 space-y-5 border-t border-line pt-4">
           {/* Days */}
           <div>
             <p className={label}>Remind after</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {draft.days.map(d => (
-                <span key={d} className="inline-flex items-center gap-1 rounded-full bg-saffron-50 py-1.5 pl-3 pr-1.5 text-sm font-bold text-saffron-700">
+                <span key={d} className="inline-flex items-center gap-1 rounded-full bg-brand-50 py-1.5 pl-3 pr-1.5 text-sm font-bold text-brand-700">
                   {d} {d === 1 ? 'day' : 'days'}
-                  <button type="button" onClick={() => removeDay(d)} aria-label={`Remove ${d} days`} className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-saffron-100">
+                  <button type="button" onClick={() => removeDay(d)} aria-label={`Remove ${d} days`} className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-brand-100">
                     <X size={12} />
                   </button>
                 </span>
@@ -113,15 +113,15 @@ const ReminderSettingsCard: React.FC<{ user: UserProfile }> = ({ user }) => {
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addDay(); } }}
                     placeholder="Days"
                     aria-label="Add a reminder after this many days"
-                    className="h-9 w-20 rounded-full border border-gray-200 bg-gray-50/60 px-3 text-sm font-bold text-[#241C17] outline-none focus:border-saffron-400 focus:ring-4 focus:ring-saffron-100"
+                    className="h-9 w-20 rounded-full border border-line bg-gray-50/60 px-3 text-sm font-bold text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand-100"
                   />
-                  <button type="button" onClick={addDay} aria-label="Add reminder day" className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F7F4F0] text-[#241C17] hover:bg-gray-100">
+                  <button type="button" onClick={addDay} aria-label="Add reminder day" className="flex h-9 w-9 items-center justify-center rounded-full bg-sunken/60 text-ink hover:bg-sunken">
                     <Plus size={16} />
                   </button>
                 </span>
               )}
             </div>
-            <p className="mt-1.5 text-xs text-[#8A6A57]">Up to 3 reminders, 1 to 60 days without a Vihar.</p>
+            <p className="mt-1.5 text-xs text-ink-2">Up to 3 reminders, 1 to 60 days without a Vihar.</p>
           </div>
 
           {/* Message */}
@@ -132,10 +132,10 @@ const ReminderSettingsCard: React.FC<{ user: UserProfile }> = ({ user }) => {
               value={draft.message}
               maxLength={REMINDER_MESSAGE_MAX}
               onChange={e => setDraft(d => ({ ...d, message: e.target.value }))}
-              className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-3.5 text-[15px] text-[#241C17] outline-none focus:border-saffron-400 focus:bg-white focus:ring-4 focus:ring-saffron-100"
+              className="mt-2 h-11 w-full rounded-xl border border-line bg-gray-50/60 px-3.5 text-[15px] text-ink outline-none focus:border-brand focus:bg-surface focus:ring-4 focus:ring-brand-100"
             />
-            <p className="mt-1 text-right text-[11px] text-[#8A6A57]">{draft.message.length}/{REMINDER_MESSAGE_MAX}</p>
-            <p className="mt-1 text-[11px] font-bold text-[#8A6A57]">Suggestions</p>
+            <p className="mt-1 text-right text-[11px] text-ink-2">{draft.message.length}/{REMINDER_MESSAGE_MAX}</p>
+            <p className="mt-1 text-[11px] font-bold text-ink-2">Suggestions</p>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {REMINDER_MESSAGE_SUGGESTIONS.map(s => {
                 const on = draft.message.trim() === s;
@@ -144,7 +144,7 @@ const ReminderSettingsCard: React.FC<{ user: UserProfile }> = ({ user }) => {
                     key={s}
                     type="button"
                     onClick={() => setDraft(d => ({ ...d, message: s }))}
-                    className={`rounded-full border px-3 py-1.5 text-left text-xs font-semibold transition-colors ${on ? 'border-saffron-500 bg-saffron-500 text-white' : 'border-saffron-100 bg-saffron-50/60 text-[#5C3A24] hover:border-saffron-300'}`}
+                    className={`rounded-full border px-3 py-1.5 text-left text-xs font-semibold transition-colors ${on ? 'border-brand bg-brand text-ink' : 'border-brand-100 bg-saffron-50/60 text-ink-2 hover:border-brand-200'}`}
                   >
                     {s}
                   </button>
@@ -166,11 +166,11 @@ const ReminderSettingsCard: React.FC<{ user: UserProfile }> = ({ user }) => {
                     role="radio"
                     aria-checked={on}
                     onClick={() => setDraft(d => ({ ...d, banner: b.key }))}
-                    className={`flex items-start gap-2.5 rounded-xl border p-2 text-left transition-colors ${on ? 'border-saffron-500 bg-saffron-50' : 'border-gray-200 hover:border-saffron-300'}`}
+                    className={`flex items-start gap-2.5 rounded-xl border p-2 text-left transition-colors ${on ? 'border-brand bg-brand-50' : 'border-line hover:border-brand-200'}`}
                   >
                     <img src={reminderBannerUrl(b.key)} alt="" loading="lazy" className="h-10 w-20 shrink-0 rounded-md object-cover" />
-                    <span className="min-w-0 flex-1 text-xs font-semibold leading-snug text-[#241C17]">{b.line}</span>
-                    {on && <Check size={15} className="mt-0.5 shrink-0 text-saffron-600" />}
+                    <span className="min-w-0 flex-1 text-xs font-semibold leading-snug text-ink">{b.line}</span>
+                    {on && <Check size={15} className="mt-0.5 shrink-0 text-brand-700" />}
                   </button>
                 );
               })}
@@ -195,18 +195,18 @@ const ReminderSettingsCard: React.FC<{ user: UserProfile }> = ({ user }) => {
                     <p className="text-[15px] font-bold leading-snug">{title}</p>
                     <p className="mt-0.5 text-sm text-white/80">{message}</p>
                   </div>
-                  <img src="/notify/large-icon.png" alt="" className="h-10 w-10 shrink-0 rounded-full bg-white object-contain" />
+                  <img src="/notify/large-icon.png" alt="" className="h-10 w-10 shrink-0 rounded-full bg-surface object-contain" />
                 </div>
               </div>
               <img src={reminderBannerUrl(draft.banner)} alt="Reminder picture" className="block aspect-[2/1] w-full object-cover" />
             </div>
-            <p className="mt-1.5 text-xs text-[#8A6A57]">Each Sevak sees their own first name and their own number of days. The picture shows when the notification is opened out.</p>
+            <p className="mt-1.5 text-xs text-ink-2">Each Sevak sees their own first name and their own number of days. The picture shows when the notification is opened out.</p>
           </div>
 
           {dirty && (
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => saved && setDraft(saved)} disabled={busy} className="h-10 rounded-xl bg-gray-100 px-3 text-sm font-bold text-[#241C17] disabled:opacity-50">Cancel</button>
-              <button type="button" onClick={() => save(draft)} disabled={busy} className="flex h-10 items-center gap-1.5 rounded-xl bg-saffron-600 px-4 text-sm font-bold text-white hover:bg-saffron-700 disabled:opacity-60">
+              <button type="button" onClick={() => saved && setDraft(saved)} disabled={busy} className="h-10 rounded-xl bg-sunken px-3 text-sm font-bold text-ink disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={() => save(draft)} disabled={busy} className="flex h-10 items-center gap-1.5 rounded-xl bg-brand px-4 text-sm font-bold text-ink hover:bg-brand-600 disabled:opacity-60">
                 {busy && <Loader2 size={14} className="animate-spin" />} Save
               </button>
             </div>
@@ -214,8 +214,8 @@ const ReminderSettingsCard: React.FC<{ user: UserProfile }> = ({ user }) => {
         </div>
       )}
 
-      <details className="mt-4 border-t border-gray-100 pt-3">
-        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-bold text-saffron-700">
+      <details className="mt-4 border-t border-line pt-3">
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-bold text-brand-700">
           <Info size={15} /> How reminders work
         </summary>
         <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-[#5C4A3E]">

@@ -18,10 +18,10 @@ interface TriggeredByInfo {
 }
 
 const STATUS_META: Record<SosAlert['status'], { label: string; badge: string }> = {
-  active: { label: '🚨 SOS ACTIVE', badge: 'bg-red-100 text-red-700' },
-  acknowledged: { label: 'SOS ACKNOWLEDGED', badge: 'bg-blue-100 text-blue-700' },
-  resolved: { label: 'SOS RESOLVED', badge: 'bg-green-100 text-green-700' },
-  cancelled: { label: 'SOS CANCELLED', badge: 'bg-gray-100 text-gray-500' },
+  active: { label: '🚨 SOS ACTIVE', badge: 'bg-err-soft text-err' },
+  acknowledged: { label: 'SOS ACKNOWLEDGED', badge: 'bg-info-soft text-info' },
+  resolved: { label: 'SOS RESOLVED', badge: 'bg-ok-soft text-ok' },
+  cancelled: { label: 'SOS CANCELLED', badge: 'bg-sunken text-ink-2' },
 };
 
 const formatTime = (iso: string) =>
@@ -108,14 +108,14 @@ const SosDetail: React.FC<SosDetailProps> = ({ currentUser, sosId, onBack }) => 
   };
 
   if (alert === undefined) {
-    return <div className="flex justify-center py-16"><Loader2 className="animate-spin text-red-600" size={24} /></div>;
+    return <div className="flex justify-center py-16"><Loader2 className="animate-spin text-err" size={24} /></div>;
   }
 
   if (!alert) {
     return (
       <div className="max-w-md mx-auto py-16 text-center">
-        <p className="text-sm text-[#8A6A57]">This SOS alert doesn't exist, or you're not authorized to view it.</p>
-        <button onClick={onBack} className="mt-3 text-sm font-bold text-saffron-600">Back</button>
+        <p className="text-sm text-ink-2">This SOS alert doesn't exist, or you're not authorized to view it.</p>
+        <button onClick={onBack} className="mt-3 text-sm font-bold text-brand-700">Back</button>
       </div>
     );
   }
@@ -128,10 +128,10 @@ const SosDetail: React.FC<SosDetailProps> = ({ currentUser, sosId, onBack }) => 
   return (
     <div className="max-w-md mx-auto space-y-5 pb-10">
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-extrabold text-[#241C17]">SOS Alert</h1>
+        <h1 className="display text-[1.6rem] font-extrabold text-ink">SOS Alert</h1>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-5 space-y-4">
+      <div className="bg-surface rounded-2xl border border-line shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-5 space-y-4">
         <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-extrabold ${meta.badge}`}>
           {alert.status === 'active' && <AlertTriangle size={16} />}
           {(alert.status === 'acknowledged' || alert.status === 'resolved') && <CheckCircle size={16} />}
@@ -140,59 +140,59 @@ const SosDetail: React.FC<SosDetailProps> = ({ currentUser, sosId, onBack }) => 
 
         <div className="space-y-3 text-sm">
           <div className="flex items-start gap-2.5">
-            <AlertTriangle size={16} className="text-[#8A6A57] shrink-0 mt-0.5" />
+            <AlertTriangle size={16} className="text-ink-2 shrink-0 mt-0.5" />
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#8A6A57]">Triggered by</p>
-              <p className="font-bold text-[#241C17]">{triggeredByInfo?.full_name || 'Sevak'}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-ink-2">Triggered by</p>
+              <p className="font-bold text-ink">{triggeredByInfo?.full_name || 'Sevak'}</p>
             </div>
           </div>
           <div className="flex items-start gap-2.5">
-            <Building2 size={16} className="text-[#8A6A57] shrink-0 mt-0.5" />
+            <Building2 size={16} className="text-ink-2 shrink-0 mt-0.5" />
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#8A6A57]">Organization</p>
-              <p className="font-bold text-[#241C17]">{orgName || '—'}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-ink-2">Organization</p>
+              <p className="font-bold text-ink">{orgName || '—'}</p>
             </div>
           </div>
           <div className="flex items-start gap-2.5">
-            <Clock size={16} className="text-[#8A6A57] shrink-0 mt-0.5" />
+            <Clock size={16} className="text-ink-2 shrink-0 mt-0.5" />
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#8A6A57]">Time</p>
-              <p className="font-bold text-[#241C17]">{formatTime(alert.created_at)}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-ink-2">Time</p>
+              <p className="font-bold text-ink">{formatTime(alert.created_at)}</p>
             </div>
           </div>
           <div className="flex items-start gap-2.5">
-            <MapPin size={16} className="text-[#8A6A57] shrink-0 mt-0.5" />
+            <MapPin size={16} className="text-ink-2 shrink-0 mt-0.5" />
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#8A6A57]">Location</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-ink-2">Location</p>
               {mapsUrl ? (
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-saffron-600 hover:text-saffron-700">
+                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-brand-700 hover:text-brand-700">
                   Open Location
                 </a>
               ) : (
-                <p className="font-bold text-[#8A6A57]">Location unavailable</p>
+                <p className="font-bold text-ink-2">Location unavailable</p>
               )}
             </div>
           </div>
           {alert.note && (
-            <div className="pt-2 border-t border-gray-50">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#8A6A57] mb-1">Note</p>
-              <p className="text-[#241C17] whitespace-pre-wrap break-words">{alert.note}</p>
+            <div className="pt-2 border-t border-line">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-ink-2 mb-1">Note</p>
+              <p className="text-ink whitespace-pre-wrap break-words">{alert.note}</p>
             </div>
           )}
         </div>
 
         {alert.status === 'acknowledged' && alert.acknowledged_at && (
-          <p className="text-xs font-semibold text-blue-700 bg-blue-50 rounded-xl px-3 py-2 flex items-center gap-1.5">
+          <p className="text-xs font-semibold text-info bg-info-soft rounded-xl px-3 py-2 flex items-center gap-1.5">
             <ShieldCheck size={14} /> Captain acknowledged at {formatTime(alert.acknowledged_at)}
           </p>
         )}
         {alert.status === 'resolved' && alert.resolved_at && (
-          <p className="text-xs font-semibold text-green-700 bg-green-50 rounded-xl px-3 py-2 flex items-center gap-1.5">
+          <p className="text-xs font-semibold text-ok bg-ok-soft rounded-xl px-3 py-2 flex items-center gap-1.5">
             <CheckCircle size={14} /> SOS resolved at {formatTime(alert.resolved_at)}
           </p>
         )}
         {alert.status === 'cancelled' && alert.cancelled_at && (
-          <p className="text-xs font-semibold text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
+          <p className="text-xs font-semibold text-ink-2 bg-sunken/60 rounded-xl px-3 py-2">
             Cancelled at {formatTime(alert.cancelled_at)}
           </p>
         )}
@@ -220,7 +220,7 @@ const SosDetail: React.FC<SosDetailProps> = ({ currentUser, sosId, onBack }) => 
           {isAdmin && triggeredByInfo?.mobile && (
             <a
               href={`tel:+91${triggeredByInfo.mobile}`}
-              className="flex-1 min-w-[45%] py-2.5 rounded-xl bg-white border border-gray-200 text-[#241C17] text-sm font-bold flex items-center justify-center gap-1.5"
+              className="flex-1 min-w-[45%] py-2.5 rounded-xl bg-surface border border-line text-ink text-sm font-bold flex items-center justify-center gap-1.5"
             >
               <Phone size={15} /> Call Sevak
             </a>
@@ -230,7 +230,7 @@ const SosDetail: React.FC<SosDetailProps> = ({ currentUser, sosId, onBack }) => 
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 min-w-[45%] py-2.5 rounded-xl bg-white border border-gray-200 text-[#241C17] text-sm font-bold flex items-center justify-center gap-1.5"
+              className="flex-1 min-w-[45%] py-2.5 rounded-xl bg-surface border border-line text-ink text-sm font-bold flex items-center justify-center gap-1.5"
             >
               <MapPin size={15} /> Open Location
             </a>
@@ -239,7 +239,7 @@ const SosDetail: React.FC<SosDetailProps> = ({ currentUser, sosId, onBack }) => 
             <button
               onClick={handleCancel}
               disabled={busy}
-              className="flex-1 min-w-[45%] py-2.5 rounded-xl bg-gray-100 text-gray-600 text-sm font-bold disabled:opacity-60"
+              className="flex-1 min-w-[45%] py-2.5 rounded-xl bg-sunken text-ink-2 text-sm font-bold disabled:opacity-60"
             >
               Cancel SOS
             </button>

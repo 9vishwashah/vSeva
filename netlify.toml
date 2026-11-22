@@ -1,6 +1,10 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  # Each production deploy costs credits (twice when both sites build from this repo). Skip the build when a push
+  # only touched files the site never uses: docs, the Android project, database scripts, reports, notes.
+  # Exit 0 = skip. On a first build (no previous commit) git diff fails, so the build runs.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude)docs' ':(exclude)android' ':(exclude)supabase' ':(exclude)SSG' ':(exclude)SSG OUTPUTS' ':(exclude)scratch' ':(exclude)resources' ':(exclude)scripts/*.sql' ':(exclude)*.md'"
 
 [functions]
   directory = "netlify/functions"
@@ -33,17 +37,17 @@
   to = "/app.html"
   status = 200
 
-# Ensure the HTML entry point and service worker files are never cached
-# so mobile PWA users always get notified about new deploys.
+# The HTML entry points are checked on every open so PWA users always pick up a new deploy. "no-cache" (not
+# "no-store") lets an unchanged page be answered with a tiny "not modified" instead of the whole page again.
 [[headers]]
   for = "/index.html"
   [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
+    Cache-Control = "no-cache"
 
 [[headers]]
   for = "/app.html"
   [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
+    Cache-Control = "no-cache"
 
 [[headers]]
   for = "/sw.js"
@@ -75,6 +79,54 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Static files that are not content-hashed: kept on the device for a week (then re-checked), so repeat views
+# cost no request. Website images, fonts and guide PDFs; push notification pictures; icons; share images.
+[[headers]]
+  for = "/vseva-site/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/notify/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/share/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/favicon.ico"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+[[headers]]
+  for = "/vseva-icon-192.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+[[headers]]
+  for = "/vseva-icon-180.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+[[headers]]
+  for = "/pwa-192x192.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+[[headers]]
+  for = "/pwa-512x512.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+[[headers]]
+  for = "/apple-touch-icon.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+[[headers]]
+  for = "/vseva-logo-full.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+# Android app-link check (Google fetches it often): a day is plenty
+[[headers]]
+  for = "/.well-known/assetlinks.json"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
 
 # Baseline security headers for every page (audit 15 Oct 2026). Deliberately conservative: no script/style
 # Content-Security-Policy yet (Supabase, OneSignal, MapLibre tiles and Google Fonts would need a tested allow-list).

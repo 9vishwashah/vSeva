@@ -72,7 +72,8 @@ export const getMeta = (env: Env): BrandMeta => {
     // Anek Gujarati: condensed-capable display face with Gujarati + Latin, matching the
     // bold uppercase headings of the reference design; Noto Sans Gujarati for body text.
     fontsHref:
-      'https://fonts.googleapis.com/css2?family=Anek+Gujarati:wght@400..800&family=Manrope:wght@500;600;700;800&family=Noto+Sans+Gujarati:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap',
+      // + Design Core fonts for the app (Bricolage, Geist, Noto Devanagari); Anek + Manrope stay for the landing page
+      'https://fonts.googleapis.com/css2?family=Anek+Gujarati:wght@400..800&family=Manrope:wght@500;600;700;800&family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,700;12..96,75..100,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap',
     includeAssets: ['pwa-192x192.png', 'apple-touch-icon.png', 'ssg-logo-full.png'],
   };
 };

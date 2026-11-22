@@ -6,7 +6,7 @@ const EntriesSkeleton = () => {
       {[...Array(5)].map((_, i) => (
         <div
           key={i}
-          className="bg-white border border-gray-200 rounded-xl p-4 space-y-3"
+          className="bg-surface ring-1 ring-inset ring-line rounded-card p-4 space-y-3"
         >
           <div className="flex justify-between">
             <Skeleton className="h-4 w-24" />

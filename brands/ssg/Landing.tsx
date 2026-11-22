@@ -205,7 +205,7 @@ const SsgLanding: React.FC<SsgLandingProps> = ({ onGetStarted }) => {
   const goRegister = () => { window.location.href = '/login?register=1'; };
 
   return (
-    <div className="ssg-landing min-h-screen bg-[#FFF6E5] text-[#3B1A0B] font-sans overflow-x-hidden">
+    <div className="ssg-landing min-h-screen bg-[#FFF6E5] text-[#3B1A0B] font-manrope overflow-x-hidden">
       {/* NAV */}
       <header className="fixed top-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-b border-orange-100">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 md:h-16 flex items-center gap-2 sm:gap-3">

@@ -6,11 +6,13 @@ import Avatar from '../components/Avatar';
 import SankalpRing from '../components/SankalpRing';
 import { useMySankalp, useOrgSankalp } from '../services/sankalpService';
 import { useCacheRefresh } from '../hooks/useCacheRefresh';
+import { invalidate } from '../services/requestCache';
 import ViharYearSelector from '../components/ViharYearSelector';
 import Modal from '../components/Modal';
 import StatusScreen from '../components/StatusScreen';
 import { Users, MapPin, Footprints, Download, FileText, Table, Activity, AlertCircle, X, Plus, Handshake, Medal, Crown, Shield, Flame, Calendar, SlidersHorizontal, Loader2, Share2, ChevronRight, Route } from 'lucide-react';
 import ThemedSelect from '../components/ThemedSelect';
+import { StatBlock } from '../components/core';
 import { placeOptions, type PlaceAliases } from '../services/placeAliases';
 import { BRAND } from '@brand';
 import { useToast } from '../context/ToastContext';
@@ -184,6 +186,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       };
 
       console.log("RPC Success. Data:", rpcData);
+      invalidate(`upcomingVihars:${currentUser.organization_id}`); // the new alert shows at once, not after the cache time
       showToast(`Alert sent with Priority!`, 'success');
       setIsAlertOpen(false);
       // Reset form
@@ -702,7 +705,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   };
 
   const SkeletonLoader = ({ width = "w-16" }) => (
-    <div className={`h-8 ${width} bg-gray-200 rounded animate-pulse mt-1`}></div>
+    <span aria-hidden="true" className={`inline-block align-middle h-[30px] ${width} rounded-lg bg-ink/10 animate-core-pulse`} />
   );
 
   // Tangerine redesign: Consistency + Recent Activity + Sankalp count are all
@@ -857,24 +860,25 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
   return (
     <div className="space-y-4 animate-fade-in relative">
       {/* Profile Completion Modal (Stats Page) */}
-      <Modal open={showProfileModal} onClose={() => setShowProfileModal(false)} maxWidth="max-w-sm" className="p-6 relative border-t-4 border-orange-500">
+      <Modal open={showProfileModal} onClose={() => setShowProfileModal(false)} maxWidth="max-w-sm" className="p-6 relative">
         <button
           onClick={() => setShowProfileModal(false)}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Close"
+          className="absolute top-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-sunken text-ink transition-colors hover:bg-line"
         >
           <X size={20} />
         </button>
-        <div className="flex justify-center mb-4 text-orange-500">
-          <AlertCircle size={48} className="drop-shadow-sm" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand">
+          <AlertCircle size={34} />
         </div>
-        <h3 className="text-xl font-bold text-center text-gray-900 mb-2">{t('dashboard.completeProfileTitle')}</h3>
-        <p className="text-sm text-center text-gray-600 mb-6 leading-relaxed">
+        <h3 className="display text-[1.75rem] font-bold text-center text-ink mb-2">{t('dashboard.completeProfileTitle')}</h3>
+        <p className="text-[15px] text-center text-ink-2 mb-6 leading-relaxed">
           {t('dashboard.completeProfileBody')}
         </p>
         <div className="flex gap-3">
           <button
             onClick={() => setShowProfileModal(false)}
-            className="flex-1 py-2.5 text-orange-700 font-semibold bg-orange-50 hover:bg-orange-100 rounded-xl transition-colors border border-orange-100"
+            className="flex-1 h-12 rounded-full bg-surface ring-1 ring-inset ring-line text-ink font-semibold hover:bg-white transition-colors"
           >
             {t('dashboard.later')}
           </button>
@@ -883,7 +887,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               setShowProfileModal(false);
               if (navigateToProfile) navigateToProfile();
             }}
-            className="flex-1 py-2.5 bg-gradient-to-r from-orange-600 to-saffron-600 hover:from-orange-700 hover:to-saffron-700 text-white font-bold rounded-xl shadow-lg shadow-orange-200 transition-all active:scale-95"
+            className="flex-1 h-12 rounded-full bg-brand hover:bg-brand-600 text-ink font-semibold transition active:translate-y-px"
           >
             {t('dashboard.completeNow')}
           </button>
@@ -892,44 +896,44 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
       {/* Alert Modal */}
       <Modal open={isAlertOpen} onClose={() => setIsAlertOpen(false)}>
-            <div className="p-5 flex justify-between items-center text-white shrink-0" style={{ background: 'linear-gradient(150deg,#FF9947 0%,#DE6B38 100%)' }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  <MapPin size={18} />
+            <div className="p-5 flex justify-between items-center gap-3 shrink-0 border-b border-line">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-2xl bg-brand text-ink flex items-center justify-center shrink-0">
+                  <MapPin size={20} />
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-base leading-tight">Announce Upcoming Vihar</h3>
-                  <p className="text-[11px] text-white/85 leading-tight">Every Sevak gets notified instantly</p>
+                <div className="min-w-0">
+                  <h3 className="display text-[1.45rem] font-bold text-ink">Announce Upcoming Vihar</h3>
+                  <p className="text-[13px] text-ink-2 mt-0.5">Every Sevak gets notified instantly</p>
                 </div>
               </div>
-              <button type="button" onClick={() => setIsAlertOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors shrink-0">
+              <button type="button" onClick={() => setIsAlertOpen(false)} aria-label="Close" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sunken text-ink hover:bg-line transition-colors shrink-0">
                 <X size={18} />
               </button>
             </div>
 
-            <form id="alertViharForm" onSubmit={handleCreateAlert} className="p-6 space-y-4 overflow-y-auto">
+            <form id="alertViharForm" onSubmit={handleCreateAlert} className="p-5 sm:p-6 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Date</label>
-                  <input type="date" required className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                  <label className="block text-sm font-medium text-ink-2 mb-1.5">Date</label>
+                  <input type="date" required className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70"
                     value={alertData.date} onChange={e => setAlertData({ ...alertData, date: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Time</label>
-                  <input type="time" required className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                  <label className="block text-sm font-medium text-ink-2 mb-1.5">Time</label>
+                  <input type="time" required className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70"
                     value={alertData.time} onChange={e => setAlertData({ ...alertData, time: e.target.value })} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">{BRAND.viharEntryExtras ? 'Vihar Session' : 'Type'}</label>
-                <div className="flex bg-[#F7F4F0] p-1 rounded-xl">
+                <label className="block text-sm font-medium text-ink-2 mb-1.5">{BRAND.viharEntryExtras ? 'Vihar Session' : 'Type'}</label>
+                <div className="flex gap-1 bg-sunken p-1 rounded-full">
                   {(['morning', 'evening'] as const).map(t => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => setAlertData({ ...alertData, type: t })}
-                      className={`flex-1 py-2 rounded-lg text-sm font-bold capitalize transition-all ${alertData.type === t ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-[#8A6A57]'}`}
+                      className={`flex-1 h-10 rounded-full text-sm font-semibold capitalize transition-colors ${alertData.type === t ? 'bg-brand text-ink' : 'text-ink-2'}`}
                     >
                       {t}
                     </button>
@@ -939,14 +943,14 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
               {BRAND.viharEntryExtras && (
                 <div>
-                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Vihar Type</label>
-                  <div className="flex bg-[#F7F4F0] p-1 rounded-xl">
+                  <label className="block text-sm font-medium text-ink-2 mb-1.5">Vihar Type</label>
+                  <div className="flex gap-1 bg-sunken p-1 rounded-full">
                     {(['internal', 'highway'] as const).map(k => (
                       <button
                         key={k}
                         type="button"
                         onClick={() => setAlertData({ ...alertData, routeKind: k })}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold capitalize transition-all ${alertData.routeKind === k ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-[#8A6A57]'}`}
+                        className={`flex-1 h-10 rounded-full text-sm font-semibold capitalize transition-colors ${alertData.routeKind === k ? 'bg-brand text-ink' : 'text-ink-2'}`}
                       >
                         {k}
                       </button>
@@ -957,37 +961,37 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">From</label>
-                  <ThemedSelect value={alertData.from} onChange={v => setAlertData({ ...alertData, from: v, to: '' })} options={placeOptions(uniqueAreas, placeAliases)} placeholder="Start Location" title="Vihar From" clearable={false} className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm" />
+                  <label className="block text-sm font-medium text-ink-2 mb-1.5">From</label>
+                  <ThemedSelect value={alertData.from} onChange={v => setAlertData({ ...alertData, from: v, to: '' })} options={placeOptions(uniqueAreas, placeAliases)} placeholder="Start Location" title="Vihar From" clearable={false} className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70" />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">To</label>
-                  <ThemedSelect value={alertData.to} onChange={v => setAlertData({ ...alertData, to: v })} options={placeOptions(uniqueAreas.filter(a => a !== alertData.from), placeAliases)} placeholder="End Location" title="Vihar To" disabled={!alertData.from} clearable={false} className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm" />
+                  <label className="block text-sm font-medium text-ink-2 mb-1.5">To</label>
+                  <ThemedSelect value={alertData.to} onChange={v => setAlertData({ ...alertData, to: v })} options={placeOptions(uniqueAreas.filter(a => a !== alertData.from), placeAliases)} placeholder="End Location" title="Vihar To" disabled={!alertData.from} clearable={false} className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Sadhu Bhagwan</label>
-                  <input type="number" min="0" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                  <label className="block text-sm font-medium text-ink-2 mb-1.5">Sadhu Bhagwan</label>
+                  <input type="number" min="0" className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70"
                     value={alertData.sadhu} onChange={e => setAlertData({ ...alertData, sadhu: Number(e.target.value) })} />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Sadhviji Bhagwan</label>
-                  <input type="number" min="0" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                  <label className="block text-sm font-medium text-ink-2 mb-1.5">Sadhviji Bhagwan</label>
+                  <input type="number" min="0" className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70"
                     value={alertData.sadhvi} onChange={e => setAlertData({ ...alertData, sadhvi: Number(e.target.value) })} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Name of Samuday</label>
-                <input type="text" maxLength={120} placeholder="e.g. Tapagachchh" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                <label className="block text-sm font-medium text-ink-2 mb-1.5">Name of Samuday</label>
+                <input type="text" maxLength={120} placeholder="e.g. Tapagachchh" className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70"
                   value={alertData.samuday} onChange={e => setAlertData({ ...alertData, samuday: e.target.value })} />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Name of Sadhu / Sadhvi</label>
-                <textarea rows={2} maxLength={500} placeholder="Names of the Maharaj Saheb / Sadhviji" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow resize-none"
+                <label className="block text-sm font-medium text-ink-2 mb-1.5">Name of Sadhu / Sadhvi</label>
+                <textarea rows={2} maxLength={500} placeholder="Names of the Maharaj Saheb / Sadhviji" className="w-full py-3 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70 resize-none"
                   value={alertData.names} onChange={e => setAlertData({ ...alertData, names: e.target.value })} />
               </div>
 
@@ -995,8 +999,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                 <AlertYesNo label="Wheelchair required" value={alertData.wheelchair} onChange={v => setAlertData({ ...alertData, wheelchair: v })} />
                 {alertData.wheelchair ? (
                   <div>
-                    <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">How many?</label>
-                    <input type="number" min={1} max={50} required className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                    <label className="block text-sm font-medium text-ink-2 mb-1.5">How many?</label>
+                    <input type="number" min={1} max={50} required className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70"
                       value={alertData.wheelchairCount} onChange={e => setAlertData({ ...alertData, wheelchairCount: Number(e.target.value) })} />
                   </div>
                 ) : <div />}
@@ -1006,21 +1010,21 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Emergency Contact Person</label>
-                  <input type="text" maxLength={80} placeholder="Name" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                  <label className="block text-sm font-medium text-ink-2 mb-1.5">Emergency Contact Person</label>
+                  <input type="text" maxLength={80} placeholder="Name" className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70"
                     value={alertData.contactName} onChange={e => setAlertData({ ...alertData, contactName: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Their Mobile</label>
-                  <input type="tel" inputMode="numeric" maxLength={10} placeholder="10 digits" className="w-full py-2.5 px-3 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm transition-shadow"
+                  <label className="block text-sm font-medium text-ink-2 mb-1.5">Their Mobile</label>
+                  <input type="tel" inputMode="numeric" maxLength={10} placeholder="10 digits" className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70"
                     value={alertData.contactPhone} onChange={e => setAlertData({ ...alertData, contactPhone: e.target.value.replace(/\D/g, '').slice(0, 10) })} />
                 </div>
               </div>
             </form>
 
-            <div className="p-5 border-t border-gray-100 flex gap-3 shrink-0">
-              <button type="button" onClick={() => setIsAlertOpen(false)} className="flex-1 py-3 text-[#8A6A57] font-bold hover:bg-gray-50 rounded-xl transition-colors">Cancel</button>
-              <button type="submit" form="alertViharForm" disabled={isLoading} className="flex-1 flex items-center justify-center gap-2 py-3 bg-saffron-600 hover:bg-saffron-700 text-white font-extrabold rounded-xl shadow-lg shadow-saffron-100 transition-all active:scale-[0.98] disabled:opacity-60">
+            <div className="p-4 sm:p-5 border-t border-line flex gap-3 shrink-0">
+              <button type="button" onClick={() => setIsAlertOpen(false)} className="flex-1 h-12 rounded-full bg-surface ring-1 ring-inset ring-line text-ink font-semibold hover:bg-white transition-colors">Cancel</button>
+              <button type="submit" form="alertViharForm" disabled={isLoading} className="flex-[1.4] flex items-center justify-center gap-2 h-12 rounded-full bg-brand hover:bg-brand-600 text-ink font-semibold transition active:translate-y-px disabled:opacity-60">
                 {isLoading ? <Loader2 size={18} className="animate-spin" /> : <MapPin size={18} />}
                 {isLoading ? 'Sending...' : 'Send Alert to All'}
               </button>
@@ -1028,10 +1032,10 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       </Modal>
 
       {/* Active Sevaks Modal */}
-      <Modal open={showActiveSevaksModal} onClose={() => setShowActiveSevaksModal(false)} maxWidth="max-w-md" className="relative border-t-4 border-orange-500">
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
-          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Activity size={20} className="text-orange-500" /> {t('dashboard.activeSevaksModalTitle')}</h3>
-          <button onClick={() => setShowActiveSevaksModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100">
+      <Modal open={showActiveSevaksModal} onClose={() => setShowActiveSevaksModal(false)} maxWidth="max-w-md" className="relative">
+        <div className="flex items-center justify-between gap-3 p-5 border-b border-line shrink-0">
+          <h3 className="display text-[1.45rem] font-bold text-ink flex items-center gap-2.5"><span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-block-lavender text-ink"><Activity size={18} /></span> {t('dashboard.activeSevaksModalTitle')}</h3>
+          <button onClick={() => setShowActiveSevaksModal(false)} aria-label="Close" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sunken text-ink hover:bg-line transition-colors shrink-0">
             <X size={20} />
           </button>
         </div>
@@ -1042,8 +1046,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                 const plainUsername = u.split('@')[0];
                 const fullName = sevakMap[u] || sevakMap[plainUsername] || plainUsername;
                 return (
-                  <li key={u} className="flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 text-orange-900 font-medium shadow-sm">
-                    <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-800 font-bold text-xs shrink-0 border border-orange-300">
+                  <li key={u} className="flex items-center gap-3 p-3 rounded-[20px] bg-white ring-1 ring-inset ring-line text-ink font-medium">
+                    <div className="w-10 h-10 rounded-full bg-sunken flex items-center justify-center text-ink font-semibold text-[13px] shrink-0">
                       {fullName.substring(0, 2).toUpperCase()}
                     </div>
                     <span className="truncate">{fullName}</span>
@@ -1052,42 +1056,42 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               })}
             </ul>
           ) : (
-            <div className="text-center text-gray-500 py-8">{t('dashboard.noActiveSevaks')}</div>
+            <div className="text-center text-ink-2 py-8">{t('dashboard.noActiveSevaks')}</div>
           )}
         </div>
       </Modal>
 
       {/* Export Configuration Modal */}
       <Modal open={showExportModal} onClose={() => !exporting && setShowExportModal(false)}>
-        <div className="p-4 flex justify-between items-center text-white shrink-0" style={{ background: 'linear-gradient(150deg,#FF9947 0%,#DE6B38 100%)' }}>
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal size={20} />
-            <h3 className="font-bold text-lg">Export Configuration</h3>
+        <div className="p-5 flex justify-between items-center gap-3 shrink-0 border-b border-line">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sunken text-ink"><SlidersHorizontal size={20} /></span>
+            <h3 className="display text-[1.45rem] font-bold text-ink">Export Configuration</h3>
           </div>
-          <button onClick={() => !exporting && setShowExportModal(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
+          <button onClick={() => !exporting && setShowExportModal(false)} aria-label="Close" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sunken text-ink hover:bg-line transition-colors shrink-0">
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-6 space-y-5 overflow-y-auto">
+        <div className="p-5 sm:p-6 space-y-5 overflow-y-auto">
           {/* Date Range */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-1.5"><Calendar size={14} /> Date Range</label>
+            <label className="block text-sm font-medium text-ink-2 mb-2 flex items-center gap-1.5"><Calendar size={15} /> Date Range</label>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] text-gray-400 mb-1">From</label>
-                <input type="date" className="w-full p-2 border rounded-lg text-sm" value={exportDateFrom} onChange={e => setExportDateFrom(e.target.value)} />
+                <label className="block text-[13px] text-ink-3 mb-1">From</label>
+                <input type="date" className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70" value={exportDateFrom} onChange={e => setExportDateFrom(e.target.value)} />
               </div>
               <div>
-                <label className="block text-[11px] text-gray-400 mb-1">To</label>
-                <input type="date" className="w-full p-2 border rounded-lg text-sm" value={exportDateTo} onChange={e => setExportDateTo(e.target.value)} />
+                <label className="block text-[13px] text-ink-3 mb-1">To</label>
+                <input type="date" className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70" value={exportDateTo} onChange={e => setExportDateTo(e.target.value)} />
               </div>
             </div>
           </div>
 
           {/* Gender / Report Type */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-1.5"><Users size={14} /> Report Type</label>
+            <label className="block text-sm font-medium text-ink-2 mb-2 flex items-center gap-1.5"><Users size={15} /> Report Type</label>
             <div className="grid grid-cols-3 gap-2">
               {([
                 { key: 'all', label: 'All (Common)' },
@@ -1098,14 +1102,14 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                   key={opt.key}
                   type="button"
                   onClick={() => setExportGender(opt.key)}
-                  className={`py-2 px-2 rounded-lg text-xs font-bold border transition-colors ${exportGender === opt.key ? 'bg-saffron-600 text-white border-saffron-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                  className={`min-h-[44px] py-2 px-2 rounded-2xl text-[13px] font-semibold leading-tight transition-colors ${exportGender === opt.key ? 'bg-brand text-ink' : 'bg-white text-ink-2 ring-1 ring-inset ring-line hover:bg-canvas'}`}
                 >
                   {opt.label}
                 </button>
               ))}
             </div>
             {exportGender !== 'all' && (
-              <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+              <p className="text-[13px] text-ink-3 mt-2 leading-relaxed">
                 Only Vihars with at least one {exportGender === 'male' ? 'Sevak' : 'Sevika'} will be included.
                 {exportGender === 'male' ? ' Sevika names are hidden from those rows.' : ' Sevak names are hidden from those rows.'}
               </p>
@@ -1114,15 +1118,15 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 
           {/* Columns */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Columns to Include</label>
+            <label className="block text-sm font-medium text-ink-2 mb-2">Columns to Include</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {EXPORT_COLUMNS.map(col => (
-                <label key={col.key} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-100">
+                <label key={col.key} className="flex items-center gap-2.5 min-h-[44px] text-[14px] text-ink bg-white ring-1 ring-inset ring-line rounded-2xl px-3 py-2 cursor-pointer hover:bg-canvas">
                   <input
                     type="checkbox"
                     checked={exportColumns[col.key]}
                     onChange={e => setExportColumns(prev => ({ ...prev, [col.key]: e.target.checked }))}
-                    className="accent-saffron-600"
+                    className="h-4 w-4 accent-[#E8730C]"
                   />
                   {col.label}
                 </label>
@@ -1131,12 +1135,12 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           </div>
         </div>
 
-        <div className="p-5 border-t border-gray-100 flex gap-3 shrink-0">
+        <div className="p-4 sm:p-5 border-t border-line flex gap-3 shrink-0">
           <button
             type="button"
             onClick={downloadPDF}
             disabled={exporting}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-bold transition-colors border border-red-100 disabled:opacity-50"
+            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 h-12 px-3 rounded-full bg-err-soft text-err text-[14px] font-semibold whitespace-nowrap transition-colors hover:brightness-95 disabled:opacity-50"
           >
             {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
             Download PDF
@@ -1145,7 +1149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             type="button"
             onClick={downloadExcel}
             disabled={exporting}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl text-sm font-bold transition-colors border border-green-100 disabled:opacity-50"
+            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 h-12 px-3 rounded-full bg-ok-soft text-ok text-[14px] font-semibold whitespace-nowrap transition-colors hover:brightness-95 disabled:opacity-50"
           >
             {exporting ? <Loader2 size={16} className="animate-spin" /> : <Table size={16} />}
             Export Excel
@@ -1163,28 +1167,28 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               <>
                 {/* Org name — first */}
                 {orgDetails ? (
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-saffron-50 self-start max-w-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-saffron-500 shrink-0" />
-                    <span className="text-xs font-bold text-saffron-700 truncate">
+                  <div className="inline-flex items-center gap-1.5 self-start max-w-full">
+                    <span className="w-2 h-2 rounded-full bg-brand shrink-0" />
+                    <span className="text-[13px] font-semibold text-ink-2 truncate">
                       {orgDetails.name}{orgDetails.city ? `, ${orgDetails.city}` : ''}
                     </span>
                   </div>
                 ) : isLoading ? (
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-saffron-50 self-start max-w-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-saffron-200 shrink-0" />
-                    <span className="h-3 w-28 bg-saffron-100 animate-pulse rounded" />
+                  <div className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-sunken self-start max-w-full">
+                    <span className="w-2 h-2 rounded-full bg-line shrink-0" />
+                    <span className="h-3 w-28 bg-line animate-core-pulse rounded-full" />
                   </div>
                 ) : null}
 
                 {/* Captain / Vice Captain badges — same size, below org name */}
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full text-xs font-bold bg-[#241C17] text-white">
-                    <Crown size={13} className="text-saffron-400 shrink-0" />
+                  <span className="inline-flex items-center gap-2 h-10 pl-3 pr-4 rounded-full text-[15px] font-bold bg-brand text-ink max-w-full">
+                    <Crown size={17} className="shrink-0" />
                     <span className="truncate">{t('dashboard.captain')}: {currentUser.full_name}</span>
                   </span>
                   {orgDetails?.vice_captain_name && (
-                    <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full text-xs font-bold bg-[#F1EAFB] text-[#6B4FAE]">
-                      <Shield size={13} className="shrink-0" />
+                    <span className="inline-flex items-center gap-1.5 h-8 pl-2.5 pr-3.5 rounded-full text-[13px] font-semibold bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100 max-w-full">
+                      <Crown size={13} className="shrink-0" />
                       <span className="truncate">{t('dashboard.viceCaptain')}: {orgDetails.vice_captain_name}</span>
                     </span>
                   )}
@@ -1192,33 +1196,33 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               </>
             ) : (
               <>
-                <p className="m-0 text-xs font-bold text-[#8A6A57]">{t('dashboard.jaiJinendra')}</p>
-                <h1 className="m-0 text-xl sm:text-2xl font-extrabold tracking-tight text-[#241C17] truncate">
+                <p className="m-0 text-[13px] font-medium text-ink-2">{t('dashboard.jaiJinendra')}</p>
+                <h1 className="display m-0 mt-0.5 text-[2rem] sm:text-[2.4rem] font-extrabold text-ink truncate">
                   {currentUser.full_name}
                 </h1>
                 {orgDetails ? (
-                  <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-saffron-50 self-start max-w-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-saffron-500 shrink-0" />
-                    <span className="text-xs font-bold text-saffron-700 truncate">
+                  <div className="mt-2 inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-surface ring-1 ring-inset ring-line self-start max-w-full">
+                    <span className="w-2 h-2 rounded-full bg-brand shrink-0" />
+                    <span className="text-[13px] font-semibold text-ink-2 truncate">
                       {orgDetails.name}{orgDetails.city ? `, ${orgDetails.city}` : ''}
                     </span>
                   </div>
                 ) : isLoading ? (
-                  <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-saffron-50 self-start max-w-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-saffron-200 shrink-0" />
-                    <span className="h-3 w-28 bg-saffron-100 animate-pulse rounded" />
+                  <div className="mt-2 inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-sunken self-start max-w-full">
+                    <span className="w-2 h-2 rounded-full bg-line shrink-0" />
+                    <span className="h-3 w-28 bg-line animate-core-pulse rounded-full" />
                   </div>
                 ) : null}
                 {(captainName || orgDetails?.vice_captain_name) && (
                   <div className="mt-1.5 flex flex-col gap-0.5">
                     {captainName && (
-                      <p className="m-0 text-[11px] font-semibold text-[#8A6A57]">
-                        {t('dashboard.captain')}: <span className="text-[#241C17] font-bold">{captainName}</span>
+                      <p className="m-0 text-[13px] font-medium text-ink-2">
+                        {t('dashboard.captain')}: <span className="text-ink font-semibold">{captainName}</span>
                       </p>
                     )}
                     {orgDetails?.vice_captain_name && (
-                      <p className="m-0 text-[11px] font-semibold text-[#8A6A57]">
-                        {t('dashboard.viceCaptain')}: <span className="text-[#241C17] font-bold">{orgDetails.vice_captain_name}</span>
+                      <p className="m-0 text-[13px] font-medium text-ink-2">
+                        {t('dashboard.viceCaptain')}: <span className="text-ink font-semibold">{orgDetails.vice_captain_name}</span>
                       </p>
                     )}
                   </div>
@@ -1233,7 +1237,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           <div className="flex flex-row gap-2 w-full md:w-auto shrink-0">
             <button
               onClick={() => setIsAlertOpen(true)}
-              className="flex-1 md:flex-none flex items-center justify-center gap-1.5 sm:gap-2 bg-saffron-600 hover:bg-saffron-700 text-white font-bold px-3 sm:px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 text-sm"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 h-12 px-5 rounded-full bg-brand hover:bg-brand-600 text-ink font-semibold text-[15px] transition active:translate-y-px"
             >
               <MapPin size={18} />
               <span className="truncate">{t('dashboard.alertVihar')}</span>
@@ -1242,7 +1246,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             <div className="relative flex-1 md:flex-none">
               <button
                 onClick={() => setShowExportModal(true)}
-                className="w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-[#241C17] font-semibold px-3 sm:px-4 py-2.5 rounded-xl transition-all active:scale-95 text-sm shadow-sm"
+                className="w-full flex items-center justify-center gap-2 h-12 px-5 rounded-full bg-surface ring-1 ring-inset ring-line hover:bg-white text-ink font-semibold text-[15px] transition active:translate-y-px"
               >
                 <Download size={18} />
                 <span className="truncate">{t('dashboard.export')}</span>
@@ -1256,7 +1260,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
         {currentUser.role === UserRole.SEVAK && onAddVihar && (
           <button
             onClick={onAddVihar}
-            className="flex items-center justify-center gap-1.5 bg-saffron-600 hover:bg-saffron-700 text-white font-bold h-10 px-4 rounded-full transition-all active:scale-95 text-sm w-full md:w-auto shrink-0"
+            className="flex items-center justify-center gap-2 h-12 px-5 rounded-full bg-brand hover:bg-brand-600 text-ink font-semibold text-[15px] transition active:translate-y-px w-full md:w-auto shrink-0"
           >
             <Plus size={18} />
             <span>{t('dashboard.addVihar')}</span>
@@ -1267,21 +1271,15 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       {/* No Vihar Since... — a personal nudge once a Sevak has gone quiet for a while */}
       {!isLoading && daysSinceLastVihar !== null && reminderLevel && (
         <div
-          className="rounded-[22px] p-5 flex items-center gap-4 text-white"
-          style={{
-            background: reminderLevel === 'high'
-              ? 'linear-gradient(150deg,#DC2626,#991B1B)'
-              : reminderLevel === 'mid'
-                ? 'linear-gradient(150deg,#EA580C,#C2410C)'
-                : 'linear-gradient(150deg,#F59E0B,#D97706)',
-          }}
+          className={`rounded-tile px-4 py-4 flex items-center gap-4 ${reminderLevel === 'high' ? 'text-white' : 'text-ink'}`}
+          style={{ background: reminderLevel === 'high' ? '#C63F3E' : reminderLevel === 'mid' ? '#E8730C' : '#EAC119' }}
         >
-          <div className="shrink-0 w-11 h-11 rounded-full bg-white/20 flex items-center justify-center">
+          <div className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center ${reminderLevel === 'high' ? 'bg-white/20' : 'bg-ink/10'}`}>
             <AlertCircle size={22} />
           </div>
           <div>
-            <p className="m-0 font-extrabold text-base">{reminderName ? `${reminderName}, ` : ''}No Vihar Since {n(daysSinceLastVihar)} Days</p>
-            <p className="m-0 text-sm text-white/90 mt-0.5">{reminderMessage}</p>
+            <p className="m-0 font-bold text-[16px]">{reminderName ? `${reminderName}, ` : ''}No Vihar Since {n(daysSinceLastVihar)} Days</p>
+            <p className="m-0 text-sm opacity-90 mt-0.5">{reminderMessage}</p>
           </div>
         </div>
       )}
@@ -1301,22 +1299,22 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
       {/* Stats section */}
       <div className="max-w-4xl space-y-3">
         {/* one line at any width: the Vihar Year already shows in the selector, so no extra chip */}
-        <div className="flex items-center justify-between gap-2 px-1">
-          <p className="m-0 min-w-0 truncate text-sm font-bold text-[#241C17]">{currentUser.role === UserRole.ORG_ADMIN ? t('dashboard.orgStats') : t('dashboard.yourStats')}</p>
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 pt-1">
+          <p className="display m-0 shrink-0 text-[1.6rem] font-bold text-ink">{currentUser.role === UserRole.ORG_ADMIN ? t('dashboard.orgStats') : t('dashboard.yourStats')}</p>
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => setShowShareSheet(true)}
               disabled={isLoading}
               aria-label="Share"
-              className="relative overflow-hidden inline-flex items-center gap-1.5 h-8 pl-1.5 pr-3 rounded-full bg-saffron-50 text-saffron-700 hover:bg-saffron-100 ring-1 ring-saffron-200 text-xs font-extrabold whitespace-nowrap transition active:scale-95 disabled:opacity-50"
+              className="relative overflow-hidden inline-flex items-center gap-1.5 h-10 pl-2 pr-3.5 rounded-full bg-brand-50 text-brand-700 hover:bg-brand-100 ring-1 ring-inset ring-brand-100 text-[13px] font-semibold whitespace-nowrap transition active:scale-95 disabled:opacity-50"
             >
               <span aria-hidden="true" className="share-badge-shine pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/80 to-transparent -skew-x-12" />
               <span className="relative flex -space-x-1.5">
-                <span className="share-badge-hop w-5 h-5 rounded-full bg-[#25D366] ring-2 ring-saffron-50 flex items-center justify-center">
+                <span className="share-badge-hop w-5 h-5 rounded-full bg-[#25D366] ring-2 ring-brand-50 flex items-center justify-center">
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="#fff" aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35zM12.05 21.5h-.01a9.4 9.4 0 0 1-4.8-1.32l-.34-.2-3.56.93.95-3.47-.22-.36a9.4 9.4 0 0 1-1.44-5.02c0-5.2 4.23-9.43 9.44-9.43a9.4 9.4 0 0 1 9.43 9.44c0 5.2-4.24 9.43-9.45 9.43zm8.03-17.46A11.3 11.3 0 0 0 12.05.72C5.8.72.7 5.8.7 12.06c0 2 .52 3.95 1.52 5.67L.6 23.6l6.02-1.58a11.3 11.3 0 0 0 5.42 1.38h.01c6.25 0 11.34-5.09 11.34-11.34 0-3.03-1.18-5.88-3.32-8.02z"/></svg>
                 </span>
-                <span className="share-badge-hop share-badge-hop-2 w-5 h-5 rounded-full ring-2 ring-saffron-50 flex items-center justify-center" style={{ background: 'radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)' }}>
+                <span className="share-badge-hop share-badge-hop-2 w-5 h-5 rounded-full ring-2 ring-brand-50 flex items-center justify-center" style={{ background: 'radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)' }}>
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" strokeWidth="2.4" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" fill="#fff" stroke="none" /></svg>
                 </span>
               </span>
@@ -1339,146 +1337,86 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
             />
           </Suspense>
         )}
-        {/* Quick Stats Grid — primary tiles (Tangerine redesign, flat tints) */}
+        {/* Quick Stats Grid — primary tiles (Design Core StatBlock: one colour per meaning, tight padding) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* 1. Total Km */}
-            <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#FFF0E5', animationDelay: '0ms' }}>
-              <div className="flex items-start justify-between">
-                {isLoading ? <SkeletonLoader /> : (
-                  <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalKm)}<span className="text-[13px] font-bold text-[#8A6A57]"> km</span></p>
-                )}
-                <Footprints size={21} style={{ color: '#DE8A5A' }} className="shrink-0" />
-              </div>
-              <p className="mt-1 text-xs font-semibold text-[#B5602C]">{t('dashboard.totalKm')}</p>
-            </div>
+            <StatBlock tone="mustard" className="app-stagger-in" style={{ animationDelay: '0ms' }} label={t('dashboard.totalKm')} icon={<Footprints />}
+              value={isLoading ? <SkeletonLoader /> : n(displayStats.totalKm)} unit={isLoading ? undefined : 'km'} />
 
             {/* 2. Total Vihars */}
-            <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#E9F4FD', animationDelay: '40ms' }}>
-              <div className="flex items-start justify-between">
-                {isLoading ? <SkeletonLoader /> : (
-                  <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalVihars)}</p>
-                )}
-                <MapPin size={21} style={{ color: '#5B9BC7' }} className="shrink-0" />
-              </div>
-              <p className="mt-1 text-xs font-semibold text-[#2E7EB0]">{t('dashboard.vihars')}</p>
-            </div>
+            <StatBlock tone="sky" className="app-stagger-in" style={{ animationDelay: '40ms' }} label={t('dashboard.vihars')} icon={<MapPin />}
+              value={isLoading ? <SkeletonLoader /> : n(displayStats.totalVihars)} />
 
             {/* 3. Sadhu / Sadhvi (combined) */}
-            <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#FCEAEB', animationDelay: '80ms' }}>
-              <div className="flex items-start justify-between">
-                {isLoading ? <SkeletonLoader /> : (
-                  <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalSadhu)}<span className="text-sm text-[#D9A6A5]"> / </span>{n(displayStats.totalSadhvi)}</p>
-                )}
-                <Users size={21} style={{ color: '#D68C89' }} className="shrink-0" />
-              </div>
-              <p className="mt-1 text-xs font-semibold text-[#C05A57]">{t('dashboard.sadhuSadhvi')}</p>
-            </div>
+            <StatBlock tone="pink" className="app-stagger-in" style={{ animationDelay: '80ms' }} label={t('dashboard.sadhuSadhvi')} icon={<Users />}
+              value={isLoading ? <SkeletonLoader /> : n(displayStats.totalSadhu)} of={isLoading ? undefined : n(displayStats.totalSadhvi)} />
 
             {/* 4. Co-Sevak — a Sevak's own most-frequent partner; not meaningful
                 for an Admin (who already sees Total Sevaks elsewhere), so
                 hidden there instead of showing a redundant sevak count. */}
             {currentUser.role !== UserRole.ORG_ADMIN && (
-              <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#F1EAFB', animationDelay: '120ms' }}>
-                <div className="flex items-start justify-between gap-2">
-                  {isLoading ? <SkeletonLoader /> : (
-                    displayStats.vSynergy && displayStats.vSynergy !== "N/A" ? (
-                      <p className="text-[15px] font-extrabold text-[#241C17] leading-tight truncate">{displayStats.vSynergy.split(',')[0]}</p>
-                    ) : (
-                      <p className="text-[15px] font-semibold text-[#8A6A57]/70 italic truncate">{t('dashboard.findPartner')}</p>
-                    )
-                  )}
-                  <Handshake size={21} style={{ color: '#9A85C9' }} className="shrink-0" />
-                </div>
-                <p className="mt-1 text-xs font-semibold text-[#6B4FAE]">{t('dashboard.coSevak')}</p>
-              </div>
+              <StatBlock tone="tea" className="app-stagger-in" style={{ animationDelay: '120ms' }} label={t('dashboard.coSevak')} icon={<Handshake />}
+                value={isLoading ? <SkeletonLoader /> : (
+                  displayStats.vSynergy && displayStats.vSynergy !== "N/A" ? (
+                    <span className="block truncate font-sans text-[18px] font-bold tracking-normal leading-[34px]">{displayStats.vSynergy.split(',')[0]}</span>
+                  ) : (
+                    <span className="block truncate font-sans text-[15px] font-medium italic tracking-normal leading-[34px] opacity-75">{t('dashboard.findPartner')}</span>
+                  )
+                )} />
             )}
           </div>
 
           {/* Secondary stats — Rank / Streak / Total Sevaks / Active Sevaks (kept from existing dashboard, not in the pilot mock but not removed) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {currentUser.role !== UserRole.ORG_ADMIN && (
-              <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#FFF6E0', animationDelay: '160ms' }}>
-                <div className="flex items-start justify-between">
-                  {isLoading ? <SkeletonLoader /> : (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-[22px] font-extrabold text-[#241C17] leading-none">#{n(displayStats.vRank)}</span>
-                      {typeof displayStats.vRank === 'number' && displayStats.totalOrgSevaks > 0 && (
-                        <span className="text-xs font-bold text-[#8A6A57]">/ {n(displayStats.totalOrgSevaks)}</span>
-                      )}
-                    </div>
-                  )}
-                  <Medal size={21} style={{ color: '#C9A227' }} className="shrink-0" />
-                </div>
-                <p className="mt-1 text-xs font-semibold text-[#946800]">{t('dashboard.rankInOrg')}</p>
-              </div>
+              <StatBlock tone="plain" className="app-stagger-in" style={{ animationDelay: '160ms' }} label={t('dashboard.rankInOrg')} icon={<Medal />}
+                value={isLoading ? <SkeletonLoader /> : `#${n(displayStats.vRank)}`}
+                of={!isLoading && typeof displayStats.vRank === 'number' && displayStats.totalOrgSevaks > 0 ? n(displayStats.totalOrgSevaks) : undefined} />
             )}
 
             {currentUser.role !== UserRole.ORG_ADMIN && (
-              <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#FFF0E5', animationDelay: '180ms' }}>
-                <div className="flex items-start justify-between">
-                  {isLoading ? <SkeletonLoader /> : (
-                    <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.streak)}</span>
-                  )}
-                  <Flame size={21} style={{ color: '#DE6B38' }} className="shrink-0" />
-                </div>
-                <p className="mt-1 text-xs font-semibold text-[#B5602C]">{t('dashboard.dayStreak')}</p>
-              </div>
+              <StatBlock tone="plain" className="app-stagger-in" style={{ animationDelay: '180ms' }} label={t('dashboard.dayStreak')} icon={<Flame />}
+                value={isLoading ? <SkeletonLoader /> : n(displayStats.streak)} />
             )}
 
-            <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#E6F7F0', animationDelay: '200ms' }}>
-              <div className="flex items-start justify-between">
-                {isLoading ? <SkeletonLoader /> : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.totalOrgSevaks)}</span>
-                    <span className="text-[10px] font-bold text-[#1F8A63]/70">{n(displayStats.totalMale || 0)}M / {n(displayStats.totalFemale || 0)}F</span>
-                  </div>
-                )}
-                <Users size={21} style={{ color: '#4EA37E' }} className="shrink-0" />
-              </div>
-              <p className="mt-1 text-xs font-semibold text-[#1F8A63]">{t('dashboard.totalSevaks')}</p>
-            </div>
+            <StatBlock tone="tea" className="app-stagger-in" style={{ animationDelay: '200ms' }} label={t('dashboard.totalSevaks')} icon={<Users />}
+              value={isLoading ? <SkeletonLoader /> : n(displayStats.totalOrgSevaks)}
+              sub={isLoading ? undefined : `${n(displayStats.totalMale || 0)}M / ${n(displayStats.totalFemale || 0)}F`} />
 
-            <div className="rounded-[18px] p-4 app-stagger-in" style={{ background: '#E3F6F5', animationDelay: '240ms' }}>
-              <div className="flex items-start justify-between">
-                {isLoading ? <SkeletonLoader /> : (
-                  <span className="text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.activeSevaks)}</span>
-                )}
-                <Activity size={21} style={{ color: '#2F9CA6' }} className="shrink-0" />
-              </div>
-              <button type="button" onClick={() => setShowActiveSevaksModal(true)} disabled={isLoading} title=">= 1 Vihar in last 30 days" className="mt-1.5 inline-flex items-center gap-0.5 text-xs font-bold px-2.5 py-1 bg-white/70 text-[#1B8A94] rounded-full hover:bg-white transition-colors active:scale-95 disabled:opacity-60">
-                {t('dashboard.activeSevaks')}<ChevronRight size={13} />
-              </button>
-            </div>
+            {/* Active Sevaks: the whole tile opens the same list (was the small button inside it) */}
+            <StatBlock tone="lavender" className="app-stagger-in" style={{ animationDelay: '240ms' }} label={t('dashboard.activeSevaks')}
+              value={isLoading ? <SkeletonLoader /> : n(displayStats.activeSevaks)}
+              onClick={() => setShowActiveSevaksModal(true)} disabled={isLoading} title=">= 1 Vihar in last 30 days" />
           </div>
 
           {BRAND.viharEntryExtras && (
-            <div className="rounded-[18px] p-4 app-stagger-in flex items-center justify-between gap-3" style={{ background: '#EEF1FB', animationDelay: '260ms' }}>
+            <div className="rounded-tile px-4 py-3.5 app-stagger-in flex items-center justify-between gap-3 bg-surface ring-1 ring-inset ring-line" style={{ animationDelay: '260ms' }}>
               <div className="flex items-center gap-5">
                 <div>
-                  {isLoading ? <SkeletonLoader /> : <p className="m-0 text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.internalVihars || 0)}</p>}
-                  <p className="m-0 mt-1 text-xs font-semibold text-[#4A5BA8]">Internal</p>
+                  {isLoading ? <SkeletonLoader /> : <p className="display num m-0 text-[2.1rem] font-extrabold leading-none text-ink">{n(displayStats.internalVihars || 0)}</p>}
+                  <p className="m-0 mt-1.5 flex items-center gap-1.5 text-[13px] font-semibold text-ink-2"><span className="h-2.5 w-2.5 rounded-full bg-block-sky" />Internal</p>
                 </div>
-                <span className="w-px h-9 bg-[#4A5BA8]/20" />
+                <span className="w-px h-10 bg-line" />
                 <div>
-                  {isLoading ? <SkeletonLoader /> : <p className="m-0 text-[22px] font-extrabold text-[#241C17] leading-none">{n(displayStats.highwayVihars || 0)}</p>}
-                  <p className="m-0 mt-1 text-xs font-semibold text-[#4A5BA8]">Highway</p>
+                  {isLoading ? <SkeletonLoader /> : <p className="display num m-0 text-[2.1rem] font-extrabold leading-none text-ink">{n(displayStats.highwayVihars || 0)}</p>}
+                  <p className="m-0 mt-1.5 flex items-center gap-1.5 text-[13px] font-semibold text-ink-2"><span className="h-2.5 w-2.5 rounded-full bg-block-mustard" />Highway</p>
                 </div>
               </div>
-              <Route size={21} style={{ color: '#6E7FC9' }} className="shrink-0" />
+              <Route size={20} className="shrink-0 text-ink-2" />
             </div>
           )}
 
           {/* Consistency — this week */}
-          <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-            <p className="m-0 mb-3.5 text-sm font-bold text-[#241C17]">{t('dashboard.consistencyThisWeek')}</p>
+          <div className="bg-surface rounded-card p-4 sm:p-5 ring-1 ring-inset ring-line">
+            <p className="m-0 mb-3 text-[16px] font-semibold text-ink">{t('dashboard.consistencyThisWeek')}</p>
             <div className="grid grid-cols-7 gap-2 text-center">
               {weeklyConsistency.map((d, i) => (
                 <div key={d.label}>
-                  <p className="m-0 mb-1.5 text-[10px] font-bold text-gray-400">{d.label}</p>
+                  <p className="m-0 mb-1.5 text-[11px] font-semibold text-ink-3">{d.label}</p>
                   <div
-                    className="w-full aspect-square rounded-full app-stagger-in"
+                    className="w-full max-w-[44px] mx-auto aspect-square rounded-full app-stagger-in"
                     style={{
-                      background: d.count >= 3 ? '#3FA34D' : d.count === 2 ? '#E8B923' : d.count === 1 ? '#DE6B38' : '#F2EEE8',
+                      background: d.count >= 3 ? '#245E55' : d.count === 2 ? '#EAC119' : d.count === 1 ? '#E8730C' : '#E9E3D8',
                       animationDelay: `${i * 40}ms`,
                     }}
                     title={d.count > 0 ? `${d.count} Vihar${d.count === 1 ? '' : 's'}` : undefined}
@@ -1489,30 +1427,30 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-white rounded-[22px] p-5 flex flex-col gap-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+          <div className="bg-surface rounded-card p-4 sm:p-5 flex flex-col gap-3.5 ring-1 ring-inset ring-line">
             <div className="flex items-center justify-between">
-              <p className="m-0 text-sm font-bold text-[#241C17]">{t('dashboard.recentActivity')}</p>
+              <p className="m-0 text-[16px] font-semibold text-ink">{t('dashboard.recentActivity')}</p>
               {navigateToEntries && (
-                <button onClick={navigateToEntries} className="text-[12.5px] font-bold text-saffron-600 hover:text-saffron-700">
+                <button onClick={navigateToEntries} className="h-9 px-3 -mr-2 rounded-full text-[13px] font-semibold text-brand-700 hover:bg-brand-50">
                   {t('dashboard.viewAllVihars')}
                 </button>
               )}
             </div>
             {recentActivity.length === 0 ? (
-              <p className="text-sm text-gray-400">{t('dashboard.noVisharsLogged')}</p>
+              <p className="text-[15px] text-ink-2">{t('dashboard.noVisharsLogged')}</p>
             ) : (
               recentActivity.map((entry, i) => (
                 <div key={entry.id} className="flex items-center gap-3 app-stagger-in" style={{ animationDelay: `${i * 40}ms` }}>
-                  <div className="shrink-0 w-[38px] h-[38px] rounded-full bg-[#EAF6E6] flex items-center justify-center">
-                    <Footprints size={17} className="text-[#5A9A45]" />
+                  <div className="shrink-0 w-10 h-10 rounded-2xl bg-sunken flex items-center justify-center">
+                    <Footprints size={18} className="text-ink" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="m-0 text-[13.5px] font-bold text-[#241C17] truncate">{entry.vihar_from} → {entry.vihar_to}</p>
-                    <p className="mt-0.5 text-xs text-gray-500 capitalize">
+                    <p className="m-0 text-[15px] font-semibold text-ink truncate">{entry.vihar_from} → {entry.vihar_to}</p>
+                    <p className="mt-0.5 text-[13px] text-ink-3 capitalize">
                       {formatRelativeDate(entry.vihar_date)} · {entry.vihar_type} · {n((entry.sevaks || []).length)} {(entry.sevaks || []).length === 1 ? t('dashboard.sevak') : t('dashboard.sevaks')}
                     </p>
                   </div>
-                  <p className="m-0 text-sm font-extrabold text-saffron-600 shrink-0">{n((entry.distance_km ?? entry.haversine_km ?? 0).toFixed(1))} km</p>
+                  <p className="display num m-0 text-[1.15rem] font-extrabold text-ink shrink-0">{n((entry.distance_km ?? entry.haversine_km ?? 0).toFixed(1))} km</p>
                 </div>
               ))
             )}
@@ -1528,8 +1466,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
 // A labelled Yes / No switch for the Alert Vihar form.
 const AlertYesNo: React.FC<{ label: string; value: boolean; onChange: (v: boolean) => void }> = ({ label, value, onChange }) => (
   <div>
-    <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">{label}</label>
-    <div className="flex bg-[#F7F4F0] p-1 rounded-xl" role="radiogroup" aria-label={label}>
+    <label className="block text-sm font-medium text-ink-2 mb-1.5">{label}</label>
+    <div className="flex gap-1 bg-sunken p-1 rounded-full" role="radiogroup" aria-label={label}>
       {[true, false].map(v => (
         <button
           key={String(v)}
@@ -1537,7 +1475,7 @@ const AlertYesNo: React.FC<{ label: string; value: boolean; onChange: (v: boolea
           role="radio"
           aria-checked={value === v}
           onClick={() => onChange(v)}
-          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${value === v ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-[#8A6A57]'}`}
+          className={`flex-1 h-10 rounded-full text-sm font-semibold transition-colors ${value === v ? 'bg-brand text-ink' : 'text-ink-2'}`}
         >
           {v ? 'Yes' : 'No'}
         </button>

@@ -14,14 +14,24 @@ const BLOCKED = 'This account belongs to a different platform. Please sign in wi
 
 // An organisation this device has already seen pass the check (per site), so the app can still open offline.
 const verifiedKey = (organizationId: string) => `brandOk:${BRAND.id}:${organizationId}`;
+// Stored as the time it passed (older versions stored '1').
 const rememberVerified = (organizationId: string | null | undefined) => {
-  try { if (organizationId) localStorage.setItem(verifiedKey(organizationId), '1'); } catch { /* optional */ }
+  try { if (organizationId) localStorage.setItem(verifiedKey(organizationId), String(Date.now())); } catch { /* optional */ }
 };
 const wasVerified = (organizationId: string | null | undefined) => {
-  try { return !!organizationId && localStorage.getItem(verifiedKey(organizationId)) === '1'; } catch { return false; }
+  try { return !!organizationId && !!localStorage.getItem(verifiedKey(organizationId)); } catch { return false; }
+};
+// Passed on this device in the last 24 hours: skip asking again on every app open. A group never moves platform.
+const RECHECK_MS = 24 * 60 * 60 * 1000;
+const verifiedRecently = (organizationId: string | null | undefined) => {
+  try {
+    const at = Number(organizationId ? localStorage.getItem(verifiedKey(organizationId)) : 0);
+    return at > 1 && Date.now() - at < RECHECK_MS;
+  } catch { return false; }
 };
 
 export async function brandAccessError(organizationId: string | null | undefined): Promise<string | null> {
+  if (verifiedRecently(organizationId)) return null;
   try {
     const { data, error } = await supabase.rpc('org_brand', { p_org: organizationId });
     if (error) throw error;

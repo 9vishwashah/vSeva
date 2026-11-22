@@ -106,10 +106,10 @@ export const LastSevenDaysChart: React.FC<{ entries: ViharEntry[]; anchorDate: D
   const todayKey = toLocalDateKey(new Date());
 
   return (
-    <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)] flex flex-col" onMouseLeave={() => t.setTip(x => (x?.pinned ? x : null))}>
+    <div className="bg-surface rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)] flex flex-col" onMouseLeave={() => t.setTip(x => (x?.pinned ? x : null))}>
       <div className="flex items-baseline justify-between gap-2 mb-4">
-        <p className="m-0 text-sm font-bold text-[#241C17]">Vihars · Last 7 Days</p>
-        <p className="m-0 text-xs font-semibold text-[#8A6A57]">{plural(total, 'Vihar')}</p>
+        <p className="m-0 text-sm font-bold text-ink">Vihars · Last 7 Days</p>
+        <p className="m-0 text-xs font-semibold text-ink-2">{plural(total, 'Vihar')}</p>
       </div>
       <div ref={t.ref} className="relative flex-1 flex flex-col">
         {t.tip && <Tip day={t.tip.day} x={t.tip.x} y={t.tip.y} bottom={t.tip.bottom} containerWidth={t.width} />}
@@ -124,9 +124,9 @@ export const LastSevenDaysChart: React.FC<{ entries: ViharEntry[]; anchorDate: D
                 type="button"
                 aria-label={`${fmtLong(d.date)}: ${d.count ? plural(d.count, 'Vihar') : 'no Vihar'}`}
                 {...t.handlers(d)}
-                className="relative flex-1 h-full flex flex-col justify-end items-center outline-none focus-visible:ring-2 focus-visible:ring-saffron-300 rounded-md"
+                className="relative flex-1 h-full flex flex-col justify-end items-center outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md"
               >
-                {d.count > 0 && <span className="mb-1 text-[11px] font-bold text-[#241C17]">{d.count}</span>}
+                {d.count > 0 && <span className="mb-1 text-[11px] font-bold text-ink">{d.count}</span>}
                 <span
                   data-mark
                   className="w-full max-w-[44px] rounded-t-[4px] transition-[height,background-color] duration-300"
@@ -138,13 +138,13 @@ export const LastSevenDaysChart: React.FC<{ entries: ViharEntry[]; anchorDate: D
         </div>
         <div className="flex gap-2 mt-1.5">
           {days.map(d => (
-            <span key={d.key} className={`flex-1 text-center text-[10px] font-semibold ${d.key === todayKey ? 'text-saffron-700' : 'text-gray-400'}`}>
+            <span key={d.key} className={`flex-1 text-center text-[11px] font-semibold ${d.key === todayKey ? 'text-brand-700' : 'text-ink-3'}`}>
               {d.date.toLocaleDateString('en-IN', { weekday: 'short' })}
             </span>
           ))}
         </div>
       </div>
-      {total === 0 && <p className="m-0 mt-3 text-xs text-[#8A6A57]">No Vihars in these 7 days yet.</p>}
+      {total === 0 && <p className="m-0 mt-3 text-xs text-ink-2">No Vihars in these 7 days yet.</p>}
     </div>
   );
 };
@@ -192,18 +192,18 @@ export const ConsistencyCalendar: React.FC<{ entries: ViharEntry[]; anchorDate: 
   };
 
   return (
-    <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+    <div className="bg-surface rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-between gap-2 mb-1">
-        <p className="m-0 text-sm font-bold text-[#241C17]">Consistency</p>
-        <p className="m-0 text-xs font-semibold text-[#8A6A57]">{plural(activeDays, 'day')} · {plural(total, 'Vihar')}</p>
+        <p className="m-0 text-sm font-bold text-ink">Consistency</p>
+        <p className="m-0 text-xs font-semibold text-ink-2">{plural(activeDays, 'day')} · {plural(total, 'Vihar')}</p>
       </div>
       <div className="flex items-center justify-between gap-2 mb-3">
-        <p className="m-0 text-[15px] font-extrabold text-[#241C17]">{month.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</p>
+        <p className="m-0 text-[15px] font-extrabold text-ink">{month.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</p>
         <div className="flex items-center gap-1">
-          <button type="button" onClick={() => go(-1)} aria-label="Previous month" className="w-9 h-9 rounded-full flex items-center justify-center text-[#8A6A57] hover:bg-[#F7F4F0] active:scale-95 transition">
+          <button type="button" onClick={() => go(-1)} aria-label="Previous month" className="w-9 h-9 rounded-full flex items-center justify-center text-ink-2 hover:bg-sunken/60 active:scale-95 transition">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
           </button>
-          <button type="button" onClick={() => go(1)} disabled={!canNext} aria-label="Next month" className="w-9 h-9 rounded-full flex items-center justify-center text-[#8A6A57] hover:bg-[#F7F4F0] active:scale-95 transition disabled:opacity-30 disabled:pointer-events-none">
+          <button type="button" onClick={() => go(1)} disabled={!canNext} aria-label="Next month" className="w-9 h-9 rounded-full flex items-center justify-center text-ink-2 hover:bg-sunken/60 active:scale-95 transition disabled:opacity-30 disabled:pointer-events-none">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
           </button>
         </div>
@@ -212,7 +212,7 @@ export const ConsistencyCalendar: React.FC<{ entries: ViharEntry[]; anchorDate: 
       <div ref={t.ref} className="relative" onMouseLeave={() => t.setTip(x => (x?.pinned ? x : null))}>
         {t.tip && <Tip day={t.tip.day} x={t.tip.x} y={t.tip.y} bottom={t.tip.bottom} containerWidth={t.width} />}
         <div className="grid grid-cols-7 gap-y-1.5 text-center">
-          {WEEKDAYS.map(w => <span key={w} className="text-[10px] font-bold text-gray-400 pb-1">{w}</span>)}
+          {WEEKDAYS.map(w => <span key={w} className="text-[11px] font-bold text-ink-3 pb-1">{w}</span>)}
           {cells.map((d, i) => {
             if (!d) return <span key={`blank-${i}`} />;
             const isToday = d.key === todayKey;
@@ -225,7 +225,7 @@ export const ConsistencyCalendar: React.FC<{ entries: ViharEntry[]; anchorDate: 
                   disabled={d.future}
                   aria-label={`${fmtLong(d.date)}: ${d.count ? plural(d.count, 'Vihar') : 'no Vihar'}`}
                   {...(d.future ? {} : t.handlers(d))}
-                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full text-[13px] font-bold outline-none transition-transform duration-150 hover:scale-110 focus-visible:ring-2 focus-visible:ring-saffron-300 disabled:hover:scale-100 ${active ? 'ring-2 ring-[#241C17] ring-offset-2' : isToday ? 'ring-2 ring-saffron-500 ring-offset-2' : ''}`}
+                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full text-[13px] font-bold outline-none transition-transform duration-150 hover:scale-110 focus-visible:ring-2 focus-visible:ring-brand disabled:hover:scale-100 ${active ? 'ring-2 ring-[#241C17] ring-offset-2' : isToday ? 'ring-2 ring-brand ring-offset-2' : ''}`}
                   style={{
                     background: d.future ? 'transparent' : dayColour(d.count),
                     color: d.future ? '#C9C2BA' : filled ? '#FFFFFF' : '#5C4A3F',
@@ -238,7 +238,7 @@ export const ConsistencyCalendar: React.FC<{ entries: ViharEntry[]; anchorDate: 
           })}
         </div>
         {/* legend */}
-        <div className="mt-3.5 flex items-center justify-end gap-3 text-[10px] font-semibold text-[#8A6A57]">
+        <div className="mt-3.5 flex items-center justify-end gap-3 text-[11px] font-semibold text-ink-2">
           {[['1', DAY_COLOURS.one], ['2', DAY_COLOURS.two], ['3+', DAY_COLOURS.many]].map(([label, colour]) => (
             <span key={label} className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full" style={{ background: colour }} />{label} Vihar{label === '1' ? '' : 's'}</span>
           ))}

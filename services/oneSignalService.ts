@@ -1,3 +1,4 @@
+import { PUSH_RECEIVED_EVENT } from './notificationsStore';
 // Track initialization state
 let initPromise: Promise<void> | null = null;
 
@@ -71,6 +72,9 @@ export const initOneSignal = async () => {
         }
         const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
         await OneSignal.initialize(appId);
+        // A push arriving while the app is open: refresh the bell now instead of at its next 3-minute check.
+        // Listening only; how the notification is shown is unchanged.
+        try { OneSignal.Notifications.addEventListener('foregroundWillDisplay', () => window.dispatchEvent(new Event(PUSH_RECEIVED_EVENT))); } catch { /* optional */ }
         // The notification permission is asked later, once someone is signed in and the app is on screen
         // (askNativePushPermission, from loginToOneSignal), never during start-up: see there.
         console.log('OneSignal: Native SDK initialized');
@@ -109,6 +113,8 @@ export const initOneSignal = async () => {
         // more than any property-existence check made afterwards.
         await new Promise(r => setTimeout(r, 800));
         console.log('OneSignal: Initialized');
+        // same as on Android: refresh the bell when a push arrives while the page is open (listening only)
+        try { OneSignal.Notifications.addEventListener('foregroundWillDisplay', () => window.dispatchEvent(new Event(PUSH_RECEIVED_EVENT))); } catch { /* optional */ }
       } catch (err) {
         console.error('OneSignal: Initialization failed', err);
       } finally {

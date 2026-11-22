@@ -420,7 +420,15 @@ export default defineConfig(({ mode }) => {
           // the app's own images too (logo, icons, the share-card photo) so screens look right offline;
           // not the website's screenshots / guide PDF, the notification art, or the social preview
           globPatterns: ['**/*.{js,css,html,png,jpg,svg,webp,woff2,webmanifest}'],
-          globIgnores: ['vseva-site/screens/**', 'vseva-site/*.pdf', 'notify/**', '*-og-preview.png'],
+          globIgnores: [
+            'vseva-site/**', 'notify/**', '*-og-preview.png', // the website's own files (its pages don't install the app)
+            // Big parts most people never open (map, Excel/PDF export, fonts for PDFs, image capture, India map,
+            // Super Admin, the PDF partner logo, the full-size logos): not downloaded on install. sw.js keeps each
+            // one on the device the first time it is used, so it still works offline after that.
+            'assets/DirectoryMap-*', 'assets/vendor-excel-*', 'assets/vendor-pdf-*', 'assets/NotoSans*',
+            'assets/html2canvas*', 'assets/IndiaMap-*', 'assets/index.es-*', 'assets/SuperAdmin*', 'assets/vsg-*',
+            'vseva-logo-full.png', 'vseva-logo-removebg.png', 'pwa-512x512.png',
+          ],
         },
         devOptions: {
           enabled: false,

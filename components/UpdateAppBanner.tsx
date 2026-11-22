@@ -71,22 +71,22 @@ export const UpdateAppBanner: React.FC = () => {
   if (!needRefresh || justUpdated) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 md:bottom-8 md:left-auto md:right-8 z-[200] max-w-sm bg-white border border-gray-100 shadow-2xl rounded-2xl p-5 flex flex-col gap-3 animate-in slide-in-from-bottom-4 fade-in duration-300">
+    <div className="fixed bottom-24 left-4 right-4 md:bottom-8 md:left-auto md:right-8 z-[200] max-w-sm bg-surface border border-line shadow-2xl rounded-2xl p-5 flex flex-col gap-3 animate-in slide-in-from-bottom-4 fade-in duration-300">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-            <RefreshCw size={20} className="text-orange-600" />
+          <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
+            <RefreshCw size={20} className="text-brand-700" />
           </div>
           <div>
-            <h4 className="font-bold text-gray-900 text-sm">App Update Available</h4>
-            <p className="text-xs text-gray-500 mt-0.5 leading-tight">
+            <h4 className="font-bold text-ink text-sm">App Update Available</h4>
+            <p className="text-xs text-ink-2 mt-0.5 leading-tight">
               A new version of {BRAND.name} is available! Update now to get the latest features.
             </p>
           </div>
         </div>
         <button
           onClick={() => setNeedRefresh(false)}
-          className="text-gray-400 hover:text-gray-600 transition-colors p-1 -mr-1 -mt-1"
+          className="text-ink-3 hover:text-ink-2 transition-colors p-1 -mr-1 -mt-1"
           aria-label="Dismiss update notification"
         >
           <X size={18} />
@@ -95,7 +95,7 @@ export const UpdateAppBanner: React.FC = () => {
 
       <button
         onClick={handleUpdate}
-        className="w-full mt-2 py-2.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white text-sm font-bold rounded-xl shadow-md transition-all active:scale-95"
+        className="w-full mt-2 py-2.5 bg-brand text-ink text-sm font-bold rounded-xl shadow-md transition-all active:scale-95"
       >
         Update App Now
       </button>

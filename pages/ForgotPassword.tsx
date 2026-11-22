@@ -71,22 +71,22 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
     if (successMessage) {
         return (
             <div className="text-center space-y-6 animate-in fade-in zoom-in duration-300 py-8">
-                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 bg-info-soft text-info rounded-full flex items-center justify-center mx-auto">
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
 
                 <div>
-                    <h2 className="text-2xl font-serif font-bold text-gray-800 mb-2">Request Sent</h2>
-                    <p className="text-gray-600 max-w-sm mx-auto">
+                    <h2 className="display text-[2rem] font-extrabold text-ink mb-2">Request Sent</h2>
+                    <p className="text-[15px] text-ink-2 max-w-sm mx-auto">
                         {successMessage}
                     </p>
                 </div>
 
                 <button
                     onClick={onBack}
-                    className="w-full bg-saffron-600 hover:bg-saffron-700 text-white py-3 rounded-lg font-medium transition-colors border border-transparent"
+                    className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand text-[16px] font-semibold text-ink transition hover:bg-brand-600 active:translate-y-px disabled:opacity-60"
                 >
                     Back to Login
                 </button>
@@ -97,25 +97,25 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
     return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="flex items-center gap-3">
-                <button type="button" onClick={onBack} aria-label="Back" className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-saffron-600">
+                <button type="button" onClick={onBack} aria-label="Back" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sunken text-ink transition-colors hover:bg-line">
                     <ArrowLeft size={20} />
                 </button>
-                <img src={BRAND.logo} alt={BRAND.name} className="h-8 w-8 object-contain" />
-                <h2 className="text-2xl font-serif font-bold text-gray-800">Forgot Password</h2>
+                <img src={BRAND.logo} alt={BRAND.name} className="h-10 w-10 object-contain" />
+                <h2 className="display text-[1.9rem] font-extrabold text-ink">Forgot Password</h2>
             </div>
 
-            <p className="text-sm leading-relaxed text-gray-600">
+            <p className="text-[15px] leading-relaxed text-ink-2">
                 <strong>Sevaks:</strong> enter your username — your Captain is notified and resets your password (it is your mobile number, so mention it if your number has changed).<br />
                 <strong>Captains:</strong> enter your email to get a reset link.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Username / Email</label>
+                    <label className="mb-1.5 block text-sm font-medium text-ink-2">Username / Email</label>
                     <input
                         type="text"
                         required
-                        className="h-12 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-3.5 text-[15px] text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-saffron-400 focus:bg-white focus:ring-4 focus:ring-saffron-100"
+                        className="h-12 w-full rounded-field bg-white text-[16px] text-ink placeholder:text-ink-3/70 ring-1 ring-inset ring-line outline-none transition focus:ring-2 focus:ring-ink px-4"
                         placeholder={BRAND.usernameHint}
                         value={emailOrUsername}
                         onChange={(e) => setEmailOrUsername(e.target.value)}
@@ -125,7 +125,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-saffron-500 to-saffron-600 text-base font-semibold text-white shadow-lg shadow-saffron-300/50 transition hover:brightness-105 active:scale-[0.99] disabled:opacity-70"
+                    className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brand text-[16px] font-semibold text-ink transition hover:bg-brand-600 active:translate-y-px disabled:opacity-60"
                 >
                     {loading ? <Loader2 className="animate-spin" size={20} /> : "Reset Password"}
                 </button>

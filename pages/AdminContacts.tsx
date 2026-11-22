@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, ContactNumber } from '../types';
 import { dataService } from '../services/dataService';
-import { PhoneCall, PlusCircle, Trash2, Loader2, Phone } from 'lucide-react';
+import { PhoneCall, PlusCircle, Trash2, Loader2, Phone, Crown, X as XIcon } from 'lucide-react';
+import Modal from '../components/Modal';
+import Avatar from '../components/Avatar';
 import { useToast } from '../context/ToastContext';
 import Skeleton from '../components/Skeleton';
 import SevakDirectorySection from '../components/SevakDirectorySection';
@@ -14,11 +16,28 @@ interface AdminContactsProps {
 
 const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
     const { showToast } = useToast();
+    // A contact who is also in this group (same mobile, else same name) shows their own profile photo.
+    // Same lookup the Sevak directory below already loads (cached), so no extra request.
+    const [people, setPeople] = useState<Record<string, { full_name: string; mobile: string; avatar_url?: string | null }>>({});
+    useEffect(() => {
+        dataService.getOrgSevakContacts(currentUser.organization_id).then(setPeople).catch(() => undefined);
+    }, [currentUser.organization_id]);
+    const photoFor = (label: string, phone?: string | null) => {
+        const digits = (phone || '').replace(/\D/g, '').slice(-10);
+        const name = label.trim().toLowerCase();
+        const list = Object.values(people) as { full_name: string; mobile: string; avatar_url?: string | null }[];
+        // One person can have two accounts (e.g. Captain + Sevak) on the same number; use whichever has a photo
+        const byPhone = digits.length === 10 ? list.filter(p => (p.mobile || '').replace(/\D/g, '').slice(-10) === digits) : [];
+        const pool = byPhone.length ? byPhone : list.filter(p => (p.full_name || '').trim().toLowerCase() === name);
+        return pool.find(p => p.avatar_url)?.avatar_url || null;
+    };
+
     const [contacts, setContacts] = useState<ContactNumber[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<'offline' | 'error' | null>(null);
     const [contactForm, setContactForm] = useState({ label: '', phone: '', description: '' });
     const [addingContact, setAddingContact] = useState(false);
+    const [addOpen, setAddOpen] = useState(false);
     const [deletingContactId, setDeletingContactId] = useState<number | null>(null);
 
     const load = async () => {
@@ -52,6 +71,7 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
             });
             setContacts(prev => [...prev, newContact]);
             setContactForm({ label: '', phone: '', description: '' });
+            setAddOpen(false);
             showToast('Contact added successfully!', 'success');
         } catch (err: any) {
             showToast(err.message || 'Failed to add contact', 'error');
@@ -78,86 +98,100 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
         <div className="max-w-2xl mx-auto space-y-6 pb-8">
             {/* Header */}
             <div>
-                <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2">
-                    <PhoneCall size={20} className="text-saffron-600" />
+                <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink flex items-center gap-2">
+                    <PhoneCall size={20} className="text-brand-700" />
                     Manage Contacts
                 </h1>
-                <p className="text-xs text-[#8A6A57]">Contacts added here appear on every Sevak's Contacts page</p>
+                <p className="text-xs text-ink-2">Contacts added here appear on every Sevak's Contacts page</p>
             </div>
 
-            {/* Add Contact Form */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-5 border-b border-gray-100 bg-gray-50/60">
-                    <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
-                        <PlusCircle size={18} className="text-saffron-600" />
-                        Add New Contact
-                    </h2>
-                </div>
-                <form onSubmit={handleAddContact} className="p-5">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1">
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                                Contact Name / Role
-                            </label>
-                            <input
-                                type="text"
-                                required
-                                placeholder="e.g. Vijay Mehta"
-                                value={contactForm.label}
-                                onChange={e => setContactForm({ ...contactForm, label: e.target.value })}
-                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
-                            />
-                        </div>
-                        <div className="flex-1">
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                                Mobile Number (10 digits)
-                            </label>
-                            <input
-                                type="tel"
-                                required
-                                maxLength={10}
-                                placeholder="9876543210"
-                                value={contactForm.phone}
-                                onChange={e =>
-                                    setContactForm({ ...contactForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })
-                                }
-                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-saffron-500 outline-none font-mono"
-                            />
+            {/* Add Contact pop-up (opened from the button beside "Emergency Contacts List") */}
+            <Modal open={addOpen} onClose={() => !addingContact && setAddOpen(false)} maxWidth="max-w-md" closeOnBackdrop={!addingContact}>
+                <div className="p-5 flex justify-between items-start gap-3 shrink-0 border-b border-line">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-11 h-11 rounded-2xl bg-brand text-ink flex items-center justify-center shrink-0"><PlusCircle size={20} /></span>
+                        <div className="min-w-0">
+                            <h3 className="display text-[1.4rem] font-bold text-ink">Add Contact</h3>
+                            <p className="text-[13px] text-ink-2 mt-0.5">Shown to every Sevak on their Contacts page</p>
                         </div>
                     </div>
-                    {/* Description row */}
-                    <div className="mt-3">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Description / Note <span className="text-gray-400 font-normal">(optional)</span>
-                        </label>
+                    <button type="button" onClick={() => setAddOpen(false)} disabled={addingContact} aria-label="Close" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sunken text-ink hover:bg-line transition-colors shrink-0 disabled:opacity-50">
+                        <XIcon size={18} />
+                    </button>
+                </div>
+                <form onSubmit={handleAddContact} className="p-5 space-y-4 overflow-y-auto">
+                    <div>
+                        <label htmlFor="contact-label" className="block text-sm font-medium text-ink-2 mb-1.5">Contact Name / Role</label>
                         <input
+                            id="contact-label"
                             type="text"
-                            placeholder="e.g. For route queries, upcoming vihar schedule..."
-                            value={contactForm.description}
-                            onChange={e => setContactForm({ ...contactForm, description: e.target.value })}
-                            className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
+                            required
+                            autoFocus
+                            placeholder="e.g. Vijay Mehta"
+                            value={contactForm.label}
+                            onChange={e => setContactForm({ ...contactForm, label: e.target.value })}
+                            className="w-full h-12 rounded-field bg-white ring-1 ring-inset ring-line px-4 text-[16px] text-ink outline-none transition focus:ring-2 focus:ring-brand"
                         />
                     </div>
-                    {/* Add button */}
-                    <button
-                        type="submit"
-                        disabled={addingContact}
-                        className="mt-3 w-full flex items-center justify-center gap-2 bg-saffron-600 hover:bg-saffron-700 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors text-sm shadow-sm"
-                    >
-                        {addingContact ? <Loader2 size={16} className="animate-spin" /> : <PlusCircle size={16} />}
-                        Add Contact
-                    </button>
+                    <div>
+                        <label htmlFor="contact-phone" className="block text-sm font-medium text-ink-2 mb-1.5">Mobile Number (10 digits)</label>
+                        <input
+                            id="contact-phone"
+                            type="tel"
+                            inputMode="numeric"
+                            required
+                            maxLength={10}
+                            placeholder="9876543210"
+                            value={contactForm.phone}
+                            onChange={e =>
+                                setContactForm({ ...contactForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })
+                            }
+                            className="num w-full h-12 rounded-field bg-white ring-1 ring-inset ring-line px-4 text-[16px] text-ink outline-none transition focus:ring-2 focus:ring-brand tracking-wide"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="contact-desc" className="block text-sm font-medium text-ink-2 mb-1.5">
+                            Description / Note <span className="text-ink-3 font-normal">(optional)</span>
+                        </label>
+                        <input
+                            id="contact-desc"
+                            type="text"
+                            placeholder="e.g. Captain, Vice Captain, route queries"
+                            value={contactForm.description}
+                            onChange={e => setContactForm({ ...contactForm, description: e.target.value })}
+                            className="w-full h-12 rounded-field bg-white ring-1 ring-inset ring-line px-4 text-[16px] text-ink outline-none transition focus:ring-2 focus:ring-brand"
+                        />
+                    </div>
+                    <div className="flex gap-3 pt-1">
+                        <button type="button" onClick={() => setAddOpen(false)} disabled={addingContact} className="flex-1 h-12 rounded-full text-[15px] font-semibold bg-surface ring-1 ring-inset ring-line text-ink disabled:opacity-50">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={addingContact} className="flex flex-1 items-center justify-center gap-2 h-12 rounded-full text-[15px] font-semibold bg-brand text-ink hover:bg-brand-600 disabled:opacity-60 active:translate-y-px">
+                            {addingContact ? <Loader2 size={16} className="animate-spin" /> : <PlusCircle size={16} />}
+                            Add Contact
+                        </button>
+                    </div>
                 </form>
-            </div>
+            </Modal>
 
             {/* Contacts List */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-5 border-b border-gray-100 bg-gray-50/60">
-                    <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
-                        <Phone size={18} className="text-saffron-600" />
-                        Emergency Contacts List
-                    </h2>
-                    <p className="text-xs text-gray-400 mt-0.5">Added only by the Captain — shown to every Sevak</p>
+            <div className="bg-surface rounded-2xl shadow-sm border border-line overflow-hidden">
+                <div className="p-5 border-b border-line bg-gray-50/60 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <h2 className="text-base font-bold text-ink flex items-center gap-2">
+                            <Phone size={18} className="text-brand-700 shrink-0" />
+                            Emergency Contacts List
+                        </h2>
+                        <p className="text-xs text-ink-3 mt-0.5">Added only by the Captain — shown to every Sevak</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setAddOpen(true)}
+                        className="shrink-0 inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-brand hover:bg-brand-600 text-ink text-[14px] font-semibold transition active:translate-y-px"
+                    >
+                        <PlusCircle size={16} />
+                        Add Contact
+                    </button>
                 </div>
 
                 {loading ? (
@@ -178,30 +212,27 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                     </div>
                 ) : contacts.length === 0 ? (
                     <div className="flex flex-col items-center py-14 text-center gap-3">
-                        <div className="p-4 bg-saffron-50 rounded-2xl">
-                            <Phone size={28} className="text-saffron-400" />
+                        <div className="p-4 bg-brand-50 rounded-2xl">
+                            <Phone size={28} className="text-brand" />
                         </div>
-                        <p className="text-sm text-gray-400">No contacts yet. Add one above.</p>
+                        <p className="text-sm text-ink-3">No contacts yet. Tap Add Contact to add one.</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-100">
-                        {contacts.map((contact) => (
+                    <div className="divide-y divide-line">
+                        {contacts.map((contact, index) => (
                             <div
                                 key={contact.id}
-                                className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/80 transition-colors group"
+                                className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 hover:bg-white transition-colors group"
                             >
-                                {/* Avatar */}
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-saffron-400 to-saffron-600 flex items-center justify-center shrink-0 shadow-sm">
-                                    <span className="text-white text-xs font-bold">
-                                        {contact.label.substring(0, 2).toUpperCase()}
-                                    </span>
-                                </div>
+                                {/* Serial number + the same round picture as the Sevak directory */}
+                                <span className="num text-[11px] font-semibold text-ink-3 bg-sunken h-5 px-1.5 min-w-[34px] inline-flex items-center justify-center rounded-full whitespace-nowrap shrink-0">#{index + 1}</span>
+                                <Avatar name={contact.label} url={photoFor(contact.label, contact.phone)} size={36} className="text-[11px]" />
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-gray-800 truncate">{contact.label}</p>
+                                    <p className="text-[15px] font-semibold text-ink leading-snug line-clamp-2 break-words">{contact.label}</p>
                                     {contact.description && (
-                                        <p className="text-xs text-gray-400 mt-0.5 italic truncate">{contact.description}</p>
+                                        <span className="mt-1 inline-flex max-w-full items-center gap-1 h-6 px-2.5 rounded-full bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100 text-[12px] font-semibold">{/captain/i.test(contact.description) && <Crown size={12} className="shrink-0" />}<span className="truncate">{contact.description}</span></span>
                                     )}
                                 </div>
 
@@ -209,7 +240,7 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
                                 <button
                                     onClick={() => handleDeleteContact(contact.id)}
                                     disabled={deletingContactId === contact.id}
-                                    className="shrink-0 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
+                                    className="shrink-0 p-1.5 sm:p-2 text-ink-3 hover:text-err hover:bg-err-soft rounded-lg transition-colors disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
                                     title="Remove contact"
                                     aria-label={`Remove ${contact.label}`}
                                 >
@@ -230,7 +261,7 @@ const AdminContacts: React.FC<AdminContactsProps> = ({ currentUser }) => {
             {/* Sevak Contact Directory — every sevak's own number, read-only */}
             <SevakDirectorySection currentUser={currentUser} />
 
-            <p className="text-center text-xs text-gray-400">
+            <p className="text-center text-xs text-ink-3">
                 Sevaks will see these contacts on their Contacts page with Call &amp; WhatsApp options
             </p>
         </div>

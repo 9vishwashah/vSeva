@@ -62,13 +62,13 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, maxWidth = 'max-
     return createPortal(
         <div
             ref={swipe.backdropRef}
-            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 app-modal-backdrop"
+            className="fixed inset-0 z-[100] bg-ink/45 flex items-center justify-center p-4 app-modal-backdrop"
             onClick={closeOnBackdrop ? onClose : undefined}
         >
             <div
                 ref={swipe.sheetRef}
                 {...swipe.handlers}
-                className={`bg-white rounded-[22px] shadow-2xl w-full ${maxWidth} overflow-hidden app-modal-card flex flex-col max-h-[90vh] ${className}`}
+                className={`bg-surface rounded-[28px] ring-1 ring-inset ring-line/70 shadow-[0_24px_64px_rgb(29_29_27/0.2)] w-full ${maxWidth} overflow-hidden app-modal-card flex flex-col max-h-[90vh] ${className}`}
                 onClick={e => e.stopPropagation()}
             >
                 {children}

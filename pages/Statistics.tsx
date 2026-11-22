@@ -10,6 +10,7 @@ import LeaderboardCard from '../components/LeaderboardCard';
 import { LastSevenDaysChart, ConsistencyCalendar } from '../components/ViharActivityCharts';
 import { Trophy, Medal, Flame } from 'lucide-react';
 import Skeleton from '../components/Skeleton';
+import { StatBlock, StatBlockSkeleton } from '../components/core';
 import StatusScreen from '../components/StatusScreen';
 
 interface StatisticsProps {
@@ -135,16 +136,11 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
     return (
       <div className="max-w-5xl mx-auto space-y-5 pb-10">
         <div>
-          <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17]">Group Analytics</h1>
-          <p className="text-xs text-[#8A6A57]">Every number behind your Seva</p>
+          <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink">Group Analytics</h1>
+          <p className="text-xs text-ink-2">Every number behind your Seva</p>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {['#FFF0E5', '#E9F4FD', '#FCEAEB', '#F1EAFB'].map((bg, i) => (
-            <div key={i} className="rounded-[18px] p-4" style={{ background: bg }}>
-              <Skeleton className="h-7 w-16 mb-2" />
-              <Skeleton className="h-3 w-20" />
-            </div>
-          ))}
+          {[0, 1, 2, 3].map(i => <StatBlockSkeleton key={i} />)}
         </div>
         <Skeleton className="h-[120px] w-full rounded-[22px]" />
         <Skeleton className="h-[160px] w-full rounded-[22px]" />
@@ -185,32 +181,21 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2 flex-wrap">
+          <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink flex items-center gap-2 flex-wrap">
             Group Analytics
-            <span className="text-[10px] font-extrabold bg-saffron-100 text-saffron-700 px-2 py-0.5 rounded-full">{selectedVY.label}</span>
+            <span className="text-[11px] font-extrabold bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">{selectedVY.label}</span>
           </h1>
-          <p className="text-xs text-[#8A6A57]">Every number behind your Seva, this Vihar Year</p>
+          <p className="text-xs text-ink-2">Every number behind your Seva, this Vihar Year</p>
         </div>
       </div>
 
       {/* KPI grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="rounded-[18px] p-4" style={{ background: '#FFF0E5' }}>
-          <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{stats.totalKm}<span className="text-[13px] font-bold text-[#8A6A57]"> km</span></p>
-          <p className="mt-1 text-xs font-semibold text-[#B5602C]">Total Distance</p>
-        </div>
-        <div className="rounded-[18px] p-4" style={{ background: '#E9F4FD' }}>
-          <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{stats.totalVihars}</p>
-          <p className="mt-1 text-xs font-semibold text-[#2E7EB0]">Total Vihars</p>
-        </div>
-        <div className="rounded-[18px] p-4" style={{ background: '#FCEAEB' }}>
-          <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{stats.totalSadhu}<span className="text-sm text-[#D9A6A5]"> / </span>{stats.totalSadhvi}</p>
-          <p className="mt-1 text-xs font-semibold text-[#C05A57]">Sadhu / Sadhvi</p>
-        </div>
-        <div className="rounded-[18px] p-4" style={{ background: '#F1EAFB' }}>
-          <p className="text-[22px] font-extrabold text-[#241C17] leading-none">{stats.longestVihar ?? 0}<span className="text-[13px] font-bold text-[#8A6A57]"> km</span></p>
-          <p className="mt-1 text-xs font-semibold text-[#6B4FAE]">Longest Vihar</p>
-        </div>
+        {/* Design Core tiles: same colour meanings as the Dashboard (mustard = distance, sky = Vihars, pink = Sadhu / Sadhvi) */}
+        <StatBlock tone="mustard" label="Total Distance" value={stats.totalKm} unit="km" />
+        <StatBlock tone="sky" label="Total Vihars" value={stats.totalVihars} />
+        <StatBlock tone="pink" label="Sadhu / Sadhvi" value={stats.totalSadhu} of={stats.totalSadhvi} />
+        <StatBlock tone="plain" label="Longest Vihar" value={stats.longestVihar ?? 0} unit="km" />
       </div>
 
       {/* Sankalp */}
@@ -220,7 +205,7 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
 
       {/* Leaderboards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <LeaderboardCard title="Top Vihar Sevaks" icon={<Trophy size={20} />} items={leaderboard.male} colorClass="text-blue-600" bgClass="bg-blue-50" orgName={orgDetails?.name} orgCity={orgDetails?.city} captainName={captainName} viceCaptainName={orgDetails?.vice_captain_name} vyLabel={selectedVY.label} />
+        <LeaderboardCard title="Top Vihar Sevaks" icon={<Trophy size={20} />} items={leaderboard.male} colorClass="text-info" bgClass="bg-info-soft" orgName={orgDetails?.name} orgCity={orgDetails?.city} captainName={captainName} viceCaptainName={orgDetails?.vice_captain_name} vyLabel={selectedVY.label} />
         <LeaderboardCard title="Top Vihar Sevikas" icon={<Trophy size={20} />} items={leaderboard.female} colorClass="text-pink-600" bgClass="bg-pink-50" orgName={orgDetails?.name} orgCity={orgDetails?.city} captainName={captainName} viceCaptainName={orgDetails?.vice_captain_name} vyLabel={selectedVY.label} />
       </div>
 
@@ -231,20 +216,20 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
 
       {/* Gender participation */}
       {totalGenderCount > 0 && (
-        <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-          <p className="m-0 mb-4 text-sm font-bold text-[#241C17]">Participation by Gender</p>
+        <div className="bg-surface rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+          <p className="m-0 mb-4 text-sm font-bold text-ink">Participation by Gender</p>
           <div className="flex h-3.5 rounded-lg overflow-hidden mb-3">
-            <div style={{ width: `${malePct}%`, background: '#2E7EB0' }} />
-            <div style={{ width: `${femalePct}%`, background: '#C9628F' }} />
+            <div style={{ width: `${malePct}%`, background: '#9ED6DF' }} />
+            <div style={{ width: `${femalePct}%`, background: '#EAA7C7' }} />
           </div>
           <div className="flex gap-5">
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full" style={{ background: '#2E7EB0' }} />
-              <span className="text-xs font-semibold text-[#241C17]">Male · {malePct}%</span>
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#9ED6DF' }} />
+              <span className="text-xs font-semibold text-ink">Male · {malePct}%</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full" style={{ background: '#C9628F' }} />
-              <span className="text-xs font-semibold text-[#241C17]">Female · {femalePct}%</span>
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#EAA7C7' }} />
+              <span className="text-xs font-semibold text-ink">Female · {femalePct}%</span>
             </div>
           </div>
         </div>
@@ -252,16 +237,16 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
 
       {/* Highest Streaks — Captain-only, org-wide */}
       {isAdmin && streakLeaderboard.length > 0 && (
-        <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-          <p className="m-0 mb-3.5 text-sm font-bold text-[#241C17] flex items-center gap-1.5">
-            <Flame size={16} className="text-orange-500" /> Highest Streaks
+        <div className="bg-surface rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+          <p className="m-0 mb-3.5 text-sm font-bold text-ink flex items-center gap-1.5">
+            <Flame size={16} className="text-brand-700" /> Highest Streaks
           </p>
           <div className="space-y-2">
             {streakLeaderboard.slice(0, 8).map((s, i) => (
               <div key={s.username} className="flex items-center gap-3">
-                <span className={`w-6 text-xs font-bold ${i === 0 ? 'text-yellow-500' : i === 1 ? 'text-gray-400' : i === 2 ? 'text-orange-500' : 'text-gray-300'}`}>#{i + 1}</span>
-                <span className="flex-1 min-w-0 text-sm font-semibold text-[#241C17] truncate">{s.name}</span>
-                <span className="flex items-center gap-1 text-sm font-extrabold text-orange-600">
+                <span className={`w-6 text-xs font-bold ${i === 0 ? 'text-yellow-500' : i === 1 ? 'text-ink-3' : i === 2 ? 'text-brand-700' : 'text-ink-3'}`}>#{i + 1}</span>
+                <span className="flex-1 min-w-0 text-sm font-semibold text-ink truncate">{s.name}</span>
+                <span className="flex items-center gap-1 text-sm font-extrabold text-brand-700">
                   <Flame size={14} /> {s.streak} day{s.streak === 1 ? '' : 's'}
                 </span>
               </div>
@@ -272,20 +257,20 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
 
       {/* Top Routes */}
       {topRoutes.length > 0 && (
-        <div className="bg-white rounded-[22px] p-5 space-y-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-          <p className="m-0 text-sm font-bold text-[#241C17]">Top Routes</p>
+        <div className="bg-surface rounded-[22px] p-5 space-y-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+          <p className="m-0 text-sm font-bold text-ink">Top Routes</p>
           {topRoutes.map(([route, count]) => (
             <div key={route} className="flex items-center justify-between">
-              <p className="m-0 text-[13.5px] font-semibold text-[#241C17]">{route}</p>
-              <p className="m-0 text-[13px] font-bold text-saffron-600">{count} Vihar{count === 1 ? '' : 's'}</p>
+              <p className="m-0 text-[13.5px] font-semibold text-ink">{route}</p>
+              <p className="m-0 text-[13px] font-bold text-brand-700">{count} Vihar{count === 1 ? '' : 's'}</p>
             </div>
           ))}
         </div>
       )}
 
       {/* Achievements — real thresholds against real Vihar count */}
-      <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-        <p className="m-0 mb-3.5 text-sm font-bold text-[#241C17]">Achievements</p>
+      <div className="bg-surface rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+        <p className="m-0 mb-3.5 text-sm font-bold text-ink">Achievements</p>
         <div className="grid grid-cols-4 gap-2.5">
           {ACHIEVEMENT_THRESHOLDS.map(threshold => {
             const unlocked = stats.totalVihars >= threshold;
@@ -293,11 +278,11 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
               <div key={threshold} className="flex flex-col items-center gap-1.5">
                 <div
                   className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center"
-                  style={{ background: unlocked ? '#FFF0E5' : '#F2EEE8', opacity: unlocked ? 1 : 0.5 }}
+                  style={{ background: unlocked ? '#FFF4EA' : '#E9E3D8', opacity: unlocked ? 1 : 0.5 }}
                 >
-                  <Medal size={22} style={{ color: unlocked ? '#DE6B38' : '#B7B7AF' }} />
+                  <Medal size={22} style={{ color: unlocked ? '#E8730C' : '#A49D91' }} />
                 </div>
-                <span className={`text-[10.5px] font-bold ${unlocked ? 'text-[#241C17]' : 'text-[#B7B7AF]'}`}>{threshold} Vihar</span>
+                <span className={`text-[10.5px] font-bold ${unlocked ? 'text-ink' : 'text-ink-3'}`}>{threshold} Vihar</span>
               </div>
             );
           })}

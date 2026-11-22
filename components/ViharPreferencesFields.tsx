@@ -35,7 +35,7 @@ const ViharPreferencesFields: React.FC<Props> = ({ scope, preferences, onChange,
                 type="button"
                 aria-pressed={on}
                 onClick={() => toggle(p.value)}
-                className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-xs font-bold border transition active:scale-95 ${on ? 'bg-saffron-600 border-saffron-600 text-white' : 'bg-white border-gray-200 text-[#241C17]'}`}
+                className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-xs font-bold border transition active:scale-95 ${on ? 'bg-brand border-brand text-white' : 'bg-surface border-line text-ink'}`}
               >
                 {on && <Check size={13} />}
                 {p.label}

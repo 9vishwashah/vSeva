@@ -23,10 +23,10 @@ const TOTAL_STEPS = 4;
 // reference across renders — nesting it inside NewEntry caused React to
 // remount this whole subtree, including every input, on each keystroke.
 const StepCard: React.FC<{ n: number; title: string; children: React.ReactNode }> = ({ n, title, children }) => (
-  <div className="bg-white rounded-[22px] p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05)] space-y-5">
-    <div className="flex items-center gap-2.5">
-      <div className="w-6 h-6 rounded-full bg-saffron-600 text-white text-xs font-extrabold flex items-center justify-center shrink-0">{n}</div>
-      <p className="text-sm font-bold text-[#241C17]">{title}</p>
+  <div className="bg-surface rounded-card p-5 sm:p-6 ring-1 ring-inset ring-line space-y-5">
+    <div className="flex items-center gap-3">
+      <div className="num w-8 h-8 rounded-full bg-brand text-ink text-[14px] font-bold flex items-center justify-center shrink-0">{n}</div>
+      <p className="display text-[1.5rem] font-bold text-ink">{title}</p>
     </div>
     {children}
   </div>
@@ -58,6 +58,8 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
   });
 
   const [loading, setLoading] = useState(false);
+  // Tick animation after a successful save ("Vihar Added" / "Vihar Submitted" / "Vihar Updated")
+  const [savedLabel, setSavedLabel] = useState<string | null>(null);
   // Optional Vihar photo (brands with viharEntryPhoto): kept locally and uploaded only on submit
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -301,7 +303,8 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
         await dataService.createViharEntry(entryPayload);
         showToast("Vihar Entry Saved Successfully!", 'success');
       }
-      onSubmit();
+      setSavedLabel(isEditing ? 'Vihar Updated' : isSevakSubmission ? 'Vihar Submitted' : 'Vihar Added');
+      window.setTimeout(onSubmit, 1500);
     } catch (err: any) {
       console.error(err);
       showToast(`Error saving entry: ${err.message}`, 'error');
@@ -328,9 +331,9 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
 
     return (
       <div className="space-y-3 relative z-20">
-        <label className="text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider flex items-center justify-between">
-          <span>{title} {isRequired && <span className="text-red-500">*</span>}</span>
-          <span className="text-[10px] font-bold text-saffron-700 bg-saffron-100 px-2 py-0.5 rounded-full">{assignedSevaks.length} selected</span>
+        <label className="text-sm font-medium text-ink-2 flex items-center justify-between gap-2">
+          <span>{title} {isRequired && <span className="text-err">*</span>}</span>
+          <span className="num text-[12px] font-semibold text-ok bg-ok-soft px-2.5 h-6 inline-flex items-center rounded-full">{assignedSevaks.length} selected</span>
         </label>
 
         <div className="space-y-3">
@@ -340,17 +343,18 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
               const s = getSevakDetails(username);
               const isFemale = s?.gender?.toLowerCase() === 'female';
               const badgeStyle = isFemale
-                ? 'bg-pink-50 text-pink-700 border-pink-200'
-                : 'bg-blue-50 text-blue-700 border-blue-200';
+                ? 'bg-[#F6DCE8] text-ink'
+                : 'bg-[#DCEFF2] text-ink';
 
               return (
-                <div key={username} className={`flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full border text-sm font-medium ${badgeStyle}`}>
+                <div key={username} className={`flex items-center gap-1.5 h-9 pl-1 pr-2 rounded-full text-[14px] font-medium ${badgeStyle}`}>
                   <Avatar name={s?.full_name || username} url={s?.avatar_url} size={22} className="text-[9px]" />
                   <span>{s?.full_name}</span>
                   <button
                     type="button"
                     onClick={() => removeSevak(username, listType)}
-                    className="hover:bg-white/50 rounded-full p-0.5"
+                    aria-label="Remove"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/60"
                   >
                     <X size={14} />
                   </button>
@@ -358,42 +362,42 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
               );
             })}
             {assignedSevaks.length === 0 && (
-              <p className="text-xs text-[#8A6A57]/70 italic py-1">No sevaks assigned yet.</p>
+              <p className="text-[14px] text-ink-3 py-1">No sevaks assigned yet.</p>
             )}
           </div>
 
           {/* Search Input */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B7B7AF]" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" size={17} />
             <input
               type="text"
               placeholder="Search & add sevaks..."
-              className="w-full py-2.5 pl-9 pr-3 rounded-xl focus:ring-2 focus:ring-saffron-300 outline-none text-sm bg-[#F7F4F0] border-none"
+              className="w-full h-12 pl-11 pr-4 rounded-full bg-white ring-1 ring-inset ring-line focus:ring-2 focus:ring-ink outline-none text-[16px] text-ink placeholder:text-ink-3/70"
               value={searchValue}
               onChange={e => setSearchValue(e.target.value)}
             />
 
             {/* Results Dropdown */}
             {searchValue.trim() !== '' && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-[60]">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-surface ring-1 ring-line rounded-2xl shadow-xl max-h-56 overflow-y-auto z-[60] py-1">
                 {filtered.length > 0 ? (
                   filtered.map(s => (
                     <div
                       key={s.username}
                       onClick={() => handleSevakToggle(s.username, listType)}
-                      className="p-3 hover:bg-gray-50 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0"
+                      className="px-3 py-2.5 hover:bg-sunken cursor-pointer flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
                         <Avatar name={s.full_name} url={s.avatar_url} size={32} className="text-xs" />
-                        <span className="text-sm font-medium text-gray-700">{s.full_name}</span>
+                        <span className="text-[15px] font-medium text-ink">{s.full_name}</span>
                       </div>
-                      <div className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                      <div className="text-[12px] text-ink-2 bg-sunken px-2.5 py-0.5 rounded-full">
                         {s.gender || 'Unknown'}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-4 text-center text-sm text-gray-400">No matching sevaks found</div>
+                  <div className="p-4 text-center text-[14px] text-ink-2">No matching sevaks found</div>
                 )}
               </div>
             )}
@@ -403,26 +407,41 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
     );
   };
 
-  const inputClass = "w-full py-3 px-3.5 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm";
-  const labelClass = "text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider block mb-2";
-  const pillWrapClass = "flex bg-[#F7F4F0] p-1 rounded-xl";
-  const pillClass = (active: boolean) => `flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${active ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-[#8A6A57]'}`;
+  // Design Core (docs/design-core.md): white 16px fields with an inset line, labels above, segmented controls
+  const inputClass = "w-full py-3 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70";
+  const labelClass = "text-sm font-medium text-ink-2 block mb-2";
+  const pillWrapClass = "flex gap-1 bg-sunken p-1 rounded-full";
+  const pillClass = (active: boolean) => `flex-1 min-w-0 h-11 px-1.5 rounded-full text-[14px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis transition-colors ${active ? 'bg-brand text-ink' : 'text-ink-2'}`;
 
   return (
     <div className="max-w-xl mx-auto space-y-5 pb-24">
+      {savedLabel && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-ink/45 p-6 app-modal-backdrop" role="status" aria-live="polite">
+          <div className="w-full max-w-[18rem] rounded-[32px] bg-surface px-6 pt-8 pb-7 text-center shadow-[0_24px_64px_rgb(29_29_27/0.25)] app-modal-card">
+            <svg className="vs-tick mx-auto" width="96" height="96" viewBox="0 0 96 96" aria-hidden="true">
+              <circle className="vs-tick-ring" cx="48" cy="48" r="42" fill="#E8730C" />
+              <path className="vs-tick-mark" d="M30 49 L43 62 L67 36" fill="none" stroke="#1D1D1B" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <p className="display mt-5 text-[1.9rem] font-extrabold text-ink">{savedLabel}</p>
+            <p className="mt-1.5 text-[14px] text-ink-2">
+              {savedLabel === 'Vihar Submitted' ? 'Sent to your Captain for approval' : savedLabel === 'Vihar Updated' ? 'Your changes are saved' : 'Saved for your group'}
+            </p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="px-1">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-[#241C17]">
+        <h2 className="display text-[2.1rem] sm:text-[2.6rem] font-extrabold text-ink">
           {isReviewingPending ? 'Review & Correct Submission' : isEditing ? 'Edit Vihar Entry' : isSevakSubmission ? 'Submit Vihar for Approval' : 'New Vihar Entry'}
         </h2>
         {isSevakSubmission && (
-          <p className="text-sm text-[#8A6A57] mt-1">
+          <p className="text-[15px] text-ink-2 mt-2">
             This will be sent to your Captain for approval before it counts as an official Vihar.
           </p>
         )}
         {isSevakSubmission && step === 1 && (
-          <div className="mt-3 rounded-2xl border border-saffron-200 bg-saffron-50 px-4 py-3 text-sm text-[#5C3B22]">
-            <p className="m-0 font-extrabold text-saffron-700">Before you submit</p>
+          <div className="mt-3 rounded-2xl bg-brand-50 px-4 py-3 text-[14px] text-ink-2">
+            <p className="m-0 font-semibold text-brand-700">Before you submit</p>
             <ul className="m-0 mt-1 pl-4 list-disc space-y-0.5">
               <li>Select <b>every Sevak who was with you</b> on this Vihar, so it counts for all of them.</li>
               <li>Only <b>one Sevak</b> submits the Vihar, on behalf of everyone. Others should not submit it again.</li>
@@ -430,16 +449,16 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
           </div>
         )}
         {isReviewingPending && (
-          <span className="mt-2 inline-flex items-center gap-1.5 bg-saffron-100 text-saffron-700 text-xs font-bold px-3 py-1 rounded-full">
+          <span className="mt-3 inline-flex items-center gap-1.5 bg-warn-soft text-warn text-[13px] font-semibold px-3 h-7 rounded-full">
             <Clock size={12} /> Pending Captain Approval
           </span>
         )}
       </div>
 
       {/* Step progress */}
-      <div className="flex items-center gap-1.5 px-1">
+      <div className="flex items-center gap-1.5 px-1" aria-label={`Step ${step} of ${TOTAL_STEPS}`}>
         {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-          <div key={i} className={`flex-1 h-1.5 rounded-full ${i < step ? 'bg-saffron-600' : 'bg-saffron-100'}`} />
+          <div key={i} className={`flex-1 h-1.5 rounded-full ${i < step ? 'bg-brand' : 'bg-line'}`} />
         ))}
       </div>
 
@@ -460,18 +479,18 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
 
         {step === 1 && (
           <StepCard n={1} title="Date & Type">
-            <div className="flex gap-3">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 min-[440px]:grid-cols-2 gap-3">
+              <div className="min-w-0">
                 <label className={labelClass}>Date</label>
                 <input
                   type="date"
                   required
-                  className={inputClass}
+                  className={inputClass + ' min-w-0 px-3'}
                   value={formData.vihar_date}
                   onChange={e => setFormData({ ...formData, vihar_date: e.target.value })}
                 />
               </div>
-              <div className="flex-1">
+              <div className="min-w-0">
                 <label className={labelClass}>Vihar Session</label>
                 <div className={pillWrapClass}>
                   {['morning', 'evening'].map(type => (
@@ -509,11 +528,11 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
               <div className={`grid gap-3 ${BRAND.viharEntryExtras ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <div
                   onClick={() => setFormData(prev => ({ ...prev, group_sadhu: !prev.group_sadhu }))}
-                  className={`cursor-pointer border-2 rounded-xl p-3.5 transition-all relative ${formData.group_sadhu ? 'border-saffron-500 bg-saffron-50/60' : 'border-transparent bg-[#F7F4F0]'}`}
+                  className={`cursor-pointer border-2 rounded-2xl p-3.5 transition-colors relative ${formData.group_sadhu ? 'border-ink bg-block-sky' : 'border-transparent bg-sunken'}`}
                 >
                   <div className="flex flex-col items-center gap-1.5">
-                    <Users size={22} className={formData.group_sadhu ? 'text-saffron-600' : 'text-[#B7B7AF]'} />
-                    <span className={`text-sm font-bold ${formData.group_sadhu ? 'text-[#241C17]' : 'text-[#8A6A57]'}`}>{BRAND.viharEntryExtras ? 'Sadhu' : 'Sadhubhagwan'}</span>
+                    <Users size={22} className={formData.group_sadhu ? 'text-ink' : 'text-ink-3'} />
+                    <span className={`text-[15px] font-semibold ${formData.group_sadhu ? 'text-ink' : 'text-ink-2'}`}>{BRAND.viharEntryExtras ? 'Sadhu' : 'Sadhubhagwan'}</span>
                   </div>
                   {formData.group_sadhu && (
                     <div className="mt-2.5" onClick={e => e.stopPropagation()}>
@@ -522,7 +541,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                         min="1"
                         placeholder="Count"
                         autoFocus
-                        className="w-full text-center py-1.5 rounded-lg outline-none text-base font-extrabold text-[#241C17] bg-white"
+                        className="num w-full h-11 text-center rounded-xl outline-none text-[18px] font-bold text-ink bg-white focus:ring-2 focus:ring-ink"
                         value={formData.no_sadhubhagwan || ''}
                         onChange={e => setFormData({ ...formData, no_sadhubhagwan: parseInt(e.target.value) })}
                       />
@@ -532,11 +551,11 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
 
                 <div
                   onClick={() => setFormData(prev => ({ ...prev, group_sadhvi: !prev.group_sadhvi }))}
-                  className={`cursor-pointer border-2 rounded-xl p-3.5 transition-all relative ${formData.group_sadhvi ? 'border-pink-400 bg-pink-50/60' : 'border-transparent bg-[#F7F4F0]'}`}
+                  className={`cursor-pointer border-2 rounded-2xl p-3.5 transition-colors relative ${formData.group_sadhvi ? 'border-ink bg-block-pink' : 'border-transparent bg-sunken'}`}
                 >
                   <div className="flex flex-col items-center gap-1.5">
-                    <Users size={22} className={formData.group_sadhvi ? 'text-pink-600' : 'text-[#B7B7AF]'} />
-                    <span className={`text-sm font-bold ${formData.group_sadhvi ? 'text-[#241C17]' : 'text-[#8A6A57]'}`}>{BRAND.viharEntryExtras ? 'Sadhvi' : 'Sadhvijibhagwan'}</span>
+                    <Users size={22} className={formData.group_sadhvi ? 'text-ink' : 'text-ink-3'} />
+                    <span className={`text-[15px] font-semibold ${formData.group_sadhvi ? 'text-ink' : 'text-ink-2'}`}>{BRAND.viharEntryExtras ? 'Sadhvi' : 'Sadhvijibhagwan'}</span>
                   </div>
                   {formData.group_sadhvi && (
                     <div className="mt-2.5" onClick={e => e.stopPropagation()}>
@@ -545,7 +564,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                         min="1"
                         placeholder="Count"
                         autoFocus
-                        className="w-full text-center py-1.5 rounded-lg outline-none text-base font-extrabold text-[#241C17] bg-white"
+                        className="num w-full h-11 text-center rounded-xl outline-none text-[18px] font-bold text-ink bg-white focus:ring-2 focus:ring-ink"
                         value={formData.no_sadhvijibhagwan || ''}
                         onChange={e => setFormData({ ...formData, no_sadhvijibhagwan: parseInt(e.target.value) })}
                       />
@@ -556,11 +575,11 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                 {BRAND.viharEntryExtras && (
                   <div
                     onClick={() => setFormData(prev => ({ ...prev, no_mumukshu: prev.no_mumukshu! > 0 ? 0 : 1 }))}
-                    className={`cursor-pointer border-2 rounded-xl p-3.5 transition-all relative ${formData.no_mumukshu! > 0 ? 'border-purple-400 bg-purple-50/60' : 'border-transparent bg-[#F7F4F0]'}`}
+                    className={`cursor-pointer border-2 rounded-2xl p-3.5 transition-colors relative ${formData.no_mumukshu! > 0 ? 'border-ink bg-block-lavender' : 'border-transparent bg-sunken'}`}
                   >
                     <div className="flex flex-col items-center gap-1.5">
-                      <Users size={22} className={formData.no_mumukshu! > 0 ? 'text-purple-600' : 'text-[#B7B7AF]'} />
-                      <span className={`text-sm font-bold ${formData.no_mumukshu! > 0 ? 'text-[#241C17]' : 'text-[#8A6A57]'}`}>Mumukshu</span>
+                      <Users size={22} className={formData.no_mumukshu! > 0 ? 'text-ink' : 'text-ink-3'} />
+                      <span className={`text-[15px] font-semibold ${formData.no_mumukshu! > 0 ? 'text-ink' : 'text-ink-2'}`}>Mumukshu</span>
                     </div>
                     {formData.no_mumukshu! > 0 && (
                       <div className="mt-2.5" onClick={e => e.stopPropagation()}>
@@ -568,7 +587,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                           type="number"
                           min="1"
                           placeholder="Count"
-                          className="w-full text-center py-1.5 rounded-lg outline-none text-base font-extrabold text-[#241C17] bg-white"
+                          className="num w-full h-11 text-center rounded-xl outline-none text-[18px] font-bold text-ink bg-white focus:ring-2 focus:ring-ink"
                           value={formData.no_mumukshu || ''}
                           onChange={e => setFormData({ ...formData, no_mumukshu: Math.max(1, parseInt(e.target.value) || 1) })}
                         />
@@ -580,14 +599,14 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
             </div>
 
             <div>
-              <div className="flex justify-between items-end mb-2">
+              <div className="flex justify-between items-end gap-2 mb-2 flex-wrap">
                 <label className={labelClass + ' mb-0'}>Route Details</label>
                 {distanceInfo && (
-                  <span className="text-xs font-bold text-saffron-700 bg-saffron-100 px-2 py-1 rounded-full">{distanceInfo}</span>
+                  <span className="num text-[13px] font-semibold text-ink bg-[#F6E7AE] px-2.5 h-7 inline-flex items-center rounded-full">{distanceInfo}</span>
                 )}
               </div>
-              <div className="flex items-center gap-2 bg-[#F7F4F0] rounded-xl p-1.5">
-                <div className="relative flex-1">
+              <div className="flex items-center gap-1 bg-white ring-1 ring-inset ring-line rounded-field p-1 min-w-0">
+                <div className="relative flex-1 min-w-0">
                   <ThemedSelect
                     value={formData.vihar_from || ''}
                     onChange={v => setFormData({ ...formData, vihar_from: v, vihar_to: '' })}
@@ -596,12 +615,12 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                     title="Vihar From"
                     clearable={false}
                     hideChevron
-                    leading={<MapPin className="text-[#B7B7AF] shrink-0" size={15} />}
-                    className="w-full py-2 px-3 bg-transparent font-semibold text-sm text-[#241C17] outline-none"
+                    leading={<MapPin className="text-ink-3 shrink-0" size={17} />}
+                    className="w-full h-11 px-3 bg-transparent font-medium text-[16px] text-ink outline-none"
                   />
                 </div>
-                <ChevronDown className="rotate-[-90deg] text-[#B7B7AF] shrink-0" size={14} />
-                <div className="relative flex-1">
+                <ChevronDown className="rotate-[-90deg] text-ink-3 shrink-0" size={16} />
+                <div className="relative flex-1 min-w-0">
                   <ThemedSelect
                     value={formData.vihar_to || ''}
                     onChange={v => setFormData({ ...formData, vihar_to: v })}
@@ -611,8 +630,8 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
                     disabled={!formData.vihar_from}
                     clearable={false}
                     hideChevron
-                    leading={<Map className="text-[#B7B7AF] shrink-0" size={15} />}
-                    className="w-full py-2 px-3 bg-transparent font-semibold text-sm text-[#241C17] outline-none"
+                    leading={<Map className="text-ink-3 shrink-0" size={17} />}
+                    className="w-full h-11 px-3 bg-transparent font-medium text-[16px] text-ink outline-none"
                   />
                 </div>
               </div>
@@ -624,7 +643,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
           <StepCard n={3} title="Seva Requirements">
             {renderSevakSelector('Assign Sevaks', 'sevaks', sevakSearch, setSevakSearch, true)}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-line">
               <div className="space-y-3">
                 <label className={labelClass}>Wheelchair Provided?</label>
                 <div className={pillWrapClass}>
@@ -684,22 +703,22 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
               <div>
                 <label className={labelClass}>Vihar Photo (Optional)</label>
                 {photoPreview || formData.photo_url ? (
-                  <div className="relative rounded-2xl overflow-hidden bg-[#F7F4F0]">
+                  <div className="relative rounded-2xl overflow-hidden bg-sunken">
                     <img src={photoPreview || formData.photo_url || ''} alt="Vihar photo" className="w-full max-h-72 object-cover" />
                     <button
                       type="button"
                       onClick={removePhoto}
                       aria-label="Remove photo"
-                      className="absolute top-2 right-2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center active:scale-95"
+                      className="absolute top-2 right-2 w-10 h-10 rounded-full bg-ink/70 text-surface flex items-center justify-center active:scale-95"
                     >
                       <X size={16} />
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-saffron-200 bg-saffron-50/40 py-6 cursor-pointer text-saffron-700 active:scale-[0.99] transition">
+                  <label className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-line bg-surface py-6 cursor-pointer text-ink active:scale-[0.99] transition">
                     <ImagePlus size={24} />
-                    <span className="text-sm font-bold">Add a photo of the Vihar</span>
-                    <span className="text-[11px] font-semibold text-[#8A6A57]">From the camera or the gallery</span>
+                    <span className="text-[15px] font-semibold">Add a photo of the Vihar</span>
+                    <span className="text-[13px] text-ink-3">From the camera or the gallery</span>
                     <input type="file" accept="image/*" className="hidden" onChange={e => { pickPhoto(e.target.files?.[0]); e.target.value = ''; }} />
                   </label>
                 )}
@@ -713,7 +732,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
           <button
             type="button"
             onClick={goBack}
-            className="flex items-center justify-center gap-1.5 px-5 py-3.5 rounded-xl bg-white border border-gray-200 text-[#241C17] font-bold text-sm active:scale-95 transition-all"
+            className="flex items-center justify-center gap-1.5 h-14 px-5 rounded-full bg-surface ring-1 ring-inset ring-line text-ink font-semibold text-[15px] hover:bg-white active:translate-y-px transition"
           >
             <ChevronLeft size={16} />
             {step === 1 ? 'Cancel' : 'Back'}
@@ -723,7 +742,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
             <button
               type="button"
               onClick={goNext}
-              className="flex-1 py-3.5 rounded-xl bg-saffron-600 hover:bg-saffron-700 text-white font-extrabold text-sm shadow-lg active:scale-[0.98] transition-all"
+              className="flex-1 h-14 rounded-full bg-brand hover:bg-brand-600 text-ink font-semibold text-[16px] active:translate-y-px transition"
             >
               Next
             </button>
@@ -731,7 +750,7 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-saffron-600 hover:bg-saffron-700 text-white font-extrabold text-sm shadow-lg active:scale-[0.98] transition-all disabled:opacity-70"
+              className="flex-1 flex items-center justify-center gap-2 h-14 rounded-full bg-brand hover:bg-brand-600 text-ink font-semibold text-[16px] active:translate-y-px transition disabled:opacity-60"
             >
               {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
               {loading

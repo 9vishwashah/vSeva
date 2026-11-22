@@ -47,8 +47,8 @@ const Avatar: React.FC<AvatarProps> = ({ name, url, size = 40, variant = 'pale',
       style={{
         ...dim,
         fontSize: Math.max(9, Math.round(size * 0.38)),
-        background: isGradient ? 'linear-gradient(150deg,#FF9947 0%,#DE6B38 100%)' : '#FCE6D8',
-        color: isGradient ? '#fff' : '#C05A2C',
+        background: isGradient ? '#E8730C' : '#FCE2CC',
+        color: isGradient ? '#1D1D1B' : '#A44E07',
       }}
       className={`rounded-full flex items-center justify-center font-extrabold shrink-0 ${className}`}
     >

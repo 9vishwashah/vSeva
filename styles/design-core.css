@@ -1,0 +1,70 @@
+/*
+ * vSeva Design Core: tokens as CSS variables, for the few places that need them outside Tailwind
+ * (inline styles, charts, canvas). The same values are Tailwind names in tailwind.config.js.
+ * Phase 1: imported only by the isolated preview (design-core.html). See docs/design-core.md.
+ */
+.vs-core {
+  --vs-canvas: #f2eee7;
+  --vs-surface: #fbfaf7;
+  --vs-white: #ffffff;
+  --vs-sunken: #e9e3d8;
+  --vs-line: #ddd5c7;
+  --vs-ink: #1d1d1b;
+  --vs-ink-2: #57534b;
+  --vs-ink-3: #6f6a60;
+
+  --vs-brand: #e8730c;
+  --vs-brand-pressed: #cf6409;
+  --vs-brand-soft: #fce2cc;
+  --vs-brand-tint: #fff4ea;
+  --vs-brand-deep: #a44e07;
+
+  --vs-sky: #9ed6df;
+  --vs-tea: #245e55;
+  --vs-lavender: #808bc5;
+  --vs-mustard: #eac119;
+  --vs-pink: #eaa7c7;
+  --vs-seashell: #eae4da;
+
+  --vs-ok: #1f6b5f;
+  --vs-ok-soft: #d9eae5;
+  --vs-warn: #6b5409;
+  --vs-warn-soft: #f7e9b8;
+  --vs-err: #b33a39;
+  --vs-err-soft: #f6dcda;
+  --vs-info: #1e5a66;
+  --vs-info-soft: #dceff2;
+
+  background: var(--vs-canvas);
+  color: var(--vs-ink);
+  font-family: Geist, 'Noto Sans Gujarati', 'Noto Sans Devanagari', system-ui, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Display face: titles and big numbers only */
+.vs-core .display {
+  font-family: 'Bricolage Grotesque', 'Noto Sans Gujarati', 'Noto Sans Devanagari', Geist, system-ui, sans-serif;
+  font-variation-settings: 'opsz' 96, 'wdth' 92;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+/* Numbers line up in every tile and total */
+.vs-core .num {
+  font-variant-numeric: tabular-nums;
+}
+
+.vs-core :focus-visible {
+  outline: 2.5px solid var(--vs-ink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vs-core *,
+  .vs-core *::before,
+  .vs-core *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

@@ -45,14 +45,14 @@ const ViharYearSelector: React.FC<ViharYearSelectorProps> = ({ selectedStartYear
                     }
                     setOpen(o => !o);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-gray-200 shadow-sm hover:border-saffron-300 hover:bg-saffron-50/50 transition-colors text-xs font-bold text-[#241C17]"
+                className="num flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-surface ring-1 ring-inset ring-line hover:bg-white transition-colors text-[13px] font-semibold text-ink whitespace-nowrap"
             >
-                <Calendar size={13} className="text-saffron-600" />
+                <Calendar size={15} className="text-ink-2" />
                 {selectedBounds.label}
-                <ChevronDown size={13} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                <ChevronDown size={14} className={`text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
             {open && (
-                <div className={`absolute ${alignLeft ? 'left-0' : 'right-0'} mt-1.5 w-44 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 py-1`}>
+                <div className={`absolute ${alignLeft ? 'left-0' : 'right-0'} mt-2 w-44 bg-surface rounded-2xl shadow-xl ring-1 ring-line z-50 overflow-hidden py-1.5`}>
                     {options.map(y => {
                         const bounds = getViharYearBoundsForStartYear(y);
                         const isSelected = y === selectedStartYear;
@@ -62,10 +62,10 @@ const ViharYearSelector: React.FC<ViharYearSelectorProps> = ({ selectedStartYear
                                 key={y}
                                 type="button"
                                 onClick={() => { onChange(y); setOpen(false); }}
-                                className={`w-full text-left px-3.5 py-2 text-xs font-semibold flex items-center justify-between gap-2 hover:bg-saffron-50 transition-colors ${isSelected ? 'text-saffron-700 bg-saffron-50' : 'text-gray-600'}`}
+                                className={`num w-full text-left px-4 py-2.5 text-[14px] font-medium flex items-center justify-between gap-2 hover:bg-sunken transition-colors ${isSelected ? 'text-ink font-semibold bg-sunken' : 'text-ink-2'}`}
                             >
                                 <span>{bounds.label}</span>
-                                {isCurrent && <span className="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full shrink-0">Current</span>}
+                                {isCurrent && <span className="text-[11px] font-semibold text-ok bg-ok-soft px-2 py-0.5 rounded-full shrink-0">Current</span>}
                             </button>
                         );
                     })}

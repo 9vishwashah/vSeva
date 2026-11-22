@@ -150,26 +150,26 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
       {/* Plain top bar — matches the tangerine redesign mock (no gradient banner) */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] truncate">
+          <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink truncate">
             {currentUser.role === UserRole.SEVAK ? 'My Vihars' : 'Vihar Entries'}
           </h1>
           {!loading && (
-            <span className="hidden sm:inline-block text-xs font-semibold text-[#8A6A57] shrink-0">
+            <span className="hidden sm:inline-block text-xs font-semibold text-ink-2 shrink-0">
               {entriesInVY.length} {entriesInVY.length === 1 ? 'Entry' : 'Entries'}
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full bg-saffron-50 text-saffron-700 text-[10px] font-extrabold shrink-0">
+          <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 text-[11px] font-extrabold shrink-0">
             {selectedVY.label}
           </span>
           <div className="relative w-40 sm:w-56 shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" size={16} />
             <input
               type="text"
               placeholder="Search..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] border-none text-sm text-[#241C17] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-saffron-200"
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] border-none text-sm text-ink placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -184,10 +184,10 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[300px]">
+          <div className="hidden md:block bg-surface rounded-xl shadow-sm border border-line overflow-hidden min-h-[300px]">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs md:text-sm whitespace-nowrap">
-                <thead className="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider border-b border-gray-100">
+                <thead className="bg-sunken/60 text-ink-2 font-bold uppercase tracking-wider border-b border-line">
                   <tr>
                     <th className="p-4">Date</th>
                     <th className="p-4">From</th>
@@ -203,17 +203,17 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                     <th className="p-4 text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 text-gray-700">
+                <tbody className="divide-y divide-line text-ink">
                   {filteredEntries.map(entry => (
-                    <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={entry.id} className="hover:bg-sunken/60 transition-colors">
                       <td className="p-4 font-medium whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <span>{entry.vihar_date ? entry.vihar_date.split('-').reverse().join('-') : '-'}</span>
                           {entry.status === 'pending' && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-orange-100 text-orange-700">Pending</span>
+                            <span className="px-1.5 py-0.5 rounded text-[11px] font-bold uppercase bg-brand-100 text-brand-700">Pending</span>
                           )}
                           {entry.status === 'rejected' && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-red-100 text-red-700">Rejected</span>
+                            <span className="px-1.5 py-0.5 rounded text-[11px] font-bold uppercase bg-err-soft text-err">Rejected</span>
                           )}
                         </div>
                       </td>
@@ -223,7 +223,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                       <td className="p-4 text-center font-semibold">{entry.no_sadhvijibhagwan || '-'}</td>
                       <td className="p-4 group relative cursor-help">
                         <div className="flex items-center gap-1">
-                          <User size={14} className="text-gray-400" />
+                          <User size={14} className="text-ink-3" />
                           <span>{(entry.sevaks || []).length}</span>
                         </div>
                         {/* Tooltip */}
@@ -231,29 +231,29 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                           {(entry.sevaks || []).map(u => getSevakInfo(u).name).join(', ')}
                         </div>
                       </td>
-                      <td className="p-4 text-center text-gray-400" title={(entry.wheelchair_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}>
+                      <td className="p-4 text-center text-ink-3" title={(entry.wheelchair_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}>
                         {entry.wheelchair ? (
                           <div className="text-xs">
-                            <span className="text-blue-600 font-bold">Yes</span>
-                            {(entry.wheelchair_sevaks || []).length > 0 && <div className="text-gray-600 font-medium max-w-[130px] whitespace-normal">{(entry.wheelchair_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}</div>}
+                            <span className="text-info font-bold">Yes</span>
+                            {(entry.wheelchair_sevaks || []).length > 0 && <div className="text-ink-2 font-medium max-w-[130px] whitespace-normal">{(entry.wheelchair_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}</div>}
                           </div>
                         ) : '-'}
                       </td>
-                      <td className="p-4 text-center text-gray-400" title={(entry.car_seva_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}>
+                      <td className="p-4 text-center text-ink-3" title={(entry.car_seva_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}>
                         {entry.car_seva ? (
                           <div className="text-xs">
-                            <span className="text-emerald-600 font-bold">Yes</span>
-                            {(entry.car_seva_sevaks || []).length > 0 && <div className="text-gray-600 font-medium max-w-[130px] whitespace-normal">{(entry.car_seva_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}</div>}
+                            <span className="text-ok font-bold">Yes</span>
+                            {(entry.car_seva_sevaks || []).length > 0 && <div className="text-ink-2 font-medium max-w-[130px] whitespace-normal">{(entry.car_seva_sevaks || []).map(u => getSevakInfo(u).name).join(', ')}</div>}
                           </div>
                         ) : '-'}
                       </td>
                       <td className="p-4 max-w-[150px] truncate" title={entry.samuday}>{entry.samuday || '-'}</td>
                       <td className="p-4">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase" style={{ background: '#FFF0E5', color: '#B5602C' }}>
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase" style={{ background: '#FFF0E5', color: '#B5602C' }}>
                           {entry.vihar_type}
                         </span>
                       </td>
-                      <td className="p-4 text-center font-bold text-blue-600">
+                      <td className="p-4 text-center font-bold text-info">
                         {entry.distance_km}
                       </td>
                       <td className="p-4 text-center">
@@ -262,7 +262,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                             href={formatWhatsAppLink(entry)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-green-500 hover:text-green-600 p-2 hover:bg-green-50 rounded-full inline-block transition-colors"
+                            className="text-ok hover:text-ok p-2 hover:bg-ok-soft rounded-full inline-block transition-colors"
                             title="Share on WhatsApp"
                           >
                             <MessageCircle size={18} />
@@ -271,7 +271,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                         {currentUser.role === UserRole.ORG_ADMIN && onEdit && (
                           <button
                             onClick={() => onEdit(entry)}
-                            className="text-blue-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-full inline-block transition-colors ml-1"
+                            className="text-blue-400 hover:text-info p-2 hover:bg-info-soft rounded-full inline-block transition-colors ml-1"
                             title="Edit Entry"
                           >
                             <Pencil size={18} />
@@ -280,7 +280,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                         {currentUser.role === UserRole.ORG_ADMIN && (
                           <button
                             onClick={() => handleDelete(entry.id)}
-                            className="text-red-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-full inline-block transition-colors ml-1"
+                            className="text-red-400 hover:text-err p-2 hover:bg-err-soft rounded-full inline-block transition-colors ml-1"
                             title="Delete Entry"
                           >
                             <Trash2 size={18} />
@@ -305,7 +305,7 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
                   <React.Fragment key={entry.id}>
                     {isNewGroup && (
                       <div className="flex items-center gap-2.5 px-1 pt-1 first:pt-0">
-                        <span className="text-xs font-extrabold tracking-wide text-[#8A6A57] uppercase shrink-0">
+                        <span className="text-xs font-extrabold tracking-wide text-ink-2 uppercase shrink-0">
                           {formatDateDivider(entry.vihar_date)}
                         </span>
                         <div className="flex-1 h-px bg-[#EEE8E1]" />
@@ -324,12 +324,12 @@ const ViewEntries: React.FC<ViewEntriesProps> = ({ currentUser, onEdit }) => {
           </div>
 
           {filteredEntries.length === 0 && (
-            <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-200">
-              <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Calendar className="text-gray-400" size={24} />
+            <div className="text-center py-12 bg-surface rounded-xl border border-dashed border-line">
+              <div className="bg-sunken/60 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Calendar className="text-ink-3" size={24} />
               </div>
-              <p className="text-gray-500 font-medium">No entries found matching your search.</p>
-              <p className="text-sm text-gray-400 mt-1">Try adjusting the filter or add a new entry.</p>
+              <p className="text-ink-2 font-medium">No entries found matching your search.</p>
+              <p className="text-sm text-ink-3 mt-1">Try adjusting the filter or add a new entry.</p>
             </div>
           )}
         </>

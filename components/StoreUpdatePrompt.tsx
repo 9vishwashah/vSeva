@@ -34,20 +34,20 @@ const StoreUpdatePrompt: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="store-update-title">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-saffron-50 text-saffron-600">
+      <div className="w-full max-w-sm rounded-3xl bg-surface p-6 shadow-2xl">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
           <Download size={26} />
         </div>
-        <h2 id="store-update-title" className="text-center text-lg font-extrabold text-[#241C17]">A new version of {BRAND.shortName} is available</h2>
-        <p className="mt-2 text-center text-sm text-[#8A6A57]">Update from the Play Store to get the latest improvements.</p>
+        <h2 id="store-update-title" className="text-center text-lg font-extrabold text-ink">A new version of {BRAND.shortName} is available</h2>
+        <p className="mt-2 text-center text-sm text-ink-2">Update from the Play Store to get the latest improvements.</p>
         <div className="mt-6 flex flex-col gap-2">
           <button
             onClick={() => { openStoreListing(); later(); }}
-            className="w-full rounded-full bg-saffron-600 py-3 text-sm font-bold text-white active:scale-[0.98]"
+            className="w-full rounded-full bg-brand py-3 text-sm font-bold text-ink active:scale-[0.98]"
           >
             Update now
           </button>
-          <button onClick={later} className="w-full rounded-full py-3 text-sm font-semibold text-[#8A6A57]">Later</button>
+          <button onClick={later} className="w-full rounded-full py-3 text-sm font-semibold text-ink-2">Later</button>
         </div>
       </div>
     </div>

@@ -41,16 +41,16 @@ const ResetSevakPasswordModal: React.FC<ResetSevakPasswordModalProps> = ({ open,
     return (
         <Modal open={open} onClose={() => !busy && onClose()} maxWidth="max-w-sm" closeOnBackdrop={!busy}>
             <form onSubmit={submit} className="p-6">
-                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-warn-soft text-warn">
                     <KeyRound size={26} />
                 </div>
-                <h3 className="text-center text-lg font-extrabold text-[#241C17]">Reset password</h3>
-                <p className="mt-1 text-center text-sm text-[#8A6A57]">
-                    Set <strong className="text-[#241C17]">{sevakName}</strong>'s new mobile number. It becomes their contact number
+                <h3 className="display text-center text-[1.75rem] font-bold text-ink">Reset password</h3>
+                <p className="mt-1 text-center text-sm text-ink-2">
+                    Set <strong className="text-ink">{sevakName}</strong>'s new mobile number. It becomes their contact number
                     and their new password.
                 </p>
 
-                <label className="mt-4 block text-[11px] font-bold uppercase tracking-wider text-[#8A6A57]" htmlFor="reset-mobile">New mobile number</label>
+                <label className="mt-4 block text-sm font-medium text-ink-2" htmlFor="reset-mobile">New mobile number</label>
                 <input
                     id="reset-mobile"
                     type="tel"
@@ -63,20 +63,20 @@ const ResetSevakPasswordModal: React.FC<ResetSevakPasswordModalProps> = ({ open,
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
                     placeholder="10-digit number"
-                    className="mt-1.5 h-12 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-3.5 text-[15px] font-semibold tracking-wide text-gray-900 outline-none transition focus:border-saffron-400 focus:bg-white focus:ring-4 focus:ring-saffron-100"
+                    className="num mt-1.5 h-12 w-full rounded-field bg-white ring-1 ring-inset ring-line px-4 text-[16px] font-semibold tracking-wide text-ink outline-none transition focus:ring-2 focus:ring-ink"
                 />
-                {error && <p role="alert" className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-600">{error}</p>}
+                {error && <p role="alert" className="mt-3 rounded-2xl bg-err-soft px-4 py-3 text-sm font-medium text-err">{error}</p>}
 
                 <div className="mt-5 flex gap-3">
-                    <button type="button" onClick={onClose} disabled={busy} className="flex-1 rounded-xl bg-gray-100 py-3 text-sm font-bold text-[#241C17] disabled:opacity-50">
+                    <button type="button" onClick={onClose} disabled={busy} className="flex-1 h-12 rounded-full text-[15px] font-semibold bg-surface ring-1 ring-inset ring-line text-ink disabled:opacity-50">
                         Cancel
                     </button>
-                    <button type="submit" disabled={busy} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-saffron-600 py-3 text-sm font-bold text-white hover:bg-saffron-700 disabled:opacity-60">
+                    <button type="submit" disabled={busy} className="flex flex-1 items-center justify-center gap-2 h-12 rounded-full text-[15px] font-semibold bg-brand text-ink hover:bg-brand-600 disabled:opacity-60">
                         {busy && <Loader2 size={16} className="animate-spin" />}
                         Reset password
                     </button>
                 </div>
-                <p className="mt-3 text-center text-xs text-[#8A6A57]">Tell the Sevak to sign in with this new number.</p>
+                <p className="mt-3 text-center text-xs text-ink-2">Tell the Sevak to sign in with this new number.</p>
             </form>
         </Modal>
     );

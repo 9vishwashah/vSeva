@@ -173,89 +173,89 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-          <ClipboardList size={18} className="text-saffron-600" />
+        <h2 className="text-lg font-bold text-ink flex items-center gap-2">
+          <ClipboardList size={18} className="text-brand-700" />
           Community Directory
         </h2>
-        <div className="flex items-center gap-3 text-xs font-bold text-gray-500">
+        <div className="flex items-center gap-3 text-xs font-bold text-ink-2">
           <span>{counts.approved_listings} Approved</span>
-          <span className="text-gray-300">·</span>
+          <span className="text-ink-3">·</span>
           <span>{counts.rejected_listings} Rejected</span>
         </div>
       </div>
 
       <div className="flex gap-2">
-        <button onClick={() => setTab('listings')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'listings' ? 'bg-saffron-600 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>
+        <button onClick={() => setTab('listings')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'listings' ? 'bg-brand text-ink' : 'bg-surface text-ink-2 border border-line'}`}>
           Pending Listings {counts.pending_listings > 0 && <span className="ml-1 opacity-80">({counts.pending_listings})</span>}
         </button>
-        <button onClick={() => setTab('edits')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'edits' ? 'bg-saffron-600 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>
+        <button onClick={() => setTab('edits')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'edits' ? 'bg-brand text-ink' : 'bg-surface text-ink-2 border border-line'}`}>
           Pending Edits {counts.pending_edits > 0 && <span className="ml-1 opacity-80">({counts.pending_edits})</span>}
         </button>
-        <button onClick={() => setTab('all')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'all' ? 'bg-saffron-600 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>
+        <button onClick={() => setTab('all')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'all' ? 'bg-brand text-ink' : 'bg-surface text-ink-2 border border-line'}`}>
           All Listings {allListings.length > 0 && <span className="ml-1 opacity-80">({allListings.length})</span>}
         </button>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-surface rounded-3xl shadow-sm border border-line overflow-hidden">
         {loading ? (
-          <div className="p-10 text-center text-gray-400 text-sm">Loading…</div>
+          <div className="p-10 text-center text-ink-3 text-sm">Loading…</div>
         ) : loadError ? (
-          <div className="p-10 text-center text-gray-400 text-sm">
+          <div className="p-10 text-center text-ink-3 text-sm">
             Couldn't load the review queue.{' '}
-            <button onClick={load} className="text-saffron-600 font-bold underline">Retry</button>
+            <button onClick={load} className="text-brand-700 font-bold underline">Retry</button>
           </div>
         ) : tab === 'listings' ? (
           submissions.length === 0 ? (
-            <div className="p-10 text-center text-gray-400 text-sm">All clear — no pending listings.</div>
+            <div className="p-10 text-center text-ink-3 text-sm">All clear — no pending listings.</div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-line">
               {submissions.map((s) => (
                 <div key={s.id} className="flex items-center justify-between p-4">
                   <div>
-                    <p className="font-bold text-gray-800 text-sm">{s.name}</p>
-                    <p className="text-xs text-gray-400">Submitted by {s.contributor_name} · {timeAgo(s.created_at)}</p>
+                    <p className="font-bold text-ink text-sm">{s.name}</p>
+                    <p className="text-xs text-ink-3">Submitted by {s.contributor_name} · {timeAgo(s.created_at)}</p>
                   </div>
-                  <button onClick={() => openReview(s)} className="px-4 py-2 bg-saffron-50 text-saffron-700 rounded-xl font-bold text-xs hover:bg-saffron-100">Review</button>
+                  <button onClick={() => openReview(s)} className="px-4 py-2 bg-brand-50 text-brand-700 rounded-xl font-bold text-xs hover:bg-brand-100">Review</button>
                 </div>
               ))}
             </div>
           )
         ) : tab === 'edits' ? (
           changeRequests.length === 0 ? (
-            <div className="p-10 text-center text-gray-400 text-sm">All clear — no pending edits.</div>
+            <div className="p-10 text-center text-ink-3 text-sm">All clear — no pending edits.</div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-line">
               {changeRequests.map((r) => (
                 <div key={r.id} className="flex items-center justify-between p-4">
                   <div>
-                    <p className="font-bold text-gray-800 text-sm">Edit request</p>
-                    <p className="text-xs text-gray-400">Submitted by {r.contributor_name} · {timeAgo(r.created_at)}</p>
+                    <p className="font-bold text-ink text-sm">Edit request</p>
+                    <p className="text-xs text-ink-3">Submitted by {r.contributor_name} · {timeAgo(r.created_at)}</p>
                   </div>
-                  <button onClick={() => setReviewChangeRequest(r)} className="px-4 py-2 bg-saffron-50 text-saffron-700 rounded-xl font-bold text-xs hover:bg-saffron-100">Review</button>
+                  <button onClick={() => setReviewChangeRequest(r)} className="px-4 py-2 bg-brand-50 text-brand-700 rounded-xl font-bold text-xs hover:bg-brand-100">Review</button>
                 </div>
               ))}
             </div>
           )
         ) : allListings.length === 0 ? (
-          <div className="p-10 text-center text-gray-400 text-sm">No published listings yet.</div>
+          <div className="p-10 text-center text-ink-3 text-sm">No published listings yet.</div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-line">
             {allListings.map((l) => (
               <div key={l.id} className="flex items-center justify-between p-4 gap-3">
                 <div className="min-w-0">
-                  <p className="font-bold text-gray-800 text-sm truncate">{l.name}</p>
-                  <p className="text-xs text-gray-400 truncate">
+                  <p className="font-bold text-ink text-sm truncate">{l.name}</p>
+                  <p className="text-xs text-ink-3 truncate">
                     {[l.area, l.city].filter(Boolean).join(', ') || 'No location'} · {getListingTags(l).map((t) => t.label).join(', ') || 'No tags yet'}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <a href={`/directory/${l.slug}`} target="_blank" rel="noopener noreferrer" title="View public page" className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                  <a href={`/directory/${l.slug}`} target="_blank" rel="noopener noreferrer" title="View public page" className="p-2 text-ink-3 hover:text-ink hover:bg-sunken/60 rounded-lg transition-colors">
                     <ExternalLink size={15} />
                   </a>
-                  <button onClick={() => setEditingListing(l)} title="Edit" className="p-2 text-saffron-600 hover:bg-saffron-50 rounded-lg transition-colors">
+                  <button onClick={() => setEditingListing(l)} title="Edit" className="p-2 text-brand-700 hover:bg-brand-50 rounded-lg transition-colors">
                     <Pencil size={15} />
                   </button>
-                  <button onClick={() => setDeletingListing(l)} title="Delete" className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                  <button onClick={() => setDeletingListing(l)} title="Delete" className="p-2 text-err hover:bg-err-soft rounded-lg transition-colors">
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -269,16 +269,16 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
       <Modal open={!!reviewSubmission} onClose={() => setReviewSubmission(null)} maxWidth="max-w-2xl">
         {reviewSubmission && (
           <div className="p-5 overflow-y-auto max-h-[85vh]">
-            <h3 className="text-lg font-bold text-gray-800 mb-1">{reviewSubmission.name}</h3>
-            <p className="text-xs text-gray-400 mb-4 flex items-center gap-3">
+            <h3 className="text-lg font-bold text-ink mb-1">{reviewSubmission.name}</h3>
+            <p className="text-xs text-ink-3 mb-4 flex items-center gap-3">
               <span className="flex items-center gap-1"><User size={12} /> {reviewSubmission.contributor_name}</span>
               {reviewSubmission.contributor_mobile && <span className="flex items-center gap-1"><Phone size={12} /> {reviewSubmission.contributor_mobile}</span>}
               <span className="flex items-center gap-1"><Clock size={12} /> {timeAgo(reviewSubmission.created_at)}</span>
             </p>
 
             {reviewSubmission.latitude != null && reviewSubmission.longitude != null && (
-              <div className="rounded-xl overflow-hidden border border-gray-100 mb-4">
-                <Suspense fallback={<div style={{ height: 160 }} className="bg-gray-50 animate-pulse" />}>
+              <div className="rounded-xl overflow-hidden border border-line mb-4">
+                <Suspense fallback={<div style={{ height: 160 }} className="bg-sunken/60 animate-pulse" />}>
                   <DirectoryMap listings={[{ ...reviewSubmission, id: 'preview', slug: 'preview', status: 'approved', updated_at: reviewSubmission.created_at } as any]} height={160} />
                 </Suspense>
               </div>
@@ -287,9 +287,9 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
             <div className="grid grid-cols-2 gap-2 mb-4">
               {EDITABLE_FIELDS.map((f) => (
                 <div key={f.key}>
-                  <label className="block text-[11px] font-bold text-gray-400 mb-1">{f.label}</label>
+                  <label className="block text-[11px] font-bold text-ink-3 mb-1">{f.label}</label>
                   <input
-                    className="w-full py-2 px-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm"
+                    className="w-full py-2 px-2.5 rounded-lg bg-sunken/60 border border-line text-sm"
                     defaultValue={(reviewSubmission as any)[f.key] || ''}
                     onChange={(e) => setOverrides((o) => ({ ...o, [f.key]: e.target.value }))}
                   />
@@ -297,30 +297,30 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
               ))}
             </div>
 
-            <div className="text-sm text-gray-600 space-y-1.5 mb-4 bg-gray-50 rounded-xl p-3">
-              <p><span className="text-gray-400">Tags:</span> {getListingTags(reviewSubmission).map((t) => t.label).join(', ') || 'None yet'}</p>
-              {reviewSubmission.mulnayak && <p><span className="text-gray-400">Mulnayak:</span> {reviewSubmission.mulnayak}</p>}
-              {reviewSubmission.vihar_group_name && <p><span className="text-gray-400">Vihar Group:</span> {reviewSubmission.vihar_group_name}</p>}
-              {reviewSubmission.captain_name && <p><span className="text-gray-400">Captain:</span> {reviewSubmission.captain_name} {reviewSubmission.captain_mobile}</p>}
-              {reviewSubmission.trustees.length > 0 && <p><span className="text-gray-400">Trustees:</span> {reviewSubmission.trustees.map(t => t.name).join(', ')}</p>}
-              {reviewSubmission.routes.length > 0 && <p><span className="text-gray-400">Routes:</span> {reviewSubmission.routes.map(r => `${r.from}→${r.to}`).join(', ')}</p>}
+            <div className="text-sm text-ink-2 space-y-1.5 mb-4 bg-sunken/60 rounded-xl p-3">
+              <p><span className="text-ink-3">Tags:</span> {getListingTags(reviewSubmission).map((t) => t.label).join(', ') || 'None yet'}</p>
+              {reviewSubmission.mulnayak && <p><span className="text-ink-3">Mulnayak:</span> {reviewSubmission.mulnayak}</p>}
+              {reviewSubmission.vihar_group_name && <p><span className="text-ink-3">Vihar Group:</span> {reviewSubmission.vihar_group_name}</p>}
+              {reviewSubmission.captain_name && <p><span className="text-ink-3">Captain:</span> {reviewSubmission.captain_name} {reviewSubmission.captain_mobile}</p>}
+              {reviewSubmission.trustees.length > 0 && <p><span className="text-ink-3">Trustees:</span> {reviewSubmission.trustees.map(t => t.name).join(', ')}</p>}
+              {reviewSubmission.routes.length > 0 && <p><span className="text-ink-3">Routes:</span> {reviewSubmission.routes.map(r => `${r.from}→${r.to}`).join(', ')}</p>}
               {[reviewSubmission.upashray && 'Upashray', reviewSubmission.bhojanshala && 'Bhojanshala', reviewSubmission.library && 'Library'].filter(Boolean).length > 0 && (
-                <p><span className="text-gray-400">Facilities:</span> {[reviewSubmission.upashray && 'Upashray', reviewSubmission.bhojanshala && 'Bhojanshala', reviewSubmission.library && 'Library'].filter(Boolean).join(', ')}</p>
+                <p><span className="text-ink-3">Facilities:</span> {[reviewSubmission.upashray && 'Upashray', reviewSubmission.bhojanshala && 'Bhojanshala', reviewSubmission.library && 'Library'].filter(Boolean).join(', ')}</p>
               )}
             </div>
 
             {rejectingId === reviewSubmission.id ? (
-              <div className="bg-red-50 rounded-xl p-3 mb-3 space-y-2">
-                <ThemedSelect value={rejectReason} onChange={setRejectReason} options={[...REJECTION_REASONS]} placeholder="Reason" title="Rejection reason" clearable={false} className="w-full py-2 px-2 rounded-lg border border-red-200 text-sm bg-white" />
-                <textarea value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Note (optional)" className="w-full py-2 px-2 rounded-lg border border-red-200 text-sm" rows={2} />
+              <div className="bg-err-soft rounded-xl p-3 mb-3 space-y-2">
+                <ThemedSelect value={rejectReason} onChange={setRejectReason} options={[...REJECTION_REASONS]} placeholder="Reason" title="Rejection reason" clearable={false} className="w-full py-2 px-2 rounded-lg border border-err-soft text-sm bg-surface" />
+                <textarea value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Note (optional)" className="w-full py-2 px-2 rounded-lg border border-err-soft text-sm" rows={2} />
                 <div className="flex gap-2">
-                  <button onClick={() => setRejectingId(null)} className="flex-1 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold">Cancel</button>
-                  <button onClick={() => handleRejectSubmission(reviewSubmission.id)} disabled={busy} className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-bold">Confirm Reject</button>
+                  <button onClick={() => setRejectingId(null)} className="flex-1 py-2 bg-surface border border-line rounded-lg text-sm font-bold">Cancel</button>
+                  <button onClick={() => handleRejectSubmission(reviewSubmission.id)} disabled={busy} className="flex-1 py-2 bg-err-solid text-white rounded-lg text-sm font-bold">Confirm Reject</button>
                 </div>
               </div>
             ) : (
               <div className="flex gap-2">
-                <button onClick={() => setRejectingId(reviewSubmission.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm"><X size={15} /> Reject</button>
+                <button onClick={() => setRejectingId(reviewSubmission.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-surface border border-line text-ink-2 rounded-xl font-bold text-sm"><X size={15} /> Reject</button>
                 <button onClick={handleApproveSubmission} disabled={busy} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-green-600 text-white rounded-xl font-bold text-sm"><Check size={15} /> Approve</button>
               </div>
             )}
@@ -332,33 +332,33 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
       <Modal open={!!reviewChangeRequest} onClose={() => setReviewChangeRequest(null)} maxWidth="max-w-xl">
         {reviewChangeRequest && (
           <div className="p-5 overflow-y-auto max-h-[85vh]">
-            <h3 className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2"><Pencil size={16} className="text-saffron-600" /> Edit Request</h3>
-            <p className="text-xs text-gray-400 mb-4">Submitted by {reviewChangeRequest.contributor_name} · {timeAgo(reviewChangeRequest.created_at)}</p>
+            <h3 className="text-lg font-bold text-ink mb-1 flex items-center gap-2"><Pencil size={16} className="text-brand-700" /> Edit Request</h3>
+            <p className="text-xs text-ink-3 mb-4">Submitted by {reviewChangeRequest.contributor_name} · {timeAgo(reviewChangeRequest.created_at)}</p>
 
-            <div className="border border-gray-100 rounded-xl overflow-hidden mb-4">
-              <div className="grid grid-cols-3 bg-gray-50 text-[11px] font-bold text-gray-400 px-3 py-2">
+            <div className="border border-line rounded-xl overflow-hidden mb-4">
+              <div className="grid grid-cols-3 bg-sunken/60 text-[11px] font-bold text-ink-3 px-3 py-2">
                 <span>Field</span><span>Current</span><span>Proposed</span>
               </div>
               {Object.keys(reviewChangeRequest.proposed_fields).map((key) => (
-                <div key={key} className="grid grid-cols-3 px-3 py-2 text-xs border-t border-gray-100">
-                  <span className="font-semibold text-gray-500 capitalize">{key.replace(/_/g, ' ')}</span>
-                  <span className="text-gray-400">{JSON.stringify((reviewChangeRequest.current_snapshot as any)?.[key] ?? '—')}</span>
-                  <span className="text-saffron-700 font-semibold">{JSON.stringify((reviewChangeRequest.proposed_fields as any)[key])}</span>
+                <div key={key} className="grid grid-cols-3 px-3 py-2 text-xs border-t border-line">
+                  <span className="font-semibold text-ink-2 capitalize">{key.replace(/_/g, ' ')}</span>
+                  <span className="text-ink-3">{JSON.stringify((reviewChangeRequest.current_snapshot as any)?.[key] ?? '—')}</span>
+                  <span className="text-brand-700 font-semibold">{JSON.stringify((reviewChangeRequest.proposed_fields as any)[key])}</span>
                 </div>
               ))}
             </div>
 
             {rejectingId === reviewChangeRequest.id ? (
-              <div className="bg-red-50 rounded-xl p-3 mb-3 space-y-2">
-                <ThemedSelect value={rejectReason} onChange={setRejectReason} options={[...REJECTION_REASONS]} placeholder="Reason" title="Rejection reason" clearable={false} className="w-full py-2 px-2 rounded-lg border border-red-200 text-sm bg-white" />
+              <div className="bg-err-soft rounded-xl p-3 mb-3 space-y-2">
+                <ThemedSelect value={rejectReason} onChange={setRejectReason} options={[...REJECTION_REASONS]} placeholder="Reason" title="Rejection reason" clearable={false} className="w-full py-2 px-2 rounded-lg border border-err-soft text-sm bg-surface" />
                 <div className="flex gap-2">
-                  <button onClick={() => setRejectingId(null)} className="flex-1 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold">Cancel</button>
-                  <button onClick={() => handleRejectChangeRequest(reviewChangeRequest.id)} disabled={busy} className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-bold">Confirm Reject</button>
+                  <button onClick={() => setRejectingId(null)} className="flex-1 py-2 bg-surface border border-line rounded-lg text-sm font-bold">Cancel</button>
+                  <button onClick={() => handleRejectChangeRequest(reviewChangeRequest.id)} disabled={busy} className="flex-1 py-2 bg-err-solid text-white rounded-lg text-sm font-bold">Confirm Reject</button>
                 </div>
               </div>
             ) : (
               <div className="flex gap-2">
-                <button onClick={() => setRejectingId(reviewChangeRequest.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm"><X size={15} /> Reject</button>
+                <button onClick={() => setRejectingId(reviewChangeRequest.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-surface border border-line text-ink-2 rounded-xl font-bold text-sm"><X size={15} /> Reject</button>
                 <button onClick={() => handleApproveChangeRequest(reviewChangeRequest)} disabled={busy} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-green-600 text-white rounded-xl font-bold text-sm"><Check size={15} /> Approve Changes</button>
               </div>
             )}
@@ -370,7 +370,7 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
       <Modal open={!!editingListing} onClose={() => setEditingListing(null)} maxWidth="max-w-2xl">
         {editingListing && (
           <div className="p-5 overflow-y-auto max-h-[85vh]">
-            <h2 className="text-lg font-bold text-[#241C17] mb-4">Edit Listing</h2>
+            <h2 className="text-lg font-bold text-ink mb-4">Edit Listing</h2>
             <DirectoryListingForm
               mode="admin-edit"
               listingId={editingListing.id}
@@ -389,13 +389,13 @@ const SuperAdminDirectoryPanel: React.FC<SuperAdminDirectoryPanelProps> = ({ cur
       <Modal open={!!deletingListing} onClose={() => setDeletingListing(null)} maxWidth="max-w-sm">
         {deletingListing && (
           <div className="p-5">
-            <h3 className="text-base font-bold text-gray-800 mb-1">Delete this listing?</h3>
-            <p className="text-sm text-gray-500 mb-5">
-              <span className="font-semibold text-gray-700">{deletingListing.name}</span> will be removed from the public directory immediately.
+            <h3 className="text-base font-bold text-ink mb-1">Delete this listing?</h3>
+            <p className="text-sm text-ink-2 mb-5">
+              <span className="font-semibold text-ink">{deletingListing.name}</span> will be removed from the public directory immediately.
             </p>
             <div className="flex gap-2">
-              <button onClick={() => setDeletingListing(null)} className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm">Cancel</button>
-              <button onClick={handleDeleteListing} disabled={busy} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-red-600 text-white rounded-xl font-bold text-sm"><Trash2 size={15} /> Delete</button>
+              <button onClick={() => setDeletingListing(null)} className="flex-1 py-2.5 bg-surface border border-line text-ink-2 rounded-xl font-bold text-sm">Cancel</button>
+              <button onClick={handleDeleteListing} disabled={busy} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-err-solid text-white rounded-xl font-bold text-sm"><Trash2 size={15} /> Delete</button>
             </div>
           </div>
         )}

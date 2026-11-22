@@ -91,9 +91,9 @@ const Layout: React.FC<LayoutProps> = ({
     <button
       onClick={() => setCurrentPage(page)}
       title={sidebarCollapsed ? label : undefined}
-      className={`flex items-center w-full py-2 px-2.5 rounded-lg text-sm transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'} ${currentPage === page
-        ? (tone === 'purple' ? 'bg-purple-100 text-purple-700 font-medium' : 'bg-saffron-100 text-saffron-700 font-medium')
-        : (tone === 'purple' ? 'text-purple-700 hover:bg-purple-50' : 'text-gray-600 hover:bg-gray-50')
+      className={`flex items-center w-full h-10 px-3 rounded-full text-[14px] font-medium transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'} ${currentPage === page
+        ? (tone === 'purple' ? 'bg-purple-100 text-purple-700' : 'bg-brand text-ink font-semibold')
+        : (tone === 'purple' ? 'text-purple-700 hover:bg-purple-50' : 'text-ink-2 hover:bg-sunken hover:text-ink')
         }`}
     >
       <Icon size={17} className={`shrink-0 ${tone === 'purple' ? 'text-purple-600' : ''}`} />
@@ -234,7 +234,7 @@ const Layout: React.FC<LayoutProps> = ({
   }, []);
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50 font-sans">
+    <div className="h-screen flex overflow-hidden bg-canvas text-ink font-sans">
       {/* Global offline notice — appears the instant the browser loses its
           connection, regardless of which page is open or whether that page's
           own fetch has failed yet. Auto-hides the moment 'online' fires. */}
@@ -248,24 +248,24 @@ const Layout: React.FC<LayoutProps> = ({
       )}
 
       {/* Sidebar for Desktop */}
-      <aside className={`hidden md:flex flex-col bg-white border-r border-gray-200 h-full flex-shrink-0 relative transition-[width] duration-200 ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
+      <aside className={`hidden md:flex flex-col bg-canvas border-r border-line h-full flex-shrink-0 relative transition-[width] duration-200 ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
         {/* Collapse/expand toggle */}
         <button
           onClick={toggleSidebar}
           title={sidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-          className="absolute -right-3 top-8 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-saffron-600 hover:border-saffron-200 transition-colors z-10"
+          className="absolute -right-3 top-8 w-6 h-6 rounded-full bg-surface border border-line shadow-sm flex items-center justify-center text-ink-3 hover:text-ink transition-colors z-10"
         >
           {sidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
 
-        <div className={`p-4 border-b border-gray-100 ${sidebarCollapsed ? 'px-3' : ''}`}>
+        <div className={`p-4 border-b border-line ${sidebarCollapsed ? 'px-3' : ''}`}>
           <div className={`flex items-center gap-2.5 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <img src={BRAND.logo} alt={BRAND.name} className="h-9 w-9 object-contain drop-shadow-sm shrink-0" />
             {!sidebarCollapsed && (
               <div>
-                <h1 className="text-lg leading-tight font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">{BRAND.shortName}</h1>
+                <h1 className="display text-[1.4rem] font-extrabold text-ink">{BRAND.shortName}</h1>
                 {(BRAND.cardCredit ?? (BRAND.shortName !== BRAND.name ? BRAND.name : null)) && (
-                  <p className="text-[9px] text-gray-400 uppercase tracking-wide">{BRAND.cardCredit ?? BRAND.name}</p>
+                  <p className="text-[11px] text-ink-3 uppercase tracking-wide">{BRAND.cardCredit ?? BRAND.name}</p>
                 )}
               </div>
             )}
@@ -291,7 +291,7 @@ const Layout: React.FC<LayoutProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 title={sidebarCollapsed ? t('nav.communityDirectory') : undefined}
-                className={`flex items-center w-full py-2 px-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'}`}
+                className={`flex items-center w-full py-2 px-2.5 rounded-lg text-sm text-ink-2 hover:bg-sunken/60 transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'}`}
               >
                 <Compass size={17} className="shrink-0" />
                 {!sidebarCollapsed && <span>{t('nav.communityDirectory')}</span>}
@@ -314,7 +314,7 @@ const Layout: React.FC<LayoutProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 title={sidebarCollapsed ? t('nav.communityDirectory') : undefined}
-                className={`flex items-center w-full py-2 px-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'}`}
+                className={`flex items-center w-full py-2 px-2.5 rounded-lg text-sm text-ink-2 hover:bg-sunken/60 transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2.5'}`}
               >
                 <Compass size={17} className="shrink-0" />
                 {!sidebarCollapsed && <span>{t('nav.communityDirectory')}</span>}
@@ -323,18 +323,18 @@ const Layout: React.FC<LayoutProps> = ({
           )}
         </nav>
 
-        <div className={`p-3 border-t border-gray-100 flex-shrink-0 ${sidebarCollapsed ? 'px-2' : ''}`}>
+        <div className={`p-3 border-t border-line flex-shrink-0 ${sidebarCollapsed ? 'px-2' : ''}`}>
           <div className={`flex items-center mb-2.5 px-1 ${sidebarCollapsed ? 'flex-col gap-2' : 'justify-between'}`}>
             <button
               onClick={() => setCurrentPage('profile')}
               title={t('nav.myProfile')}
-              className={`flex items-center rounded-lg transition-colors -ml-1 px-1 py-1 ${currentPage === 'profile' ? 'bg-saffron-50' : 'hover:bg-gray-50'} ${sidebarCollapsed ? 'flex-col gap-1' : ''}`}
+              className={`flex items-center rounded-lg transition-colors -ml-1 px-1 py-1 ${currentPage === 'profile' ? 'bg-sunken' : 'hover:bg-sunken'} ${sidebarCollapsed ? 'flex-col gap-1' : ''}`}
             >
               <Avatar name={userName || userInitials} url={avatarUrl} size={28} className="text-xs" />
               {!sidebarCollapsed && (
                 <div className="ml-2.5 text-left">
-                  <p className={`text-xs font-medium leading-tight ${currentPage === 'profile' ? 'text-saffron-700' : 'text-gray-700'}`}>{t('nav.account')}</p>
-                  <p className="text-[11px] text-gray-400 capitalize leading-tight">{role === UserRole.ORG_ADMIN ? t('nav.captain') : t('nav.sevak')}</p>
+                  <p className="text-[13px] font-semibold leading-tight text-ink">{t('nav.account')}</p>
+                  <p className="text-[12px] text-ink-3 capitalize leading-tight">{role === UserRole.ORG_ADMIN ? t('nav.captain') : t('nav.sevak')}</p>
                 </div>
               )}
             </button>
@@ -345,16 +345,16 @@ const Layout: React.FC<LayoutProps> = ({
           <button
             onClick={onLogout}
             title={sidebarCollapsed ? t('nav.signOut') : undefined}
-            className={`flex items-center text-gray-500 hover:text-red-500 w-full px-2 py-1.5 text-sm rounded-lg hover:bg-gray-50 transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2'}`}
+            className={`flex items-center text-ink-2 hover:text-err w-full h-10 px-3 text-[14px] font-medium rounded-full hover:bg-err-soft transition-colors ${sidebarCollapsed ? 'justify-center' : 'space-x-2'}`}
           >
             <LogOut size={16} className="shrink-0" />
             {!sidebarCollapsed && <span>{t('nav.signOut')}</span>}
           </button>
           {/* Creator Credit - Desktop */}
           {!sidebarCollapsed && BRAND.designer && (
-            <p className="text-center text-[8px] text-gray-300 mt-2 leading-tight select-none">
+            <p className="text-center text-[11px] text-ink-3 mt-2 leading-tight select-none">
               Designed by{' '}
-              <span className="font-semibold text-gray-400">{BRAND.designer.name}</span>
+              <span className="font-semibold text-ink-3">{BRAND.designer.name}</span>
               {' '}({BRAND.designer.org})
             </p>
           )}
@@ -366,17 +366,27 @@ const Layout: React.FC<LayoutProps> = ({
 
         {/* Mobile Top Header — floating, hides on scroll-down, reveals on scroll-up */}
         <header
-          className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 px-4 flex justify-between items-center z-20 transition-transform duration-300 ease-in-out"
-          style={{ height: '56px', transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)' }}
+          className="md:hidden fixed top-0 left-0 right-0 bg-canvas/90 backdrop-blur-md px-4 flex justify-between items-center gap-2 z-20 transition-transform duration-300 ease-in-out"
+          style={{ height: 'calc(60px + env(safe-area-inset-top, 0px))', paddingTop: 'env(safe-area-inset-top, 0px)', transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)' }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {/* vSeva's logo art has transparent padding, so it is scaled up to read at the same size */}
-            <img src={BRAND.logo} alt={BRAND.name} className={`h-11 w-11 object-contain drop-shadow-sm shrink-0 ${BRAND.logoPadded ? 'scale-125' : ''}`} />
-            <h1 className="text-xl font-serif font-bold bg-gradient-to-r from-saffron-600 to-orange-600 bg-clip-text text-transparent">{BRAND.shortName}</h1>
+            <img src={BRAND.logo} alt={BRAND.name} className={`h-10 w-10 object-contain shrink-0 ${BRAND.logoPadded ? 'scale-125' : ''}`} />
+            <h1 className="display text-[1.4rem] font-extrabold text-ink truncate">{BRAND.shortName}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <LanguageDropdown />
             <NotificationBell userId={userId} role={role} onOpenNotification={onOpenNotification} onViewAll={() => setCurrentPage('notifications')} />
+            {/* Profile & Settings: moved here from the bottom bar (approved in Phase 2); same destination */}
+            <button
+              type="button"
+              onClick={() => { tick(); setCurrentPage('profile'); }}
+              aria-label="Profile & Settings"
+              className={`flex items-center justify-center rounded-full active:scale-95 transition-transform duration-150 ${currentPage === 'profile' ? 'ring-2 ring-brand ring-offset-2 ring-offset-canvas' : ''}`}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <Avatar name={userName || userInitials} url={avatarUrl} size={44} variant="gradient" className="text-[14px]" />
+            </button>
           </div>
         </header>
 
@@ -387,19 +397,19 @@ const Layout: React.FC<LayoutProps> = ({
           className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 w-full"
           style={{ WebkitOverflowScrolling: 'touch', scrollbarGutter: 'stable' } as React.CSSProperties}
         >
-          <div className="max-w-7xl mx-auto px-4 pt-[72px] pb-28 md:p-8">
+          <div className="max-w-7xl mx-auto px-4 pt-[calc(76px+env(safe-area-inset-top,0px))] pb-28 md:p-8">
             <div key={currentPage} ref={contentRef} className={slideDirRef.current ? `app-slide-${slideDirRef.current}` : undefined}>
               {children}
             </div>
+            {/* Creator credit (mobile): at the end of the page, so it never sits on top of content */}
+            {BRAND.designer && (
+              <p className="md:hidden mt-10 text-center text-[11px] text-ink-3 select-none">
+                Designed by <span className="font-medium">{BRAND.designer.name}</span> ({BRAND.designer.org})
+              </p>
+            )}
           </div>
         </main>
 
-        {/* Creator Credit - Mobile (above nav pill) */}
-        {BRAND.designer && <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 flex justify-center" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 83px)' }}>
-          <p className="text-[8px] text-gray-400/60 select-none tracking-wide">
-            Designed by <span className="font-medium">{BRAND.designer.name}</span> ({BRAND.designer.org})
-          </p>
-        </div>}
 
         {/* Mobile Bottom Nav: iOS-style frosted bar (components/ui/bottom-nav-bar) + More sheet + avatar */}
         <nav
@@ -418,18 +428,7 @@ const Layout: React.FC<LayoutProps> = ({
             ]}
             activeKey={moreActive ? '__more' : primaryItems.some(i => i.page === currentPage) ? currentPage : null}
             onSelect={key => { tick(); if (key === '__more') setMoreOpen(true); else setCurrentPage(key); }}
-            trailing={
-              // Avatar: always visible for both roles, always opens Profile & Settings
-              <button
-                type="button"
-                onClick={() => { tick(); setCurrentPage('profile'); }}
-                aria-label="Profile & Settings"
-                className={`flex items-center justify-center rounded-full active:scale-90 transition-transform duration-150 ${currentPage === 'profile' ? 'ring-2 ring-saffron-400 ring-offset-2 ring-offset-[#FFE9D6]' : ''}`}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <Avatar name={userName || userInitials} url={avatarUrl} size={36} variant="gradient" className="text-[13px]" />
-              </button>
-            }
+            actionKey="new-entry"
           />
         </nav>
 
@@ -440,11 +439,12 @@ const Layout: React.FC<LayoutProps> = ({
             <div
               ref={sheet.sheetRef}
               {...sheet.handlers}
-              className="relative w-full max-w-md bg-[#FBE8D9] rounded-t-[28px] p-4 shadow-xl app-sheet-up"
+              className="relative w-full max-w-md bg-surface rounded-t-sheet p-4 shadow-sheet app-sheet-up"
               style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)', overscrollBehavior: 'contain' }}
               onClick={e => e.stopPropagation()}
             >
-              <div className="w-9 h-1 rounded-full bg-[#7A4A2E]/25 mx-auto mb-4" />
+              <div className="w-10 h-1.5 rounded-full bg-line mx-auto mb-3" />
+              <p className="display text-[1.75rem] font-bold px-1 mb-3">{t('nav.more')}</p>
               <div className="space-y-2">
                 {moreItems.map(item => {
                   const active = currentPage === item.page;
@@ -452,10 +452,10 @@ const Layout: React.FC<LayoutProps> = ({
                     <button
                       key={item.page}
                       onClick={() => { setCurrentPage(item.page); setMoreOpen(false); }}
-                      className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] ${active ? 'bg-[#DE6B38] text-white' : 'bg-white/75 text-[#5C3A24] hover:bg-white'}`}
+                      className={`w-full flex items-center gap-3 p-3 rounded-[20px] transition-colors active:scale-[0.98] ${active ? 'bg-brand text-ink' : 'bg-surface text-ink ring-1 ring-inset ring-line hover:bg-canvas'}`}
                     >
-                      <span className={`[&>svg]:w-[22px] [&>svg]:h-[22px] ${active ? 'text-white' : (item as any).tone === 'purple' ? 'text-purple-600' : 'text-[#7A4A2E]'}`}>{item.icon}</span>
-                      <span className="text-sm font-bold">{item.label}</span>
+                      <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl [&>svg]:w-5 [&>svg]:h-5 ${active ? 'bg-white/40 text-ink' : (item as any).tone === 'purple' ? 'bg-purple-50 text-purple-600' : 'bg-sunken text-ink'}`}>{item.icon}</span>
+                      <span className="text-[15px] font-semibold">{item.label}</span>
                     </button>
                   );
                 })}
@@ -464,10 +464,10 @@ const Layout: React.FC<LayoutProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMoreOpen(false)}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl transition-colors active:scale-[0.98] bg-white/75 text-[#5C3A24] hover:bg-white"
+                  className="w-full flex items-center gap-3 p-3 rounded-[20px] transition-colors active:scale-[0.98] bg-surface text-ink ring-1 ring-inset ring-line hover:bg-canvas"
                 >
-                  <span className="text-[#7A4A2E]"><Compass size={22} /></span>
-                  <span className="text-sm font-bold">{t('nav.communityDirectory')}</span>
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-sunken text-ink"><Compass size={20} /></span>
+                  <span className="text-[15px] font-semibold">{t('nav.communityDirectory')}</span>
                 </a>
               </div>
             </div>

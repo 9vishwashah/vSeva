@@ -31,7 +31,7 @@ interface AddSevakProps {
 
 // Formats a UTC ISO timestamp into a human-readable relative string
 const formatLastLogin = (isoString?: string): { label: string; color: string } => {
-  if (!isoString) return { label: 'Never', color: 'text-gray-400' };
+  if (!isoString) return { label: 'Never', color: 'text-ink-3' };
 
   const diff = Date.now() - new Date(isoString).getTime();
   const mins = Math.floor(diff / 60000);
@@ -47,7 +47,7 @@ const formatLastLogin = (isoString?: string): { label: string; color: string } =
   else if (days < 30) label = `${Math.floor(days / 7)}w ago`;
   else label = new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
 
-  const color = days < 3 ? 'text-green-500' : days < 14 ? 'text-amber-500' : days < 30 ? 'text-red-500' : 'text-gray-400';
+  const color = days < 3 ? 'text-ok' : days < 14 ? 'text-amber-500' : days < 30 ? 'text-err' : 'text-ink-3';
   return { label, color };
 };
 
@@ -56,7 +56,7 @@ const formatLastLogin = (isoString?: string): { label: string; color: string } =
 // Unlike last-login, this never fades to gray for old dates — long-inactive
 // stays red so it reads as a signal worth acting on, not a stale detail.
 const formatLastVihar = (dateStr?: string): { label: string; color: string } => {
-  if (!dateStr) return { label: 'No Vihar', color: 'text-gray-400' };
+  if (!dateStr) return { label: 'No Vihar', color: 'text-ink-3' };
 
   const days = Math.floor((Date.now() - new Date(`${dateStr}T00:00:00`).getTime()) / 86400000);
 
@@ -67,14 +67,15 @@ const formatLastVihar = (dateStr?: string): { label: string; color: string } => 
   else if (days < 30) label = `${Math.floor(days / 7)}w ago`;
   else label = new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
 
-  const color = days < 7 ? 'text-green-500' : days < 30 ? 'text-amber-500' : 'text-red-500';
+  const color = days < 7 ? 'text-ok' : days < 30 ? 'text-amber-500' : 'text-err';
   return { label, color };
 };
 
 // One label + value cell of the Sevak Details grid. `wide` spans both columns.
 const DetailField: React.FC<{ label: string; wide?: boolean; children: React.ReactNode }> = ({ label, wide, children }) => (
-  <div className={wide ? 'col-span-2 min-w-0' : 'min-w-0'}>
-    <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">{label}</p>
+  // long values (address, username, email) wrap inside the pop-up instead of running past its edge
+  <div className={(wide ? 'col-span-2 min-w-0' : 'min-w-0') + ' [overflow-wrap:anywhere]'}>
+    <p className="mb-0.5 text-[11px] font-bold uppercase tracking-wider text-ink-3">{label}</p>
     {children}
   </div>
 );
@@ -90,6 +91,9 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<{ username: string, password: string, renamed: boolean } | null>(null);
+  // The create-Sevak form lives in a pop-up opened from the Organization Members toolbar
+  const [addOpen, setAddOpen] = useState(false);
+  const openAdd = () => { setError(null); setSuccess(null); setAddOpen(true); };
   const [error, setError] = useState<string | null>(null);
 
   // State for the list of existing sevaks
@@ -445,141 +449,32 @@ Kindly do Vihar and continue your Seva.`;
   // Border/background/text triplet per last-Vihar recency, matching the
   // color scale formatLastVihar already computes.
   const viharButtonClasses = (color: string) => {
-    if (color === 'text-green-500') return 'bg-green-50 hover:bg-green-100 text-green-600 border-green-100';
-    if (color === 'text-amber-500') return 'bg-amber-50 hover:bg-amber-100 text-amber-600 border-amber-100';
-    if (color === 'text-red-500') return 'bg-red-50 hover:bg-red-100 text-red-600 border-red-100';
-    return 'bg-gray-50 hover:bg-gray-100 text-gray-500 border-gray-100';
+    if (color === 'text-ok') return 'bg-ok-soft text-ok';
+    if (color === 'text-amber-500') return 'bg-warn-soft text-warn';
+    if (color === 'text-err') return 'bg-err-soft text-err';
+    return 'bg-sunken text-ink-2';
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-5 md:space-y-4">
 
       <div>
-        <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2">
-          <UserPlus size={20} className="text-saffron-600" />
+        <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink flex items-center gap-2">
+          <UserPlus size={20} className="text-brand-700" />
           Add New Sevak
         </h1>
-        <p className="text-xs text-[#8A6A57]">Create a profile and login credentials for a new volunteer</p>
-      </div>
-
-      {/* Form Section - white card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <form onSubmit={handleSubmit} className="p-4 md:p-4 space-y-4">
-
-          {error && (
-            <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm flex items-center gap-2">
-              <AlertTriangle size={16} />
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center animate-fade-in">
-              <CheckCircle className="mx-auto text-green-600 mb-2" size={32} />
-              <h3 className="text-lg font-bold text-green-800">Sevak Added Successfully!</h3>
-              <p className="text-sm text-gray-600 mt-2">Share these credentials with the sevak:</p>
-              <div className="mt-4 bg-white p-4 rounded border border-green-100 inline-block text-left shadow-sm">
-                <p className="text-sm"><strong>Username:</strong> {success.username}</p>
-                <p className="text-sm"><strong>Password:</strong> {success.password}</p>
-              </div>
-              {success.renamed && (
-                <p className="mt-3 text-xs text-gray-600 max-w-sm mx-auto">Another Sevak already uses this name, so a number was added to the username. The Sevak can still sign in with their name and mobile number.</p>
-              )}
-            </div>
-          )}
-
-          {/* Mobile: stacked. Desktop: one row — name, mobile, gender, create button */}
-          <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-[1.25fr_1fr_0.9fr_auto_auto] md:items-end md:gap-3">
-            <div>
-              <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Full Name</label>
-              <input
-                type="text"
-                required
-                className="w-full p-3 rounded-xl bg-[#F7F4F0] border-none focus:ring-2 focus:ring-saffron-300 outline-none font-semibold text-[#241C17]"
-                placeholder="e.g. Rahul Jain"
-                value={formData.fullName}
-                onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Mobile Number</label>
-              <input
-                type="tel"
-                required
-                maxLength={10}
-                className="w-full p-3 rounded-xl bg-[#F7F4F0] border-none focus:ring-2 focus:ring-saffron-300 outline-none font-semibold text-[#241C17]"
-                placeholder="10 digit number (Used as Password)"
-                value={formData.mobile}
-                onChange={e => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                  setFormData({ ...formData, mobile: val });
-                }}
-              />
-              <p className="text-xs text-gray-400 mt-1 md:hidden">Additional details (date of birth, address, etc.) can be filled by the sevak on their profile.</p>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Alias <span className="normal-case font-semibold text-gray-400">(optional)</span></label>
-              <input
-                type="text"
-                maxLength={60}
-                className="w-full p-3 rounded-xl bg-[#F7F4F0] border-none focus:ring-2 focus:ring-saffron-300 outline-none font-semibold text-[#241C17]"
-                placeholder="e.g. Rahul Paldi, Bhai"
-                value={formData.alias}
-                onChange={e => setFormData({ ...formData, alias: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider mb-1.5">Gender</label>
-              <div className="flex bg-[#F7F4F0] p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, gender: 'Male' })}
-                  className={`flex-1 px-4 py-2 text-sm font-semibold rounded-md transition-all ${
-                    formData.gender === 'Male'
-                      ? 'bg-saffron-600 text-white shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Male
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, gender: 'Female' })}
-                  className={`flex-1 px-4 py-2 text-sm font-semibold rounded-md transition-all ${
-                    formData.gender === 'Female'
-                      ? 'bg-saffron-600 text-white shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Female
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full md:w-auto bg-saffron-600 hover:bg-saffron-700 text-white font-medium py-3.5 md:py-3 md:px-5 rounded-xl shadow-lg md:shadow-md flex justify-center items-center space-x-2 transition-all mt-4 md:mt-0 whitespace-nowrap"
-            >
-              {loading ? <Loader2 className="animate-spin" size={18} /> : <UserPlus size={18} />}
-              <span>{loading ? "Creating..." : "Create Sevak Account"}</span>
-            </button>
-          </div>
-        </form>
+        <p className="text-xs text-ink-2">Create a profile and login credentials for a new volunteer</p>
       </div>
 
       {/* Existing Members Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-surface rounded-xl shadow-sm border border-line overflow-hidden">
+        <div className="p-6 border-b border-line bg-sunken/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Users size={24} className="text-saffron-600" />
+            <h2 className="text-xl font-bold text-ink flex items-center gap-2">
+              <Users size={24} className="text-brand-700" />
               Organization Members
               {!loadingSevaks && (
-                <span className="text-xs font-bold text-saffron-700 bg-saffron-100 px-2.5 py-1 rounded-full">
+                <span className="text-xs font-bold text-brand-700 bg-brand-100 px-2.5 py-1 rounded-full whitespace-nowrap">
                   {sevaks.length} {sevaks.length === 1 ? 'Member' : 'Members'}
                 </span>
               )}
@@ -593,27 +488,38 @@ Kindly do Vihar and continue your Seva.`;
                 placeholder="Search sevaks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-saffron-500 focus:border-saffron-500 outline-none text-sm"
+                className="w-full h-10 pl-10 pr-4 bg-white ring-1 ring-inset ring-line rounded-full focus:ring-2 focus:ring-brand outline-none text-sm"
               />
-              <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+              <Search className="absolute left-3 top-2.5 text-ink-3" size={18} />
             </div>
             
             <button
+              type="button"
+              onClick={openAdd}
+              className="flex items-center justify-center gap-2 h-10 px-4 bg-brand hover:bg-brand-600 text-ink rounded-full transition active:translate-y-px text-sm font-semibold whitespace-nowrap"
+            >
+              <UserPlus size={16} />
+              Add Sevak
+            </button>
+            {/* Side by side on phones so the toolbar stays short */}
+            <div className="grid grid-cols-2 gap-3 sm:flex">
+            <button
               onClick={() => setShowBulkImport(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
+              className="flex items-center justify-center gap-2 h-10 px-4 bg-surface ring-1 ring-inset ring-line text-ink rounded-full hover:bg-sunken/60 transition-colors text-sm font-semibold whitespace-nowrap"
               title="Add many Sevaks from a CSV or Excel file"
             >
-              <Upload size={16} className="text-gray-500" />
+              <Upload size={16} className="text-ink-2" />
               Bulk upload
             </button>
             <button
               onClick={() => setShowExportChoice(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium whitespace-nowrap shadow-sm"
+              className="flex items-center justify-center gap-2 h-10 px-4 bg-surface ring-1 ring-inset ring-line text-ink rounded-full hover:bg-sunken/60 transition-colors text-sm font-semibold whitespace-nowrap"
               title="Download the member list"
             >
-              <Download size={16} className="text-gray-500" />
+              <Download size={16} className="text-ink-2" />
               Export
             </button>
+            </div>
           </div>
         </div>
 
@@ -629,11 +535,11 @@ Kindly do Vihar and continue your Seva.`;
               <StatusScreen variant={sevaksLoadError} onRetry={fetchData} compact />
             </div>
           ) : sevaks.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No members found. Add your first member above.</div>
+            <div className="p-8 text-center text-ink-2">No members found. Add your first member above.</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 bg-gray-50/50">
               {filteredSevaks.length === 0 ? (
-                <div className="col-span-full p-12 text-center text-gray-400 font-medium">
+                <div className="col-span-full p-12 text-center text-ink-3 font-medium">
                   No members found matching "{searchQuery}"
                 </div>
               ) : (
@@ -644,23 +550,23 @@ Kindly do Vihar and continue your Seva.`;
                   const pct = getProfileCompletion(sevak);
 
                    return (
-                    <div key={sevak.id} className="bg-white rounded-[20px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col group overflow-hidden relative">
+                    <div key={sevak.id} className="bg-surface rounded-card p-4 ring-1 ring-inset ring-line flex flex-col group overflow-hidden relative">
 
                       {/* Top Line: Sr No + Name + Last Seen */}
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded tracking-widest uppercase border border-gray-100 whitespace-nowrap flex-shrink-0">
+                          <span className="num text-[12px] font-semibold text-ink-2 bg-sunken h-6 px-2 inline-flex items-center rounded-full whitespace-nowrap flex-shrink-0">
                             #{serialById[sevak.id] ?? index + 1}
                           </span>
-                          <h3 className="text-base font-bold text-gray-900 tracking-tight truncate group-hover:text-saffron-600 transition-colors">
+                          <h3 className="text-[16px] font-semibold text-ink truncate group-hover:text-brand-700 transition-colors">
                             {sevak.full_name}
-                            {sevak.alias && <span className="font-semibold text-[#8A6A57]"> ({sevak.alias})</span>}
+                            {sevak.alias && <span className="font-semibold text-ink-2"> ({sevak.alias})</span>}
                           </h3>
                         </div>
                         {/* Last seen */}
-                        <div className="flex items-center gap-1 whitespace-nowrap bg-gray-50 px-2 py-0.5 rounded border border-gray-100 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 whitespace-nowrap bg-sunken h-6 px-2.5 rounded-full flex-shrink-0">
                            <div className={`w-1.5 h-1.5 rounded-full ${statusDotColor} shadow-sm`}></div>
-                           <span className={`text-[9px] font-bold ${color} uppercase tracking-wider`}>{label}</span>
+                           <span className={`text-[12px] font-semibold ${color}`}>{label}</span>
                         </div>
                       </div>
 
@@ -679,7 +585,7 @@ Kindly do Vihar and continue your Seva.`;
                         </div>
                         <button
                           onClick={() => openModal(sevak)}
-                          className="flex-1 py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-[12px] font-extrabold text-[11px] tracking-wider uppercase transition-colors flex justify-center items-center gap-2 border border-indigo-100 hover:border-indigo-200 shadow-sm"
+                          className="flex-1 h-10 px-3 bg-brand-50 hover:bg-brand-100 text-brand-700 ring-1 ring-inset ring-brand-100 rounded-full font-semibold text-[14px] transition-colors flex justify-center items-center gap-2"
                         >
                           Profile
                         </button>
@@ -687,7 +593,7 @@ Kindly do Vihar and continue your Seva.`;
                           href={`https://wa.me/91${sevak.mobile}?text=${generateWhatsAppMessage(sevak)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-center w-9 h-9 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-[12px] transition-colors border border-[#25D366]/20 focus:outline-none shadow-sm shrink-0"
+                          className="flex items-center justify-center w-10 h-10 bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C4B] rounded-full transition-colors shrink-0"
                           title="Notify via WhatsApp"
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -697,12 +603,12 @@ Kindly do Vihar and continue your Seva.`;
                           href={`https://wa.me/91${sevak.mobile}?text=${generateViharReminderMessage(sevak)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={`flex items-center gap-1 h-9 px-2.5 rounded-[12px] border transition-colors shrink-0 ${viharButtonClasses(viharColor)}`}
+                          className={`flex items-center gap-1.5 h-10 px-3 rounded-full transition-colors hover:brightness-95 shrink-0 ${viharButtonClasses(viharColor)}`}
                           title="Send Vihar reminder via WhatsApp"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Footprints size={12} className="shrink-0" />
-                          <span className="text-[9px] font-extrabold uppercase tracking-wider whitespace-nowrap">{viharLabel}</span>
+                          <Footprints size={14} className="shrink-0" />
+                          <span className="text-[13px] font-semibold whitespace-nowrap">{viharLabel}</span>
                         </a>
                       </div>
                     </div>
@@ -715,14 +621,140 @@ Kindly do Vihar and continue your Seva.`;
       </div>
 
 
+      {/* Add Sevak pop-up */}
+      <Modal open={addOpen} onClose={() => !loading && setAddOpen(false)} maxWidth="max-w-md" closeOnBackdrop={!loading}>
+        <div className="p-5 flex justify-between items-start gap-3 shrink-0 border-b border-line">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="w-11 h-11 rounded-2xl bg-brand text-ink flex items-center justify-center shrink-0"><UserPlus size={20} /></span>
+            <div className="min-w-0">
+              <h3 className="display text-[1.4rem] font-bold text-ink">Add New Sevak</h3>
+              <p className="text-[13px] text-ink-2 mt-0.5">Creates their profile and login</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => setAddOpen(false)} disabled={loading} aria-label="Close" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sunken text-ink hover:bg-line transition-colors shrink-0 disabled:opacity-50">
+            <X size={18} />
+          </button>
+        </div>
+
+        {success ? (
+          <div className="p-5 overflow-y-auto text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-ok-soft text-ok">
+              <CheckCircle size={28} />
+            </div>
+            <h4 className="display text-[1.4rem] font-bold text-ink">Sevak added</h4>
+            <p className="text-sm text-ink-2 mt-1">Share these sign-in details with the Sevak:</p>
+            <div className="mt-4 rounded-2xl bg-sunken/60 ring-1 ring-inset ring-line p-4 text-left space-y-1.5 [overflow-wrap:anywhere]">
+              <p className="text-sm text-ink-2">Username: <span className="font-semibold text-ink">{success.username}</span></p>
+              <p className="text-sm text-ink-2">Password: <span className="num font-semibold text-ink">{success.password}</span></p>
+            </div>
+            {success.renamed && (
+              <p className="mt-3 text-xs text-ink-2">Another Sevak already uses this name, so a number was added to the username. The Sevak can still sign in with their name and mobile number.</p>
+            )}
+            <div className="mt-5 flex gap-3">
+              <button type="button" onClick={() => setSuccess(null)} className="flex-1 h-12 rounded-full text-[15px] font-semibold bg-surface ring-1 ring-inset ring-line text-ink">
+                Add another
+              </button>
+              <button type="button" onClick={() => setAddOpen(false)} className="flex-1 h-12 rounded-full text-[15px] font-semibold bg-brand text-ink hover:bg-brand-600">
+                Done
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
+            <div className="p-5 space-y-4 overflow-y-auto min-h-0">
+            {error && (
+              <div role="alert" className="bg-err-soft text-err px-4 py-3 rounded-2xl text-sm font-medium flex items-start gap-2">
+                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                <span className="[overflow-wrap:anywhere]">{error}</span>
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="sevak-name" className="block text-sm font-medium text-ink-2 mb-1.5">Full Name</label>
+              <input
+                id="sevak-name"
+                type="text"
+                required
+                autoFocus
+                className="w-full h-12 rounded-field bg-white ring-1 ring-inset ring-line px-4 text-[16px] font-medium text-ink outline-none transition focus:ring-2 focus:ring-brand"
+                placeholder="e.g. Rahul Jain"
+                value={formData.fullName}
+                onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="sevak-mobile" className="block text-sm font-medium text-ink-2 mb-1.5">Mobile Number</label>
+              <input
+                id="sevak-mobile"
+                type="tel"
+                inputMode="numeric"
+                required
+                maxLength={10}
+                className="num w-full h-12 rounded-field bg-white ring-1 ring-inset ring-line px-4 text-[16px] font-medium text-ink outline-none transition focus:ring-2 focus:ring-brand tracking-wide"
+                placeholder="10-digit number"
+                value={formData.mobile}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setFormData({ ...formData, mobile: val });
+                }}
+              />
+              <p className="text-xs text-ink-3 mt-1.5">Also used as their password. The Sevak fills in the rest on their profile.</p>
+            </div>
+
+            <div>
+              <label htmlFor="sevak-alias" className="block text-sm font-medium text-ink-2 mb-1.5">Alias <span className="font-normal text-ink-3">(optional)</span></label>
+              <input
+                id="sevak-alias"
+                type="text"
+                maxLength={60}
+                className="w-full h-12 rounded-field bg-white ring-1 ring-inset ring-line px-4 text-[16px] font-medium text-ink outline-none transition focus:ring-2 focus:ring-brand"
+                placeholder="e.g. Rahul Paldi, Bhai"
+                value={formData.alias}
+                onChange={e => setFormData({ ...formData, alias: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <span className="block text-sm font-medium text-ink-2 mb-1.5">Gender</span>
+              <div role="radiogroup" aria-label="Gender" className="flex gap-1 bg-sunken p-1 rounded-full">
+                {(['Male', 'Female'] as const).map(g => (
+                  <button
+                    key={g}
+                    type="button"
+                    role="radio"
+                    aria-checked={formData.gender === g}
+                    onClick={() => setFormData({ ...formData, gender: g })}
+                    className={`flex-1 h-10 rounded-full text-[15px] font-semibold transition-colors ${formData.gender === g ? 'bg-brand text-ink' : 'text-ink-2 hover:text-ink'}`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            </div>
+            <div className="flex gap-3 p-4 border-t border-line shrink-0">
+              <button type="button" onClick={() => setAddOpen(false)} disabled={loading} className="flex-1 h-12 rounded-full text-[15px] font-semibold bg-surface ring-1 ring-inset ring-line text-ink disabled:opacity-50">
+                Cancel
+              </button>
+              <button type="submit" disabled={loading} className="flex flex-[1.6] items-center justify-center gap-2 h-12 rounded-full text-[15px] font-semibold bg-brand text-ink hover:bg-brand-600 disabled:opacity-60 active:translate-y-px whitespace-nowrap">
+                {loading ? <Loader2 className="animate-spin" size={18} /> : <UserPlus size={18} />}
+                {loading ? 'Creating...' : 'Create Sevak Account'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
       <BulkSevakImport open={showBulkImport} onClose={() => setShowBulkImport(false)} orgId={currentUser.organization_id} onCreated={fetchData} />
 
       <BottomSheet open={showExportChoice} onClose={() => { if (!exporting) setShowExportChoice(false); }} maxWidth="max-w-sm">
         <div className="px-5 pt-3 pb-5 md:pt-5">
-          <p className="m-0 text-base font-extrabold text-[#241C17]">Export member list</p>
-          <p className="m-0 mt-0.5 text-xs text-[#8A6A57]">{sevaks.length} members, numbered in the order they were added</p>
+          <p className="m-0 text-base font-extrabold text-ink">Export member list</p>
+          <p className="m-0 mt-0.5 text-xs text-ink-2">{sevaks.length} members, numbered in the order they were added</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
-            {([['pdf', 'PDF', FileText, 'text-red-600 bg-red-50'], ['excel', 'Excel', Table, 'text-green-700 bg-green-50']] as const).map(([kind, label, Icon, tone]) => (
+            {([['pdf', 'PDF', FileText, 'text-err bg-err-soft'], ['excel', 'Excel', Table, 'text-ok bg-ok-soft']] as const).map(([kind, label, Icon, tone]) => (
               <button
                 key={kind}
                 type="button"
@@ -748,25 +780,25 @@ Kindly do Vihar and continue your Seva.`;
           const joined = selectedSevak.created_at && !isNaN(new Date(selectedSevak.created_at).getTime())
             ? new Date(selectedSevak.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
             : null;
-          const inp = 'w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:border-saffron-400 focus:ring-2 focus:ring-saffron-100 outline-none';
+          const inp = 'w-full h-11 px-3.5 rounded-xl ring-1 ring-inset ring-line text-[15px] text-ink bg-white focus:ring-2 focus:ring-ink outline-none';
           const close = () => { setSelectedSevak(null); setEditingId(null); setShowIdCard(false); };
           return (
           <>
-            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <Users size={18} className="text-saffron-600" />
+            <div className="px-5 py-4 border-b border-line flex justify-between items-center gap-3 bg-surface shrink-0">
+              <h3 className="display text-[1.4rem] font-bold text-ink flex items-center gap-2.5">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 shrink-0"><Users size={18} /></span>
                 Sevak Details
               </h3>
-              <button onClick={close} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors">
+              <button onClick={close} aria-label="Close" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sunken text-ink hover:bg-line transition-colors shrink-0 disabled:opacity-40">
                 <X size={18} />
               </button>
             </div>
 
-            <div className="px-4 py-3 overflow-y-auto flex-1">
+            <div className="px-5 py-4 overflow-y-auto flex-1">
               {showIdCard ? (
                  <div className="flex flex-col items-center justify-center py-3 min-h-[40vh]">
                     <IDCardBadge user={selectedSevak} orgName={currentUser.organization_id} />
-                    <p className="text-xs text-gray-500 mt-4 text-center max-w-xs print:hidden">
+                    <p className="text-xs text-ink-2 mt-4 text-center max-w-xs print:hidden">
                         Print this badge. Scanning the QR code will verify the identity.
                     </p>
                  </div>
@@ -778,48 +810,48 @@ Kindly do Vihar and continue your Seva.`;
                       <Avatar name={selectedSevak.full_name} url={selectedSevak.avatar_url} size={56} variant="gradient" className="text-xl" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-base font-bold text-gray-900 truncate">{selectedSevak.full_name}{selectedSevak.alias && <span className="font-semibold text-gray-500"> ({selectedSevak.alias})</span>}</h4>
+                      <h4 className="text-base font-bold text-ink truncate">{selectedSevak.full_name}{selectedSevak.alias && <span className="font-semibold text-ink-2"> ({selectedSevak.alias})</span>}</h4>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                         {editing ? (
-                          <div className="flex bg-gray-100 p-0.5 rounded-lg">
+                          <div className="flex bg-sunken p-0.5 rounded-full">
                             {['Male', 'Female'].map(g => (
                               <button key={g} type="button" onClick={() => setEditForm({ ...editForm, gender: g })}
-                                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${editForm.gender === g ? 'bg-saffron-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>{g}</button>
+                                className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${editForm.gender === g ? 'bg-brand text-ink' : 'text-ink-2 hover:text-ink'}`}>{g}</button>
                             ))}
                           </div>
                         ) : (
-                          <span className={`font-bold ${selectedSevak.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>{selectedSevak.gender || 'Unknown'}</span>
+                          <span className={`font-bold ${selectedSevak.gender === 'Female' ? 'text-pink-600' : 'text-info'}`}>{selectedSevak.gender || 'Unknown'}</span>
                         )}
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: pctColor.bg, color: pctColor.text }}>Profile {modalPct}%</span>
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: pctColor.bg, color: pctColor.text }}>Profile {modalPct}%</span>
                       </div>
-                      {joined && <p className="mt-0.5 text-[11px] text-gray-400">Joined {joined}</p>}
+                      {joined && <p className="mt-0.5 text-[11px] text-ink-3">Joined {joined}</p>}
                     </div>
                   </div>
                   {!editing && missing.length > 0 && (
-                    <p className="mt-2 text-[11px] leading-snug text-amber-700 bg-amber-50 rounded-md px-2 py-1.5">Still to fill: {missing.join(', ')}</p>
+                    <p className="mt-2 text-[11px] leading-snug text-warn bg-warn-soft rounded-md px-2 py-1.5">Still to fill: {missing.join(', ')}</p>
                   )}
 
                   {/* Details — compact two-column grid */}
                   <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2.5">
                     <DetailField label="Username">
                       <div className="flex items-center justify-between gap-1">
-                        <code className="text-sm font-mono text-gray-800 truncate">{selectedSevak.username}</code>
-                        <button onClick={() => handleCopy(selectedSevak.username, selectedSevak.id)} className="text-gray-400 hover:text-saffron-600 p-0.5 shrink-0" title="Copy username">
-                          {copiedId === selectedSevak.id ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                        <code className="text-sm font-mono text-ink truncate">{selectedSevak.username}</code>
+                        <button onClick={() => handleCopy(selectedSevak.username, selectedSevak.id)} className="text-ink-3 hover:text-brand-700 p-0.5 shrink-0" title="Copy username">
+                          {copiedId === selectedSevak.id ? <Check size={14} className="text-ok" /> : <Copy size={14} />}
                         </button>
                       </div>
                     </DetailField>
 
                     {/* Mobile is the Sevak's password: changed only through Reset password */}
                     <DetailField label="Mobile Number">
-                      <span className="text-sm font-mono font-semibold text-gray-800">{selectedSevak.mobile}</span>
+                      <span className="text-sm font-mono font-semibold text-ink">{selectedSevak.mobile}</span>
                     </DetailField>
 
                     <DetailField label="Date of Birth" wide={editing}>
                       {editing ? (
                         <DateOfBirthField value={editForm.dateOfBirth} onChange={v => setEditForm({ ...editForm, dateOfBirth: v })} className={inp} />
                       ) : (
-                        <span className="text-sm font-semibold text-gray-900">{dobWithAge(selectedSevak.date_of_birth)}</span>
+                        <span className="text-sm font-semibold text-ink">{dobWithAge(selectedSevak.date_of_birth)}</span>
                       )}
                     </DetailField>
 
@@ -827,7 +859,7 @@ Kindly do Vihar and continue your Seva.`;
                       {editing ? (
                         <ThemedSelect value={editForm.bloodGroup} onChange={v => setEditForm({ ...editForm, bloodGroup: v })} options={['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']} placeholder="Select" title="Blood Group" className={inp} />
                       ) : (
-                        <span className="text-sm font-semibold text-gray-900">{selectedSevak.blood_group || '-'}</span>
+                        <span className="text-sm font-semibold text-ink">{selectedSevak.blood_group || '-'}</span>
                       )}
                     </DetailField>
 
@@ -835,7 +867,7 @@ Kindly do Vihar and continue your Seva.`;
                       {editing ? (
                         <input type="tel" maxLength={10} value={editForm.emergencyNumber} onChange={e => setEditForm({ ...editForm, emergencyNumber: e.target.value.replace(/\D/g, '').slice(0, 10) })} placeholder="10-digit number" className={inp} />
                       ) : (
-                        <span className="text-sm font-mono font-semibold text-gray-900">{selectedSevak.emergency_number || '-'}</span>
+                        <span className="text-sm font-mono font-semibold text-ink">{selectedSevak.emergency_number || '-'}</span>
                       )}
                     </DetailField>
 
@@ -843,7 +875,7 @@ Kindly do Vihar and continue your Seva.`;
                       {editing ? (
                         <input type="text" maxLength={80} value={editForm.emergencyContactName} onChange={e => setEditForm({ ...editForm, emergencyContactName: e.target.value })} placeholder="Whose number?" className={inp} />
                       ) : (
-                        <span className="text-sm font-semibold text-gray-900 break-words">{selectedSevak.emergency_contact_name || '-'}</span>
+                        <span className="text-sm font-semibold text-ink break-words">{selectedSevak.emergency_contact_name || '-'}</span>
                       )}
                     </DetailField>
 
@@ -856,7 +888,7 @@ Kindly do Vihar and continue your Seva.`;
                           )}
                         </div>
                       ) : (
-                        <span className="text-sm font-semibold text-gray-900 break-words">{selectedSevak.occupation ? (selectedSevak.occupation_details ? `${selectedSevak.occupation} · ${selectedSevak.occupation_details}` : selectedSevak.occupation) : '-'}</span>
+                        <span className="text-sm font-semibold text-ink break-words">{selectedSevak.occupation ? (selectedSevak.occupation_details ? `${selectedSevak.occupation} · ${selectedSevak.occupation_details}` : selectedSevak.occupation) : '-'}</span>
                       )}
                     </DetailField>
 
@@ -864,7 +896,7 @@ Kindly do Vihar and continue your Seva.`;
                       {editing ? (
                         <input type="text" maxLength={60} value={editForm.alias} onChange={e => setEditForm({ ...editForm, alias: e.target.value })} placeholder="A name you know them by (optional)" className={inp} />
                       ) : (
-                        <span className="text-sm font-semibold text-gray-900 break-words">{selectedSevak.alias || '-'}</span>
+                        <span className="text-sm font-semibold text-ink break-words">{selectedSevak.alias || '-'}</span>
                       )}
                     </DetailField>
 
@@ -875,16 +907,16 @@ Kindly do Vihar and continue your Seva.`;
                           preferences={editForm.sevaPreferences}
                           onChange={({ scope, preferences }) => setEditForm({ ...editForm, viharScope: scope, sevaPreferences: preferences })}
                           selectClassName={inp}
-                          labelClassName="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"
+                          labelClassName="block text-[11px] font-bold text-ink-3 uppercase tracking-wider mb-1"
                         />
                       </div>
                     ) : (
                       <>
                         <DetailField label="Vihar Type">
-                          <span className="text-sm font-semibold text-gray-900">{selectedSevak.vihar_scope || '-'}</span>
+                          <span className="text-sm font-semibold text-ink">{selectedSevak.vihar_scope || '-'}</span>
                         </DetailField>
                         <DetailField label="Seva Preference">
-                          <span className="text-sm font-semibold text-gray-900 break-words">{formatSevaPreferences(selectedSevak.seva_preferences) || '-'}</span>
+                          <span className="text-sm font-semibold text-ink break-words">{formatSevaPreferences(selectedSevak.seva_preferences) || '-'}</span>
                         </DetailField>
                       </>
                     ))}
@@ -893,7 +925,7 @@ Kindly do Vihar and continue your Seva.`;
                       {editing ? (
                         <textarea value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} placeholder="Full address" rows={2} className={inp + ' resize-none'} />
                       ) : (
-                        <span className="text-sm font-semibold text-gray-900 whitespace-pre-wrap break-words leading-snug">{selectedSevak.address || '-'}</span>
+                        <span className="text-sm font-semibold text-ink whitespace-pre-wrap break-words leading-snug">{selectedSevak.address || '-'}</span>
                       )}
                     </DetailField>
                   </div>
@@ -902,32 +934,32 @@ Kindly do Vihar and continue your Seva.`;
             </div>
 
             {/* Modal Actions */}
-            <div className="px-3 py-2.5 border-t border-gray-100 bg-white flex items-center gap-2">
+            <div className="px-4 py-3 border-t border-line bg-surface flex items-center gap-2 flex-wrap">
               {showIdCard ? (
-                  <button onClick={() => setShowIdCard(false)} className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-sm font-semibold transition-colors flex justify-center items-center gap-2">
+                  <button onClick={() => setShowIdCard(false)} className="w-full h-12 rounded-full text-[15px] font-semibold bg-surface ring-1 ring-inset ring-line hover:bg-white text-ink transition-colors flex justify-center items-center gap-2">
                     <ArrowLeft size={16} /> Back to Details
                   </button>
               ) : editing ? (
                 <>
-                  <button onClick={() => setEditingId(null)} className="flex-1 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm">
+                  <button onClick={() => setEditingId(null)} className="flex-1 h-12 rounded-full text-[15px] font-semibold ring-1 ring-inset ring-line text-ink bg-surface hover:bg-white transition-colors">
                     Cancel
                   </button>
-                  <button onClick={handleSaveProfile} disabled={savingId === selectedSevak.id} className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm flex justify-center items-center gap-1.5 disabled:opacity-60">
+                  <button onClick={handleSaveProfile} disabled={savingId === selectedSevak.id} className="flex-1 h-12 rounded-full text-[15px] font-semibold bg-brand text-ink hover:bg-brand-600 transition-colors flex justify-center items-center gap-1.5 disabled:opacity-60">
                     {savingId === selectedSevak.id ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Save
                   </button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => handleDelete(selectedSevak.id, selectedSevak.full_name)} title="Delete Sevak" className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors shrink-0">
+                  <button onClick={() => handleDelete(selectedSevak.id, selectedSevak.full_name)} title="Delete Sevak" aria-label="Delete Sevak" className="inline-flex h-11 w-11 items-center justify-center text-err bg-err-soft hover:brightness-95 rounded-full transition-colors shrink-0">
                     <Trash2 size={16} />
                   </button>
-                  <button onClick={() => setShowResetPassword(true)} className="flex-1 py-2 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg transition-colors flex items-center justify-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+                  <button onClick={() => setShowResetPassword(true)} className="flex-1 h-11 px-3 bg-warn-soft text-warn hover:brightness-95 rounded-full transition-colors flex items-center justify-center gap-1.5 text-[13px] font-semibold whitespace-nowrap">
                     <KeyRound size={15} /> Reset password
                   </button>
-                  <button onClick={() => setShowIdCard(true)} className="flex-1 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+                  <button onClick={() => setShowIdCard(true)} className="flex-1 h-11 px-3 bg-info-soft text-info hover:brightness-95 rounded-full transition-colors flex items-center justify-center gap-1.5 text-[13px] font-semibold whitespace-nowrap">
                     <Printer size={15} /> ID Card
                   </button>
-                  <button onClick={() => startEdit(selectedSevak)} className="flex-1 py-2 bg-saffron-600 hover:bg-saffron-700 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+                  <button onClick={() => startEdit(selectedSevak)} className="flex-1 h-11 px-3 bg-brand hover:bg-brand-600 text-ink rounded-full transition-colors flex items-center justify-center gap-1.5 text-[13px] font-semibold whitespace-nowrap">
                     <Edit2 size={15} /> Edit Profile
                   </button>
                 </>
@@ -959,25 +991,25 @@ Kindly do Vihar and continue your Seva.`;
       <Modal open={!!showDeleteModal} onClose={() => setShowDeleteModal(null)} maxWidth="max-w-md">
         {showDeleteModal && (
           <div className="p-6 text-center overflow-y-auto">
-            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-err-soft text-err rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Sevak?</h3>
-            <p className="text-gray-500 mb-6">
-              Are you sure you want to delete <span className="font-semibold text-gray-800">{showDeleteModal.name}</span>?
+            <h3 className="display text-[1.75rem] font-bold text-ink mb-2">Delete Sevak?</h3>
+            <p className="text-ink-2 mb-6">
+              Are you sure you want to delete <span className="font-semibold text-ink">{showDeleteModal.name}</span>?
               This action will clear all their data and cannot be undone.
             </p>
 
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowDeleteModal(null)}
-                className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-xl transition-colors"
+                className="flex-1 h-12 rounded-full text-[15px] font-semibold px-4 bg-surface ring-1 ring-inset ring-line hover:bg-white text-ink transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm shadow-red-200"
+                className="flex-1 h-12 rounded-full text-[15px] font-semibold px-4 bg-err-solid hover:bg-[#b23736] text-white transition-colors flex items-center justify-center gap-2"
               >
                 <Trash2 size={18} />
                 Delete

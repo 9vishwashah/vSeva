@@ -176,17 +176,17 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
+        <div className="bg-surface rounded-xl shadow-sm border border-line overflow-hidden flex flex-col h-full">
             {/* Header */}
-            <div className={`p-4 border-b border-gray-100 flex items-center gap-2 ${bgClass}`}>
+            <div className={`p-4 border-b border-line flex items-center gap-2 ${bgClass}`}>
                 <div className={colorClass}>{icon}</div>
-                <h3 className="font-bold text-gray-800 flex-1">{title}</h3>
+                <h3 className="font-bold text-ink flex-1">{title}</h3>
                 <img src={BRAND.logo} alt={BRAND.name} className="h-8 w-8 object-contain opacity-80 mr-1" />
                 <button
                     onClick={handleDownload}
                     disabled={busy || !!loading || items.length === 0}
                     title="Download as PDF"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/70 hover:bg-white text-gray-600 hover:text-orange-600 border border-white/50 transition-all active:scale-90 disabled:opacity-40 text-xs font-semibold shadow-sm"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/70 hover:bg-surface text-ink-2 hover:text-brand-700 border border-white/50 transition-all active:scale-90 disabled:opacity-40 text-xs font-semibold shadow-sm"
                 >
                     {busy
                         ? <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin block" />
@@ -202,34 +202,34 @@ const LeaderboardCard: React.FC<LeaderboardCardProps> = ({
                     <div className="p-4 space-y-3">
                         {[1, 2, 3].map(i => (
                             <div key={i} className="flex items-center gap-3 animate-pulse">
-                                <div className="w-8 h-8 bg-gray-200 rounded-full" />
+                                <div className="w-8 h-8 bg-line rounded-full" />
                                 <div className="flex-1 space-y-2">
-                                    <div className="h-4 bg-gray-200 rounded w-3/4" />
-                                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                                    <div className="h-4 bg-line rounded w-3/4" />
+                                    <div className="h-3 bg-line rounded w-1/2" />
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : items.length === 0 ? (
-                    <div className="p-8 text-center text-gray-400 text-sm">No active sevaks found.</div>
+                    <div className="p-8 text-center text-ink-3 text-sm">No active sevaks found.</div>
                 ) : (
-                    <div className="divide-y divide-gray-50">
+                    <div className="divide-y divide-line">
                         {items.map((item, index) => (
-                            <div key={index} className="flex items-center p-3 hover:bg-gray-50 transition-colors">
+                            <div key={index} className="flex items-center p-3 hover:bg-sunken/60 transition-colors">
                                 <div className={`flex-shrink-0 w-8 flex justify-center text-sm font-bold ${
                                     item.rank === 1 ? 'text-yellow-500' :
-                                    item.rank === 2 ? 'text-gray-400'   :
-                                    item.rank === 3 ? 'text-orange-500' : 'text-gray-400'
+                                    item.rank === 2 ? 'text-ink-3'   :
+                                    item.rank === 3 ? 'text-brand-700' : 'text-ink-3'
                                 }`}>
                                     {item.rank <= 3 ? <Medal size={18} /> : `#${item.rank}`}
                                 </div>
                                 <div className="flex-1 min-w-0 ml-3">
-                                    <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                                    <p className="text-xs text-gray-500">{item.km} km</p>
+                                    <p className="text-sm font-medium text-ink truncate">{item.name}</p>
+                                    <p className="text-xs text-ink-2">{item.km} km</p>
                                 </div>
                                 <div className="mr-2 text-right">
-                                    <span className="block text-lg font-bold text-gray-800 leading-none">{item.count}</span>
-                                    <span className="text-[10px] text-gray-400 uppercase">Vihars</span>
+                                    <span className="block text-lg font-bold text-ink leading-none">{item.count}</span>
+                                    <span className="text-[11px] text-ink-3 uppercase">Vihars</span>
                                 </div>
                             </div>
                         ))}

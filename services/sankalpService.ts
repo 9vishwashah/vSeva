@@ -31,7 +31,7 @@ export const sankalpService = {
         .maybeSingle();
       if (error) throw error;
       return data?.target ?? null;
-    }, 30_000);
+    }, 5 * 60_000);
   },
 
   async getOrg(orgId: string, year: number): Promise<OrgSankalp> {
@@ -44,7 +44,7 @@ export const sankalpService = {
         .maybeSingle();
       if (error) throw error;
       return { target: data?.target ?? null, sevaks_can_edit: data?.sevaks_can_edit ?? true };
-    }, 30_000);
+    }, 30 * 60_000, { persist: true }); // changes are picked up sooner by services/dataSync.ts
   },
 
   async setMine(year: number, target: number): Promise<void> {

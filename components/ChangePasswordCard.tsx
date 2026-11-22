@@ -5,8 +5,8 @@ import { useToast } from '../context/ToastContext';
 
 export const MIN_PASSWORD_LENGTH = 8;
 
-const inputClass = 'w-full py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm';
-const labelClass = 'text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider block mb-1.5';
+const inputClass = 'w-full py-2.5 px-3.5 rounded-xl bg-sunken/60 border-none outline-none focus:ring-2 focus:ring-brand font-semibold text-ink text-sm';
+const labelClass = 'text-[11px] font-bold text-ink-2 uppercase tracking-wider block mb-1.5';
 
 // Captain-only (the caller decides who sees it — see ProfileSection). Asks for the current
 // password first, so a Captain account left signed in on a shared phone can't be taken over.
@@ -52,7 +52,7 @@ const ChangePasswordCard: React.FC = () => {
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-surface rounded-2xl shadow-sm border border-line p-4">
             <button
                 type="button"
                 onClick={() => { setOpen(o => !o); if (open) reset(); }}
@@ -64,11 +64,11 @@ const ChangePasswordCard: React.FC = () => {
                         <KeyRound size={18} style={{ color: '#DE6B38' }} />
                     </span>
                     <span className="min-w-0">
-                        <span className="block font-bold text-[#241C17] text-sm">Change password</span>
-                        <span className="block text-xs text-[#8A6A57] mt-0.5">Choose your own password instead of your mobile number</span>
+                        <span className="block font-bold text-ink text-sm">Change password</span>
+                        <span className="block text-xs text-ink-2 mt-0.5">Choose your own password instead of your mobile number</span>
                     </span>
                 </span>
-                <span className="text-sm font-bold text-saffron-700 shrink-0">{open ? 'Cancel' : 'Change'}</span>
+                <span className="text-sm font-bold text-brand-700 shrink-0">{open ? 'Cancel' : 'Change'}</span>
             </button>
 
             {open && (
@@ -85,14 +85,14 @@ const ChangePasswordCard: React.FC = () => {
                         <label className={labelClass} htmlFor="cp-confirm">Confirm new password</label>
                         <input id="cp-confirm" type={show ? 'text' : 'password'} autoComplete="new-password" required className={inputClass} value={confirm} onChange={e => setConfirm(e.target.value)} />
                     </div>
-                    <button type="button" onClick={() => setShow(s => !s)} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#8A6A57]">
+                    <button type="button" onClick={() => setShow(s => !s)} className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-2">
                         {show ? <EyeOff size={14} /> : <Eye size={14} />} {show ? 'Hide passwords' : 'Show passwords'}
                     </button>
-                    {error && <p role="alert" className="text-sm font-medium text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
+                    {error && <p role="alert" className="text-sm font-medium text-err bg-err-soft border border-err-soft rounded-xl px-3 py-2">{error}</p>}
                     <button
                         type="submit"
                         disabled={busy}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-saffron-600 text-white font-bold text-sm disabled:opacity-60"
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-brand text-ink font-bold text-sm disabled:opacity-60"
                     >
                         {busy && <Loader2 size={16} className="animate-spin" />}
                         Save new password

@@ -17,7 +17,7 @@ const WHATSAPP_DISPLAY = BRAND.contact.whatsapp.length === 12
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="mb-8">
-    <h2 className="text-lg font-extrabold text-[#241C17] mb-2">{title}</h2>
+    <h2 className="text-lg font-extrabold text-ink mb-2">{title}</h2>
     <div className="text-sm leading-relaxed text-[#4A3F38] space-y-3">{children}</div>
   </section>
 );
@@ -29,20 +29,20 @@ const Bullets: React.FC<{ items: React.ReactNode[] }> = ({ items }) => (
 );
 
 const Shell: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className="min-h-screen bg-[#FDFBF7]">
-    <header className="border-b border-orange-100 bg-white">
+  <div className="min-h-screen bg-sunken/60">
+    <header className="border-b border-brand-100 bg-surface">
       <div className="max-w-2xl mx-auto px-5 py-4 flex items-center gap-3">
-        <a href="/" className="w-9 h-9 rounded-full bg-[#FDFBF7] border border-orange-100 flex items-center justify-center" aria-label={`Back to ${BRAND.name}`}>
-          <ChevronLeft size={16} className="text-[#241C17]" />
+        <a href="/" className="w-9 h-9 rounded-full bg-sunken/60 border border-brand-100 flex items-center justify-center" aria-label={`Back to ${BRAND.name}`}>
+          <ChevronLeft size={16} className="text-ink" />
         </a>
-        <span className="font-extrabold text-saffron-600 text-lg">{BRAND.shortName}</span>
+        <span className="font-extrabold text-brand-700 text-lg">{BRAND.shortName}</span>
       </div>
     </header>
     <main className="max-w-2xl mx-auto px-5 py-8">
-      <h1 className="text-2xl font-extrabold text-[#241C17] mb-1">{title}</h1>
-      <p className="text-xs text-[#8A6A57] mb-8">Last updated: {LAST_UPDATED}</p>
+      <h1 className="text-2xl font-extrabold text-ink mb-1">{title}</h1>
+      <p className="text-xs text-ink-2 mb-8">Last updated: {LAST_UPDATED}</p>
       {children}
-      <p className="text-xs text-[#8A6A57] mt-10 pt-6 border-t border-orange-100">{BRAND.legalFooter}</p>
+      <p className="text-xs text-ink-2 mt-10 pt-6 border-t border-brand-100">{BRAND.legalFooter}</p>
     </main>
   </div>
 );
@@ -130,7 +130,7 @@ export const PrivacyPolicy: React.FC = () => (
         'View and update your details in Profile & Settings, or ask your Captain to update them.',
         'Turn notifications on or off in Profile & Settings or your device settings.',
         'Allow or deny location in your device settings at any time. SOS still works without it (it is sent without a location); finding nearby temples needs it.',
-        <>Ask us to delete your account and data — see <a className="text-saffron-600 underline" href="/delete-account">how to request deletion</a>.</>,
+        <>Ask us to delete your account and data — see <a className="text-brand-700 underline" href="/delete-account">how to request deletion</a>.</>,
       ]} />
     </Section>
 
@@ -145,8 +145,8 @@ export const PrivacyPolicy: React.FC = () => (
     <Section title="Contact">
       <p>
         Questions or requests about your data: email{' '}
-        <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> or message us on{' '}
-        <a className="text-saffron-600 underline" href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp ({WHATSAPP_DISPLAY})</a>.
+        <a className="text-brand-700 underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> or message us on{' '}
+        <a className="text-brand-700 underline" href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp ({WHATSAPP_DISPLAY})</a>.
       </p>
     </Section>
   </Shell>
@@ -166,11 +166,11 @@ export const DeleteAccount: React.FC = () => {
           href={requestLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block mt-2 px-5 py-3 rounded-xl bg-saffron-600 text-white font-bold text-sm"
+          className="inline-block mt-2 px-5 py-3 rounded-xl bg-brand text-ink font-bold text-sm"
         >
           Request deletion on WhatsApp
         </a>
-        <p className="pt-1">Or email <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`${BRAND.name} account deletion request`)}`}>{CONTACT_EMAIL}</a>.</p>
+        <p className="pt-1">Or email <a className="text-brand-700 underline" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`${BRAND.name} account deletion request`)}`}>{CONTACT_EMAIL}</a>.</p>
         <p className="pt-2">Captains: deleting a Captain account affects the whole group, so we will contact you first to transfer or close the group.</p>
       </Section>
 
@@ -191,7 +191,7 @@ export const DeleteAccount: React.FC = () => {
       </Section>
 
       <p className="text-sm text-[#4A3F38]">
-        See the full <a className="text-saffron-600 underline" href="/privacy">Privacy Policy</a> for details on what {BRAND.name} collects.
+        See the full <a className="text-brand-700 underline" href="/privacy">Privacy Policy</a> for details on what {BRAND.name} collects.
       </p>
     </Shell>
   );
@@ -228,9 +228,9 @@ export const ChildSafetyStandards: React.FC = () => (
     <Section title="How to report a concern">
       <p>You can report a child-safety concern at any time, in the app or outside it. Reports are read by a named person and handled promptly.</p>
       <Bullets items={[
-        <>In the app: <em>Profile &amp; Settings → Report a safety concern</em>, or the <a className="text-saffron-600 underline" href="/contact">Contact</a> page on the sign-in screen.</>,
-        <>WhatsApp: <a className="text-saffron-600 underline" href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">{WHATSAPP_DISPLAY}</a></>,
-        <>Email: <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`${BRAND.name} child safety concern`)}`}>{CONTACT_EMAIL}</a></>,
+        <>In the app: <em>Profile &amp; Settings → Report a safety concern</em>, or the <a className="text-brand-700 underline" href="/contact">Contact</a> page on the sign-in screen.</>,
+        <>WhatsApp: <a className="text-brand-700 underline" href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">{WHATSAPP_DISPLAY}</a></>,
+        <>Email: <a className="text-brand-700 underline" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`${BRAND.name} child safety concern`)}`}>{CONTACT_EMAIL}</a></>,
       ]} />
       <p>If a child is in immediate danger, contact local emergency services first (India: 112, or Childline 1098).</p>
     </Section>
@@ -245,7 +245,7 @@ export const ChildSafetyStandards: React.FC = () => (
 
     <Section title="Point of contact">
       <p>
-        Child-safety contact for {BRAND.name}: {BRAND.operator} — <a className="text-saffron-600 underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>, WhatsApp {WHATSAPP_DISPLAY}.
+        Child-safety contact for {BRAND.name}: {BRAND.operator} — <a className="text-brand-700 underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>, WhatsApp {WHATSAPP_DISPLAY}.
         This person is available to discuss our CSAM prevention practices and compliance.
       </p>
     </Section>

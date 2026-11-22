@@ -5,6 +5,7 @@ import { Bell, Check, MapPin, X, Users, Clock } from 'lucide-react';
 import { UserNotification, UserRole } from '../types';
 import { getNotificationTarget } from '../services/notificationRouting';
 import { useToast } from '../context/ToastContext';
+import { subscribeNotifications, updateNotifications } from '../services/notificationsStore';
 
 const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?: () => void; onOpenNotification?: (n: UserNotification) => void }> = ({ userId, role, onViewAll, onOpenNotification }) => {
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
@@ -13,49 +14,14 @@ const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?:
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
 
-  const fetchNotifications = async () => {
+  // One shared list for every bell on the page, fetched every 3 minutes while on screen (services/notificationsStore.ts)
+  useEffect(() => {
     if (!userId) return;
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(30);
-
-      if (error) throw error;
-
-      const now = new Date();
-
-      // Filter out EXPIRED upcoming alerts
-      const validNotifications = (data || []).filter(n => {
-        if (n.type === 'alert_upcoming' && n.payload?.date && n.payload?.time) {
-          const alertDate = new Date(`${n.payload.date}T${n.payload.time}`);
-          return alertDate > now; // Only show if future
-        }
-        return true; // Keep other notifications
-      });
-
-      setNotifications(validNotifications);
-
-      // Calculate Badge Count
-      // Rule: "1 mark will not go until that day time arrives"
-      // Count = Standard Unread + Active Upcoming Alerts (regardless of read status)
-      // Actually, if we want them to stay "new", we just count all active upcoming as +1?
-      // Or maybe just sum up unread normal + all active upcoming?
-      // Let's assume user wants 'badge' to persist.
-
-      const count = validNotifications.reduce((acc, n) => {
-        if (n.type === 'alert_upcoming') return acc + 1; // Always count active alerts
-        return acc + (n.is_read ? 0 : 1);
-      }, 0);
-
-      setUnreadCount(count);
-
-    } catch (err) {
-      console.error("Failed to fetch notifications", err);
-    }
-  };
+    return subscribeNotifications(userId, s => {
+      setNotifications(s.notifications);
+      setUnreadCount(s.unreadCount);
+    });
+  }, [userId]);
 
   const markAsRead = async (id: string) => {
     try {
@@ -66,23 +32,11 @@ const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?:
 
       if (error) throw error;
 
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-      // Re-calculate unread count (simplified)
-      // If it triggers a refetch, that's fine, but let's do optimistic update logic if complex
-      fetchNotifications();
+      updateNotifications(list => list.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch (err) {
       console.error("Failed to mark read", err);
     }
   };
-
-  useEffect(() => {
-    fetchNotifications();
-    // Poll only while the app is on screen; catch up as soon as it comes back.
-    const interval = setInterval(() => { if (document.visibilityState === 'visible') fetchNotifications(); }, 30000);
-    const onVisible = () => { if (document.visibilityState === 'visible') fetchNotifications(); };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisible); };
-  }, [userId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -120,8 +74,7 @@ const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?:
         console.error('Failed to auto mark-as-read', error);
         return;
       }
-      setNotifications(prev => prev.map(n => (unreadIds.includes(n.id) ? { ...n, is_read: true } : n)));
-      fetchNotifications();
+      updateNotifications(list => list.map(n => (unreadIds.includes(n.id) ? { ...n, is_read: true } : n)));
     });
   }, [isOpen]);
 
@@ -131,32 +84,33 @@ const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?:
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-saffron-600 transition-colors rounded-full hover:bg-gray-100"
+        aria-label="Notifications"
+        className="relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface text-ink ring-1 ring-inset ring-line transition-colors hover:bg-surface active:scale-95"
       >
-        <Bell size={24} />
+        <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full animate-pulse">
+          <span className="absolute -top-1 -right-1 inline-flex min-w-[20px] h-5 items-center justify-center px-1.5 text-[11px] font-bold leading-none text-ink bg-brand rounded-full ring-2 ring-canvas">
             {unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="app-modal-backdrop fixed inset-x-4 top-20 bottom-auto md:absolute md:inset-auto md:left-full md:bottom-[-10px] md:ml-6 w-auto md:w-96 max-h-[80vh] md:max-h-[600px] bg-white rounded-xl shadow-2xl overflow-hidden z-[100] border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="app-modal-backdrop fixed inset-x-4 top-20 bottom-auto md:absolute md:inset-auto md:left-full md:bottom-[-10px] md:ml-6 w-auto md:w-96 max-h-[80vh] md:max-h-[600px] bg-surface rounded-xl shadow-2xl overflow-hidden z-[100] border border-line animate-in fade-in slide-in-from-bottom-2 duration-200">
 
-          <div className="px-4 py-3 border-b bg-gray-50 flex justify-between items-center sticky top-0 bg-gray-50 z-10">
+          <div className="px-4 py-3 border-b bg-sunken/60 flex justify-between items-center sticky top-0 bg-sunken/60 z-10">
             <div>
-              <h3 className="font-semibold text-gray-700">Notifications</h3>
-              <span className="text-xs text-gray-500">{unreadCount > 0 ? `${unreadCount} active` : 'All caught up'}</span>
+              <h3 className="font-semibold text-ink">Notifications</h3>
+              <span className="text-xs text-ink-2">{unreadCount > 0 ? `${unreadCount} active` : 'All caught up'}</span>
             </div>
-            <button onClick={() => setIsOpen(false)} className="md:hidden p-1 text-gray-400">
+            <button onClick={() => setIsOpen(false)} className="md:hidden p-1 text-ink-3">
               <X size={20} />
             </button>
           </div>
 
           <div className="max-h-[60vh] md:max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-6 text-center text-gray-400 text-sm">
+              <div className="p-6 text-center text-ink-3 text-sm">
                 No notifications
               </div>
             ) : (
@@ -177,40 +131,40 @@ const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?:
                     key={notif.id}
                     onClick={target ? openTarget : undefined}
                     className={`p-4 border-b last:border-b-0 transition-colors 
-                       ${!notif.is_read ? 'bg-blue-50/50' : 'hover:bg-gray-50'}
+                       ${!notif.is_read ? 'bg-blue-50/50' : 'hover:bg-sunken/60'}
                        ${isUpcoming ? 'border-l-4 border-l-saffron-500 bg-orange-50/40' : ''}
-                       ${target ? 'cursor-pointer active:bg-gray-100' : ''}
+                       ${target ? 'cursor-pointer active:bg-sunken' : ''}
                      `}
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          {isUpcoming && <MapPin size={14} className="text-saffron-600" />}
-                          <p className={`font-medium text-sm ${isUpcoming ? 'text-saffron-800' : 'text-gray-800'}`}>
+                          {isUpcoming && <MapPin size={14} className="text-brand-700" />}
+                          <p className={`font-medium text-sm ${isUpcoming ? 'text-brand-700' : 'text-ink'}`}>
                             {notif.title}
                           </p>
                         </div>
-                        <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">{notif.message}</p>
+                        <p className="text-xs text-ink-2 leading-relaxed whitespace-pre-wrap">{notif.message}</p>
 
                         {isUpcoming && (
                           <div className="mt-2 text-xs bg-white/60 p-2 rounded border border-orange-200/50 grid grid-cols-2 gap-2">
                             <div className="flex items-center gap-1.5">
-                              <Clock size={12} className="text-saffron-600" />
-                              <span className="font-semibold text-gray-700">{payload.time ? payload.time.slice(0, 5) : ''}</span>
+                              <Clock size={12} className="text-brand-700" />
+                              <span className="font-semibold text-ink">{payload.time ? payload.time.slice(0, 5) : ''}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <span className="capitalize px-1.5 py-0.5 bg-orange-100 rounded text-[10px] text-orange-700 font-bold">{payload.type}</span>
+                              <span className="capitalize px-1.5 py-0.5 bg-brand-100 rounded text-[11px] text-brand-700 font-bold">{payload.type}</span>
                             </div>
                             {(payload.sadhu_count > 0 || payload.sadhvi_count > 0) && (
-                              <div className="col-span-2 border-t border-orange-100 pt-1 mt-1 flex gap-3">
+                              <div className="col-span-2 border-t border-brand-100 pt-1 mt-1 flex gap-3">
                                 {payload.sadhu_count > 0 && (
-                                  <div className="flex items-center gap-1 text-gray-600" title="Sadhu Bhagwan">
-                                    <Users size={12} className="text-saffron-500" />
+                                  <div className="flex items-center gap-1 text-ink-2" title="Sadhu Bhagwan">
+                                    <Users size={12} className="text-brand-700" />
                                     <span className="font-bold">{payload.sadhu_count}</span>
                                   </div>
                                 )}
                                 {payload.sadhvi_count > 0 && (
-                                  <div className="flex items-center gap-1 text-gray-600" title="Sadhviji Bhagwan">
+                                  <div className="flex items-center gap-1 text-ink-2" title="Sadhviji Bhagwan">
                                     <Users size={12} className="text-pink-500" />
                                     <span className="font-bold">{payload.sadhvi_count}</span>
                                   </div>
@@ -220,8 +174,8 @@ const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?:
                           </div>
                         )}
 
-                        {target && <p className="mt-1.5 text-[11px] font-bold text-saffron-600">{target.label} →</p>}
-                        <p className="text-[10px] text-gray-400 mt-2">
+                        {target && <p className="mt-1.5 text-[11px] font-bold text-brand-700">{target.label} →</p>}
+                        <p className="text-[11px] text-ink-3 mt-2">
                           {new Date(notif.created_at).toLocaleString()}
                         </p>
                       </div>
@@ -238,7 +192,7 @@ const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?:
                       {!notif.is_read && (
                         <button
                           onClick={(e) => { e.stopPropagation(); markAsRead(notif.id); }}
-                          className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100/50 transition-colors"
+                          className="text-info hover:text-info p-1 rounded-full hover:bg-blue-100/50 transition-colors"
                           title="Mark as read"
                         >
                           <Check size={16} />
@@ -254,7 +208,7 @@ const NotificationBell: React.FC<{ userId?: string; role?: UserRole; onViewAll?:
           {onViewAll && (
             <button
               onClick={() => { setIsOpen(false); onViewAll(); }}
-              className="w-full py-3 text-center text-sm font-bold text-saffron-600 hover:bg-saffron-50 border-t border-gray-100 sticky bottom-0 bg-white transition-colors"
+              className="w-full py-3 text-center text-sm font-bold text-brand-700 hover:bg-brand-50 border-t border-line sticky bottom-0 bg-surface transition-colors"
             >
               View All Notifications
             </button>

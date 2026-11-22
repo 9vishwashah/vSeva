@@ -100,47 +100,45 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
     };
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow relative overflow-hidden">
-            {/* Left accent stripe */}
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-saffron-400 to-saffron-600 rounded-l-2xl" />
+        <div className="bg-surface rounded-card ring-1 ring-inset ring-line relative overflow-hidden">
             {/* Capture Area */}
-            <div ref={cardRef} className="bg-white p-3 pl-4 rounded-2xl relative">
+            <div ref={cardRef} className="bg-surface p-4 rounded-card relative">
                 {/* Date badge — absolute top-right, matches redesign mock */}
-                <div className="absolute top-3.5 right-3.5 rounded-xl text-center leading-none px-2.5 py-1.5" style={{ background: '#FFF0E5' }}>
-                    <p className="text-sm font-extrabold" style={{ color: '#DE6B38' }}>{new Date(`${entry.vihar_date}T00:00:00`).getDate()}</p>
-                    <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wide" style={{ color: '#B5602C' }}>{new Date(`${entry.vihar_date}T00:00:00`).toLocaleString('default', { month: 'short' })}</p>
+                <div className="absolute top-4 right-4 rounded-2xl text-center leading-none px-2.5 py-2 bg-sunken min-w-[48px]">
+                    <p className="display num text-[1.35rem] font-extrabold text-ink">{new Date(`${entry.vihar_date}T00:00:00`).getDate()}</p>
+                    <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-ink-2">{new Date(`${entry.vihar_date}T00:00:00`).toLocaleString('default', { month: 'short' })}</p>
                 </div>
 
                 {/* Route — its own line, full width (no pill sharing the line
                     and truncating it) */}
-                <div className="flex items-center gap-1.5 min-w-0 pr-14 mb-1.5">
-                    <span className="text-[15px] font-extrabold text-[#241C17] truncate">{entry.vihar_from}</span>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B7B7AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                    <span className="text-[15px] font-extrabold text-[#241C17] truncate">{entry.vihar_to}</span>
+                <div className="flex items-center gap-1.5 min-w-0 pr-16 mb-2">
+                    <span className="display text-[1.3rem] font-bold text-ink truncate">{entry.vihar_from}</span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A49D91" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                    <span className="display text-[1.3rem] font-bold text-ink truncate">{entry.vihar_to}</span>
                 </div>
 
                 {/* Type + status — own line below the route */}
                 <div className="flex items-center gap-1.5 flex-wrap mb-3">
-                    <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-full" style={{ background: '#FFF0E5', color: '#B5602C' }}>
+                    <span className="shrink-0 text-[12px] font-semibold px-2.5 h-6 inline-flex items-center rounded-full bg-sunken text-ink-2">
                         {entry.vihar_type}
                     </span>
-                    {entry.status === 'pending' && <span className="text-[10px] text-orange-700 font-bold bg-orange-100 px-1.5 py-0.5 rounded uppercase">Pending Captain Approval</span>}
-                    {entry.status === 'rejected' && <span className="text-[10px] text-red-700 font-bold bg-red-100 px-1.5 py-0.5 rounded uppercase">Rejected</span>}
+                    {entry.status === 'pending' && <span className="text-[12px] text-warn font-semibold bg-warn-soft px-2.5 h-6 inline-flex items-center rounded-full">Pending Captain Approval</span>}
+                    {entry.status === 'rejected' && <span className="text-[12px] text-err font-semibold bg-err-soft px-2.5 h-6 inline-flex items-center rounded-full">Rejected</span>}
                 </div>
 
                 {/* Stats chips */}
                 <div className="grid grid-cols-3 gap-2 mb-3">
-                    <div className="text-center rounded-xl py-2" style={{ background: '#FFF0E5' }}>
-                        <p className="text-sm font-extrabold text-[#241C17] leading-none">{entry.distance_km}<span className="text-[10px] font-bold" style={{ color: '#B5602C' }}> km</span></p>
-                        <p className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#B5602C' }}>Total KM</p>
+                    <div className="text-center rounded-2xl py-2.5" style={{ background: '#F6E7AE' }}>
+                        <p className="display num text-[1.35rem] font-extrabold text-ink leading-none">{entry.distance_km}<span className="font-sans text-[12px] font-semibold"> km</span></p>
+                        <p className="mt-1 text-[12px] font-medium text-ink/70">Total KM</p>
                     </div>
-                    <div className="text-center rounded-xl py-2" style={{ background: '#FCEAEB' }}>
-                        <p className="text-sm font-extrabold text-[#241C17] leading-none">{entry.no_sadhubhagwan || 0}<span className="text-[10px]" style={{ color: '#D9A6A5' }}> / </span>{entry.no_sadhvijibhagwan || 0}</p>
-                        <p className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#C05A57' }}>Sadhu/Sadhvi</p>
+                    <div className="text-center rounded-2xl py-2.5" style={{ background: '#F6DCE8' }}>
+                        <p className="display num text-[1.35rem] font-extrabold text-ink leading-none">{entry.no_sadhubhagwan || 0}<span className="opacity-50"> / </span>{entry.no_sadhvijibhagwan || 0}</p>
+                        <p className="mt-1 text-[12px] font-medium text-ink/70">Sadhu/Sadhvi</p>
                     </div>
-                    <div className="text-center rounded-xl py-2" style={{ background: '#F1EAFB' }}>
-                        <p className="text-sm font-extrabold text-[#241C17] leading-none">{(entry.sevaks || []).length}</p>
-                        <p className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#6B4FAE' }}>Sevaks</p>
+                    <div className="text-center rounded-2xl py-2.5 bg-ok-soft">
+                        <p className="display num text-[1.35rem] font-extrabold text-ink leading-none">{(entry.sevaks || []).length}</p>
+                        <p className="mt-1 text-[12px] font-medium text-ink/70">Sevaks</p>
                     </div>
                 </div>
 
@@ -150,7 +148,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                     actually visible/captured in the shared image instead of
                     being cropped past the visible width. */}
                 <div className="mb-2">
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8A6A57]">Sevaks Present</p>
+                    <p className="mb-1.5 text-[13px] font-medium text-ink-2">Sevaks Present</p>
                     <div
                         className={isSharing ? 'flex flex-wrap gap-1.5' : 'flex flex-nowrap gap-1.5 overflow-x-auto pb-1'}
                         style={isSharing ? undefined : { scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -159,12 +157,12 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                             const info = getSevakInfo(u);
                             return (
                                 <div key={i} className="shrink-0 flex flex-col items-center gap-0.5">
-                                    <span className="flex items-center gap-1.5 text-[11px] pl-0.5 pr-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: '#F7F4F0', color: '#241C17' }}>
-                                        <Avatar name={info.name} url={info.avatar_url} size={20} className="text-[9px]" />
+                                    <span className="flex items-center gap-1.5 text-[13px] pl-0.5 pr-3 py-0.5 rounded-full font-medium whitespace-nowrap bg-sunken text-ink">
+                                        <Avatar name={info.name} url={info.avatar_url} size={24} className="text-[10px]" />
                                         {info.name}
                                     </span>
                                     {info.blood && (
-                                        <span className="text-[8px] px-1.5 py-0 bg-red-50 text-red-600 rounded border border-red-100 font-bold uppercase leading-tight">
+                                        <span className="text-[10px] px-1.5 py-0.5 bg-err-soft text-err rounded-full font-semibold uppercase leading-none">
                                             {info.blood}
                                         </span>
                                     )}
@@ -178,15 +176,15 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                 {(entry.wheelchair || entry.car_seva) && (
                     <div className="mb-2 space-y-1.5">
                         {[
-                            { label: 'Wheelchair Seva', on: !!entry.wheelchair, names: entry.wheelchair_sevaks || [], bg: '#E9F4FD', fg: '#2B6CB0' },
-                            { label: 'Car Seva', on: !!entry.car_seva, names: entry.car_seva_sevaks || [], bg: '#E6F7F0', fg: '#1F7A57' },
+                            { label: 'Wheelchair Seva', on: !!entry.wheelchair, names: entry.wheelchair_sevaks || [], bg: '#DCEFF2', fg: '#1E5A66' },
+                            { label: 'Car Seva', on: !!entry.car_seva, names: entry.car_seva_sevaks || [], bg: '#D9EAE5', fg: '#1F6B5F' },
                         ].filter(r => r.on).map(r => (
                             <div key={r.label}>
-                                <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-[#8A6A57]">{r.label}</p>
+                                <p className="mb-1 text-[13px] font-medium text-ink-2">{r.label}</p>
                                 <div className="flex flex-wrap gap-1.5">
                                     {r.names.length > 0 ? r.names.map((u, i) => (
-                                        <span key={i} className="text-[11px] px-2.5 py-0.5 rounded-full font-semibold" style={{ background: r.bg, color: r.fg }}>{getSevakInfo(u).name}</span>
-                                    )) : <span className="text-[11px] px-2.5 py-0.5 rounded-full font-semibold" style={{ background: r.bg, color: r.fg }}>Yes</span>}
+                                        <span key={i} className="text-[13px] px-3 py-0.5 rounded-full font-medium" style={{ background: r.bg, color: r.fg }}>{getSevakInfo(u).name}</span>
+                                    )) : <span className="text-[13px] px-3 py-0.5 rounded-full font-medium" style={{ background: r.bg, color: r.fg }}>Yes</span>}
                                 </div>
                             </div>
                         ))}
@@ -201,7 +199,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                             onClick={handleSave}
                             disabled={isSharing}
                             aria-label="Save image"
-                            className="flex items-center gap-1.5 bg-[#F7F4F0] text-[#8A6A57] px-3 py-1.5 rounded-full text-[11px] font-bold hover:bg-[#EFE9E2] transition-colors"
+                            className="flex items-center gap-1.5 bg-sunken text-ink h-9 px-3.5 rounded-full text-[13px] font-semibold hover:bg-line transition-colors"
                         >
                             {busy === 'save'
                                 ? <span className="animate-spin w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full"></span>
@@ -211,7 +209,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                         <button
                             onClick={handleShare}
                             disabled={isSharing}
-                            className="flex items-center gap-1.5 bg-[#25D366]/10 text-[#25D366] px-3 py-1.5 rounded-full text-[11px] font-bold hover:bg-[#25D366]/20 transition-colors"
+                            className="flex items-center gap-1.5 bg-[#25D366]/15 text-[#128C4B] h-9 px-3.5 rounded-full text-[13px] font-semibold hover:bg-[#25D366]/25 transition-colors"
                         >
                             {busy === 'share' ? (
                                 <span className="animate-spin w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full"></span>
@@ -227,36 +225,35 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
 
                 {/* Vihar photo (optional, Shraman Seva Group entry forms) */}
                 {entry.photo_url && (
-                    <a href={entry.photo_url} target="_blank" rel="noopener noreferrer" className="block mb-2 rounded-xl overflow-hidden bg-[#F7F4F0]" data-html2canvas-ignore="true">
+                    <a href={entry.photo_url} target="_blank" rel="noopener noreferrer" className="block mb-2 rounded-2xl overflow-hidden bg-sunken" data-html2canvas-ignore="true">
                         <img src={entry.photo_url} alt="Vihar photo" loading="lazy" className="w-full max-h-56 object-cover" />
                     </a>
                 )}
 
                 {/* Notes (included in image) */}
                 {entry.notes?.trim() && (
-                    <div className="pt-2 border-t border-gray-100 mb-2">
-                        <p className="text-xs text-gray-500 italic">"{entry.notes.trim()}"</p>
+                    <div className="pt-2 border-t border-line mb-2">
+                        <p className="text-[13px] text-ink-2 italic">"{entry.notes.trim()}"</p>
                     </div>
                 )}
 
                 {/* Branding footer — only for the shared image, not the
                     normal on-screen card. */}
                 {isSharing && (
-                    <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center opacity-70">
-                        <div className="text-[10px] font-bold text-saffron-600 uppercase tracking-widest">{BRAND.name} App</div>
-                        <div className="text-[8px] text-gray-400">Track. Serve. Inspire.</div>
+                    <div className="mt-2 pt-2 border-t border-line flex justify-between items-center opacity-80">
+                        <div className="text-[11px] font-bold text-brand-700 uppercase tracking-widest">{BRAND.name} App</div>
+                        <div className="text-[10px] text-ink-3">Track. Serve. Inspire.</div>
                     </div>
                 )}
             </div>
 
             {/* Footer: Edit/Delete only (Share moved under Sevaks Present, above) */}
             {(onEdit || onDelete) && (
-            <div className="flex items-center justify-end pt-2.5 px-4 pb-2.5 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-2 pt-3 px-4 pb-3 border-t border-line">
                 {onEdit && (
                     <button
                         onClick={() => onEdit(entry)}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-colors"
-                        style={{ background: '#F1EAFB', color: '#6B4FAE' }}
+                        className="flex items-center gap-1.5 h-10 px-4 rounded-full text-[13px] font-semibold transition-colors bg-sunken text-ink hover:bg-line"
                     >
                         <Pencil size={16} />
                         <span className="md:hidden">Edit</span>
@@ -265,8 +262,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, getSevakInfo, onDelete, on
                 {onDelete && (
                     <button
                         onClick={() => onDelete(entry.id)}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-colors ml-2"
-                        style={{ background: '#FCEAEB', color: '#C05A57' }}
+                        className="flex items-center gap-1.5 h-10 px-4 rounded-full text-[13px] font-semibold transition-colors bg-err-soft text-err"
                     >
                         <Trash2 size={16} />
                         <span className="md:hidden">Delete</span>

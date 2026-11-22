@@ -58,14 +58,16 @@ export const getMeta = (_env: Env): BrandMeta => ({
   keywords: 'vSeva, Jain Vihar, Vihar Seva, Jainism, Vihar Tracking, VJAS, Digitize Vihar, Jain Monk Tracking',
   ogTitle: 'vSeva - Digitizing Jain Vihar Seva',
   ogDescription: 'Your Steps. Your Seva. Your Legacy. A modern platform to record and manage Jain Vihar Seva activities.',
-  iconPath: '/vseva-logo-full.png',
-  appleTouchIconPath: '/vseva-logo-full.png',
+  // small copies of vseva-logo-full.png (286 KB): the icon is fetched on every page view
+  iconPath: '/vseva-icon-192.png',
+  appleTouchIconPath: '/vseva-icon-180.png',
   ogImagePath: '/vseva-og.jpg',
   ogImageSize: [1200, 630],
   schemaLogoPath: '/vseva-og-preview.png',
   altName: 'vSeva - VJAS',
   schemaContactPath: '/#contact',
   googleVerification: 'uEEgQxlfmHsWCwjOR64dWKVt9mQteVzbpbdcr2Y3izc',
-  fontsHref: 'https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@600;700&display=swap',
+  // Design Core fonts (components/core/theme.ts); the public website loads its own faces
+  fontsHref: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,700;12..96,75..100,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap',
   includeAssets: ['vseva-logo.png', 'pwa-192x192.png', 'apple-touch-icon.png', 'mask-icon.svg'],
 });

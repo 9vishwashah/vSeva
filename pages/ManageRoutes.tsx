@@ -260,41 +260,41 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
         placeMatches(r.via, aliases, searchTerm)
     );
     const aliasChip = (place: string) =>
-        aliases[place] ? <span className="ml-1.5 shrink-0 rounded-md bg-saffron-50 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-saffron-700">{aliases[place]}</span> : null;
+        aliases[place] ? <span className="ml-1.5 shrink-0 rounded-md bg-brand-50 px-1.5 py-0.5 text-[11px] font-extrabold tracking-wide text-brand-700">{aliases[place]}</span> : null;
     const filteredPlaces = knownAreas.filter(p => placeMatches(p, aliases, searchTerm));
 
     return (
         <div className="space-y-6 animate-fade-in">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] flex items-center gap-2">
-                        <Map size={20} className="text-saffron-600" />
+                    <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink flex items-center gap-2">
+                        <Map size={20} className="text-brand-700" />
                         Manage Routes
                     </h1>
-                    <p className="text-xs text-[#8A6A57]">Configure area distances for Vihar calculations</p>
+                    <p className="text-xs text-ink-2">Configure area distances for Vihar calculations</p>
                     {!loading && (
-                        <span className="mt-2 inline-block bg-saffron-100 text-saffron-700 text-xs font-bold px-3 py-1 rounded-full">
+                        <span className="mt-2 inline-block bg-brand-100 text-brand-700 text-xs font-bold px-3 py-1 rounded-full">
                             {existingRoutes.length} {existingRoutes.length === 1 ? 'Route' : 'Routes'}
                         </span>
                     )}
                 </div>
                 {/* Tab switcher */}
-                <div className="flex bg-gray-100 p-1 rounded-xl shrink-0">
+                <div className="flex bg-sunken p-1 rounded-xl shrink-0">
                     <button
                         onClick={() => setActiveTab('add')}
-                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'add' ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'add' ? 'bg-brand text-ink shadow-sm' : 'text-ink-2 hover:text-ink'}`}
                     >
                         <div className="flex items-center gap-2"><Plus size={16} /> Add Routes</div>
                     </button>
                     <button
                         onClick={() => setActiveTab('list')}
-                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'list' ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'list' ? 'bg-brand text-ink shadow-sm' : 'text-ink-2 hover:text-ink'}`}
                     >
                         <div className="flex items-center gap-2"><Table size={16} /> View All</div>
                     </button>
                     <button
                         onClick={() => setActiveTab('aliases')}
-                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'aliases' ? 'bg-[#DE6B38] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'aliases' ? 'bg-brand text-ink shadow-sm' : 'text-ink-2 hover:text-ink'}`}
                     >
                         <div className="flex items-center gap-2"><Tag size={16} /> Short Forms</div>
                     </button>
@@ -302,13 +302,13 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
             </div>
 
             {activeTab === 'add' && (
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                <div className="bg-surface rounded-2xl shadow-xl border border-line overflow-hidden">
 
                     <div className="p-6">
                         <div className="space-y-4">
                             {/* Headers */}
                             {/* Headers - Hidden on Mobile */}
-                            <div className="hidden md:grid grid-cols-12 gap-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">
+                            <div className="hidden md:grid grid-cols-12 gap-4 text-xs font-bold text-ink-3 uppercase tracking-wider mb-2 px-2">
                                 <div className="col-span-5 md:col-span-4">From Area</div>
                                 <div className="col-span-1 hidden md:block text-center"></div>
                                 <div className="col-span-5 md:col-span-4">To Area</div>
@@ -317,21 +317,21 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                             </div>
 
                             {tempRoutes.map((route, index) => (
-                                <div key={route.id} className="flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 items-stretch md:items-center bg-gray-50 p-4 md:p-2 rounded-xl group hover:bg-white hover:shadow-md transition-all border border-gray-100 md:border-transparent hover:border-gray-100 relative">
+                                <div key={route.id} className="flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 items-stretch md:items-center bg-sunken/60 p-4 md:p-2 rounded-xl group hover:bg-surface hover:shadow-md transition-all border border-line md:border-transparent hover:border-line relative">
 
                                     {/* Mobile helper label */}
-                                    <div className="md:hidden absolute top-2 right-2 text-xs text-gray-300 font-mono">#{index + 1}</div>
+                                    <div className="md:hidden absolute top-2 right-2 text-xs text-ink-3 font-mono">#{index + 1}</div>
 
                                     {/* From */}
                                     <div className="w-full md:col-span-4 relative">
-                                        <label className="text-xs font-bold text-gray-400 mb-1 block md:hidden">From</label>
+                                        <label className="text-xs font-bold text-ink-3 mb-1 block md:hidden">From</label>
                                         <div className="relative">
-                                            <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
+                                            <MapPin size={14} className="absolute left-3 top-3 text-ink-3" />
                                             <input
                                                 type="text"
                                                 placeholder="Start Location"
                                                 list="area-suggestions"
-                                                className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none uppercase"
+                                                className="w-full pl-9 p-2 rounded-lg border border-line text-sm focus:ring-2 focus:ring-brand outline-none uppercase"
                                                 value={route.from_name}
                                                 onChange={e => updateRow(route.id, 'from_name', e.target.value.toUpperCase())}
                                             />
@@ -339,20 +339,20 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                     </div>
 
                                     {/* Arrow (Desktop) */}
-                                    <div className="hidden md:flex col-span-1 justify-center text-gray-400">
+                                    <div className="hidden md:flex col-span-1 justify-center text-ink-3">
                                         <ArrowRight size={16} />
                                     </div>
 
                                     {/* To */}
                                     <div className="w-full md:col-span-4 relative">
-                                        <label className="text-xs font-bold text-gray-400 mb-1 block md:hidden">To</label>
+                                        <label className="text-xs font-bold text-ink-3 mb-1 block md:hidden">To</label>
                                         <div className="relative">
-                                            <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
+                                            <MapPin size={14} className="absolute left-3 top-3 text-ink-3" />
                                             <input
                                                 type="text"
                                                 placeholder="End Location"
                                                 list="area-suggestions"
-                                                className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none uppercase"
+                                                className="w-full pl-9 p-2 rounded-lg border border-line text-sm focus:ring-2 focus:ring-brand outline-none uppercase"
                                                 value={route.to_name}
                                                 onChange={e => updateRow(route.id, 'to_name', e.target.value.toUpperCase())}
                                             />
@@ -361,12 +361,12 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
                                     {/* Km */}
                                     <div className="w-full md:col-span-2">
-                                        <label className="text-xs font-bold text-gray-400 mb-1 block md:hidden">Distance (Km)</label>
+                                        <label className="text-xs font-bold text-ink-3 mb-1 block md:hidden">Distance (Km)</label>
                                         <input
                                             type="number"
                                             step="0.1"
                                             placeholder="0.0"
-                                            className="w-full p-2 text-center rounded-lg border border-gray-200 text-sm font-bold focus:ring-2 focus:ring-saffron-500 outline-none"
+                                            className="w-full p-2 text-center rounded-lg border border-line text-sm font-bold focus:ring-2 focus:ring-brand outline-none"
                                             value={route.distance_km}
                                             onChange={e => updateRow(route.id, 'distance_km', e.target.value)}
                                         />
@@ -375,24 +375,24 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                     {/* Via + Google Maps link (optional) */}
                                     <div className="w-full md:col-span-12 md:order-last grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4">
                                         <div className="md:col-span-4">
-                                            <label className="text-xs font-bold text-gray-400 mb-1 block md:hidden">Via (optional)</label>
+                                            <label className="text-xs font-bold text-ink-3 mb-1 block md:hidden">Via (optional)</label>
                                             <input
                                                 type="text"
                                                 placeholder="Via (optional)"
                                                 list="area-suggestions"
                                                 maxLength={200}
-                                                className="w-full p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none uppercase"
+                                                className="w-full p-2 rounded-lg border border-line text-sm focus:ring-2 focus:ring-brand outline-none uppercase"
                                                 value={route.via}
                                                 onChange={e => updateRow(route.id, 'via', e.target.value.toUpperCase())}
                                             />
                                         </div>
                                         <div className="md:col-span-7">
-                                            <label className="text-xs font-bold text-gray-400 mb-1 block md:hidden">Google Maps link (optional)</label>
+                                            <label className="text-xs font-bold text-ink-3 mb-1 block md:hidden">Google Maps link (optional)</label>
                                             <input
                                                 type="url"
                                                 inputMode="url"
                                                 placeholder="Paste the Google Maps route link (optional)"
-                                                className="w-full p-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-saffron-500 outline-none"
+                                                className="w-full p-2 rounded-lg border border-line text-sm focus:ring-2 focus:ring-brand outline-none"
                                                 value={route.maps_url}
                                                 onChange={e => updateRow(route.id, 'maps_url', e.target.value)}
                                             />
@@ -403,7 +403,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                     <div className="flex md:col-span-1 justify-end md:justify-center mt-2 md:mt-0">
                                         <button
                                             onClick={() => removeRow(route.id)}
-                                            className="text-red-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 flex items-center gap-2"
+                                            className="text-red-400 hover:text-err p-2 rounded-full hover:bg-err-soft flex items-center gap-2"
                                             tabIndex={-1}
                                         >
                                             <span className="md:hidden text-xs font-bold uppercase">Remove</span>
@@ -417,7 +417,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                         <div className="mt-4 flex justify-start">
                             <button
                                 onClick={() => setTempRoutes(prev => [...prev, newRow()])}
-                                className="flex items-center space-x-2 text-gray-500 hover:text-saffron-600 font-bold px-4 py-2 mt-2 rounded-lg hover:bg-saffron-50 transition-colors border border-transparent hover:border-saffron-100"
+                                className="flex items-center space-x-2 text-ink-2 hover:text-brand-700 font-bold px-4 py-2 mt-2 rounded-lg hover:bg-brand-50 transition-colors border border-transparent hover:border-brand-100"
                             >
                                 <Plus size={18} />
                                 <span>Add Another Route</span>
@@ -428,7 +428,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                             <button
                                 onClick={handleSaveAll}
                                 disabled={loading || tempRoutes.length === 0}
-                                className="flex items-center space-x-2 bg-saffron-600 hover:bg-saffron-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 disabled:opacity-50"
+                                className="flex items-center space-x-2 bg-brand hover:bg-brand-600 text-ink px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 disabled:opacity-50"
                             >
                                 {loading ? <span className="animate-pulse">Saving...</span> : <>
                                     <Save size={20} />
@@ -447,14 +447,14 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
             {/* List View */}
             {activeTab === 'list' && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="p-4 border-b border-gray-100 flex gap-4">
+                <div className="bg-surface rounded-2xl shadow-sm border border-line overflow-hidden">
+                    <div className="p-4 border-b border-line flex gap-4">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <Search className="absolute left-3 top-3 text-ink-3" size={18} />
                             <input
                                 type="text"
                                 placeholder="Search routes or short forms..."
-                                className="w-full pl-10 p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none"
+                                className="w-full pl-10 p-2.5 bg-sunken/60 border border-line rounded-lg focus:ring-2 focus:ring-brand outline-none"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
@@ -476,49 +476,49 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                         {/* Mobile Card List */}
                         <div className="md:hidden space-y-3 p-4">
                             {filteredRoutes.length > 0 ? filteredRoutes.map(route => (
-                                <div key={route.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col gap-3 relative">
+                                <div key={route.id} className="bg-sunken/60 border border-line rounded-xl p-4 flex flex-col gap-3 relative">
                                     {editingId === route.id ? (
                                         // Mobile Edit Mode
                                         <div className="flex flex-col gap-3">
                                             <div>
-                                                <label className="text-[10px] uppercase font-bold text-gray-400">From</label>
+                                                <label className="text-[11px] uppercase font-bold text-ink-3">From</label>
                                                 <input
-                                                    className="w-full p-2 border rounded-lg text-sm bg-white"
+                                                    className="w-full p-2 border rounded-lg text-sm bg-surface"
                                                     value={editValues.from_name}
                                                     onChange={e => setEditValues({ ...editValues, from_name: e.target.value })}
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-[10px] uppercase font-bold text-gray-400">To</label>
+                                                <label className="text-[11px] uppercase font-bold text-ink-3">To</label>
                                                 <input
-                                                    className="w-full p-2 border rounded-lg text-sm bg-white"
+                                                    className="w-full p-2 border rounded-lg text-sm bg-surface"
                                                     value={editValues.to_name}
                                                     onChange={e => setEditValues({ ...editValues, to_name: e.target.value })}
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-[10px] uppercase font-bold text-gray-400">KM</label>
+                                                <label className="text-[11px] uppercase font-bold text-ink-3">KM</label>
                                                 <input
                                                     type="number"
                                                     step="0.1"
-                                                    className="w-full p-2 border rounded-lg text-sm bg-white"
+                                                    className="w-full p-2 border rounded-lg text-sm bg-surface"
                                                     value={editValues.distance_km}
                                                     onChange={e => setEditValues({ ...editValues, distance_km: parseFloat(e.target.value) })}
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-[10px] uppercase font-bold text-gray-400">Via (optional)</label>
+                                                <label className="text-[11px] uppercase font-bold text-ink-3">Via (optional)</label>
                                                 <input
-                                                    className="w-full p-2 border rounded-lg text-sm bg-white uppercase"
+                                                    className="w-full p-2 border rounded-lg text-sm bg-surface uppercase"
                                                     value={editValues.via || ''}
                                                     onChange={e => setEditValues({ ...editValues, via: e.target.value.toUpperCase() })}
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-[10px] uppercase font-bold text-gray-400">Google Maps link (optional)</label>
+                                                <label className="text-[11px] uppercase font-bold text-ink-3">Google Maps link (optional)</label>
                                                 <input
                                                     type="url"
-                                                    className="w-full p-2 border rounded-lg text-sm bg-white"
+                                                    className="w-full p-2 border rounded-lg text-sm bg-surface"
                                                     placeholder="https://maps.app.goo.gl/..."
                                                     value={editValues.maps_url || ''}
                                                     onChange={e => setEditValues({ ...editValues, maps_url: e.target.value })}
@@ -526,41 +526,41 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                             </div>
                                             <div className="flex justify-end gap-2 mt-2">
                                                 <button onClick={cancelEditing} className="p-2 border rounded-lg text-sm">Cancel</button>
-                                                <button onClick={saveEdit} className="p-2 bg-saffron-600 text-white rounded-lg text-sm font-bold">Save</button>
+                                                <button onClick={saveEdit} className="p-2 bg-brand text-ink rounded-lg text-sm font-bold">Save</button>
                                             </div>
                                         </div>
                                     ) : (
                                         // Mobile View Mode
                                         <>
                                             <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-gray-800 font-medium">
-                                                    <MapPin size={16} className="text-saffron-500" />
+                                                <div className="flex items-center gap-2 text-ink font-medium">
+                                                    <MapPin size={16} className="text-brand-700" />
                                                     <span className="inline-flex items-center">{route.from_name}{aliasChip(route.from_name)}</span>
                                                 </div>
-                                                <ArrowRight size={14} className="text-gray-300" />
-                                                <div className="flex items-center gap-2 text-gray-800 font-medium">
+                                                <ArrowRight size={14} className="text-ink-3" />
+                                                <div className="flex items-center gap-2 text-ink font-medium">
                                                     <span className="inline-flex items-center">{route.to_name}{aliasChip(route.to_name)}</span>
                                                 </div>
                                             </div>
-                                            {route.via && <p className="-mt-1.5 text-xs font-semibold text-[#8A6A57]">via {route.via}</p>}
+                                            {route.via && <p className="-mt-1.5 text-xs font-semibold text-ink-2">via {route.via}</p>}
 
                                             <div className="flex items-center justify-between pt-2 border-t border-gray-200/50">
-                                                <span className="bg-saffron-50 text-saffron-700 px-3 py-1 rounded-full text-xs font-bold">
+                                                <span className="bg-brand-50 text-brand-700 px-3 py-1 rounded-full text-xs font-bold">
                                                     {route.distance_km} km
                                                 </span>
                                                 <div className="flex items-center gap-1">
                                                     {route.maps_url && (
-                                                        <a href={route.maps_url} target="_blank" rel="noopener noreferrer" aria-label="Open route in Google Maps" className="p-2 text-[#2E7EB0]">
+                                                        <a href={route.maps_url} target="_blank" rel="noopener noreferrer" aria-label="Open route in Google Maps" className="p-2 text-info">
                                                             <Navigation size={18} />
                                                         </a>
                                                     )}
                                                     <button onClick={() => shareRoute(route)} aria-label="Share route on WhatsApp" className="p-2 text-[#25D366]">
                                                         <WhatsAppIcon size={18} />
                                                     </button>
-                                                    <button onClick={() => startEditing(route)} className="p-2 text-gray-400 hover:text-saffron-600">
+                                                    <button onClick={() => startEditing(route)} className="p-2 text-ink-3 hover:text-brand-700">
                                                         <Pencil size={18} />
                                                     </button>
-                                                    <button onClick={() => handleDelete(route.id)} className="p-2 text-gray-400 hover:text-red-500">
+                                                    <button onClick={() => handleDelete(route.id)} className="p-2 text-ink-3 hover:text-err">
                                                         <Trash2 size={18} />
                                                     </button>
                                                 </div>
@@ -569,7 +569,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                     )}
                                 </div>
                             )) : (
-                                <div className="text-center py-8 text-gray-400">
+                                <div className="text-center py-8 text-ink-3">
                                     No routes found.
                                 </div>
                             )}
@@ -577,7 +577,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
                         {/* Desktop Table View */}
                         <table className="hidden md:table w-full text-left">
-                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-bold tracking-wider">
+                            <thead className="bg-sunken/60 text-ink-2 text-xs uppercase font-bold tracking-wider">
                                 <tr>
                                     <th className="p-4">From</th>
                                     <th className="p-4">To</th>
@@ -587,7 +587,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                     <th className="p-4 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-line">
                                 {filteredRoutes.length > 0 ? filteredRoutes.map(route => (
                                     <tr key={route.id} className="hover:bg-gray-50/50 transition-colors">
                                         {editingId === route.id ? (
@@ -636,13 +636,13 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button
                                                             onClick={saveEdit}
-                                                            className="text-green-600 hover:text-green-700 p-2 rounded-full hover:bg-green-50"
+                                                            className="text-ok hover:text-ok p-2 rounded-full hover:bg-ok-soft"
                                                         >
                                                             <Check size={18} />
                                                         </button>
                                                         <button
                                                             onClick={cancelEditing}
-                                                            className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
+                                                            className="text-ink-3 hover:text-ink-2 p-2 rounded-full hover:bg-sunken"
                                                         >
                                                             <X size={18} />
                                                         </button>
@@ -651,39 +651,39 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                             </>
                                         ) : (
                                             <>
-                                                <td className="p-4 font-medium text-gray-800">{route.from_name}{aliasChip(route.from_name)}</td>
-                                                <td className="p-4 font-medium text-gray-800">{route.to_name}{aliasChip(route.to_name)}</td>
-                                                <td className="p-4 text-sm font-semibold text-[#8A6A57]">{route.via || '-'}</td>
+                                                <td className="p-4 font-medium text-ink">{route.from_name}{aliasChip(route.from_name)}</td>
+                                                <td className="p-4 font-medium text-ink">{route.to_name}{aliasChip(route.to_name)}</td>
+                                                <td className="p-4 text-sm font-semibold text-ink-2">{route.via || '-'}</td>
                                                 <td className="p-4 text-center">
-                                                    <span className="bg-saffron-50 text-saffron-700 px-3 py-1 rounded-full text-xs font-bold">
+                                                    <span className="bg-brand-50 text-brand-700 px-3 py-1 rounded-full text-xs font-bold">
                                                         {route.distance_km} km
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
                                                     {route.maps_url ? (
-                                                        <a href={route.maps_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#2E7EB0] hover:underline">
+                                                        <a href={route.maps_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-info hover:underline">
                                                             <Navigation size={14} /> Open
                                                         </a>
-                                                    ) : <span className="text-gray-300">-</span>}
+                                                    ) : <span className="text-ink-3">-</span>}
                                                 </td>
                                                 <td className="p-4 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button
                                                             onClick={() => shareRoute(route)}
                                                             title="Share on WhatsApp"
-                                                            className="text-[#25D366] p-2 rounded-full hover:bg-green-50 transition-colors"
+                                                            className="text-[#25D366] p-2 rounded-full hover:bg-ok-soft transition-colors"
                                                         >
                                                             <WhatsAppIcon size={16} />
                                                         </button>
                                                         <button
                                                             onClick={() => startEditing(route)}
-                                                            className="text-gray-400 hover:text-saffron-600 p-2 rounded-full hover:bg-saffron-50 transition-colors"
+                                                            className="text-ink-3 hover:text-brand-700 p-2 rounded-full hover:bg-brand-50 transition-colors"
                                                         >
                                                             <Pencil size={16} />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDelete(route.id)}
-                                                            className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors"
+                                                            className="text-ink-3 hover:text-err p-2 rounded-full hover:bg-err-soft transition-colors"
                                                         >
                                                             <Trash2 size={16} />
                                                         </button>
@@ -694,7 +694,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={6} className="p-8 text-center text-gray-400">
+                                        <td colSpan={6} className="p-8 text-center text-ink-3">
                                             No routes found. Switch to the "Add Routes" tab to create some!
                                         </td>
                                     </tr>
@@ -708,18 +708,18 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
 
             {/* Short forms: one alias per place, used to search From / To everywhere */}
             {activeTab === 'aliases' && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="p-4 border-b border-gray-100 space-y-3">
-                        <p className="text-sm text-[#8A6A57]">
-                            Give long place names a short form, like <b className="text-[#241C17]">SP</b> for <b className="text-[#241C17]">SHREE PARSHWANATH ROAD</b>.
+                <div className="bg-surface rounded-2xl shadow-sm border border-line overflow-hidden">
+                    <div className="p-4 border-b border-line space-y-3">
+                        <p className="text-sm text-ink-2">
+                            Give long place names a short form, like <b className="text-ink">SP</b> for <b className="text-ink">SHREE PARSHWANATH ROAD</b>.
                             Typing it in any From / To search (New Entry, Alert Vihar) finds the place. Up to {ALIAS_MAX} characters.
                         </p>
                         <div className="relative">
-                            <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <Search className="absolute left-3 top-3 text-ink-3" size={18} />
                             <input
                                 type="text"
                                 placeholder="Search places or short forms..."
-                                className="w-full pl-10 p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-saffron-500 outline-none"
+                                className="w-full pl-10 p-2.5 bg-sunken/60 border border-line rounded-lg focus:ring-2 focus:ring-brand outline-none"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
@@ -730,22 +730,22 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                     ) : loadError ? (
                         <div className="p-4"><StatusScreen variant={loadError} onRetry={loadRoutes} compact /></div>
                     ) : filteredPlaces.length === 0 ? (
-                        <p className="p-8 text-center text-sm text-gray-400">{knownAreas.length ? 'No place matches your search.' : 'Add routes first; their places appear here.'}</p>
+                        <p className="p-8 text-center text-sm text-ink-3">{knownAreas.length ? 'No place matches your search.' : 'Add routes first; their places appear here.'}</p>
                     ) : (
-                        <ul className="divide-y divide-gray-100">
+                        <ul className="divide-y divide-line">
                             {filteredPlaces.map(place => {
                                 const draft = aliasDrafts[place] ?? '';
                                 const changed = draft.trim().toUpperCase() !== (aliases[place] || '');
                                 return (
                                     <li key={place} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-                                        <span className="flex min-w-0 items-center gap-2 font-semibold text-[#241C17]">
-                                            <MapPin size={15} className="shrink-0 text-saffron-600" />
+                                        <span className="flex min-w-0 items-center gap-2 font-semibold text-ink">
+                                            <MapPin size={15} className="shrink-0 text-brand-700" />
                                             <span className="break-words">{place}</span>
                                         </span>
                                         <div className="flex items-center gap-2 sm:shrink-0">
                                             <input
                                                 aria-label={`Short form for ${place}`}
-                                                className="w-full sm:w-36 p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold uppercase tracking-wide focus:ring-2 focus:ring-saffron-500 outline-none"
+                                                className="w-full sm:w-36 p-2.5 bg-sunken/60 border border-line rounded-lg text-sm font-bold uppercase tracking-wide focus:ring-2 focus:ring-brand outline-none"
                                                 placeholder="e.g. SP"
                                                 maxLength={ALIAS_MAX}
                                                 value={draft}
@@ -756,7 +756,7 @@ const ManageRoutes: React.FC<ManageRoutesProps> = ({ currentUser }) => {
                                                 type="button"
                                                 onClick={() => saveAlias(place)}
                                                 disabled={!changed || savingAlias === place}
-                                                className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-[#DE6B38] text-white text-sm font-bold disabled:opacity-40 transition-opacity"
+                                                className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-brand text-ink text-sm font-bold disabled:opacity-40 transition-opacity"
                                             >
                                                 <Check size={15} /> {savingAlias === place ? 'Saving' : 'Save'}
                                             </button>

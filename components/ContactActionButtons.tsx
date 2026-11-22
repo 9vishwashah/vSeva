@@ -35,11 +35,11 @@ const ContactActionButtons: React.FC<ContactActionButtonsProps> = ({ phone, name
     const waHref = `https://wa.me/91${phone}`;
 
     if (logos) {
-        const tap = size === 'sm' ? 'w-9 h-9' : 'w-10 h-10';
-        const logo = size === 'sm' ? 'w-7 h-7' : 'w-8 h-8';
+        const tap = size === 'sm' ? 'w-9 h-9' : 'w-9 h-9 sm:w-10 sm:h-10';
+        const logo = size === 'sm' ? 'w-7 h-7' : 'w-7 h-7 sm:w-8 sm:h-8';
         const linkClass = `flex items-center justify-center ${tap} rounded-full transition-transform duration-150 hover:scale-110 active:scale-95`;
         return (
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                 <a href={waHref} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
                     className={linkClass} title={`WhatsApp ${name}`} aria-label={`WhatsApp ${name}`}>
                     <WhatsAppLogo className={logo} />
@@ -57,7 +57,7 @@ const ContactActionButtons: React.FC<ContactActionButtonsProps> = ({ phone, name
             key="call"
             href={phoneHref}
             onClick={e => e.stopPropagation()}
-            className={`flex items-center justify-center ${dim} rounded-xl bg-green-50 hover:bg-green-500 text-green-600 hover:text-white transition-all duration-150 shadow-sm hover:shadow-md active:scale-95`}
+            className={`flex items-center justify-center ${dim} rounded-xl bg-ok-soft hover:bg-green-500 text-ok hover:text-white transition-all duration-150 shadow-sm hover:shadow-md active:scale-95`}
             title={`Call ${name}`}
         >
             <Phone size={iconSize} strokeWidth={2.5} />

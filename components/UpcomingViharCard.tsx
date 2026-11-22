@@ -21,12 +21,7 @@ const UpcomingViharCard: React.FC<UpcomingViharCardProps> = ({ currentUser, onVi
     const load = async () => {
       setLoading(true);
       const [viharsRes, contactsMap] = await Promise.all([
-        supabase
-          .from('upcoming_vihars')
-          .select('*')
-          .eq('organization_id', currentUser.organization_id)
-          .order('vihar_date', { ascending: true })
-          .order('vihar_time', { ascending: true }),
+        dataService.getUpcomingVihars(currentUser.organization_id).then(data => ({ data, error: null }), error => ({ data: null, error })),
         dataService.getOrgSevakContacts(currentUser.organization_id),
       ]);
 
@@ -55,7 +50,7 @@ const UpcomingViharCard: React.FC<UpcomingViharCardProps> = ({ currentUser, onVi
       {onViewAll && (
         <button
           onClick={onViewAll}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-saffron-600 hover:text-saffron-700 py-2 transition-colors"
+          className="w-full flex items-center justify-center gap-1.5 h-10 rounded-full text-[13px] font-semibold text-brand-700 hover:bg-brand-50 transition-colors"
         >
           View all Vihar alerts <ArrowRight size={13} />
         </button>

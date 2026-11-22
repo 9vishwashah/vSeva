@@ -110,9 +110,9 @@ const AvatarCropModal: React.FC<AvatarCropModalProps> = ({ file, onCancel, onCon
 
     return (
         <Portal>
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-[22px] p-5 w-full max-w-sm flex flex-col items-center gap-4 shadow-2xl">
-                <p className="text-sm font-extrabold text-[#241C17] self-start">Adjust Photo</p>
+        <div className="fixed inset-0 z-[200] bg-ink/45 flex items-center justify-center p-4 app-modal-backdrop">
+            <div className="bg-surface rounded-[28px] ring-1 ring-inset ring-line/70 p-5 w-full max-w-sm flex flex-col items-center gap-4 shadow-[0_24px_64px_rgb(29_29_27/0.2)] app-modal-card">
+                <p className="display text-[1.5rem] font-bold text-ink self-start">Adjust Photo</p>
 
                 <div
                     className="relative rounded-full overflow-hidden select-none"
@@ -143,7 +143,7 @@ const AvatarCropModal: React.FC<AvatarCropModalProps> = ({ file, onCancel, onCon
                 </div>
 
                 <div className="w-full flex items-center gap-3">
-                    <span className="text-xs font-bold text-[#8A6A57]">−</span>
+                    <span className="text-xs font-bold text-ink-2">−</span>
                     <input
                         type="range"
                         min={1}
@@ -152,25 +152,25 @@ const AvatarCropModal: React.FC<AvatarCropModalProps> = ({ file, onCancel, onCon
                         value={zoom}
                         onChange={e => handleZoomChange(parseFloat(e.target.value))}
                         disabled={!naturalSize}
-                        className="flex-1 accent-saffron-600"
+                        className="flex-1 accent-[#E8730C]"
                     />
-                    <span className="text-xs font-bold text-[#8A6A57]">+</span>
+                    <span className="text-xs font-bold text-ink-2">+</span>
                 </div>
 
-                <p className="text-[11px] text-[#8A6A57] text-center -mt-1">Drag to reposition, use the slider to zoom</p>
+                <p className="text-[11px] text-ink-2 text-center -mt-1">Drag to reposition, use the slider to zoom</p>
 
                 <div className="w-full flex gap-3 mt-1">
                     <button
                         onClick={onCancel}
                         disabled={saving}
-                        className="flex-1 py-3 rounded-2xl font-bold text-sm bg-[#F7F4F0] text-[#241C17] active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
+                        className="flex-1 py-3 rounded-2xl font-bold text-sm bg-sunken/60 text-ink active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
                     >
                         <X size={16} /> Cancel
                     </button>
                     <button
                         onClick={handleConfirm}
                         disabled={saving || !naturalSize}
-                        className="flex-1 py-3 rounded-2xl font-bold text-sm bg-saffron-600 hover:bg-saffron-700 text-white active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
+                        className="flex-1 py-3 rounded-2xl font-bold text-sm bg-brand hover:bg-brand-600 text-ink active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
                     >
                         {saving ? <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> : <Check size={16} />}
                         {saving ? 'Saving…' : 'Save'}

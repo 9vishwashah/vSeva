@@ -34,8 +34,8 @@ interface ProfileSectionProps {
 
 const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
-const fieldLabelClass = "text-[11px] font-bold text-[#8A6A57] uppercase tracking-wider block mb-1.5";
-const fieldInputClass = "w-full py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] border-none outline-none focus:ring-2 focus:ring-saffron-300 font-semibold text-[#241C17] text-sm";
+const fieldLabelClass = "text-[11px] font-bold text-ink-2 uppercase tracking-wider block mb-1.5";
+const fieldInputClass = "w-full py-2.5 px-3.5 rounded-xl bg-sunken/60 border-none outline-none focus:ring-2 focus:ring-brand font-semibold text-ink text-sm";
 
 const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onProfileUpdated, onLogout, onOpenSos }) => {
     const orgName = orgDetails?.name || user.organization_id;
@@ -344,13 +344,13 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             {/* Top bar */}
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                    <h1 className="text-lg sm:text-xl font-extrabold text-[#241C17] truncate">Profile & Settings</h1>
+                    <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink truncate">Profile & Settings</h1>
                 </div>
                 {onOpenSos && <SosButton currentUser={user} onOpenDetail={onOpenSos} />}
             </div>
 
             {/* Avatar card */}
-            <div className="bg-white rounded-[22px] py-5 px-5 flex items-center gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+            <div className="bg-surface rounded-[22px] py-5 px-5 flex items-center gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
                 <div className="relative shrink-0" style={{ width: RING, height: RING }} title={isSevak ? (missingFields.length ? `Profile ${completionPct}% complete. Still to add: ${missingFields.join(', ')}` : 'Profile 100% complete') : undefined}>
                     {isSevak && (
                         <svg className="absolute inset-0" width={RING} height={RING} viewBox={`0 0 ${RING} ${RING}`} style={{ transform: 'rotate(-90deg)' }} aria-hidden="true">
@@ -368,7 +368,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                         )}
                     </div>
                     {isSevak && (
-                        <span className="absolute left-1/2 -translate-x-1/2 -bottom-1 rounded-full border-2 border-white px-2 py-0.5 text-[10px] font-extrabold leading-none text-white whitespace-nowrap" style={{ background: ringColor }}>
+                        <span className="absolute left-1/2 -translate-x-1/2 -bottom-1 rounded-full border-2 border-white px-2 py-0.5 text-[11px] font-extrabold leading-none text-white whitespace-nowrap" style={{ background: ringColor }}>
                             {completionPct}%
                         </span>
                     )}
@@ -389,18 +389,18 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     />
                 </div>
                 <div className="min-w-0 flex-1">
-                    <p className="m-0 flex items-center gap-1.5 text-lg font-extrabold text-[#241C17]">
+                    <p className="m-0 flex items-center gap-1.5 text-lg font-extrabold text-ink">
                         <span className="truncate">{user.full_name}</span>
                         {accountBadge && <BadgeCheck size={20} className="shrink-0 fill-[#1D9BF0] text-white" aria-label="Verified" />}
                     </p>
-                    <p className="m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-[#8A6A57] uppercase tracking-wide">
+                    <p className="m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-ink-2 uppercase tracking-wide">
                         <span>{user.role === UserRole.ORG_ADMIN ? 'Captain' : 'Sevak'}</span>
                         {accountBadge && (
-                            <span className="rounded-full bg-[#E8F4FD] px-2 py-0.5 text-[10px] font-extrabold normal-case tracking-normal text-[#1D7FC4]">{accountBadge.title}</span>
+                            <span className="rounded-full bg-[#E8F4FD] px-2 py-0.5 text-[11px] font-extrabold normal-case tracking-normal text-[#1D7FC4]">{accountBadge.title}</span>
                         )}
                     </p>
                     {joinedLabel && (
-                        <p className="m-0 mt-1.5 flex items-center gap-1.5 text-xs font-medium text-[#8A6A57]">
+                        <p className="m-0 mt-1.5 flex items-center gap-1.5 text-xs font-medium text-ink-2">
                             <CalendarDays size={13} className="shrink-0" /> Joined {joinedLabel}
                         </p>
                     )}
@@ -418,33 +418,33 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
             {/* Profile Incomplete nudge */}
             {isSevak && missingFields.some(f => f !== 'Date of birth') && (
-                <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
-                    <div className="mt-0.5 text-blue-600 shrink-0">
+                <div className="px-4 py-3 bg-info-soft border border-info-soft rounded-2xl flex items-start gap-3">
+                    <div className="mt-0.5 text-info shrink-0">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
                     <div>
                         <p className="text-sm font-bold text-blue-900 mb-0.5">Please Complete Your Profile</p>
-                        <p className="text-xs text-blue-800 leading-relaxed">Filling in your Blood Group, Family Emergency Number (and whose it is), Occupation, Address{BRAND.sevakViharPreferences ? ', Vihar Type and Seva Preference' : ''} ensures we can assist you promptly during an incident, and is required for your Vihar Sevak Card.</p>
+                        <p className="text-xs text-info leading-relaxed">Filling in your Blood Group, Family Emergency Number (and whose it is), Occupation, Address{BRAND.sevakViharPreferences ? ', Vihar Type and Seva Preference' : ''} ensures we can assist you promptly during an incident, and is required for your Vihar Sevak Card.</p>
                     </div>
                 </div>
             )}
 
             {/* Your Details */}
-            <div className="bg-white rounded-[22px] p-5 sm:p-6 flex flex-col gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-                <p className="m-0 text-sm font-bold text-[#241C17]">{isSevak ? 'Your Details' : 'Organization Details'}</p>
+            <div className="bg-surface rounded-[22px] p-5 sm:p-6 flex flex-col gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+                <p className="m-0 text-sm font-bold text-ink">{isSevak ? 'Your Details' : 'Organization Details'}</p>
 
                 {isSevak ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Username — read-only */}
                         <div>
                             <label className={fieldLabelClass}>Username</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{user.username}</p>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">{user.username}</p>
                         </div>
 
                         {/* Mobile Number — read-only */}
                         <div>
                             <label className={fieldLabelClass}>Mobile Number</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm">{user.mobile}</p>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm">{user.mobile}</p>
                         </div>
 
                         {/* Blood Group */}
@@ -485,7 +485,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
                         {/* Occupation / Profession (recommended) */}
                         <div>
-                            <label className={fieldLabelClass}>Occupation / Profession <span className="ml-1 rounded-full bg-saffron-50 px-1.5 py-0.5 text-[9px] font-extrabold normal-case tracking-normal text-saffron-700">Recommended</span></label>
+                            <label className={fieldLabelClass}>Occupation / Profession <span className="ml-1 rounded-full bg-brand-50 px-1.5 py-0.5 text-[11px] font-extrabold normal-case tracking-normal text-brand-700">Recommended</span></label>
                             <ThemedSelect value={editForm.occupation} onChange={v => setEditForm({ ...editForm, occupation: v, occupation_details: v ? editForm.occupation_details : '' })} options={[...OCCUPATIONS]} placeholder="Select occupation" title="Occupation" className={fieldInputClass} />
                         </div>
                         {editForm.occupation && (
@@ -516,10 +516,10 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
                         {/* Vihar preferences (Shraman Seva Group) */}
                         {BRAND.sevakViharPreferences && (
-                            <div className="sm:col-span-2 rounded-2xl bg-[#FFF8F1] p-4 flex flex-col gap-3">
+                            <div className="sm:col-span-2 rounded-2xl bg-surface p-4 flex flex-col gap-3">
                                 <div>
-                                    <p className="m-0 text-sm font-bold text-[#241C17]">Vihar Preferences</p>
-                                    <p className="m-0 text-xs text-[#8A6A57]">Which Vihars you join and how you like to serve.</p>
+                                    <p className="m-0 text-sm font-bold text-ink">Vihar Preferences</p>
+                                    <p className="m-0 text-xs text-ink-2">Which Vihars you join and how you like to serve.</p>
                                 </div>
                                 <ViharPreferencesFields
                                     scope={editForm.vihar_scope}
@@ -534,7 +534,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                         {/* Gender — read-only */}
                         <div>
                             <label className={fieldLabelClass}>Gender</label>
-                            <p className={`m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-sm ${user.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>
+                            <p className={`m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-sm ${user.gender === 'Female' ? 'text-pink-600' : 'text-info'}`}>
                                 {user.gender || 'Not specified'}
                             </p>
                         </div>
@@ -542,18 +542,18 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                         {/* Organization — read-only */}
                         <div>
                             <label className={fieldLabelClass}>Vihar Seva Group</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{orgName}</p>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">{orgName}</p>
                         </div>
 
                         {/* Captain — read-only */}
                         <div>
                             <label className={fieldLabelClass}>Captain</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{myCaptain || '—'}</p>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">{myCaptain || '—'}</p>
                         </div>
                         {orgDetails?.vice_captain_name && (
                             <div>
                                 <label className={fieldLabelClass}>Vice Captain</label>
-                                <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{orgDetails.vice_captain_name}</p>
+                                <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">{orgDetails.vice_captain_name}</p>
                             </div>
                         )}
                     </div>
@@ -562,13 +562,13 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                         {/* Username — read-only */}
                         <div>
                             <label className={fieldLabelClass}>Username</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{user.username}</p>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">{user.username}</p>
                         </div>
 
                         {/* Mobile Number — read-only */}
                         <div>
                             <label className={fieldLabelClass}>Mobile Number</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm">{user.mobile}</p>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm">{user.mobile}</p>
                         </div>
 
                         {/* Captain Name */}
@@ -598,13 +598,13 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                         {/* Vihar Seva Group — read-only */}
                         <div>
                             <label className={fieldLabelClass}>Vihar Seva Group</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">{orgName}</p>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">{orgName}</p>
                         </div>
 
                         {/* City / Town — read-only */}
                         <div>
                             <label className={fieldLabelClass}>City</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">
                                 {orgDetails?.city || '—'}{orgDetails?.town ? `, ${orgDetails.town}` : ''}
                             </p>
                         </div>
@@ -612,11 +612,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                         {/* Vihar Year duration — read-only, current VY */}
                         <div className="sm:col-span-2">
                             <label className={fieldLabelClass}>Vihar Year Duration</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-[#F7F4F0] font-semibold text-[#241C17] text-sm truncate">
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">
                                 {currentVY.start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                 {' – '}
                                 {currentVY.end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                <span className="text-[#8A6A57] font-bold ml-1.5">({currentVY.label})</span>
+                                <span className="text-ink-2 font-bold ml-1.5">({currentVY.label})</span>
                             </p>
                         </div>
                     </div>
@@ -625,7 +625,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 <button
                     onClick={isSevak ? handleSave : handleSaveOrgDetails}
                     disabled={isSaving || !hasChanges}
-                    className={`w-full py-3.5 font-extrabold rounded-2xl transition-all flex items-center justify-center gap-2 mt-1 ${hasChanges ? 'bg-saffron-600 hover:bg-saffron-700 text-white shadow-sm active:scale-[0.98]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'} ${isSaving ? 'opacity-60' : ''}`}
+                    className={`w-full py-3.5 font-extrabold rounded-2xl transition-all flex items-center justify-center gap-2 mt-1 ${hasChanges ? 'bg-brand hover:bg-brand-600 text-white shadow-sm active:scale-[0.98]' : 'bg-line text-ink-3 cursor-not-allowed'} ${isSaving ? 'opacity-60' : ''}`}
                 >
                     {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                     {isSaving ? 'Saving…' : 'Save Changes'}
@@ -634,19 +634,19 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
             {/* Vihar Seva ID Card (Sevaks only; a Captain account has no card) */}
             {user.role !== UserRole.ORG_ADMIN && (
-            <div className="bg-white rounded-[22px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+            <div className="bg-surface rounded-[22px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
                 <div className="flex items-center gap-3">
                     <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#FFF0E5' }}>
                         <CreditCard size={18} style={{ color: '#DE6B38' }} />
                     </div>
                     <div>
-                        <p className="font-bold text-[#241C17] text-sm">Vihar Seva ID Card</p>
-                        <p className="text-xs text-[#8A6A57] mt-0.5">View and print your ID card with QR code</p>
+                        <p className="font-bold text-ink text-sm">Vihar Seva ID Card</p>
+                        <p className="text-xs text-ink-2 mt-0.5">View and print your ID card with QR code</p>
                     </div>
                 </div>
                 <button
                     onClick={() => setShowIdCard(true)}
-                    className="px-4 py-2 bg-[#F7F4F0] text-sm font-bold text-[#241C17] rounded-xl hover:bg-gray-100 active:scale-95 transition-transform flex items-center justify-center gap-2 shrink-0"
+                    className="px-4 py-2 bg-sunken/60 text-sm font-bold text-ink rounded-xl hover:bg-sunken active:scale-95 transition-transform flex items-center justify-center gap-2 shrink-0"
                 >
                     <Printer size={16} /> View Card
                 </button>
@@ -654,17 +654,17 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             )}
 
             {/* App Settings */}
-            <div className="bg-white rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-                <p className="m-0 mb-4 text-sm font-bold text-[#241C17]">App Settings</p>
+            <div className="bg-surface rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+                <p className="m-0 mb-4 text-sm font-bold text-ink">App Settings</p>
 
                 {pushPermission === 'denied' && !isNativePlatform() ? (
                     // Web only — once a browser blocks a site's notification permission,
                     // no in-app button can undo that, unlike native (see below).
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
-                        <AlertTriangle size={18} className="text-red-500 mt-0.5 shrink-0" />
+                    <div className="p-4 bg-err-soft border border-err-soft rounded-2xl flex items-start gap-3">
+                        <AlertTriangle size={18} className="text-err mt-0.5 shrink-0" />
                         <div>
                             <p className="font-medium text-red-900 text-sm">Notifications are blocked in your browser</p>
-                            <p className="text-xs text-red-700 mt-1 leading-relaxed">
+                            <p className="text-xs text-err mt-1 leading-relaxed">
                                 Your browser is blocking notifications for {BRAND.name}, so nothing inside the app can turn them back on.
                                 In Chrome: tap the <strong>lock / info icon</strong> next to the address bar → <strong>Permissions</strong> (or Site settings) →
                                 set <strong>Notifications</strong> to <strong>Allow</strong> → then reload the app.
@@ -679,12 +679,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                             <BellOff size={18} style={{ color: '#B5602C' }} />
                         </div>
                         <div className="min-w-0">
-                            <p className="font-bold text-[#241C17] text-sm">Push Notifications</p>
-                            <p className="text-xs mt-0.5 text-[#8A6A57]">Coming soon for {BRAND.name}. Until then, alerts appear under the bell icon in the app.</p>
+                            <p className="font-bold text-ink text-sm">Push Notifications</p>
+                            <p className="text-xs mt-0.5 text-ink-2">Coming soon for {BRAND.name}. Until then, alerts appear under the bell icon in the app.</p>
                         </div>
                     </div>
                 ) : pushPermission === 'unsupported' ? (
-                    <div className="p-4 rounded-2xl text-xs text-[#8A6A57]" style={{ background: '#F7F4F0' }}>
+                    <div className="p-4 rounded-2xl text-xs text-ink-2" style={{ background: '#F7F4F0' }}>
                         Push notifications aren't available on this device.
                     </div>
                 ) : (
@@ -698,18 +698,18 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                                 )}
                             </div>
                             <div className="min-w-0">
-                                <p className="font-bold text-[#241C17] text-sm">Push Notifications</p>
+                                <p className="font-bold text-ink text-sm">Push Notifications</p>
                                 {pushPermission === 'granted' ? (
-                                    <p className="text-xs mt-0.5 text-green-700 font-medium">Enabled on this device</p>
+                                    <p className="text-xs mt-0.5 text-ok font-medium">Enabled on this device</p>
                                 ) : (
-                                    <p className="text-xs mt-0.5 text-[#8A6A57]">Receive updates about Vihar alerts and more</p>
+                                    <p className="text-xs mt-0.5 text-ink-2">Receive updates about Vihar alerts and more</p>
                                 )}
                             </div>
                         </div>
                         <button
                             onClick={handleEnablePush}
                             disabled={pushBusy}
-                            className="px-4 py-2 bg-white shadow-sm text-sm font-bold text-[#241C17] rounded-xl hover:bg-gray-50 active:scale-95 transition-transform shrink-0 disabled:opacity-60 flex items-center gap-1.5"
+                            className="px-4 py-2 bg-surface shadow-sm text-sm font-bold text-ink rounded-xl hover:bg-sunken/60 active:scale-95 transition-transform shrink-0 disabled:opacity-60 flex items-center gap-1.5"
                         >
                             {pushBusy && <Loader2 size={14} className="animate-spin" />}
                             {!pushBusy && pushPermission === 'granted' && <RefreshCw size={14} />}
@@ -723,13 +723,13 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 /child-safety page itself stays public (Google Play's child-safety standards link points there). */}
             <a
                 href="/child-safety"
-                className="hidden items-center justify-between gap-3 rounded-[22px] bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
+                className="hidden items-center justify-between gap-3 rounded-[22px] bg-surface p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
             >
                 <span>
-                    <span className="block text-sm font-bold text-[#241C17]">Report a safety concern</span>
-                    <span className="block text-xs text-[#8A6A57]">Child safety standards and how to reach us</span>
+                    <span className="block text-sm font-bold text-ink">Report a safety concern</span>
+                    <span className="block text-xs text-ink-2">Child safety standards and how to reach us</span>
                 </span>
-                <ChevronRight size={18} className="shrink-0 text-[#8A6A57]" />
+                <ChevronRight size={18} className="shrink-0 text-ink-2" />
             </a>
 
             {/* Captains choose their own password (Sevaks' passwords are managed by their Captain) */}
@@ -739,7 +739,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             {onLogout && (
                 <button
                     onClick={onLogout}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-white rounded-2xl shadow-sm border border-gray-100 text-red-500 font-bold text-sm hover:bg-red-50 active:scale-[0.98] transition-all"
+                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-surface rounded-2xl shadow-sm border border-line text-err font-bold text-sm hover:bg-err-soft active:scale-[0.98] transition-all"
                 >
                     <LogOut size={16} />
                     Sign Out
@@ -747,7 +747,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             )}
 
             {/* which web build is running (the Android app updates itself; this shows that it did) */}
-            <p className="text-center text-[11px] text-gray-400">{BRAND.shortName} · build {__APP_BUILD__}</p>
+            <p className="text-center text-[11px] text-ink-3">{BRAND.shortName} · build {__APP_BUILD__}</p>
 
             {/* Avatar Crop Modal */}
             {cropFile && (
@@ -760,15 +760,15 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
             {/* ID Card Modal */}
             {showIdCard && (
-                <div className="fixed inset-0 z-[100] bg-white flex flex-col pt-16 items-center p-4 print:pt-0 pb-16 overflow-y-auto">
+                <div className="fixed inset-0 z-[100] bg-surface flex flex-col pt-16 items-center p-4 print:pt-0 pb-16 overflow-y-auto">
                     <div className="w-full max-w-md print:hidden flex items-center justify-between mb-8 pr-4">
-                        <button onClick={() => setShowIdCard(false)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium">
+                        <button onClick={() => setShowIdCard(false)} className="flex items-center gap-2 text-ink-2 hover:text-ink font-medium">
                             <ArrowLeft size={20} /> Back to Profile
                         </button>
                     </div>
                     <div className="flex flex-col items-center justify-center min-h-[50vh]">
                         <IDCardBadge user={user} orgName={orgName} />
-                        <p className="text-sm text-gray-500 mt-8 text-center max-w-sm print:hidden">
+                        <p className="text-sm text-ink-2 mt-8 text-center max-w-sm print:hidden">
                             Print this badge on an ID card printer or standard A4 paper and cut it out. Scanning the QR code will open your verified profile.
                         </p>
                     </div>

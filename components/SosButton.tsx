@@ -87,7 +87,7 @@ const SosButton: React.FC<SosButtonProps> = ({ currentUser, onOpenDetail }) => {
         onClick={startConfirm}
         title={activeSosId ? 'SOS active — tap to view' : 'Send SOS to your Captain'}
         className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center shadow-[0_1px_3px_rgba(0,0,0,0.06)] active:scale-95 transition-transform ${
-          activeSosId ? 'animate-pulse bg-red-600' : 'bg-red-500 hover:bg-red-600'
+          activeSosId ? 'animate-pulse bg-err-solid' : 'bg-err-solid hover:bg-err-solid'
         }`}
       >
         <AlertTriangle size={17} className="text-white" strokeWidth={2.5} />
@@ -95,11 +95,11 @@ const SosButton: React.FC<SosButtonProps> = ({ currentUser, onOpenDetail }) => {
 
       <Modal open={confirming} onClose={cancelConfirm} maxWidth="max-w-xs" closeOnBackdrop={!sending}>
         <div className="p-6 flex flex-col items-center text-center">
-          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-3">
-            <AlertTriangle size={30} className="text-red-600" strokeWidth={2.5} />
+          <div className="w-16 h-16 rounded-full bg-err-soft flex items-center justify-center mb-3">
+            <AlertTriangle size={30} className="text-err" strokeWidth={2.5} />
           </div>
-          <h3 className="text-lg font-extrabold text-[#241C17]">Send SOS?</h3>
-          <p className="text-sm text-[#8A6A57] mt-1">
+          <h3 className="text-lg font-extrabold text-ink">Send SOS?</h3>
+          <p className="text-sm text-ink-2 mt-1">
             Your Captain will be alerted immediately{sending ? '' : ` in ${countdown}s`}.
           </p>
 
@@ -107,14 +107,14 @@ const SosButton: React.FC<SosButtonProps> = ({ currentUser, onOpenDetail }) => {
             <button
               onClick={cancelConfirm}
               disabled={sending}
-              className="flex-1 py-3 rounded-xl bg-gray-100 text-sm font-bold text-[#241C17] disabled:opacity-50"
+              className="flex-1 py-3 rounded-xl bg-sunken text-sm font-bold text-ink disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={send}
               disabled={sending}
-              className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-sm font-bold text-white disabled:opacity-70 flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl bg-err-solid hover:bg-[#b23736] text-sm font-bold text-white disabled:opacity-70 flex items-center justify-center gap-2"
             >
               {sending && <Loader2 size={16} className="animate-spin" />}
               {sending ? 'Sending...' : 'Send SOS'}

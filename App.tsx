@@ -6,6 +6,7 @@ import { getNotificationTarget } from './services/notificationRouting';
 import { dataService } from './services/dataService';
 import { brandAccessError } from './services/brandAccess';
 import { clearAll as clearRequestCache, setCacheScope } from './services/requestCache';
+import { startDataSync, stopDataSync, touchDataSync } from './services/dataSync';
 import OpenedAsBanner from './components/OpenedAsBanner';
 import Login from './pages/Login';
 import Landing from '@brand/Landing';
@@ -139,6 +140,7 @@ const App: React.FC = () => {
       setSosId(null);
     }
     if (page !== currentPage) pageHistoryRef.current.push(currentPage);
+    touchDataSync(); // a cheap "did anything change?" check, so the page opens on current data
     setCurrentPage(page);
   };
 
@@ -149,6 +151,11 @@ const App: React.FC = () => {
   // The on-device "last time's data" cache belongs to exactly one signed-in user. A layout effect, so it is
   // set before any screen's own loading effect runs.
   useLayoutEffect(() => { setCacheScope(user?.id ?? null); }, [user?.id]);
+  // Data saved on the device is reused until the server says it changed (services/dataSync.ts)
+  useLayoutEffect(() => {
+    if (user?.id && user.organization_id) startDataSync(user.id, user.organization_id);
+    else stopDataSync();
+  }, [user?.id, user?.organization_id]);
 
   const pageHistoryRef = useRef<string[]>([]);
   const currentPageRef = useRef(currentPage);
@@ -385,6 +392,7 @@ const App: React.FC = () => {
             }
           }
           if (profile) {
+            startDataSync(profile.id, profile.organization_id); // before any screen reads its data
             setUser(profile);
             // Fetched separately (not on the login-critical path) — see
             // dataService.getAvatarUrl for why.
@@ -442,6 +450,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleLoginSuccess = async (profile: UserProfile) => {
+    startDataSync(profile.id, profile.organization_id);
     setUser(profile);
     dataService.getAvatarUrl(profile.id).then(url => {
       if (url) setUser(prev => (prev ? { ...prev, avatar_url: url } : prev));
@@ -463,6 +472,7 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     logoutFromOneSignal();
+    stopDataSync();
     clearRequestCache(); // never let the next person to use this device/browser see a leftover cached response
     setUser(null);
     setOrgDetails(null);
@@ -522,6 +532,7 @@ const App: React.FC = () => {
       {showOnboarding && user && (
         <OnboardingWalkthrough
           role={user.role}
+          name={user.full_name}
           onDone={() => markOnboardingDone(user.role)}
         />
       )}

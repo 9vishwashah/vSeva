@@ -80,7 +80,7 @@ const ACTIVITY_OPTIONS: { value: string; label: string }[] = [
     { value: 'none', label: 'No activity yet' },
 ];
 const DAY_MS = 24 * 60 * 60 * 1000;
-const FILTER_FIELD = 'w-full py-2.5 px-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-medium text-gray-800 outline-none focus:ring-2 focus:ring-saffron-200';
+const FILTER_FIELD = 'w-full py-2.5 px-3 rounded-xl bg-sunken/60 border border-line text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-brand-100';
 
 // Platform a request / group belongs to, so the owner can tell SSG applicants from general vSeva ones.
 const PLATFORM_LABELS: Record<string, string> = { vseva: 'vSeva', ssg: 'SSG · Shraman Seva Group' };
@@ -89,7 +89,7 @@ const platformLabel = (brand?: string | null) => PLATFORM_LABELS[platformOf(bran
 const PlatformBadge: React.FC<{ brand?: string | null }> = ({ brand }) => {
     const isOther = platformOf(brand) !== 'vseva';
     return (
-        <span className={`inline-block ml-2 align-middle px-2 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide border ${isOther ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+        <span className={`inline-block ml-2 align-middle px-2 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide border ${isOther ? 'bg-warn-soft text-warn border-amber-300' : 'bg-sunken text-ink-2 border-line'}`}>
             {platformLabel(brand)}
         </span>
     );
@@ -439,7 +439,7 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
         const active = sortKey === k;
         return (
             <th className={`p-5 ${className}`} aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                <button type="button" onClick={() => sortBy(k)} className={`inline-flex items-center gap-1 uppercase font-bold tracking-wider hover:text-gray-800 ${active ? 'text-saffron-700' : ''}`} title={`Sort by ${label}`}>
+                <button type="button" onClick={() => sortBy(k)} className={`inline-flex items-center gap-1 uppercase font-bold tracking-wider hover:text-ink ${active ? 'text-brand-700' : ''}`} title={`Sort by ${label}`}>
                     {label}
                     {active ? (sortDir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={11} className="opacity-40" />}
                 </button>
@@ -453,52 +453,52 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
 
     if (accessError) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-                <div className="max-w-md w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-                    <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4"><Lock size={26} /></div>
-                    <h1 className="text-xl font-bold text-gray-900 mb-2">Access not available</h1>
-                    <p className="text-sm text-gray-600 mb-6">{accessError}</p>
-                    <a href="/" className="inline-block px-5 py-2.5 rounded-xl bg-saffron-600 text-white text-sm font-bold">Back to home</a>
+            <div className="min-h-screen flex items-center justify-center bg-sunken/60 p-6">
+                <div className="max-w-md w-full bg-surface rounded-2xl border border-line shadow-sm p-8 text-center">
+                    <div className="w-14 h-14 rounded-full bg-err-soft text-err flex items-center justify-center mx-auto mb-4"><Lock size={26} /></div>
+                    <h1 className="text-xl font-bold text-ink mb-2">Access not available</h1>
+                    <p className="text-sm text-ink-2 mb-6">{accessError}</p>
+                    <a href="/" className="inline-block px-5 py-2.5 rounded-xl bg-brand text-ink text-sm font-bold">Back to home</a>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 md:p-8 lg:p-12">
+        <div className="min-h-screen bg-sunken/60 p-4 md:p-8 lg:p-12">
             <div className="max-w-7xl mx-auto space-y-10">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-1">
-                            <div className="p-2 bg-saffron-600 rounded-lg text-white shadow-lg shadow-saffron-200">
+                            <div className="p-2 bg-brand rounded-lg text-ink shadow-lg shadow-black/5">
                                 <ShieldCheck size={24} />
                             </div>
-                            <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900">{BRAND.name} Central Control</h1>
+                            <h1 className="text-2xl md:text-3xl display font-bold text-ink">{BRAND.name} Central Control</h1>
                         </div>
-                        <p className="text-gray-500">
+                        <p className="text-ink-2">
                             {scope && !scope.all ? 'Monitoring and onboarding for your groups' : 'Global monitoring and organization lifecycle management'}
-                            {scope && <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-saffron-50 text-saffron-700 text-xs font-bold border border-saffron-100 align-middle">{scope.all ? 'All brands' : scope.brands.map(b => b.toUpperCase()).join(', ')}</span>}
+                            {scope && <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 text-xs font-bold border border-brand-100 align-middle">{scope.all ? 'All brands' : scope.brands.map(b => b.toUpperCase()).join(', ')}</span>}
                         </p>
                     </div>
                     <div className="flex items-center gap-3 w-full md:w-auto">
                         <button
                             onClick={handleRefresh}
-                            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 font-medium transition-colors shadow-sm"
+                            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-surface border border-line rounded-xl hover:bg-sunken/60 text-ink-2 font-medium transition-colors shadow-sm"
                         >
                             <RefreshCw size={18} className={(loading || statsLoading) ? "animate-spin" : ""} />
                             Refresh Data
                         </button>
                         <button 
                             onClick={() => { clearSuperAdminPin(); setIsPinVerified(false); }}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                            className="p-2 text-ink-3 hover:text-err hover:bg-err-soft rounded-xl transition-all"
                             title="Lock Dashboard"
                         >
                             <Lock size={20} />
                         </button>
                         <button
                             onClick={async () => { clearSuperAdminPin(); await supabase.auth.signOut(); clearRequestCache(); window.location.href = '/super-admin'; }}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                            className="p-2 text-ink-3 hover:text-err hover:bg-err-soft rounded-xl transition-all"
                             title={scope?.email ? `Sign out (${scope.email})` : 'Sign out'}
                             aria-label="Sign out"
                         >
@@ -509,50 +509,50 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
 
                 {/* Stats Overview */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-surface p-6 rounded-2xl border border-line shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4 mb-3">
-                            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                            <div className="p-3 bg-info-soft text-info rounded-xl">
                                 <Building2 size={24} />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500 font-medium">Active Groups</p>
-                                <p className="text-2xl font-bold text-gray-900">{statsLoading ? '...' : statsError ? '—' : totalOrgs}</p>
+                                <p className="text-sm text-ink-2 font-medium">Active Groups</p>
+                                <p className="text-2xl font-bold text-ink">{statsLoading ? '...' : statsError ? '—' : totalOrgs}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-surface p-6 rounded-2xl border border-line shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4 mb-3">
-                            <div className="p-3 bg-saffron-50 text-saffron-600 rounded-xl">
+                            <div className="p-3 bg-brand-50 text-brand-700 rounded-xl">
                                 <Users size={24} />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500 font-medium">Global Sevaks</p>
-                                <p className="text-2xl font-bold text-gray-900">{statsLoading ? '...' : statsError ? '—' : totalSevaks}</p>
+                                <p className="text-sm text-ink-2 font-medium">Global Sevaks</p>
+                                <p className="text-2xl font-bold text-ink">{statsLoading ? '...' : statsError ? '—' : totalSevaks}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-surface p-6 rounded-2xl border border-line shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4 mb-3">
-                            <div className="p-3 bg-green-50 text-green-600 rounded-xl">
+                            <div className="p-3 bg-ok-soft text-ok rounded-xl">
                                 <LayoutDashboard size={24} />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500 font-medium">Total Vihars</p>
-                                <p className="text-2xl font-bold text-gray-900">{statsLoading ? '...' : statsError ? '—' : totalEntries}</p>
+                                <p className="text-sm text-ink-2 font-medium">Total Vihars</p>
+                                <p className="text-2xl font-bold text-ink">{statsLoading ? '...' : statsError ? '—' : totalEntries}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-surface p-6 rounded-2xl border border-line shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4 mb-3">
-                            <div className="p-3 bg-orange-50 text-orange-600 rounded-xl">
+                            <div className="p-3 bg-brand-50 text-brand-700 rounded-xl">
                                 <PieChart size={24} />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500 font-medium">Pending Approvals</p>
-                                <p className="text-2xl font-bold text-orange-600">{loading ? '...' : requestsError ? '—' : pendingRequests}</p>
+                                <p className="text-sm text-ink-2 font-medium">Pending Approvals</p>
+                                <p className="text-2xl font-bold text-brand-700">{loading ? '...' : requestsError ? '—' : pendingRequests}</p>
                             </div>
                         </div>
                     </div>
@@ -562,12 +562,12 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <MessageCircle size={18} className="text-saffron-600" />
+                            <h2 className="text-lg font-bold text-ink flex items-center gap-2">
+                                <MessageCircle size={18} className="text-brand-700" />
                                 Pending Organization Requests
                             </h2>
                             {pendingRequests > 0 && (
-                                <span className="px-2 py-0.5 bg-saffron-100 text-saffron-700 text-xs font-bold rounded-full">
+                                <span className="px-2 py-0.5 bg-brand-100 text-brand-700 text-xs font-bold rounded-full">
                                     {pendingRequests} New
                                 </span>
                             )}
@@ -575,16 +575,16 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                         {requests.length > 0 && (
                             <button
                                 onClick={downloadAllRequestsPDF}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all font-bold text-xs shadow-sm"
+                                className="flex items-center gap-2 px-4 py-2 bg-info-soft text-info rounded-xl hover:bg-info-soft transition-all font-bold text-xs shadow-sm"
                             >
                                 <Download size={16} /> Download All (PDF)
                             </button>
                         )}
                     </div>
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-surface rounded-3xl shadow-sm border border-line overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50 text-gray-500 text-[10px] uppercase font-bold tracking-wider">
+                                <thead className="bg-sunken/60 text-ink-2 text-[11px] uppercase font-bold tracking-wider">
                                     <tr>
                                         <th className="p-5 w-10"></th>
                                         <th className="p-5">Date</th>
@@ -594,26 +594,26 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                         <th className="p-5 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-line">
                                     {requests.length > 0 ? requests.map(req => (
                                         <React.Fragment key={req.id}>
                                             <tr className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="p-5">
-                                                    <button onClick={() => toggleRow(req.id)} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+                                                    <button onClick={() => toggleRow(req.id)} className="w-8 h-8 rounded-lg hover:bg-sunken flex items-center justify-center text-ink-3 hover:text-ink-2 transition-colors">
                                                         {expandedRows.has(req.id) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                                                     </button>
                                                 </td>
-                                                <td className="p-5 text-sm text-gray-500 font-medium">
+                                                <td className="p-5 text-sm text-ink-2 font-medium">
                                                     {new Date(req.created_at).toLocaleDateString()}
                                                 </td>
-                                                <td className="p-5 font-bold text-gray-900">
+                                                <td className="p-5 font-bold text-ink">
                                                     {req.vihar_group_name}
                                                     {scope?.all && <PlatformBadge brand={req.brand} />}
                                                 </td>
-                                                <td className="p-5 text-sm text-gray-800 font-medium">
+                                                <td className="p-5 text-sm text-ink font-medium">
                                                     {req.captain_name}
                                                 </td>
-                                                <td className="p-5 text-sm text-gray-600">
+                                                <td className="p-5 text-sm text-ink-2">
                                                     {req.mobile}
                                                 </td>
                                                 <td className="p-5 text-right">
@@ -626,7 +626,7 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                                         </button>
                                                         <button
                                                             onClick={() => handleReject(req.id)}
-                                                            className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                                                            className="w-9 h-9 flex items-center justify-center text-ink-3 hover:text-err hover:bg-err-soft rounded-xl transition-colors"
                                                             title="Reject"
                                                         >
                                                             <X size={20} />
@@ -639,36 +639,36 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                                     <td colSpan={6} className="p-8">
                                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-sm">
                                                             <div className="space-y-1">
-                                                                <span className="block text-gray-400 font-bold text-[10px] uppercase tracking-wider">Sangh Name</span>
-                                                                <span className="text-gray-800 font-bold">{req.sangh_name}</span>
+                                                                <span className="block text-ink-3 font-bold text-[11px] uppercase tracking-wider">Sangh Name</span>
+                                                                <span className="text-ink font-bold">{req.sangh_name}</span>
                                                             </div>
                                                             <div className="space-y-1">
-                                                                <span className="block text-gray-400 font-bold text-[10px] uppercase tracking-wider">Vice Captain</span>
-                                                                <span className="text-gray-800 font-bold">{req.vice_captain_name || '-'}</span>
+                                                                <span className="block text-ink-3 font-bold text-[11px] uppercase tracking-wider">Vice Captain</span>
+                                                                <span className="text-ink font-bold">{req.vice_captain_name || '-'}</span>
                                                             </div>
                                                             <div className="space-y-1">
-                                                                <span className="block text-gray-400 font-bold text-[10px] uppercase tracking-wider">Email Address</span>
-                                                                <span className="text-gray-800 font-bold">{req.email}</span>
+                                                                <span className="block text-ink-3 font-bold text-[11px] uppercase tracking-wider">Email Address</span>
+                                                                <span className="text-ink font-bold">{req.email}</span>
                                                             </div>
                                                             <div className="space-y-1">
-                                                                <span className="block text-gray-400 font-bold text-[10px] uppercase tracking-wider">Location Status</span>
-                                                                <span className="text-gray-800 font-bold">{req.city}, {req.state}</span>
+                                                                <span className="block text-ink-3 font-bold text-[11px] uppercase tracking-wider">Location Status</span>
+                                                                <span className="text-ink font-bold">{req.city}, {req.state}</span>
                                                             </div>
                                                             <div className="space-y-1">
-                                                                <span className="block text-gray-400 font-bold text-[10px] uppercase tracking-wider">Town / Area</span>
-                                                                <span className="text-gray-800 font-bold">{req.town || '-'}</span>
+                                                                <span className="block text-ink-3 font-bold text-[11px] uppercase tracking-wider">Town / Area</span>
+                                                                <span className="text-ink font-bold">{req.town || '-'}</span>
                                                             </div>
                                                             <div className="col-span-1 sm:col-span-2 space-y-1">
-                                                                <span className="block text-gray-400 font-bold text-[10px] uppercase tracking-wider">Full Postal Address</span>
-                                                                <span className="text-gray-800 font-bold">{req.full_address}</span>
+                                                                <span className="block text-ink-3 font-bold text-[11px] uppercase tracking-wider">Full Postal Address</span>
+                                                                <span className="text-ink font-bold">{req.full_address}</span>
                                                             </div>
                                                             <div className="space-y-1">
-                                                                <span className="block text-gray-400 font-bold text-[10px] uppercase tracking-wider">Pin Code</span>
-                                                                <span className="text-gray-800 font-bold">{req.pin_code}</span>
+                                                                <span className="block text-ink-3 font-bold text-[11px] uppercase tracking-wider">Pin Code</span>
+                                                                <span className="text-ink font-bold">{req.pin_code}</span>
                                                             </div>
                                                             <div className="space-y-1">
-                                                                <span className="block text-gray-400 font-bold text-[10px] uppercase tracking-wider">District / State</span>
-                                                                <span className="text-gray-800 font-bold">{[req.district, req.state].filter(Boolean).join(', ') || '-'}</span>
+                                                                <span className="block text-ink-3 font-bold text-[11px] uppercase tracking-wider">District / State</span>
+                                                                <span className="text-ink font-bold">{[req.district, req.state].filter(Boolean).join(', ') || '-'}</span>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -680,15 +680,15 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                             <td colSpan={6} className="p-20 text-center">
                                                 {loading ? (
                                                     <div className="flex flex-col items-center gap-3">
-                                                        <Loader2 className="animate-spin text-saffron-600" size={32} />
-                                                        <span className="text-gray-500 font-medium">Fetching requests...</span>
+                                                        <Loader2 className="animate-spin text-brand-700" size={32} />
+                                                        <span className="text-ink-2 font-medium">Fetching requests...</span>
                                                     </div>
                                                 ) : requestsError ? (
                                                     <StatusScreen variant={requestsError} onRetry={fetchRequests} compact bare />
                                                 ) : (
                                                     <div className="space-y-2">
-                                                        <p className="text-gray-400 text-lg font-medium font-serif">All clear!</p>
-                                                        <p className="text-gray-400 text-sm">No pending organization requests discovered.</p>
+                                                        <p className="text-ink-3 text-lg font-medium display">All clear!</p>
+                                                        <p className="text-ink-3 text-sm">No pending organization requests discovered.</p>
                                                     </div>
                                                 )}
                                             </td>
@@ -702,27 +702,27 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
 
                 {/* Current Groups / Activity Status Table */}
                 <div className="space-y-4">
-                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <Building2 size={18} className="text-blue-600" />
+                    <h2 className="text-lg font-bold text-ink flex items-center gap-2">
+                        <Building2 size={18} className="text-info" />
                         Managed Organizations
                     </h2>
 
                     {/* Search, filters and sort */}
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-4 md:p-5 space-y-3">
+                    <div className="bg-surface rounded-3xl shadow-sm border border-line p-4 md:p-5 space-y-3">
                         <div className="flex flex-col md:flex-row gap-3">
                             <label className="relative flex-1">
                                 <span className="sr-only">Search groups</span>
-                                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" />
                                 <input
                                     type="search"
                                     value={orgSearch}
                                     onChange={e => setOrgSearch(e.target.value)}
                                     placeholder="Search by group, Org ID, Captain, mobile, email, town, city or state"
-                                    className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-saffron-200"
+                                    className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-sunken/60 border border-line text-sm text-ink outline-none focus:ring-2 focus:ring-brand-100"
                                 />
                             </label>
                             <div className="md:w-72 flex items-center gap-2">
-                                <ArrowUpDown size={16} className="shrink-0 text-gray-400" aria-hidden />
+                                <ArrowUpDown size={16} className="shrink-0 text-ink-3" aria-hidden />
                                 <ThemedSelect
                                     value={`${sortKey}:${sortDir}`}
                                     onChange={v => { const [k, d] = v.split(':'); setSortKey(k as OrgSortKey); setSortDir(d as SortDir); }}
@@ -742,23 +742,23 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                             <ThemedSelect value={cityFilter} onChange={setCityFilter} options={cityOptions} placeholder="All cities" title="City" className={FILTER_FIELD} />
                             <ThemedSelect value={activityFilter} onChange={setActivityFilter} options={ACTIVITY_OPTIONS} placeholder="Any activity" title="Last Activity" className={FILTER_FIELD} />
                         </div>
-                        <div className="flex items-center justify-between gap-3 text-xs text-gray-500">
+                        <div className="flex items-center justify-between gap-3 text-xs text-ink-2">
                             <span className="inline-flex items-center gap-1.5">
                                 <SlidersHorizontal size={13} />
-                                Showing <b className="text-gray-800">{visibleStats.length}</b> of {orgStats.length} groups
+                                Showing <b className="text-ink">{visibleStats.length}</b> of {orgStats.length} groups
                             </span>
                             {activeFilterCount > 0 && (
-                                <button type="button" onClick={clearOrgFilters} className="font-bold text-saffron-700 hover:underline underline-offset-2">
+                                <button type="button" onClick={clearOrgFilters} className="font-bold text-brand-700 hover:underline underline-offset-2">
                                     Clear filters ({activeFilterCount})
                                 </button>
                             )}
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-surface rounded-3xl shadow-sm border border-line overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50 text-gray-500 text-[10px] uppercase font-bold tracking-wider">
+                                <thead className="bg-sunken/60 text-ink-2 text-[11px] uppercase font-bold tracking-wider">
                                     <tr>
                                         {sortHeader('serial', 'Org ID', 'w-16')}
                                         {sortHeader('name', 'Group Name')}
@@ -774,56 +774,56 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                         <th className="p-5 text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-line">
                                     {visibleStats.length > 0 ? visibleStats
                                         .map((stat) => {
                                         const admin = orgAdmins[stat.org_id];
                                         return (
                                             <tr key={stat.org_id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="p-5">
-                                                    <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-black tracking-wide bg-saffron-600 text-white shadow-sm shadow-saffron-200 select-all">
+                                                    <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-black tracking-wide bg-brand text-ink shadow-sm shadow-black/5 select-all">
                                                         {serialById.get(stat.org_id)}
                                                     </span>
                                                 </td>
-                                                <td className="p-5 font-bold text-gray-900">
-                                                    <a href={`/super-admin/org/${stat.org_id}`} className="text-gray-900 hover:text-saffron-700 hover:underline underline-offset-2" title="Open full details">
+                                                <td className="p-5 font-bold text-ink">
+                                                    <a href={`/super-admin/org/${stat.org_id}`} className="text-ink hover:text-brand-700 hover:underline underline-offset-2" title="Open full details">
                                                         {stat.org_name}
                                                     </a>
                                                     {scope?.all && <PlatformBadge brand={stat.brand} />}
                                                 </td>
-                                                <td className="p-5 text-sm text-gray-700 font-medium">
+                                                <td className="p-5 text-sm text-ink font-medium">
                                                     {admin?.full_name || '-'}
                                                 </td>
-                                                <td className="p-5 text-sm text-gray-600 font-mono">
+                                                <td className="p-5 text-sm text-ink-2 font-mono">
                                                     {admin?.mobile || '-'}
                                                 </td>
-                                                <td className="p-5 text-sm text-gray-600">
+                                                <td className="p-5 text-sm text-ink-2">
                                                     {admin?.email ? (
-                                                        <a href={`mailto:${admin.email}`} className="hover:text-saffron-700 hover:underline underline-offset-2 break-all">{admin.email}</a>
+                                                        <a href={`mailto:${admin.email}`} className="hover:text-brand-700 hover:underline underline-offset-2 break-all">{admin.email}</a>
                                                     ) : '-'}
                                                 </td>
-                                                <td className="p-5 text-sm text-gray-600">
+                                                <td className="p-5 text-sm text-ink-2">
                                                     {admin?.town || '-'}
                                                 </td>
-                                                <td className="p-5 text-sm text-gray-600">
+                                                <td className="p-5 text-sm text-ink-2">
                                                     {stat.city || '-'}
                                                 </td>
-                                                <td className="p-5 text-sm text-gray-600">
+                                                <td className="p-5 text-sm text-ink-2">
                                                     {admin?.state || '-'}
                                                 </td>
                                                 <td className="p-5 text-center">
-                                                    <span className="inline-block px-3 py-1 bg-saffron-50 text-saffron-700 text-xs font-bold rounded-lg border border-saffron-100">
+                                                    <span className="inline-block px-3 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100">
                                                         {stat.total_sevaks}
                                                     </span>
                                                 </td>
                                                 <td className="p-5 text-center">
-                                                    <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-100">
+                                                    <span className="inline-block px-3 py-1 bg-info-soft text-info text-xs font-bold rounded-lg border border-info-soft">
                                                         {stat.total_entries}
                                                     </span>
                                                 </td>
-                                                <td className="p-5 text-right text-sm text-gray-500 font-medium whitespace-nowrap">
+                                                <td className="p-5 text-right text-sm text-ink-2 font-medium whitespace-nowrap">
                                                     {stat.last_updated ? new Date(stat.last_updated).toLocaleDateString() : (
-                                                        <span className="text-gray-300 italic">No activity</span>
+                                                        <span className="text-ink-3 italic">No activity</span>
                                                     )}
                                                 </td>
                                                 <td className="p-5 text-center">
@@ -869,15 +869,15 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                                             <td colSpan={12} className="p-20 text-center">
                                                 {statsLoading ? (
                                                     <div className="flex flex-col items-center gap-3">
-                                                        <Loader2 className="animate-spin text-blue-600" size={32} />
-                                                        <span className="text-gray-500 font-medium">Retrieving stats...</span>
+                                                        <Loader2 className="animate-spin text-info" size={32} />
+                                                        <span className="text-ink-2 font-medium">Retrieving stats...</span>
                                                     </div>
                                                 ) : statsError ? (
                                                     <StatusScreen variant={statsError} onRetry={fetchStats} compact bare />
                                                 ) : orgStats.length > 0 ? (
                                                     <div className="space-y-2">
-                                                        <p className="text-gray-500 font-medium">No groups match these filters.</p>
-                                                        <button type="button" onClick={clearOrgFilters} className="text-sm font-bold text-saffron-700 hover:underline underline-offset-2">Clear filters</button>
+                                                        <p className="text-ink-2 font-medium">No groups match these filters.</p>
+                                                        <button type="button" onClick={clearOrgFilters} className="text-sm font-bold text-brand-700 hover:underline underline-offset-2">Clear filters</button>
                                                     </div>
                                                 ) : "No active groups found"}
                                             </td>

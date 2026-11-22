@@ -30,6 +30,20 @@ registerRoute(new NavigationRoute(async (options) => {
   denylist: [/^\/\.netlify\//, /\/[^/?]+\.[a-z0-9]+$/i],
 }));
 
+// App files not pre-downloaded on install (vite.config.ts globIgnores: map, Excel/PDF export, ...): kept on the
+// device the first time they are used. Their names change whenever their content does, so a kept copy is
+// always right; old ones expire after 60 days.
+registerRoute(
+  ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/assets/'),
+  new CacheFirst({
+    cacheName: 'app-chunks',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [200] }),
+      new ExpirationPlugin({ maxEntries: 80, maxAgeSeconds: 60 * 24 * 60 * 60 }),
+    ],
+  }),
+);
+
 // Google Fonts: the stylesheet refreshes in the background, the font files are kept for a year,
 // so text keeps its typeface offline after the first visit
 registerRoute(

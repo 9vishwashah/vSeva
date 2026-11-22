@@ -40,6 +40,22 @@ async function shrinkImage(file: File, maxSide: number, quality: number): Promis
   }
 }
 
+// How long a read stays fresh on this device before it is checked again. Changes made anywhere are picked up
+// sooner than this by services/dataSync.ts (checked on open, on return, on page moves and every 2 minutes),
+// so these are only the fallback for when that check can't run.
+const SLOW_TTL = 30 * 60_000;   // members, routes, contacts, settings: change rarely
+const ACTIVE_TTL = 10 * 60_000; // Vihar entries, stats, ranks, pending approvals, incidents
+
+// Group reads that used to go through a Netlify Function now run as a Supabase function with the same
+// "your own group only" check (scripts/perf_read_rpcs_and_versions.sql): faster, and no Netlify compute.
+// If the database function isn't there or fails for an infrastructure reason, the Netlify Function is used.
+async function groupRead<T = any>(rpc: string, args: Record<string, unknown>, fn: string, body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.rpc(rpc, args);
+  if (!error && data !== null && data !== undefined) return data as T;
+  if (error?.code === '42501') throw error; // not this person's group: the function would refuse too
+  return callFn<T>(fn, { body, retry: true });
+}
+
 export const dataService = {
 
   // --- Profiles & Sevaks ---
@@ -61,7 +77,7 @@ export const dataService = {
         return null;
       }
       return data as UserProfile;
-    }, 30_000, { persist: true });
+    }, SLOW_TTL, { persist: true });
   },
 
   // Fetched separately from getProfile (not on the login-critical path) since it
@@ -82,7 +98,7 @@ export const dataService = {
         // ignore — column likely doesn't exist yet
       }
       return 25;
-    }, 60_000);
+    }, SLOW_TTL, { persist: true });
   },
 
   // Same defensive pattern as getYearlyGoal — fetched separately from
@@ -103,7 +119,7 @@ export const dataService = {
         // ignore — column/bucket likely doesn't exist yet
       }
       return null;
-    }, 60_000);
+    }, SLOW_TTL, { persist: true });
   },
 
   async uploadAvatar(userId: string, file: File): Promise<string> {
@@ -176,7 +192,7 @@ export const dataService = {
         return null;
       }
       return fallbackData as Organization;
-    }, 60_000, { persist: true });
+    }, SLOW_TTL, { persist: true });
   },
 
   async updateOrgLeadership(updates: { captainName?: string; viceCaptainName?: string }): Promise<void> {
@@ -216,7 +232,7 @@ export const dataService = {
 
       if (fallbackError) throw fallbackError;
       return fallbackData as UserProfile[];
-    }, 30_000);
+    }, SLOW_TTL, { persist: true });
   },
 
   async getAllOrgUsers(orgId: string, includeInactive: boolean = false): Promise<UserProfile[]> {
@@ -233,7 +249,7 @@ export const dataService = {
       const { data, error } = await query;
       if (error) throw error;
       return data as UserProfile[];
-    }, 30_000);
+    }, SLOW_TTL, { persist: true });
   },
 
   // --- Super Admin ---
@@ -333,28 +349,28 @@ export const dataService = {
       const { data, error } = await supabase.rpc('get_my_org_captain');
       if (error) { console.warn('Could not load Captain name:', error.message); return ''; }
       return (Array.isArray(data) ? data[0]?.full_name : (data as any)?.full_name) || '';
-    }, 5 * 60_000);
+    }, SLOW_TTL, { persist: true });
   },
 
   async getDashboardStats(orgId: string) {
     return getCached(`dashboardStats:${orgId}`, async () => {
       try {
-        return await callFn('get-dashboard-stats', { body: { orgId }, retry: true });
+        return await groupRead('get_dashboard_stats', { p_org: orgId }, 'get-dashboard-stats', { orgId });
       } catch (e: any) {
         throw new Error(e?.message || "Failed to fetch dashboard stats");
       }
-    }, 20_000, { persist: true });
+    }, ACTIVE_TTL, { persist: true });
   },
 
   async getSevakNameMap(orgId: string): Promise<Record<string, string>> {
     return getCached(`sevakNameMap:${orgId}`, async () => {
       try {
-        return await callFn<Record<string, string>>('get-sevak-names', { body: { orgId }, retry: true });
+        return await groupRead<Record<string, string>>('get_sevak_names', { p_org: orgId }, 'get-sevak-names', { orgId });
       } catch (e) {
         console.warn("Failed to fetch secure sevak name config via serverless");
         return {};
       }
-    }, 60_000, { persist: true });
+    }, SLOW_TTL, { persist: true });
   },
 
   // Username -> avatar_url, same shape/scope as getSevakNameMap. Kept separate
@@ -363,23 +379,23 @@ export const dataService = {
   async getSevakAvatarMap(orgId: string): Promise<Record<string, string>> {
     return getCached(`sevakAvatarMap:${orgId}`, async () => {
       try {
-        return await callFn<Record<string, string>>('get-sevak-avatars', { body: { orgId }, retry: true });
+        return await groupRead<Record<string, string>>('get_sevak_avatars', { p_org: orgId }, 'get-sevak-avatars', { orgId });
       } catch (e) {
         console.warn("Failed to fetch secure sevak avatar map via serverless");
         return {};
       }
-    }, 60_000, { persist: true });
+    }, SLOW_TTL, { persist: true });
   },
 
   async getOrgSevakContacts(orgId: string): Promise<Record<string, { full_name: string; mobile: string; avatar_url?: string | null; role?: string; is_active?: boolean }>> {
     return getCached(`orgSevakContacts:${orgId}`, async () => {
       try {
-        return await callFn<Record<string, any>>('get-org-sevak-contacts', { body: { orgId }, retry: true });
+        return await groupRead<Record<string, any>>('get_org_sevak_contacts', { p_org: orgId }, 'get-org-sevak-contacts', { orgId });
       } catch (e) {
         console.warn("Failed to fetch secure sevak contacts via serverless");
         return {};
       }
-    }, 30_000, { persist: true });
+    }, SLOW_TTL, { persist: true });
   },
 
   // profiles has no "same org" SELECT policy — a Sevak's session can only read
@@ -389,12 +405,12 @@ export const dataService = {
   async getOrgRoster(orgId: string, includeInactive: boolean = false): Promise<Pick<UserProfile, 'username' | 'full_name' | 'gender' | 'avatar_url'>[]> {
     return getCached(`orgRoster:${orgId}:${includeInactive}`, async () => {
       try {
-        return await callFn<any[]>('get-org-roster', { body: { orgId, includeInactive }, retry: true });
+        return await groupRead<any[]>('get_org_roster', { p_org: orgId, p_include_inactive: includeInactive }, 'get-org-roster', { orgId, includeInactive });
       } catch (e) {
         console.warn("Failed to fetch org roster via serverless");
         return [];
       }
-    }, 30_000);
+    }, SLOW_TTL, { persist: true });
   },
 
   // Same data as getOrgRoster (username/full_name/gender), via a plain
@@ -412,7 +428,7 @@ export const dataService = {
       });
       if (error) throw error;
       return (data || []) as { username: string; full_name: string; gender: string | null }[];
-    }, 30_000, { persist: true });
+    }, SLOW_TTL, { persist: true });
   },
 
   async createSevak(
@@ -682,7 +698,7 @@ export const dataService = {
       const { data, error } = await query;
       if (error) throw error;
       return data || [];
-    }, 60_000, { persist: true });
+    }, SLOW_TTL, { persist: true });
   },
 
   // Short forms for long place names (e.g. "SP" for "SHREE PARSHWANATH ROAD"), one per place per group, so place
@@ -692,7 +708,7 @@ export const dataService = {
       const { data, error } = await supabase.from('place_aliases').select('place_name, alias').eq('organization_id', orgId);
       if (error) { console.warn('Could not load place aliases:', error.message); return {}; }
       return Object.fromEntries((data || []).map((r: { place_name: string; alias: string }) => [r.place_name, r.alias]));
-    }, 60_000, { persist: true });
+    }, SLOW_TTL, { persist: true });
   },
 
   // Captain only (RLS). An empty alias removes it.
@@ -725,7 +741,7 @@ export const dataService = {
       const { data } = await query.order('via', { ascending: true, nullsFirst: true }).limit(1);
 
       return data && data[0] ? data[0].distance_km : 0;
-    }, 60_000);
+    }, SLOW_TTL);
   },
 
   async addRoute(route: Omit<AreaRoute, 'id' | 'created_at'>) {
@@ -875,7 +891,7 @@ export const dataService = {
 
       if (error) throw error;
       return data as ViharEntry[];
-    }, 20_000, { persist: true });
+    }, ACTIVE_TTL, { persist: true });
   },
 
   // Org-wide (vihar_date, distance_km, sevaks) only — for rank/leaderboard
@@ -893,7 +909,7 @@ export const dataService = {
       });
       if (error) throw error;
       return (data || []) as ViharEntry[];
-    }, 20_000, { persist: true });
+    }, ACTIVE_TTL, { persist: true });
   },
 
   async getSevakEntries(username: string): Promise<ViharEntry[]> {
@@ -908,7 +924,7 @@ export const dataService = {
 
       if (error) throw error;
       return data as ViharEntry[];
-    }, 20_000);
+    }, ACTIVE_TTL, { persist: true });
   },
 
   // A Sevak's own Vihar history: their own submissions (any status — pending/approved/
@@ -929,7 +945,7 @@ export const dataService = {
       [...(ownSubmissions.data || []), ...(participantEntries.data || [])].forEach((e: any) => byId.set(e.id, e));
 
       return Array.from(byId.values()).sort((a, b) => (a.vihar_date < b.vihar_date ? 1 : -1));
-    }, 20_000, { persist: true });
+    }, ACTIVE_TTL, { persist: true });
   },
 
   // --- Vihar Approval Workflow (Captain review) ---
@@ -945,7 +961,7 @@ export const dataService = {
 
       if (error) throw error;
       return data as ViharEntry[];
-    }, 15_000);
+    }, ACTIVE_TTL, { persist: true });
   },
 
   async approveViharEntry(entryId: number): Promise<ViharEntry> {
@@ -1195,7 +1211,7 @@ export const dataService = {
         return "N/A";
       }
       return data || "N/A";
-    }, 20_000);
+    }, ACTIVE_TTL, { persist: true });
   },
 
   async getTotalOrgSevaks(orgId: string): Promise<number | null> {
@@ -1209,7 +1225,7 @@ export const dataService = {
         return null;
       }
       return data as number;
-    }, 30_000, { persist: true });
+    }, ACTIVE_TTL, { persist: true });
   },
 
   async getTopSevaks(orgId: string, limit: number = 1000) {
@@ -1250,7 +1266,21 @@ export const dataService = {
         console.error(err);
         return { male: [], female: [], overall: [] };
       }
-    }, 20_000);
+    }, ACTIVE_TTL, { persist: true });
+  },
+
+  // Upcoming Vihar alerts for the group, soonest first (Dashboard card + Notifications page share this).
+  async getUpcomingVihars(orgId: string): Promise<any[]> {
+    return getCached(`upcomingVihars:${orgId}`, async () => {
+      const { data, error } = await supabase
+        .from('upcoming_vihars')
+        .select('*')
+        .eq('organization_id', orgId)
+        .order('vihar_date', { ascending: true })
+        .order('vihar_time', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    }, ACTIVE_TTL, { persist: true });
   },
 
   // --- Contact Numbers ---
@@ -1264,7 +1294,7 @@ export const dataService = {
         .order('created_at', { ascending: true });
       if (error) throw error;
       return data as ContactNumber[];
-    }, 60_000);
+    }, SLOW_TTL, { persist: true });
   },
 
   async addContactNumber(contact: { organization_id: string; label: string; phone: string; description?: string }): Promise<ContactNumber> {
@@ -1311,7 +1341,7 @@ export const dataService = {
 
       if (error) throw error;
       return data as IncidentReport[];
-    }, 30_000);
+    }, ACTIVE_TTL, { persist: true });
   },
 
   async updateIncidentReportStatus(reportId: string, status: IncidentReport['status']) {

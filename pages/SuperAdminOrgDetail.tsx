@@ -71,13 +71,13 @@ const downloadCsv = (filename: string, rows: (string | number)[][]) => {
 };
 
 const Stat: React.FC<{ icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string; tone: string }> = ({ icon, label, value, sub, tone }) => (
-  <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+  <div className="bg-surface p-4 rounded-2xl border border-line shadow-sm">
     <div className="flex items-center gap-3">
       <div className={`p-2.5 rounded-xl ${tone}`}>{icon}</div>
       <div className="min-w-0">
-        <p className="text-xs text-gray-500 font-medium">{label}</p>
-        <p className="text-xl font-bold text-gray-900 leading-tight">{value}</p>
-        {sub && <p className="text-[11px] text-gray-400 truncate">{sub}</p>}
+        <p className="text-xs text-ink-2 font-medium">{label}</p>
+        <p className="text-xl font-bold text-ink leading-tight">{value}</p>
+        {sub && <p className="text-[11px] text-ink-3 truncate">{sub}</p>}
       </div>
     </div>
   </div>
@@ -85,8 +85,8 @@ const Stat: React.FC<{ icon: React.ReactNode; label: string; value: React.ReactN
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="min-w-0">
-    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{label}</p>
-    <div className="text-sm font-semibold text-gray-900 break-words">{children || '-'}</div>
+    <p className="text-[11px] font-bold uppercase tracking-wider text-ink-3">{label}</p>
+    <div className="text-sm font-semibold text-ink break-words">{children || '-'}</div>
   </div>
 );
 
@@ -191,15 +191,15 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-sunken/60 p-6">
         {offline ? <StatusScreen variant="offline" onRetry={load} /> : (
-          <div className="max-w-md w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-            <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4"><Lock size={26} /></div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Can't open this organisation</h1>
-            <p className="text-sm text-gray-600 mb-6">{error}</p>
+          <div className="max-w-md w-full bg-surface rounded-2xl border border-line shadow-sm p-8 text-center">
+            <div className="w-14 h-14 rounded-full bg-err-soft text-err flex items-center justify-center mx-auto mb-4"><Lock size={26} /></div>
+            <h1 className="text-xl font-bold text-ink mb-2">Can't open this organisation</h1>
+            <p className="text-sm text-ink-2 mb-6">{error}</p>
             <div className="flex gap-2 justify-center">
-              <a href="/super-admin" className="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-bold">Back</a>
-              <button onClick={load} className="px-5 py-2.5 rounded-xl bg-saffron-600 text-white text-sm font-bold">Retry</button>
+              <a href="/super-admin" className="px-5 py-2.5 rounded-xl bg-sunken text-ink text-sm font-bold">Back</a>
+              <button onClick={load} className="px-5 py-2.5 rounded-xl bg-brand text-ink text-sm font-bold">Retry</button>
             </div>
           </div>
         )}
@@ -209,8 +209,8 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
 
   if (!data || !calc) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-3 text-gray-500"><Loader2 className="animate-spin text-saffron-600" size={32} /><span className="font-medium">Loading organisation…</span></div>
+      <div className="min-h-screen flex items-center justify-center bg-sunken/60">
+        <div className="flex flex-col items-center gap-3 text-ink-2"><Loader2 className="animate-spin text-brand-700" size={32} /><span className="font-medium">Loading organisation…</span></div>
       </div>
     );
   }
@@ -315,43 +315,43 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
   const btn = 'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-bold transition-colors';
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-sunken/60 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="min-w-0">
-            <a href="/super-admin" className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-saffron-700 mb-2"><ArrowLeft size={16} /> Central Control</a>
+            <a href="/super-admin" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-2 hover:text-brand-700 mb-2"><ArrowLeft size={16} /> Central Control</a>
             <div className="flex items-center gap-3 flex-wrap">
-              <div className="p-2 bg-saffron-600 rounded-lg text-white shadow-lg shadow-saffron-200"><Building2 size={22} /></div>
-              <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900">{org.name}</h1>
-              <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold border ${org.brand === 'vseva' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-amber-100 text-amber-800 border-amber-300'}`}>{platform}</span>
+              <div className="p-2 bg-brand rounded-lg text-ink shadow-lg shadow-black/5"><Building2 size={22} /></div>
+              <h1 className="text-2xl md:text-3xl display font-bold text-ink">{org.name}</h1>
+              <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold border ${org.brand === 'vseva' ? 'bg-sunken text-ink-2 border-line' : 'bg-warn-soft text-warn border-amber-300'}`}>{platform}</span>
             </div>
-            <p className="mt-1 text-sm text-gray-500 flex items-center gap-1.5"><MapPin size={14} /> {place || 'Location not provided'} <span className="text-gray-300">•</span> Joined {fmtDate(org.created_at)}</p>
+            <p className="mt-1 text-sm text-ink-2 flex items-center gap-1.5"><MapPin size={14} /> {place || 'Location not provided'} <span className="text-ink-3">•</span> Joined {fmtDate(org.created_at)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <ThemedSelect value={String(vyYear)} onChange={v => setVyYear(parseInt(v, 10))} options={calc.years.map(y => ({ value: String(y), label: getViharYearBoundsForStartYear(y).label }))} placeholder="Vihar Year" clearable={false} className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-bold text-gray-700" />
-            <button onClick={load} className={`${btn} bg-white border border-gray-200 text-gray-600 hover:bg-gray-50`}><RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh</button>
-            <button onClick={exportReportPdf} disabled={exporting} className={`${btn} bg-saffron-600 text-white hover:bg-saffron-700 disabled:opacity-60`}>
+            <ThemedSelect value={String(vyYear)} onChange={v => setVyYear(parseInt(v, 10))} options={calc.years.map(y => ({ value: String(y), label: getViharYearBoundsForStartYear(y).label }))} placeholder="Vihar Year" clearable={false} className="px-3 py-2 rounded-xl border border-line bg-surface text-sm font-bold text-ink" />
+            <button onClick={load} className={`${btn} bg-surface border border-line text-ink-2 hover:bg-sunken/60`}><RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh</button>
+            <button onClick={exportReportPdf} disabled={exporting} className={`${btn} bg-brand text-ink hover:bg-brand-600 disabled:opacity-60`}>
               {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />} Report (PDF)
             </button>
-            <button onClick={exportSevaksCsv} className={`${btn} bg-blue-50 text-blue-700 hover:bg-blue-100`}><Download size={16} /> Sevaks CSV</button>
-            <button onClick={exportEntriesCsv} className={`${btn} bg-green-50 text-green-700 hover:bg-green-100`}><Download size={16} /> Vihars CSV</button>
-            <button onClick={() => { clearSuperAdminPin(); setPinOk(false); }} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl" title="Lock"><Lock size={18} /></button>
+            <button onClick={exportSevaksCsv} className={`${btn} bg-info-soft text-info hover:bg-info-soft`}><Download size={16} /> Sevaks CSV</button>
+            <button onClick={exportEntriesCsv} className={`${btn} bg-ok-soft text-ok hover:bg-ok-soft`}><Download size={16} /> Vihars CSV</button>
+            <button onClick={() => { clearSuperAdminPin(); setPinOk(false); }} className="p-2 text-ink-3 hover:text-err hover:bg-err-soft rounded-xl" title="Lock"><Lock size={18} /></button>
           </div>
         </div>
 
         {/* Summary */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <Stat tone="bg-saffron-50 text-saffron-600" icon={<Users size={20} />} label="Sevaks" value={data.sevaks.length} sub={`${calc.active} active · ${data.sevaks.length - calc.active} inactive`} />
-          <Stat tone="bg-green-50 text-green-600" icon={<Footprints size={20} />} label={`Vihars · ${vy.label}`} value={calc.inVy.length} sub={`${calc.approved.length} all time${calc.pending ? ` · ${calc.pending} pending` : ''}`} />
+          <Stat tone="bg-brand-50 text-brand-700" icon={<Users size={20} />} label="Sevaks" value={data.sevaks.length} sub={`${calc.active} active · ${data.sevaks.length - calc.active} inactive`} />
+          <Stat tone="bg-ok-soft text-ok" icon={<Footprints size={20} />} label={`Vihars · ${vy.label}`} value={calc.inVy.length} sub={`${calc.approved.length} all time${calc.pending ? ` · ${calc.pending} pending` : ''}`} />
           <Stat tone="bg-purple-50 text-purple-600" icon={<Target size={20} />} label="Group Sankalp" value={orgTarget ? `${calc.inVy.length} / ${orgTarget}` : 'Not set'} sub={pct !== null ? `${pct}% complete` : undefined} />
-          <Stat tone="bg-blue-50 text-blue-600" icon={<Route size={20} />} label="Distance" value={`${calc.km.toFixed(0)} km`} sub={`Last Vihar ${calc.lastEntry ? fmtDay(calc.lastEntry) : '—'}`} />
+          <Stat tone="bg-info-soft text-info" icon={<Route size={20} />} label="Distance" value={`${calc.km.toFixed(0)} km`} sub={`Last Vihar ${calc.lastEntry ? fmtDay(calc.lastEntry) : '—'}`} />
         </div>
 
         <div className="grid lg:grid-cols-3 gap-4">
           {/* Group & Captain */}
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-5 space-y-4 lg:col-span-1">
-            <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2"><Building2 size={16} className="text-blue-600" /> Group &amp; Captain</h2>
+          <div className="bg-surface rounded-3xl border border-line shadow-sm p-5 space-y-4 lg:col-span-1">
+            <h2 className="text-sm font-bold text-ink flex items-center gap-2"><Building2 size={16} className="text-info" /> Group &amp; Captain</h2>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Captain">{captain?.full_name}</Field>
               <Field label="Mobile">{captain?.mobile && <span className="font-mono">{captain.mobile}</span>}</Field>
@@ -366,18 +366,18 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
             {captain?.mobile && (
               <div className="flex gap-2 pt-1">
                 <button onClick={whatsapp} className={`${btn} bg-[#25D366] text-white hover:bg-[#20bd5a]`}><MessageCircle size={15} /> WhatsApp</button>
-                <a href={`tel:+91${captain.mobile}`} className={`${btn} bg-gray-100 text-gray-700 hover:bg-gray-200`}><Phone size={15} /> Call</a>
+                <a href={`tel:+91${captain.mobile}`} className={`${btn} bg-sunken text-ink hover:bg-line`}><Phone size={15} /> Call</a>
               </div>
             )}
             {captain?.id && (
-              <div className="pt-1 border-t border-gray-100">
+              <div className="pt-1 border-t border-line">
                 {!confirmOpenAs ? (
-                  <button onClick={() => setConfirmOpenAs(true)} className={`${btn} mt-3 bg-saffron-50 text-saffron-700 hover:bg-saffron-100`}>
+                  <button onClick={() => setConfirmOpenAs(true)} className={`${btn} mt-3 bg-brand-50 text-brand-700 hover:bg-brand-100`}>
                     <LogIn size={15} /> Open as Captain
                   </button>
                 ) : (
-                  <div className="mt-3 rounded-2xl bg-saffron-50 border border-saffron-100 p-3 space-y-2">
-                    <p className="text-xs text-gray-700 leading-relaxed">
+                  <div className="mt-3 rounded-2xl bg-brand-50 border border-brand-100 p-3 space-y-2">
+                    <p className="text-xs text-ink leading-relaxed">
                       You will be signed in as <b>{captain.full_name}</b> ({org.name}) in this browser and leave Super Admin.
                       Their password is not changed. This is recorded. To come back, sign out and open /super-admin.
                     </p>
@@ -394,11 +394,11 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
                             setOpeningAs(false);
                           }
                         }}
-                        className={`${btn} bg-saffron-600 text-white hover:bg-saffron-700 disabled:opacity-60`}
+                        className={`${btn} bg-brand text-ink hover:bg-brand-600 disabled:opacity-60`}
                       >
                         {openingAs ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />} Open account
                       </button>
-                      <button disabled={openingAs} onClick={() => setConfirmOpenAs(false)} className={`${btn} bg-white text-gray-700 border border-gray-200 hover:bg-gray-50`}>Cancel</button>
+                      <button disabled={openingAs} onClick={() => setConfirmOpenAs(false)} className={`${btn} bg-surface text-ink border border-line hover:bg-sunken/60`}>Cancel</button>
                     </div>
                   </div>
                 )}
@@ -407,16 +407,16 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
           </div>
 
           {/* Group stats */}
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-5 space-y-4 lg:col-span-2">
-            <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2"><Calendar size={16} className="text-green-600" /> Group stats · {vy.label}</h2>
+          <div className="bg-surface rounded-3xl border border-line shadow-sm p-5 space-y-4 lg:col-span-2">
+            <h2 className="text-sm font-bold text-ink flex items-center gap-2"><Calendar size={16} className="text-ok" /> Group stats · {vy.label}</h2>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Vihars per month</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ink-3 mb-2">Vihars per month</p>
               <div className="flex items-end gap-1.5 h-28">
                 {calc.monthly.map((n, i) => (
                   <div key={MONTHS[i]} className="flex-1 flex flex-col items-center justify-end gap-1 h-full">
-                    <span className="text-[10px] font-bold text-gray-500">{n || ''}</span>
-                    <div className="w-full rounded-t-md bg-saffron-400" style={{ height: `${n ? Math.max(6, (n / maxMonth) * 80) : 2}%`, opacity: n ? 1 : 0.25 }} />
-                    <span className="text-[10px] text-gray-400">{MONTHS[i]}</span>
+                    <span className="text-[11px] font-bold text-ink-2">{n || ''}</span>
+                    <div className="w-full rounded-t-md bg-brand" style={{ height: `${n ? Math.max(6, (n / maxMonth) * 80) : 2}%`, opacity: n ? 1 : 0.25 }} />
+                    <span className="text-[11px] text-ink-3">{MONTHS[i]}</span>
                   </div>
                 ))}
               </div>
@@ -429,18 +429,18 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Top Sevaks</p>
-                {calc.top.length === 0 ? <p className="text-sm text-gray-400">No Vihars this year</p> : (
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-3 mb-1.5">Top Sevaks</p>
+                {calc.top.length === 0 ? <p className="text-sm text-ink-3">No Vihars this year</p> : (
                   <ol className="space-y-1">{calc.top.map(({ s, n }, i) => (
-                    <li key={s.id} className="flex items-center justify-between text-sm"><span className="truncate"><span className="text-gray-400 mr-1.5">{i + 1}.</span>{s.full_name}</span><span className="font-bold text-saffron-700">{n}</span></li>
+                    <li key={s.id} className="flex items-center justify-between text-sm"><span className="truncate"><span className="text-ink-3 mr-1.5">{i + 1}.</span>{s.full_name}</span><span className="font-bold text-brand-700">{n}</span></li>
                   ))}</ol>
                 )}
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Top routes</p>
-                {calc.topRoutes.length === 0 ? <p className="text-sm text-gray-400">No Vihars this year</p> : (
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-3 mb-1.5">Top routes</p>
+                {calc.topRoutes.length === 0 ? <p className="text-sm text-ink-3">No Vihars this year</p> : (
                   <ol className="space-y-1">{calc.topRoutes.map(([r, n]) => (
-                    <li key={r} className="flex items-center justify-between gap-2 text-sm"><span className="truncate">{r}</span><span className="font-bold text-blue-700">{n}</span></li>
+                    <li key={r} className="flex items-center justify-between gap-2 text-sm"><span className="truncate">{r}</span><span className="font-bold text-info">{n}</span></li>
                   ))}</ol>
                 )}
               </div>
@@ -454,19 +454,19 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
         {/* Sevaks */}
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Users size={18} className="text-saffron-600" /> Sevaks <span className="text-xs font-bold text-saffron-700 bg-saffron-100 px-2 py-0.5 rounded-full">{rows.length}{rows.length !== data.sevaks.length ? ` of ${data.sevaks.length}` : ''}</span></h2>
+            <h2 className="text-lg font-bold text-ink flex items-center gap-2"><Users size={18} className="text-brand-700" /> Sevaks <span className="text-xs font-bold text-brand-700 bg-brand-100 px-2 py-0.5 rounded-full">{rows.length}{rows.length !== data.sevaks.length ? ` of ${data.sevaks.length}` : ''}</span></h2>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search size={15} className="absolute left-3 top-2.5 text-gray-400" />
-                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name, mobile, occupation…" className="pl-9 pr-3 py-2 w-64 max-w-full rounded-xl border border-gray-200 text-sm outline-none focus:border-saffron-400" />
+                <Search size={15} className="absolute left-3 top-2.5 text-ink-3" />
+                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name, mobile, occupation…" className="pl-9 pr-3 py-2 w-64 max-w-full rounded-xl border border-line text-sm outline-none focus:border-brand" />
               </div>
-              <ThemedSelect value={statusFilter} onChange={v => setStatusFilter(v as any)} options={[{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} placeholder="Status" clearable={false} className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700" />
+              <ThemedSelect value={statusFilter} onChange={v => setStatusFilter(v as any)} options={[{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} placeholder="Status" clearable={false} className="px-3 py-2 rounded-xl border border-line bg-surface text-sm font-semibold text-ink" />
             </div>
           </div>
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-surface rounded-3xl shadow-sm border border-line overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-gray-500 text-[10px] uppercase font-bold tracking-wider">
+                <thead className="bg-sunken/60 text-ink-2 text-[11px] uppercase font-bold tracking-wider">
                   <tr>
                     <th className="p-3 pl-5">#</th><th className="p-3">Sevak</th><th className="p-3">Mobile</th><th className="p-3">Age / Blood</th>
                     <th className="p-3">Occupation</th><th className="p-3">Family emergency contact</th><th className="p-3">Joined</th><th className="p-3">Last login</th>
@@ -474,31 +474,31 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
                     <th className="p-3 text-center">Sankalp</th><th className="p-3 text-center pr-5">Profile</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {rows.length === 0 && <tr><td colSpan={13} className="p-10 text-center text-gray-400">No Sevaks found</td></tr>}
+                <tbody className="divide-y divide-line">
+                  {rows.length === 0 && <tr><td colSpan={13} className="p-10 text-center text-ink-3">No Sevaks found</td></tr>}
                   {rows.map((s, i) => {
                     const p = calc.perSevak.get(s.username);
                     const pc = completion(s);
                     const miss = missingFields(s);
                     return (
                       <tr key={s.id} className={`hover:bg-gray-50/60 ${s.is_active ? '' : 'opacity-60'}`}>
-                        <td className="p-3 pl-5 text-gray-400">{i + 1}</td>
+                        <td className="p-3 pl-5 text-ink-3">{i + 1}</td>
                         <td className="p-3 min-w-[170px]">
-                          <p className="font-bold text-gray-900 flex items-center gap-1.5">{s.full_name}{!s.is_active && <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 rounded">Inactive</span>}</p>
-                          <p className="text-[11px] text-gray-400 font-mono truncate">{s.username}</p>
+                          <p className="font-bold text-ink flex items-center gap-1.5">{s.full_name}{!s.is_active && <span className="text-[11px] font-bold text-err bg-err-soft px-1.5 rounded">Inactive</span>}</p>
+                          <p className="text-[11px] text-ink-3 font-mono truncate">{s.username}</p>
                         </td>
-                        <td className="p-3 font-mono text-gray-700">{s.mobile}</td>
-                        <td className="p-3 text-gray-700 whitespace-nowrap">{ageFromDob(s.date_of_birth) ?? '-'} · {s.blood_group || '-'}<span className={`ml-1.5 text-[11px] font-bold ${s.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`}>{s.gender ? s.gender[0] : ''}</span></td>
-                        <td className="p-3 text-gray-700 min-w-[140px]">{occupationText(s) || '-'}</td>
-                        <td className="p-3 text-gray-700 min-w-[150px]">{s.emergency_number ? <>{s.emergency_contact_name && <span className="block text-xs text-gray-500">{s.emergency_contact_name}</span>}<span className="font-mono">{s.emergency_number}</span></> : '-'}</td>
-                        <td className="p-3 text-gray-500 whitespace-nowrap">{fmtDate(s.created_at)}</td>
-                        <td className="p-3 text-gray-500 whitespace-nowrap">{fmtDate(s.last_login_at)}</td>
-                        <td className="p-3 text-center"><span className="inline-block px-2.5 py-0.5 bg-saffron-50 text-saffron-700 text-xs font-bold rounded-lg border border-saffron-100">{p?.vy ?? 0}</span></td>
-                        <td className="p-3 text-center text-gray-600">{p?.total ?? 0}</td>
-                        <td className="p-3 text-gray-500 whitespace-nowrap">{p?.last ? fmtDay(p.last) : <span className="text-gray-300 italic">None</span>}</td>
-                        <td className="p-3 text-center text-gray-700">{calc.sevakSankalp.get(s.id) ?? <span className="text-gray-300">—</span>}</td>
+                        <td className="p-3 font-mono text-ink">{s.mobile}</td>
+                        <td className="p-3 text-ink whitespace-nowrap">{ageFromDob(s.date_of_birth) ?? '-'} · {s.blood_group || '-'}<span className={`ml-1.5 text-[11px] font-bold ${s.gender === 'Female' ? 'text-pink-600' : 'text-info'}`}>{s.gender ? s.gender[0] : ''}</span></td>
+                        <td className="p-3 text-ink min-w-[140px]">{occupationText(s) || '-'}</td>
+                        <td className="p-3 text-ink min-w-[150px]">{s.emergency_number ? <>{s.emergency_contact_name && <span className="block text-xs text-ink-2">{s.emergency_contact_name}</span>}<span className="font-mono">{s.emergency_number}</span></> : '-'}</td>
+                        <td className="p-3 text-ink-2 whitespace-nowrap">{fmtDate(s.created_at)}</td>
+                        <td className="p-3 text-ink-2 whitespace-nowrap">{fmtDate(s.last_login_at)}</td>
+                        <td className="p-3 text-center"><span className="inline-block px-2.5 py-0.5 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100">{p?.vy ?? 0}</span></td>
+                        <td className="p-3 text-center text-ink-2">{p?.total ?? 0}</td>
+                        <td className="p-3 text-ink-2 whitespace-nowrap">{p?.last ? fmtDay(p.last) : <span className="text-ink-3 italic">None</span>}</td>
+                        <td className="p-3 text-center text-ink">{calc.sevakSankalp.get(s.id) ?? <span className="text-ink-3">—</span>}</td>
                         <td className="p-3 pr-5 text-center" title={miss.length ? `Missing: ${miss.join(', ')}` : 'Complete'}>
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold ${pc === 100 ? 'bg-green-100 text-green-700' : pc >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>{pc}%</span>
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold ${pc === 100 ? 'bg-ok-soft text-ok' : pc >= 50 ? 'bg-warn-soft text-warn' : 'bg-err-soft text-err'}`}>{pc}%</span>
                         </td>
                       </tr>
                     );
@@ -511,32 +511,32 @@ const SuperAdminOrgDetail: React.FC<{ orgId: string }> = ({ orgId }) => {
 
         {/* Vihar log */}
         <div className="space-y-3">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Clock size={18} className="text-green-600" /> Vihar log <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">{data.entries.length}</span></h2>
-          {data.entriesTruncated && <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">Showing the most recent 20,000 entries.</p>}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+          <h2 className="text-lg font-bold text-ink flex items-center gap-2"><Clock size={18} className="text-ok" /> Vihar log <span className="text-xs font-bold text-ok bg-ok-soft px-2 py-0.5 rounded-full">{data.entries.length}</span></h2>
+          {data.entriesTruncated && <p className="text-xs text-warn bg-warn-soft rounded-lg px-3 py-2">Showing the most recent 20,000 entries.</p>}
+          <div className="bg-surface rounded-3xl shadow-sm border border-line overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-gray-500 text-[10px] uppercase font-bold tracking-wider">
+                <thead className="bg-sunken/60 text-ink-2 text-[11px] uppercase font-bold tracking-wider">
                   <tr><th className="p-3 pl-5">Date</th><th className="p-3">Route</th><th className="p-3">Type</th><th className="p-3 text-center">Sadhu / Sadhviji</th><th className="p-3 text-center">km</th><th className="p-3">Sevaks</th><th className="p-3 pr-5">Status</th></tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {data.entries.length === 0 && <tr><td colSpan={7} className="p-10 text-center text-gray-400">No Vihars recorded yet</td></tr>}
+                <tbody className="divide-y divide-line">
+                  {data.entries.length === 0 && <tr><td colSpan={7} className="p-10 text-center text-ink-3">No Vihars recorded yet</td></tr>}
                   {data.entries.slice(0, entryLimit).map(e => (
                     <tr key={e.id} className="hover:bg-gray-50/60">
-                      <td className="p-3 pl-5 whitespace-nowrap text-gray-700">{fmtDay(e.vihar_date)}</td>
-                      <td className="p-3 text-gray-800 min-w-[180px]">{e.vihar_from} → {e.vihar_to}{e.wheelchair && <span className="ml-1.5 text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 rounded">Wheelchair</span>}</td>
-                      <td className="p-3 capitalize text-gray-600">{e.vihar_type}</td>
-                      <td className="p-3 text-center text-gray-600">{e.group_sadhu ? e.no_sadhubhagwan ?? 0 : 0} / {e.group_sadhvi ? e.no_sadhvijibhagwan ?? 0 : 0}</td>
-                      <td className="p-3 text-center text-gray-600">{e.distance_km ?? '-'}</td>
-                      <td className="p-3 text-gray-600 min-w-[200px]">{(e.sevaks || []).map(u => calc.nameByUser.get(u) || u).join(', ') || '-'}</td>
-                      <td className="p-3 pr-5"><span className={`px-2 py-0.5 rounded-full text-[11px] font-bold capitalize ${(!e.status || e.status === 'approved') ? 'bg-green-100 text-green-700' : e.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>{e.status || 'approved'}</span></td>
+                      <td className="p-3 pl-5 whitespace-nowrap text-ink">{fmtDay(e.vihar_date)}</td>
+                      <td className="p-3 text-ink min-w-[180px]">{e.vihar_from} → {e.vihar_to}{e.wheelchair && <span className="ml-1.5 text-[11px] font-bold text-info bg-info-soft px-1.5 rounded">Wheelchair</span>}</td>
+                      <td className="p-3 capitalize text-ink-2">{e.vihar_type}</td>
+                      <td className="p-3 text-center text-ink-2">{e.group_sadhu ? e.no_sadhubhagwan ?? 0 : 0} / {e.group_sadhvi ? e.no_sadhvijibhagwan ?? 0 : 0}</td>
+                      <td className="p-3 text-center text-ink-2">{e.distance_km ?? '-'}</td>
+                      <td className="p-3 text-ink-2 min-w-[200px]">{(e.sevaks || []).map(u => calc.nameByUser.get(u) || u).join(', ') || '-'}</td>
+                      <td className="p-3 pr-5"><span className={`px-2 py-0.5 rounded-full text-[11px] font-bold capitalize ${(!e.status || e.status === 'approved') ? 'bg-ok-soft text-ok' : e.status === 'pending' ? 'bg-warn-soft text-warn' : 'bg-err-soft text-err'}`}>{e.status || 'approved'}</span></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             {data.entries.length > entryLimit && (
-              <button onClick={() => setEntryLimit(l => l + 50)} className="w-full py-3 text-sm font-bold text-saffron-700 hover:bg-saffron-50 border-t border-gray-100">Show more ({data.entries.length - entryLimit} remaining)</button>
+              <button onClick={() => setEntryLimit(l => l + 50)} className="w-full py-3 text-sm font-bold text-brand-700 hover:bg-brand-50 border-t border-line">Show more ({data.entries.length - entryLimit} remaining)</button>
             )}
           </div>
         </div>

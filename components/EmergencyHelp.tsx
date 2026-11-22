@@ -106,23 +106,23 @@ export const EmergencyHelp: React.FC = () => {
         return (
             <div className="mb-2">
                 {places.length === 0 ? (
-                    <p className="text-gray-500 text-sm py-2 px-1">No results found nearby.</p>
+                    <p className="text-ink-2 text-sm py-2 px-1">No results found nearby.</p>
                 ) : (
                     <div className="space-y-3">
                         {places.map((place, index) => (
-                            <div key={index} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                            <div key={index} className="bg-surface border border-line rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex items-start justify-between gap-2">
-                                    <h4 className="font-bold text-gray-800 line-clamp-1">
-                                        <span className="text-gray-400 font-medium mr-2 max-w-[20px] inline-block">{index + 1}.</span>
+                                    <h4 className="font-bold text-ink line-clamp-1">
+                                        <span className="text-ink-3 font-medium mr-2 max-w-[20px] inline-block">{index + 1}.</span>
                                         {place.name}
                                     </h4>
                                     {place.distance !== undefined && (
-                                        <span className="shrink-0 bg-gray-100 text-gray-600 text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full font-bold">
+                                        <span className="shrink-0 bg-sunken text-ink-2 text-[11px] uppercase tracking-wide px-2 py-0.5 rounded-full font-bold">
                                             {place.distance.toFixed(1)} km
                                         </span>
                                     )}
                                 </div>
-                                <div className="flex items-start gap-1 mt-1.5 text-gray-500 text-xs">
+                                <div className="flex items-start gap-1 mt-1.5 text-ink-2 text-xs">
                                     <MapPin size={14} className="shrink-0 mt-0.5" />
                                     <span className="line-clamp-2">{place.address}</span>
                                 </div>
@@ -131,7 +131,7 @@ export const EmergencyHelp: React.FC = () => {
                                         <a
                                             href={`tel:${place.phone.replace(/\D/g, '')}`}
                                             className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-colors
-                                            ${colorClass === 'text-red-500' ? 'bg-green-50 text-green-600 hover:bg-green-100 cursor-pointer' : 'bg-green-50 text-green-600 hover:bg-green-100 cursor-pointer'}`}
+                                            ${colorClass === 'text-err' ? 'bg-ok-soft text-ok hover:bg-ok-soft cursor-pointer' : 'bg-ok-soft text-ok hover:bg-ok-soft cursor-pointer'}`}
                                         >
                                             <Phone size={16} />
                                             Call
@@ -140,7 +140,7 @@ export const EmergencyHelp: React.FC = () => {
                                     <button
                                         onClick={() => openDirections(place.lat, place.lng)}
                                         className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-colors
-                                        ${colorClass === 'text-red-500' ? 'bg-red-50 text-red-600 hover:bg-red-100 cursor-pointer' : 'bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer'}`}
+                                        ${colorClass === 'text-err' ? 'bg-err-soft text-err hover:bg-err-soft cursor-pointer' : 'bg-info-soft text-info hover:bg-info-soft cursor-pointer'}`}
                                     >
                                         <img src="/google-maps.svg" alt="Maps" className="w-[18px] h-[18px] drop-shadow-sm" />
                                         Directions
@@ -158,7 +158,7 @@ export const EmergencyHelp: React.FC = () => {
         <div className="w-full">
             <button
                 onClick={handleGetHelp}
-                className="w-full relative overflow-hidden group bg-gradient-to-r from-red-500 to-red-600 text-white rounded-2xl p-4 shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-3 font-bold text-lg"
+                className="w-full relative overflow-hidden group text-white rounded-2xl p-4 shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-3 font-bold text-lg"
             >
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                 <AlertTriangle size={24} className="animate-pulse" />
@@ -168,9 +168,9 @@ export const EmergencyHelp: React.FC = () => {
             {/* Modal */}
             {isOpen && (
                 <Portal>
-                <div ref={swipe.backdropRef} onClick={swipe.close} className="fixed inset-0 z-50 flex flex-col md:items-center justify-end md:justify-center bg-black/60 backdrop-blur-sm p-4 app-modal-backdrop">
-                    <div ref={swipe.sheetRef} {...swipe.handlers} onClick={e => e.stopPropagation()} style={{ overscrollBehavior: 'contain' }} className="bg-gray-50 w-full max-w-lg rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] app-sheet-up">
-                        <div className="bg-gradient-to-r from-saffron-500 to-saffron-700 text-white p-5 flex items-center justify-between shrink-0">
+                <div ref={swipe.backdropRef} onClick={swipe.close} className="fixed inset-0 z-50 flex flex-col md:items-center justify-end md:justify-center bg-ink/45 p-4 app-modal-backdrop">
+                    <div ref={swipe.sheetRef} {...swipe.handlers} onClick={e => e.stopPropagation()} style={{ overscrollBehavior: 'contain' }} className="bg-sunken/60 w-full max-w-lg rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] app-sheet-up">
+                        <div className="bg-brand text-ink p-5 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/20 p-2 rounded-full">
                                     <AlertTriangle size={20} />
@@ -188,17 +188,17 @@ export const EmergencyHelp: React.FC = () => {
                         <div className="p-5 overflow-y-auto flex-1">
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-12 gap-4">
-                                    <Loader2 className="animate-spin text-saffron-500" size={40} />
-                                    <p className="text-gray-600 font-medium">Fetching nearby help...</p>
-                                    <p className="text-xs text-gray-400 text-center px-4">Locating nearest hospitals and police stations...</p>
+                                    <Loader2 className="animate-spin text-brand-700" size={40} />
+                                    <p className="text-ink-2 font-medium">Fetching nearby help...</p>
+                                    <p className="text-xs text-ink-3 text-center px-4">Locating nearest hospitals and police stations...</p>
                                 </div>
                             ) : error ? (
-                                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-center space-y-2 py-8">
+                                <div className="bg-err-soft border border-err-soft text-err p-4 rounded-xl text-center space-y-2 py-8">
                                     <AlertTriangle className="mx-auto" size={32} />
                                     <p className="font-semibold">{error}</p>
                                     <button
                                         onClick={handleGetHelp}
-                                        className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer"
+                                        className="mt-2 text-sm bg-err-soft hover:bg-red-200 px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer"
                                     >
                                         Try Again
                                     </button>
@@ -208,21 +208,21 @@ export const EmergencyHelp: React.FC = () => {
                                     <div className="flex bg-gray-200/60 p-1.5 rounded-xl">
                                         <button
                                             onClick={() => setActiveTab('hospital')}
-                                            className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'hospital' ? 'bg-white text-red-500 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                            className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'hospital' ? 'bg-surface text-err shadow-sm' : 'text-ink-2 hover:text-ink'}`}
                                         >
                                             <PlusSquare size={18} /> Hospitals
                                         </button>
                                         <button
                                             onClick={() => setActiveTab('police')}
-                                            className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'police' ? 'bg-white text-blue-500 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                            className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'police' ? 'bg-surface text-info shadow-sm' : 'text-ink-2 hover:text-ink'}`}
                                         >
                                             <Shield size={18} /> Police
                                         </button>
                                     </div>
                                     <div className="pt-2">
                                         {activeTab === 'hospital' 
-                                            ? renderPlaces('Hospitals Nearby', <PlusSquare size={20} />, hospitals, 'text-red-500')
-                                            : renderPlaces('Police Nearby', <Shield size={20} />, police, 'text-blue-500')
+                                            ? renderPlaces('Hospitals Nearby', <PlusSquare size={20} />, hospitals, 'text-err')
+                                            : renderPlaces('Police Nearby', <Shield size={20} />, police, 'text-info')
                                         }
                                     </div>
                                 </div>

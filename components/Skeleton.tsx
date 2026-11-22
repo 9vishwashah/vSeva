@@ -6,7 +6,7 @@ import React from 'react';
 // keeps the page shell visible immediately and avoids layout jumps once
 // data arrives.
 const Skeleton: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className = '', style }) => (
-  <div className={`animate-pulse rounded-md bg-gray-200/80 ${className}`} style={style} />
+  <div className={`animate-core-pulse rounded-lg bg-sunken ${className}`} style={style} />
 );
 
 export default Skeleton;

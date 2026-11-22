@@ -54,9 +54,9 @@ const DateOfBirthField: React.FC<Props> = ({ value, onChange, className }) => {
         <ThemedSelect value={parts.m} onChange={m => update({ ...parts, m })} options={MONTHS.map((label, i) => ({ value: String(i + 1), label }))} placeholder="Month" title="Month" className={className} />
         <ThemedSelect value={parts.y} onChange={y => update({ ...parts, y })} options={years} placeholder="Year" title="Year" className={className} />
       </div>
-      <p className="text-xs text-[#8A6A57] mt-1.5 min-h-[1rem]">
+      <p className="text-xs text-ink-2 mt-1.5 min-h-[1rem]">
         {complete
-          ? (age !== null ? <>Age: <span className="font-bold text-[#241C17]">{age} years</span> (worked out from the date)</> : 'This date is in the future.')
+          ? (age !== null ? <>Age: <span className="font-bold text-ink">{age} years</span> (worked out from the date)</> : 'This date is in the future.')
           : (parts.d || parts.m || parts.y ? 'Pick day, month and year.' : 'Your age is worked out from this.')}
       </p>
     </div>

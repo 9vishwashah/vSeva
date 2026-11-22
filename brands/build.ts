@@ -107,7 +107,7 @@ export function prepareBrandPublicDir(root: string, m: BrandMeta): string {
     );
     fs.writeFileSync(
       path.join(out, 'robots.txt'),
-      `User-agent: *\nAllow: /\n\nSitemap: ${m.siteUrl}/sitemap.xml\nSitemap: ${m.siteUrl}/directory-sitemap.xml\n`
+      `User-agent: *\nAllow: /\nDisallow: /app-update/\n\nSitemap: ${m.siteUrl}/sitemap.xml\nSitemap: ${m.siteUrl}/directory-sitemap.xml\n`
     );
   } else {
     fs.rmSync(path.join(out, 'sitemap.xml'), { force: true });

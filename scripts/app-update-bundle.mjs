@@ -33,7 +33,8 @@ if (!(brand in MIN_NATIVE)) {
 }
 
 const SKIP = [
-  /^app-update\//, /^vseva-site\/screens\//, /^notify\//, /\.pdf$/i,
+  /^app-update\//, /^vseva-site\//, /^notify\//, /\.pdf$/i, /^gone\.txt$/,
+  /^vseva-og/, /^vseva-logo-full\.png$/, /^vseva-logo-removebg\.png$/, // website / link-preview images
   /^(sw|OneSignalSDKWorker)\.js$/, /^(_redirects|_headers|robots\.txt|sitemap\.xml)$/,
   /^(documentation|contact|support-us)\.html$/, /-og-preview\.png$/, /^app-build\.json$/,
 ];
@@ -53,13 +54,60 @@ walk(dist);
 // the app's own page, never the website's landing page
 files['index.html'] = [fs.readFileSync(path.join(dist, 'app.html')), { level: 9 }];
 
-const zip = Buffer.from(zipSync(files));
-const checksum = crypto.createHash('sha256').update(zip).digest('hex');
+// What the app actually contains, ignoring things that change on every build without changing the app: the
+// build stamp, and the content-hash part of file names (a file's hash only changes when its content does,
+// and that content is compared here too).
+const HASHED_NAME = /-[A-Za-z0-9_-]{8}\.(js|css|png|jpe?g|svg|webp|gif|woff2?)\b/g;
+const TEXT = /\.(js|css|html|json|webmanifest|svg|txt)$/i;
+const contentHash = (() => {
+  const h = crypto.createHash('sha256');
+  const norm = (s) => s.replace(HASHED_NAME, '-HASH.$1');
+  // One line per file: normalised name + digest of its normalised content. Sorted, so the order depends on
+  // neither the hash part of names nor which of several same-named chunks (index-*.js) was listed first.
+  const lines = Object.keys(files).map((name) => {
+    const buf = files[name][0];
+    const body = TEXT.test(name) ? norm(buf.toString('utf8').split(build).join('BUILD')) : buf;
+    return `${norm(name)} ${crypto.createHash('sha256').update(body).digest('hex')}`;
+  }).sort();
+  h.update(lines.join('\n'));
+  return h.digest('hex');
+})();
+
 const outDir = path.join(dist, 'app-update');
 fs.mkdirSync(outDir, { recursive: true });
-const zipName = `${brand}-${build}.zip`;
-fs.writeFileSync(path.join(outDir, zipName), zip);
-fs.writeFileSync(path.join(outDir, `${brand}.json`), JSON.stringify({
-  brand, build, url: `/app-update/${zipName}`, checksum, minNative: MIN_NATIVE[brand], size: zip.length,
-}, null, 2));
-console.log(`[app-update] ${brand} build ${build}: ${Object.keys(files).length} files, ${(zip.length / 1024 / 1024).toFixed(2)} MB → dist/app-update/${zipName}`);
+const manifestPath = path.join(outDir, `${brand}.json`);
+
+// Website-only change? Then keep publishing the bundle the phones already have, so a deploy doesn't make every
+// installed app download ~3 MB again. Needs the live site's address (Netlify sets URL); any doubt -> new bundle.
+async function reuseLiveBundle() {
+  const site = (process.env.URL || '').replace(/\/$/, '');
+  if (!site || process.env.CONTEXT !== 'production' || process.env.FORCE_APP_UPDATE) return false;
+  try {
+    const res = await fetch(`${site}/app-update/${brand}.json`, { cache: 'no-store' });
+    if (!res.ok) return false;
+    const live = await res.json();
+    if (live?.contentHash !== contentHash || live.minNative !== MIN_NATIVE[brand] || typeof live.url !== 'string') return false;
+    const zipRes = await fetch(new URL(live.url, site));
+    if (!zipRes.ok) return false;
+    const liveZip = Buffer.from(await zipRes.arrayBuffer());
+    if (crypto.createHash('sha256').update(liveZip).digest('hex') !== live.checksum) return false;
+    fs.writeFileSync(path.join(outDir, path.basename(live.url)), liveZip);
+    fs.writeFileSync(manifestPath, JSON.stringify(live, null, 2));
+    console.log(`[app-update] ${brand}: app unchanged since build ${live.build}, keeping that bundle (phones download nothing).`);
+    return true;
+  } catch (err) {
+    console.warn('[app-update] could not compare with the live bundle, publishing a new one:', err?.message || err);
+    return false;
+  }
+}
+
+if (!(await reuseLiveBundle())) {
+  const zip = Buffer.from(zipSync(files));
+  const checksum = crypto.createHash('sha256').update(zip).digest('hex');
+  const zipName = `${brand}-${build}.zip`;
+  fs.writeFileSync(path.join(outDir, zipName), zip);
+  fs.writeFileSync(manifestPath, JSON.stringify({
+    brand, build, url: `/app-update/${zipName}`, checksum, minNative: MIN_NATIVE[brand], size: zip.length, contentHash,
+  }, null, 2));
+  console.log(`[app-update] ${brand} build ${build}: ${Object.keys(files).length} files, ${(zip.length / 1024 / 1024).toFixed(2)} MB → dist/app-update/${zipName}`);
+}
