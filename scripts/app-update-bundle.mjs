@@ -33,7 +33,7 @@ if (!(brand in MIN_NATIVE)) {
 }
 
 const SKIP = [
-  /^app-update\//, /^vseva-site\//, /^notify\//, /\.pdf$/i, /^gone\.txt$/,
+  /^app-update\//, /^vseva-site\//, /^notify\//, /\.pdf$/i, /^gone\.txt$/, /^install\.html$/,
   /^vseva-og/, /^vseva-logo-full\.png$/, /^vseva-logo-removebg\.png$/, // website / link-preview images
   /^(sw|OneSignalSDKWorker)\.js$/, /^(_redirects|_headers|robots\.txt|sitemap\.xml)$/,
   /^(documentation|contact|support-us)\.html$/, /-og-preview\.png$/, /^app-build\.json$/,

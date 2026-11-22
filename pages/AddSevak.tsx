@@ -399,35 +399,40 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   };
 
 
+  // Welcome message sent from the green WhatsApp button on a Sevak's card. *text* is bold in WhatsApp.
+  // The install link is the site's /install page (dist/install.html): WhatsApp shows the app's logo and name
+  // for it, then it opens the Play Store. A direct Play Store link often shows no preview at all.
   const generateWhatsAppMessage = (sevak: UserProfile) => {
-    const orgName = orgDetails?.name || 'our organization';
-    const orgCity = orgDetails?.city || 'our city';
-    const message = `Pranam ${sevak.full_name}
-
-You have been successfully added to ${BRAND.name} under the organization
-${orgName}, ${orgCity}
-
-You can now view your Vihar summary and share your contribution.
-
-Login Details:
-Username: ${sevak.username}
-Password: ${sevak.mobile}
-
-All Vihar entries are managed by ${currentUser.full_name}.
-
-
-Login to ${BRAND.name}:
-${BRAND.siteUrl || window.location.origin}
-
-Install ${BRAND.name} App.
-${BRAND.instagram ? `
-Follow ${BRAND.name} for updates:
-${BRAND.instagram.url}
-` : ''}
-"${BRAND.slogan}"
-
-${BRAND.name}${BRAND.cardCredit ? `
-${BRAND.cardCredit}` : ''}`;
+    const groupName = orgDetails?.name || 'your Vihar Seva group';
+    const username = String(sevak.username || '').replace(/@vsevak(\.in)?$/i, '');
+    const site = BRAND.siteUrl || window.location.origin;
+    const installUrl = BRAND.playStoreUrl ? `${site}/install` : site;
+    const viceName = orgDetails?.vice_captain_name?.trim();
+    const viceMobile = orgDetails?.vice_captain_mobile?.trim();
+    const lines = [
+      `Pranam *${sevak.full_name}*`,
+      '',
+      `You have been successfully added to ${BRAND.name} App by`,
+      `*${groupName}*`,
+      '',
+      'Login Details:',
+      `Username: ${username}`,
+      `Password: ${sevak.mobile} (Your Mobile No)`,
+      '',
+      `Captain : ${currentUser.full_name}`,
+      ...(currentUser.mobile ? [`Mobile Number ${currentUser.mobile}`] : []),
+      ...(viceName ? [`Vice Captain : ${viceName}`] : []),
+      ...(viceName && viceMobile ? [`Mobile Number ${viceMobile}`] : []),
+      '',
+      ...(BRAND.playStoreUrl
+        ? [`Install ${BRAND.name} App for Android:`, installUrl, '', `Install ${BRAND.name} App for iPhone:`, `${site}/`]
+        : [`Install ${BRAND.name} App:`, `${site}/`]),
+      ...(BRAND.instagram ? ['', `Follow ${BRAND.name} on Instagram for updates:`, BRAND.instagram.url] : []),
+      '',
+      BRAND.name,
+      ...(BRAND.cardCredit ? [`developed ${BRAND.cardCredit}`] : []),
+    ];
+    const message = lines.join('\n');
 
     return encodeURIComponent(message);
   };

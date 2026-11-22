@@ -44,7 +44,10 @@ async function rawHandler(event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON body' }) };
     }
 
-    const { captainName, viceCaptainName } = body;
+    const { captainName, viceCaptainName, viceCaptainMobile } = body;
+    if (viceCaptainMobile !== undefined && viceCaptainMobile !== '' && !/^[0-9]{10}$/.test(String(viceCaptainMobile))) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Vice Captain mobile number must be 10 digits.' }) };
+    }
 
     if (captainName !== undefined) {
       const { error } = await supabaseAdmin
@@ -60,6 +63,16 @@ async function rawHandler(event) {
         .update({ vice_captain_name: viceCaptainName || null })
         .eq('id', profile.organization_id);
       if (error) throw error;
+    }
+    // Separate write: needs scripts/add_vice_captain_mobile.sql, and must never block saving the names above.
+    if (viceCaptainMobile !== undefined) {
+      const { error } = await supabaseAdmin
+        .from('organizations')
+        .update({ vice_captain_mobile: viceCaptainMobile || null })
+        .eq('id', profile.organization_id);
+      if (error) {
+        return { statusCode: 400, body: JSON.stringify({ error: 'Names saved, but the Vice Captain mobile could not be saved yet (database update pending).' }) };
+      }
     }
 
     return { statusCode: 200, body: JSON.stringify({ success: true }) };

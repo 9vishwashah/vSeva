@@ -125,11 +125,13 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
     // date of birth/blood group/etc.
     const [captainName, setCaptainName] = useState(user.full_name);
     const [viceCaptainName, setViceCaptainName] = useState(orgDetails?.vice_captain_name || '');
+    const [viceCaptainMobile, setViceCaptainMobile] = useState(orgDetails?.vice_captain_mobile || '');
 
     useEffect(() => {
         setCaptainName(user.full_name);
         setViceCaptainName(orgDetails?.vice_captain_name || '');
-    }, [user.full_name, orgDetails?.vice_captain_name]);
+        setViceCaptainMobile(orgDetails?.vice_captain_mobile || '');
+    }, [user.full_name, orgDetails?.vice_captain_name, orgDetails?.vice_captain_mobile]);
 
     const handleSave = async () => {
         if (editForm.emergency_number && editForm.emergency_number.replace(/\D/g, '').length !== 10) {
@@ -183,11 +185,16 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             || (BRAND.sevakViharPreferences && (editForm.vihar_scope !== (user.vihar_scope || '')
                 || [...editForm.seva_preferences].sort().join('|') !== [...(user.seva_preferences || [])].sort().join('|'))))
         : (captainName.trim() !== user.full_name.trim()
-            || viceCaptainName.trim() !== (orgDetails?.vice_captain_name || '').trim());
+            || viceCaptainName.trim() !== (orgDetails?.vice_captain_name || '').trim()
+            || viceCaptainMobile !== (orgDetails?.vice_captain_mobile || ''));
 
     const handleSaveOrgDetails = async () => {
         if (!captainName.trim()) {
             showToast('Captain name is required', 'error');
+            return;
+        }
+        if (viceCaptainMobile && viceCaptainMobile.length !== 10) {
+            showToast('Vice Captain mobile number must be 10 digits', 'error');
             return;
         }
         setIsSaving(true);
@@ -195,6 +202,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
             await dataService.updateOrgLeadership({
                 captainName: captainName.trim(),
                 viceCaptainName: viceCaptainName.trim(),
+                viceCaptainMobile,
             });
             showToast('Organization details updated!', 'success');
             if (onProfileUpdated) await onProfileUpdated();
@@ -591,6 +599,20 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                                 value={viceCaptainName}
                                 onChange={e => setViceCaptainName(e.target.value)}
                                 placeholder="Optional"
+                                className={fieldInputClass}
+                            />
+                        </div>
+
+                        {/* Vice Captain Mobile (shown in the Sevak welcome WhatsApp message) */}
+                        <div>
+                            <label className={fieldLabelClass}>Vice Captain Mobile Number</label>
+                            <input
+                                type="tel"
+                                inputMode="numeric"
+                                maxLength={10}
+                                value={viceCaptainMobile}
+                                onChange={e => setViceCaptainMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                placeholder="Optional, 10 digits"
                                 className={fieldInputClass}
                             />
                         </div>

@@ -41,8 +41,8 @@ android {
         // you want the visible version to change; it can lag behind versionCode
         // incrementing on every build. There is no auto-increment configured —
         // bump both by hand right before each `./gradlew bundleRelease`.
-        versionCode 5
-        versionName "1.3"
+        versionCode 6
+        versionName "1.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -66,8 +66,8 @@ android {
             dimension "brand"
             applicationId "in.vjas.ssg"
             // Its own Play listing => its own, independent version counter.
-            versionCode 3
-            versionName "1.2"
+            versionCode 4   // 1.3: Firebase push (src/ssg/google-services.json)
+            versionName "1.3"
         }
     }
     buildTypes {

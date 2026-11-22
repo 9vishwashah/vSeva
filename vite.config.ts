@@ -406,6 +406,39 @@ export default defineConfig(({ mode }) => {
             }
             // which build this is, for scripts/app-update-bundle.mjs
             fs.writeFileSync(path.join(outDir, 'app-build.json'), JSON.stringify({ build: appBuild, brand: brand.id }));
+
+            // /install: the link put in WhatsApp messages (pages/AddSevak.tsx). A Play Store link often gets no
+            // preview in WhatsApp; this page carries the app's own preview (logo banner, name) and then opens the
+            // Play Store. WhatsApp's preview reader doesn't run scripts, so it reads these tags, not Play's page.
+            if (brand.playStoreUrl) {
+              const site = brand.siteUrl || '';
+              const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+              const title = `Install the ${brand.name} app`;
+              const desc = `${brand.slogan}. Get ${brand.name} on Google Play.`;
+              const [ow, oh] = brand.ogImageSize;
+              const installHtml = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${esc(brand.name)}">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:image" content="${esc(site + brand.ogImagePath)}">
+<meta property="og:image:width" content="${ow}"><meta property="og:image:height" content="${oh}">
+<meta property="og:url" content="${esc(site + '/install')}">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="${esc(brand.iconPath)}">
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#F2EEE7;font-family:system-ui,sans-serif;color:#1D1D1B;text-align:center}
+img{width:96px;height:96px;border-radius:24px}h1{margin:16px 0 4px;font-size:28px}p{margin:0 0 24px;color:#57534B}
+a{display:inline-block;padding:14px 28px;border-radius:999px;background:#E8730C;color:#1D1D1B;font-weight:600;text-decoration:none}</style>
+</head><body><main><img src="${esc(brand.appleTouchIconPath)}" alt=""><h1>${esc(brand.name)}</h1><p>Opening Google Play…</p>
+<a href="${esc(brand.playStoreUrl)}">Get it on Google Play</a></main>
+<script>location.replace(${JSON.stringify(brand.playStoreUrl)});</script></body></html>
+`;
+              fs.writeFileSync(path.join(outDir, 'install.html'), installHtml);
+            }
           },
         };
       })(),
@@ -421,7 +454,7 @@ export default defineConfig(({ mode }) => {
           // not the website's screenshots / guide PDF, the notification art, or the social preview
           globPatterns: ['**/*.{js,css,html,png,jpg,svg,webp,woff2,webmanifest}'],
           globIgnores: [
-            'vseva-site/**', 'notify/**', '*-og-preview.png', // the website's own files (its pages don't install the app)
+            'vseva-site/**', 'notify/**', '*-og-preview.png', 'install.html', // the website's own files (its pages don't install the app)
             // Big parts most people never open (map, Excel/PDF export, fonts for PDFs, image capture, India map,
             // Super Admin, the PDF partner logo, the full-size logos): not downloaded on install. sw.js keeps each
             // one on the device the first time it is used, so it still works offline after that.

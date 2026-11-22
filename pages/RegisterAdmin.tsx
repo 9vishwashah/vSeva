@@ -14,6 +14,7 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
     const [formData, setFormData] = useState({
         captainName: '',
         viceCaptainName: '',
+        viceCaptainMobile: '',
         mobile: '',
         email: '',
         address: '',
@@ -89,11 +90,10 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
 
         try {
             // Updated Flow: Submit Request to 'registration_requests' table
-            const { error } = await supabase
-                .from('registration_requests')
-                .insert({
+            const request = {
                     captain_name: formData.captainName,
                     vice_captain_name: formData.viceCaptainName,
+                    vice_captain_mobile: formData.viceCaptainMobile,
                     mobile: formData.mobile,
                     email: formData.email,
                     full_address: formData.address,
@@ -107,7 +107,14 @@ const RegisterAdmin: React.FC<RegisterAdminProps> = ({ onBack, onSuccess }) => {
                     password: formData.mobile, // Setting Mobile Number as Password per requirement
                     // Only branded deployments tag the request (vSeva rows keep brand NULL).
                     ...(BRAND.dbBrand ? { brand: BRAND.dbBrand } : {})
-                });
+            };
+            let { error } = await supabase.from('registration_requests').insert(request);
+            // Until scripts/add_vice_captain_mobile.sql has run the column doesn't exist: submit without it
+            // instead of turning the Captain away.
+            if (error && /vice_captain_mobile/i.test(error.message || '')) {
+                const { vice_captain_mobile: _skip, ...withoutMobile } = request;
+                ({ error } = await supabase.from('registration_requests').insert(withoutMobile));
+            }
 
             if (error) throw error;
 
@@ -207,10 +214,12 @@ Kindly review and Approve.`;
                 <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                     {field('Captain Name',
                         <input name="captainName" type="text" required autoComplete="name" className={inputCls} placeholder={ex.captain} value={formData.captainName} onChange={handleChange} />)}
-                    {field(<>Vice Captain Name <span className="font-normal text-ink-3">(optional)</span></>,
-                        <input name="viceCaptainName" type="text" className={inputCls} placeholder={ex.viceCaptain} value={formData.viceCaptainName} onChange={handleChange} />)}
                     {field('Captain Mobile Number',
                         <input name="mobile" type="tel" inputMode="numeric" required pattern="[0-9]{10}" maxLength={10} autoComplete="tel-national" className={inputCls} placeholder={ex.mobile} value={formData.mobile} onChange={e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10); handleChange(e); }} />)}
+                    {field('Vice Captain Name',
+                        <input name="viceCaptainName" type="text" required className={inputCls} placeholder={ex.viceCaptain} value={formData.viceCaptainName} onChange={handleChange} />)}
+                    {field('Vice Captain Mobile Number',
+                        <input name="viceCaptainMobile" type="tel" inputMode="numeric" required pattern="[0-9]{10}" maxLength={10} className={inputCls} placeholder="10-digit number" value={formData.viceCaptainMobile} onChange={e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10); handleChange(e); }} />)}
                     {field('Captain Email ID',
                         <input name="email" type="email" required autoComplete="email" className={inputCls} placeholder={ex.email} value={formData.email} onChange={handleChange} />)}
 

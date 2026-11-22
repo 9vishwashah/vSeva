@@ -53,6 +53,9 @@ async function rawHandler(event) {
         // before the brand columns exist.
         const orgRow = { name: request.vihar_group_name, city: request.city, town: request.town };
         if (request.brand) orgRow.brand = request.brand;
+        // The Vice Captain entered on the request belongs to the group (it used to be dropped here).
+        if (request.vice_captain_name) orgRow.vice_captain_name = request.vice_captain_name;
+        if (request.vice_captain_mobile) orgRow.vice_captain_mobile = request.vice_captain_mobile;
 
         const { data: org, error: orgError } = await sb.from('organizations').insert(orgRow).select().single();
         if (orgError) throw new Error('Failed to create organization: ' + orgError.message);

@@ -11,6 +11,7 @@ export interface Organization {
   town?: string;
   created_by?: string;
   vice_captain_name?: string | null;
+  vice_captain_mobile?: string | null;
 }
 
 export interface UserProfile {

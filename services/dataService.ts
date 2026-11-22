@@ -170,13 +170,21 @@ export const dataService = {
 
   async getOrganization(orgId: string): Promise<Organization | null> {
     return getCached(`org:${orgId}`, async () => {
+      // vice_captain_mobile needs scripts/add_vice_captain_mobile.sql: until then read without it
       const { data, error } = await supabase
         .from('organizations')
-        .select('id, name, city, town, created_by, vice_captain_name')
+        .select('id, name, city, town, created_by, vice_captain_name, vice_captain_mobile')
         .eq('id', orgId)
         .single();
 
       if (!error) return data as Organization;
+
+      const { data: noMobile, error: noMobileError } = await supabase
+        .from('organizations')
+        .select('id, name, city, town, created_by, vice_captain_name')
+        .eq('id', orgId)
+        .single();
+      if (!noMobileError) return noMobile as Organization;
 
       // town/vice_captain_name need scripts/add_vice_captain_name.sql run first —
       // fall back to the original narrow select rather than breaking org name/city
@@ -195,7 +203,7 @@ export const dataService = {
     }, SLOW_TTL, { persist: true });
   },
 
-  async updateOrgLeadership(updates: { captainName?: string; viceCaptainName?: string }): Promise<void> {
+  async updateOrgLeadership(updates: { captainName?: string; viceCaptainName?: string; viceCaptainMobile?: string }): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) throw new Error('Admin session required. Please login again.');
 
