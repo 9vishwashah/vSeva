@@ -7,7 +7,7 @@ import { UserProfile, UserRole, Organization, SevaPreference } from '../types';
 import { getMissingProfileFields, getProfileCompletion } from '../services/profileCompletion';
 import ViharPreferencesFields from './ViharPreferencesFields';
 import { dataService } from '../services/dataService';
-import { Printer, ArrowLeft, Check, Loader2, Bell, BellOff, AlertTriangle, RefreshCw, CreditCard, LogOut, Camera, BadgeCheck, CalendarDays, ChevronRight } from 'lucide-react';
+import { Printer, ArrowLeft, Check, Loader2, Bell, BellOff, AlertTriangle, CreditCard, LogOut, Camera, BadgeCheck, CalendarDays, ChevronRight } from 'lucide-react';
 import IDCardBadge from './IDCardBadge';
 import Avatar from './Avatar';
 import AvatarCropModal from './AvatarCropModal';
@@ -226,8 +226,38 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
     const [pushPermission, setPushPermission] = useState<'checking' | 'granted' | 'denied' | 'default' | 'unsupported'>('checking');
     const [pushBusy, setPushBusy] = useState(false);
+    // Opted in = OneSignal sends to this device. Switched off in the app it stays false even while the phone still
+    // allows notifications, so the switch below shows what the person actually gets.
+    const [pushOptedIn, setPushOptedIn] = useState<boolean | null>(null);
+
+    // The web OneSignal SDK may never finish loading (blocked, other domain): answer within 3 s regardless.
+    const withWebOneSignal = <T,>(fn: (OneSignal: any) => Promise<T> | T, fallback: T): Promise<T> =>
+        new Promise<T>((resolve) => {
+            const timer = window.setTimeout(() => resolve(fallback), 3000);
+            // @ts-ignore
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            // @ts-ignore
+            window.OneSignalDeferred.push(async (OneSignal: any) => {
+                try { resolve(await fn(OneSignal)); } catch { resolve(fallback); } finally { window.clearTimeout(timer); }
+            });
+        });
+
+    const readPushOptedIn = async () => {
+        if (!PUSH_ENABLED) return;
+        try {
+            if (isNativePlatform()) {
+                const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
+                setPushOptedIn(await OneSignal.User.pushSubscription.getOptedInAsync());
+            } else {
+                setPushOptedIn(await withWebOneSignal(OS => !!OS.User?.PushSubscription?.optedIn, null as boolean | null));
+            }
+        } catch {
+            setPushOptedIn(null);
+        }
+    };
 
     const readPushPermission = async () => {
+        void readPushOptedIn();
         if (isNativePlatform()) {
             try {
                 const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
@@ -274,6 +304,26 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
         return () => window.removeEventListener('focus', onFocus);
     }, []);
 
+    const handleDisablePush = async () => {
+        if (pushBusy) return;
+        setPushBusy(true);
+        try {
+            if (isNativePlatform()) {
+                const { default: OneSignal } = await import('@onesignal/capacitor-plugin');
+                await OneSignal.User.pushSubscription.optOut();
+            } else {
+                await withWebOneSignal(OS => OS.User?.PushSubscription?.optOut?.(), undefined);
+            }
+            setPushOptedIn(false);
+            showToast('Notifications turned off on this device', 'info');
+        } catch (e) {
+            console.error('Failed to turn off notifications', e);
+            showToast('Could not turn notifications off. Please try again.', 'error');
+        } finally {
+            setPushBusy(false);
+        }
+    };
+
     const handleEnablePush = async () => {
         if (pushBusy) return;
         setPushBusy(true);
@@ -285,8 +335,10 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 // Android won't ask again (declined before), open the app's notification settings instead
                 const { granted } = await NotificationPermission.request();
                 if (!granted) await NotificationPermission.openSettings();
-                if (granted && user.username) {
-                    await OneSignal.login(user.username);
+                if (granted) {
+                    // permission is already granted here, so this doesn't show OneSignal's own permission screen
+                    await OneSignal.User.pushSubscription.optIn();
+                    if (user.username) await OneSignal.login(user.username);
                 }
                 await readPushPermission();
                 if (granted) {
@@ -304,6 +356,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 window.OneSignalDeferred.push(async function (OneSignal: any) {
                     try {
                         await OneSignal.Slidedown.prompt();
+                        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                            await OneSignal.User?.PushSubscription?.optIn?.();
+                        }
                         if (user.username) {
                             await OneSignal.login(user.username);
                         }
@@ -709,36 +764,44 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     <div className="p-4 rounded-2xl text-xs text-ink-2" style={{ background: '#F7F4F0' }}>
                         Push notifications aren't available on this device.
                     </div>
-                ) : (
-                    <div className="flex items-center justify-between p-4 rounded-2xl gap-3" style={{ background: '#F7F4F0' }}>
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#FFF0E5' }}>
-                                {pushPermission === 'granted' ? (
-                                    <Bell size={18} style={{ color: '#DE6B38' }} />
-                                ) : (
-                                    <BellOff size={18} style={{ color: '#B5602C' }} />
-                                )}
+                ) : (() => {
+                    // On = the phone allows notifications AND this device is opted in. Unknown opt-in (SDK not ready)
+                    // follows the permission, which is what it used to show.
+                    const pushOn = pushPermission === 'granted' && pushOptedIn !== false;
+                    const blockedOnPhone = pushPermission === 'denied';
+                    return (
+                        <div className="flex items-center justify-between p-4 rounded-2xl gap-3 bg-sunken/60">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-brand-50">
+                                    {pushOn ? <Bell size={18} className="text-brand-700" /> : <BellOff size={18} className="text-ink-3" />}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="font-bold text-ink text-sm">Push Notifications</p>
+                                    {pushOn ? (
+                                        <p className="text-xs mt-0.5 text-ok font-medium">On for this device</p>
+                                    ) : blockedOnPhone ? (
+                                        <p className="text-xs mt-0.5 text-ink-2">Off. Turn on to allow them in your phone settings</p>
+                                    ) : (
+                                        <p className="text-xs mt-0.5 text-ink-2">Off. Turn on for Vihar alerts and updates</p>
+                                    )}
+                                </div>
                             </div>
-                            <div className="min-w-0">
-                                <p className="font-bold text-ink text-sm">Push Notifications</p>
-                                {pushPermission === 'granted' ? (
-                                    <p className="text-xs mt-0.5 text-ok font-medium">Enabled on this device</p>
-                                ) : (
-                                    <p className="text-xs mt-0.5 text-ink-2">Receive updates about Vihar alerts and more</p>
-                                )}
-                            </div>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={pushOn}
+                                aria-label="Push notifications on this device"
+                                onClick={pushOn ? handleDisablePush : handleEnablePush}
+                                disabled={pushBusy || pushPermission === 'checking'}
+                                className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-60 ${pushOn ? 'bg-green-500' : 'bg-gray-300'}`}
+                            >
+                                <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-surface shadow transition-all flex items-center justify-center ${pushOn ? 'left-[1.4rem]' : 'left-0.5'}`}>
+                                    {pushBusy && <Loader2 size={12} className="animate-spin text-ink-3" />}
+                                </span>
+                            </button>
                         </div>
-                        <button
-                            onClick={handleEnablePush}
-                            disabled={pushBusy}
-                            className="px-4 py-2 bg-surface shadow-sm text-sm font-bold text-ink rounded-xl hover:bg-sunken/60 active:scale-95 transition-transform shrink-0 disabled:opacity-60 flex items-center gap-1.5"
-                        >
-                            {pushBusy && <Loader2 size={14} className="animate-spin" />}
-                            {!pushBusy && pushPermission === 'granted' && <RefreshCw size={14} />}
-                            {pushBusy ? 'Working…' : pushPermission === 'granted' ? 'Re-sync' : 'Enable'}
-                        </button>
-                    </div>
-                )}
+                    );
+                })()}
             </div>
 
             {/* Safety: a way to report a child-safety / safety concern. Hidden in the app for now; the

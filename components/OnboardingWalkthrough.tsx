@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { PartyPopper, UserPlus, Map, FilePlus, CheckCircle2, Sparkles, Smartphone, Home, BarChart2, RefreshCw, Lightbulb } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { PartyPopper, UserPlus, Map, FilePlus, CheckCircle2, Sparkles, Home, BarChart2, RefreshCw, Lightbulb, Bell, BellRing, Loader2, Settings } from 'lucide-react';
+import { readPushState, turnOnPush, type PushState } from '../services/pushPermission';
 import { BRAND } from '@brand';
 import { UserRole } from '../types';
 
@@ -28,7 +29,15 @@ interface Step {
   description: string;
   highlight?: string; // optional bold/colored keyword
   tip?: string;       // optional tip box
+  kind?: 'notifications'; // the "turn on notifications" card (must be turned on to continue)
 }
+
+// Shown before the last card for Captains and Sevaks. Left out where push isn't available (e.g. a browser without it).
+const NOTIFICATIONS_STEP: Step = {
+  icon: <BellRing />, tone: 'lavender', kind: 'notifications',
+  title: 'Turn On Notifications',
+  description: 'To get Vihar updates and reminders, turn on notifications. You will know as soon as your Captain needs Sevaks for a Vihar.',
+};
 
 const CAPTAIN_STEPS: Step[] = [
   {
@@ -67,13 +76,6 @@ const SEVAK_STEPS: Step[] = [
     description: `Your Captain has added you to the team. ${BRAND.name} helps you track and celebrate your Vihar Seva contributions.`,
   },
   {
-    icon: <Smartphone />, tone: 'sky',
-    title: 'Get Your Login Details',
-    description: 'Ask your Captain to tap the',
-    highlight: 'WhatsApp button',
-    tip: 'Your Captain will send your Username and Password directly to your WhatsApp, so you can log in anytime.',
-  },
-  {
     icon: <Home />, tone: 'mustard',
     title: 'Your Profile',
     description: 'Your personal stats — total km, vihars, ranking, and more — live on the "Home" tab. Tap your avatar anytime to open Profile & Settings and update your blood group or emergency contact.',
@@ -101,24 +103,66 @@ interface OnboardingWalkthroughProps {
   onDone: () => void;
   /** Shown in the first step's greeting ("Welcome, Vijay!") instead of "Captain" / the app name */
   name?: string;
+  /** Links this device to the person when notifications are turned on */
+  username?: string;
 }
 
-const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onDone, name }) => {
+const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onDone, name, username }) => {
   const [step, setStep] = useState(0);
   const [exiting, setExiting] = useState(false);
+  const [push, setPush] = useState<PushState | 'checking'>('checking');
+  const [pushBusy, setPushBusy] = useState(false);
 
-  const steps = role === UserRole.ORG_ADMIN ? CAPTAIN_STEPS : SEVAK_STEPS;
-  const current = steps[step];
+  // Know straight away whether the notifications card applies, and re-check when the person comes back from the
+  // phone's settings (where a blocked permission has to be turned on).
+  useEffect(() => {
+    let alive = true;
+    const check = () => readPushState().then(s => { if (alive) setPush(s); });
+    check();
+    const onVisible = () => { if (document.visibilityState === 'visible') check(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { alive = false; document.removeEventListener('visibilitychange', onVisible); };
+  }, []);
+
+  const base = role === UserRole.ORG_ADMIN ? CAPTAIN_STEPS : SEVAK_STEPS;
+  const steps = push === 'unsupported' ? base : [...base.slice(0, -1), NOTIFICATIONS_STEP, base[base.length - 1]];
+  const current = steps[Math.min(step, steps.length - 1)];
+  const isPushStep = current.kind === 'notifications';
+  // Compulsory: this card can only be passed once notifications are on. Exception: a website whose browser has
+  // blocked them, since only the browser's own settings can change that (the Android app opens its settings).
+  const nativeApp = !!(globalThis as any).Capacitor?.isNativePlatform?.();
+  const webBlocked = push === 'blocked' && !nativeApp;
+  const pushBlocksNext = isPushStep && push !== 'on' && !webBlocked;
   const isLast = step === steps.length - 1;
   const firstName = (name || '').trim().split(/\s+/)[0];
   const title = step === 0 && firstName ? `Welcome, ${firstName}!` : current.title;
 
+  const handleTurnOnPush = async () => {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      const result = await turnOnPush(username);
+      setPush(result);
+      if (result === 'on') setTimeout(() => setStep(s => s + 1), 700); // show the tick, then move on
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
   const handleNext = () => {
+    if (pushBlocksNext) return;
     if (isLast) {
       handleDone();
     } else {
       setStep(s => s + 1);
     }
+  };
+
+  // Skipping the tour still stops at the notifications card while they're off (it is required)
+  const handleSkip = () => {
+    const pushIndex = steps.findIndex(s => s.kind === 'notifications');
+    if (pushIndex >= 0 && push !== 'on') setStep(pushIndex);
+    else handleDone();
   };
 
   const handleBack = () => {
@@ -173,6 +217,23 @@ const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onD
             )}
           </p>
 
+          {isPushStep && (
+            <div className={`mt-4 rounded-2xl px-4 py-3 text-left flex gap-2.5 ${push === 'on' ? 'bg-ok-soft' : 'bg-block-lavender/20'}`}>
+              {push === 'on'
+                ? <CheckCircle2 size={18} className="shrink-0 mt-0.5 text-ok" aria-hidden="true" />
+                : <Bell size={18} className="shrink-0 mt-0.5 text-ink-2" aria-hidden="true" />}
+              <p className={`text-[14px] leading-relaxed ${push === 'on' ? 'text-ok font-medium' : 'text-ink-2'}`}>
+                {push === 'on'
+                  ? 'Notifications are on. You are all set for Vihar alerts and reminders.'
+                  : webBlocked
+                  ? 'Your browser is blocking notifications for this site. Allow them from the lock icon next to the web address, then reload.'
+                  : push === 'blocked'
+                  ? 'Notifications are turned off for this app on your phone. Tap below, then switch on Notifications and come back.'
+                  : 'Required to continue. Tap below and choose Allow.'}
+              </p>
+            </div>
+          )}
+
           {/* Optional tip box */}
           {current.tip && (
             <div className="mt-4 bg-warn-soft rounded-2xl px-4 py-3 text-left flex gap-2.5">
@@ -189,7 +250,7 @@ const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onD
           {steps.map((_, i) => (
             <button
               key={i}
-              onClick={() => setStep(i)}
+              onClick={() => { if (!(pushBlocksNext && i > step)) setStep(i); }}
               aria-label={`Step ${i + 1}`}
               className={`rounded-full transition-all duration-300 ${
                 i === step
@@ -213,13 +274,25 @@ const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onD
             </button>
           ) : (
             <button
-              onClick={handleDone}
+              onClick={handleSkip}
               className="flex-shrink-0 h-12 px-5 rounded-full text-ink-2 hover:bg-sunken font-semibold text-[15px] transition-colors"
             >
               Skip
             </button>
           )}
 
+          {pushBlocksNext ? (
+            <button
+              onClick={handleTurnOnPush}
+              disabled={pushBusy || push === 'checking'}
+              className="flex-1 h-12 rounded-full font-semibold text-[15px] transition active:translate-y-px bg-brand hover:bg-brand-600 text-ink disabled:opacity-60 inline-flex items-center justify-center gap-2"
+            >
+              {pushBusy || push === 'checking'
+                ? <Loader2 size={18} className="animate-spin" />
+                : push === 'blocked' ? <Settings size={18} /> : <Bell size={18} />}
+              {push === 'blocked' ? 'Open phone settings' : 'Turn on notifications'}
+            </button>
+          ) : (
           <button
             onClick={handleNext}
             className={`flex-1 h-12 rounded-full font-semibold text-[15px] transition active:translate-y-px ${
@@ -230,6 +303,7 @@ const OnboardingWalkthrough: React.FC<OnboardingWalkthroughProps> = ({ role, onD
           >
             {isLast ? 'Let\'s Go!' : 'Next →'}
           </button>
+          )}
         </div>
       </div>
     </div>

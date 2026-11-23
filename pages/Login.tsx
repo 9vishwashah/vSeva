@@ -131,6 +131,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onAdminLogin }) => {
             throw new Error('This account is not authorised for Super Admin access.');
           }
         }
+        // Signed in on the normal login page with a Super Admin account (no Captain/Sevak profile): take them to
+        // the Super Admin dashboard instead of turning them away. The server decides who is a Super Admin.
+        try {
+          await withTimeout(dataService.getSuperAdminScope());
+          window.location.href = '/super-admin';
+          return;
+        } catch {
+          await supabase.auth.signOut();
+        }
         throw new Error("Profile not found. Contact your Captain.");
       }
 

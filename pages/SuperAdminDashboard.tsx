@@ -13,6 +13,7 @@ import { useToast } from '../context/ToastContext';
 import { BRAND } from '@brand';
 import StatusScreen from '../components/StatusScreen';
 import SuperAdminDirectoryPanel from '../components/directory/SuperAdminDirectoryPanel';
+import RouteDirectoryAdminCard from '../components/RouteDirectoryAdminCard';
 import { deliverPdf } from '../services/pdfDelivery';
 import SuperAdminPinGate, { isSuperAdminPinVerified, clearSuperAdminPin } from '../components/SuperAdminPinGate';
 
@@ -888,6 +889,9 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                         </div>
                     </div>
                 </div>
+
+                {/* Public Vihar route directory (vSeva website) — publish / refresh */}
+                {scope?.all && BRAND.id === 'vseva' && <RouteDirectoryAdminCard />}
 
                 {/* Public Community Directory — pending listings/edits review */}
                 {scope?.all && BRAND.showsDirectoryAdmin && <SuperAdminDirectoryPanel currentUser={currentUser} />}

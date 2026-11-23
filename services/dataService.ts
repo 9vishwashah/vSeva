@@ -262,6 +262,11 @@ export const dataService = {
 
   // --- Super Admin ---
 
+  // Publishes the public Vihar route directory file (netlify/functions/route-directory.js). Super Admin only.
+  async refreshRouteDirectory(): Promise<{ generatedAt: string; stats: { routes: number; groups: number; cities: number } }> {
+    return callFn('route-directory', { body: { action: 'refresh' }, timeoutMs: 60000 });
+  },
+
   async getSuperAdminScope(): Promise<{ email: string; all: boolean; brands: string[] }> {
     return superAdminCall('whoami', {}, true);
   },
@@ -1363,6 +1368,19 @@ export const dataService = {
     if (error) throw error;
     if (data?.organization_id) invalidate(data.organization_id);
     return data as IncidentReport;
+  },
+
+  // Captain only (scripts/incident_reports_delete_policy.sql). The database answers "nothing deleted" (not an
+  // error) when the delete rule isn't in place, so that case is reported as an error too.
+  async deleteIncidentReport(reportId: string, orgId: string): Promise<void> {
+    const { data, error } = await supabase
+      .from('incident_reports')
+      .delete()
+      .eq('id', reportId)
+      .select('id');
+    if (error) throw error;
+    if (!data || data.length === 0) throw new Error('This report could not be deleted yet (permission pending). Please try again later.');
+    invalidate(orgId);
   },
 
 };

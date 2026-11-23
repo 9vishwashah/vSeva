@@ -353,7 +353,8 @@ const App: React.FC = () => {
 
   // /super-admin (dashboard) and /super-admin/org/<id> (one organisation's full details)
   const superAdminOrgId = /^\/super-admin\/org\/([0-9a-f-]{36})$/.exec(normalizedPath)?.[1] ?? null;
-  const isSuperAdmin = path === '/super-admin' || !!superAdminOrgId;
+  // normalizedPath: also /super-admin/ (trailing slash) and any capitals, which used to fall back to the normal login
+  const isSuperAdmin = normalizedPath === '/super-admin' || !!superAdminOrgId;
 
   const checkSession = async () => {
       setLoading(true);
@@ -533,6 +534,7 @@ const App: React.FC = () => {
         <OnboardingWalkthrough
           role={user.role}
           name={user.full_name}
+          username={user.username}
           onDone={() => markOnboardingDone(user.role)}
         />
       )}

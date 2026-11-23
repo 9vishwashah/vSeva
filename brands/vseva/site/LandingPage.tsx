@@ -4,6 +4,7 @@ import { ArrowRight, ArrowUpRight, MapPin, BookOpen, Instagram, BellRing, Cake, 
 import { COMMUNITY_LINKS, FOUNDERS, GUIDES, PLAY_STORE_URL, SCREENS, STATS, TEAM, TICKER, type Screen } from './content';
 import { Eyebrow, GooglePlayIcon, IPhoneShot, Section, SiteShell, StoreButtons } from './ui';
 import { PAGE_META } from './seo';
+import RouteFinder from './RouteDirectory';
 
 // The map's state outlines are large, so they load only once the section is close to the screen
 const IndiaMap = lazy(() => import('./IndiaMap'));
@@ -784,6 +785,26 @@ const Community: React.FC = () => (
   </Section>
 );
 
+/* ───────────── Vihar route finder ───────────── */
+
+const RouteFinderSection: React.FC = () => (
+  <Section id="vihar-routes" className="border-t border-[color:var(--line)] py-20 md:py-24" labelledBy="routes-title">
+    <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
+      <div className="lg:col-span-4" data-reveal>
+        <Eyebrow>Vihar route directory</Eyebrow>
+        <h2 id="routes-title" className="vs-h2 mt-4">Find a Vihar route.</h2>
+        <p className="mt-4 text-[color:var(--ink-2)]">
+          Routes shared by Vihar Seva groups on vSeva, with the distance, walking directions and the Captain to contact.
+          Type where the Vihar starts and ends, even part of a name.
+        </p>
+      </div>
+      <div className="lg:col-span-8" data-reveal style={{ ['--d' as string]: 1 }}>
+        <RouteFinder compact />
+      </div>
+    </div>
+  </Section>
+);
+
 /* ───────────── Page ───────────── */
 
 interface LandingPageProps {
@@ -804,6 +825,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => (
     <GetStarted />
     <People />
     <RateUs />
+    <RouteFinderSection />
     <Community />
   </SiteShell>
 );

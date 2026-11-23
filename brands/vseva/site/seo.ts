@@ -2,7 +2,7 @@
 // scripts/prerender.mjs, which writes it into each page's static HTML along with the structured data.
 import { CONTACT, PLAY_STORE_URL, SITE_URL } from './content';
 
-export type PublicPath = '/' | '/documentation' | '/contact' | '/support-us';
+export type PublicPath = '/' | '/documentation' | '/contact' | '/support-us' | '/vihar-routes';
 
 export const PAGE_META: Record<PublicPath, { title: string; description: string; crumb?: string }> = {
   '/': {
@@ -27,6 +27,12 @@ export const PAGE_META: Record<PublicPath, { title: string; description: string;
     description:
       'vSeva is built to help Vihar Seva groups organize their records. Voluntary support helps maintain and improve the platform.',
     crumb: 'Support us',
+  },
+  '/vihar-routes': {
+    title: 'Vihar route directory – find Jain Vihar routes, distances and Captains | vSeva',
+    description:
+      'Search Vihar routes shared by Jain Vihar Seva groups on vSeva: from and to, distance in km, walking directions and the group Captain to contact.',
+    crumb: 'Vihar routes',
   },
 };
 

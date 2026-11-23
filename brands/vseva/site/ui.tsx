@@ -5,7 +5,7 @@ import { InstallPWA, IOS_GUIDE_EVENT } from '../../../components/InstallPWA';
 import { CONTACT, COMMUNITY_LINKS, GUIDES, NAV, PLAY_STORE_URL, type Screen } from './content';
 import './site.css';
 
-export type SitePage = 'home' | 'docs' | 'contact' | 'support';
+export type SitePage = 'home' | 'docs' | 'contact' | 'support' | 'routes';
 
 // iPhone: there is no App Store app, so open the "Add to Home Screen" guide for the web app (InstallPWA)
 export const installOnIPhone = () => window.dispatchEvent(new Event(IOS_GUIDE_EVENT));
@@ -132,7 +132,7 @@ const AppBar: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
 /* ───────────── Header ───────────── */
 
 const isCurrent = (href: string, page: SitePage) =>
-  (href === '/documentation' && page === 'docs') || (href === '/contact' && page === 'contact') || (href === '/support-us' && page === 'support');
+  (href === '/documentation' && page === 'docs') || (href === '/contact' && page === 'contact') || (href === '/support-us' && page === 'support') || (href === '/vihar-routes' && page === 'routes');
 
 const LoginLink: React.FC<{ onLogin?: () => void; className: string }> = ({ onLogin, className }) => (
   <a

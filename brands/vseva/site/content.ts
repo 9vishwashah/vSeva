@@ -78,6 +78,7 @@ export const COMMUNITY_LINKS: CommunityLink[] = [
 export const NAV = [
   { href: '/#features', label: 'Features' },
   { href: '/#how-it-works', label: 'How it works' },
+  { href: '/vihar-routes', label: 'Vihar routes' },
   { href: '/documentation', label: 'Documentation' },
   { href: '/#story', label: 'Our story' },
   { href: '/contact', label: 'Contact' },
