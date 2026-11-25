@@ -51,7 +51,7 @@ async function rawHandler(event) {
 
         switch (body.action) {
             case 'whoami':
-                return ok({ email: user.email, all: scope.all, brands: scope.brands });
+                return ok({ email: user.email, all: scope.all, brands: scope.brands, owner: !!scope.owner });
 
             case 'open_as': {
                 if (!body.userId) throw new HttpError(400, 'userId is required');

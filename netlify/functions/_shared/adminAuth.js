@@ -67,7 +67,30 @@ export async function requireAdmin(event) {
         if (row) scope = { all: true, brands: [] };
     }
     if (!scope) throw new HttpError(403, 'This account is not authorised for Super Admin access.');
+
+    // Platform-owner tools (WhatsApp reminders, website data) check `owner`, which narrowing below keeps.
+    scope = { ...scope, owner: !!scope.all };
+
+    // Each site's Super Admin page shows only its own brand: vseva.vjas.in only vSeva groups, ssg.vjas.in only SSG
+    // groups, even for a platform admin who may see every brand (owner's decision, 25 Nov 2026). The page says which
+    // site it is ("siteBrand" in the request); this can only narrow what the account may see, never widen it.
+    const siteBrand = siteBrandOf(event);
+    if (siteBrand) {
+        const brands = scope.all ? [siteBrand] : scope.brands.filter((b) => b === siteBrand);
+        if (!brands.length) throw new HttpError(403, 'This account is not authorised for Super Admin access on this site.');
+        scope = { all: false, brands, owner: scope.owner };
+    }
     return { sb, user: data.user, scope };
+}
+
+// The site the request came from, as sent by the app (services/dataService.ts adds it to Super Admin calls).
+function siteBrandOf(event) {
+    try {
+        const b = JSON.parse(event.body || '{}')?.siteBrand;
+        return typeof b === 'string' && /^[a-z0-9_]{2,20}$/.test(b) ? b : '';
+    } catch {
+        return '';
+    }
 }
 
 // brand column: NULL means vSeva (the original product).

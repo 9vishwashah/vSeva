@@ -44,16 +44,38 @@ async function rawHandler(event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON body' }) };
     }
 
-    const { captainName, viceCaptainName, viceCaptainMobile } = body;
+    const { captainName, viceCaptainName, viceCaptainMobile, captainMobile, groupName, city } = body;
+    const tenDigits = (v) => /^[0-9]{10}$/.test(String(v));
+    if (captainMobile !== undefined && !tenDigits(captainMobile)) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Captain mobile number must be 10 digits.' }) };
+    }
+    if (groupName !== undefined && !String(groupName).trim()) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Group name is required.' }) };
+    }
     if (viceCaptainMobile !== undefined && viceCaptainMobile !== '' && !/^[0-9]{10}$/.test(String(viceCaptainMobile))) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Vice Captain mobile number must be 10 digits.' }) };
     }
 
-    if (captainName !== undefined) {
+    // The Captain's own name and contact number (a Captain signs in with their email, not this number)
+    const profileUpdate = {};
+    if (captainName !== undefined) profileUpdate.full_name = String(captainName).trim().slice(0, 120);
+    if (captainMobile !== undefined) profileUpdate.mobile = String(captainMobile);
+    if (Object.keys(profileUpdate).length) {
       const { error } = await supabaseAdmin
         .from('profiles')
-        .update({ full_name: captainName })
+        .update(profileUpdate)
         .eq('id', authData.user.id);
+      if (error) throw error;
+    }
+    // The group's name and city
+    const orgUpdate = {};
+    if (groupName !== undefined) orgUpdate.name = String(groupName).trim().slice(0, 120);
+    if (city !== undefined) orgUpdate.city = String(city).trim().slice(0, 80) || null;
+    if (Object.keys(orgUpdate).length) {
+      const { error } = await supabaseAdmin
+        .from('organizations')
+        .update(orgUpdate)
+        .eq('id', profile.organization_id);
       if (error) throw error;
     }
 

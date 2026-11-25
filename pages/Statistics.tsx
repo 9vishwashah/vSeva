@@ -28,7 +28,6 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
   const [genderMap, setGenderMap] = useState<Record<string, string>>({});
   const [orgDetails, setOrgDetails] = useState<Organization | null>(null);
   const [captainName, setCaptainName] = useState<string>('');
-  const [streakLeaderboard, setStreakLeaderboard] = useState<{ username: string; name: string; streak: number }[]>([]);
 
   const isAdmin = currentUser.role === UserRole.ORG_ADMIN;
 
@@ -80,7 +79,6 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
         // waits for the org-wide Captain lookup shared with captainName.
         if (isAdmin) {
           setCaptainName(currentUser.full_name);
-          setStreakLeaderboard(dataService.getStreakLeaderboard(allOrgEntries, nm));
         } else {
           dataService.getMyCaptainName().then(name => { if (name) setCaptainName(name); });
         }
@@ -109,6 +107,14 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
     vyStats.streak = dataService.calculateStats(entries, currentUser.username, nameMap).streak;
     return vyStats;
   }, [entries, selectedVY.start.getTime(), selectedVY.end.getTime(), nameMap, currentUser.username]);
+
+  // Highest Streaks follow the selected Vihar Year (they used to count every year, and each Sevak's latest run
+  // however old, so Sevaks with no Vihar this year still showed up)
+  const streakLeaderboard = useMemo(() => {
+    if (!isAdmin) return [];
+    const vy = orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
+    return dataService.getStreakLeaderboard(vy, nameMap);
+  }, [isAdmin, orgEntriesAll, selectedVY.start.getTime(), nameMap]);
 
   const leaderboard = useMemo(() => {
     const orgEntriesVY = orgEntriesAll.filter(e => isDateInViharYear(e.vihar_date, selectedVY));
@@ -240,6 +246,12 @@ const Statistics: React.FC<StatisticsProps> = ({ currentUser }) => {
         <div className="bg-surface rounded-[22px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
           <p className="m-0 mb-3.5 text-sm font-bold text-ink flex items-center gap-1.5">
             <Flame size={16} className="text-brand-700" /> Highest Streaks
+            <span className="relative group inline-flex">
+              <button type="button" aria-label="How Highest Streaks are calculated" className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sunken text-ink-2 text-[11px] font-bold">i</button>
+              <span role="tooltip" className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 rounded-xl bg-ink px-3 py-2 text-[12px] font-medium leading-snug text-surface opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                The most days in a row a Sevak did an approved Vihar in {selectedVY.label}. Each calendar day counts once; a missed day starts a new run.
+              </span>
+            </span>
           </p>
           <div className="space-y-2">
             {streakLeaderboard.slice(0, 8).map((s, i) => (

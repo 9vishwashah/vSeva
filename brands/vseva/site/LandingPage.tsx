@@ -5,6 +5,7 @@ import { COMMUNITY_LINKS, FOUNDERS, GUIDES, PLAY_STORE_URL, SCREENS, STATS, TEAM
 import { Eyebrow, GooglePlayIcon, IPhoneShot, Section, SiteShell, StoreButtons } from './ui';
 import { PAGE_META } from './seo';
 import RouteFinder from './RouteDirectory';
+import Leaderboard from './Leaderboard';
 
 // The map's state outlines are large, so they load only once the section is close to the screen
 const IndiaMap = lazy(() => import('./IndiaMap'));
@@ -785,6 +786,24 @@ const Community: React.FC = () => (
   </Section>
 );
 
+/* ───────────── Top Vihar Sevaks ───────────── */
+
+const LeaderboardSection: React.FC = () => (
+  <Section id="leaderboard" className="border-t border-[color:var(--line)] py-20 md:py-24" labelledBy="leaderboard-title">
+    <div className="max-w-[640px]" data-reveal>
+      <Eyebrow>Leaderboard</Eyebrow>
+      <h2 id="leaderboard-title" className="vs-h2 mt-4">Top Vihar Sevaks.</h2>
+      <p className="mt-4 text-[color:var(--ink-2)]">
+        The Sevaks, Sevikas and groups who walk the most, across every Vihar Seva group on vSeva.
+        See this Vihar Year or all time, by Vihars or by kilometres.
+      </p>
+    </div>
+    <div className="mt-8" data-reveal style={{ ['--d' as string]: 1 }}>
+      <Leaderboard />
+    </div>
+  </Section>
+);
+
 /* ───────────── Vihar route finder ───────────── */
 
 const RouteFinderSection: React.FC = () => (
@@ -825,6 +844,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => (
     <GetStarted />
     <People />
     <RateUs />
+    <LeaderboardSection />
     <RouteFinderSection />
     <Community />
   </SiteShell>

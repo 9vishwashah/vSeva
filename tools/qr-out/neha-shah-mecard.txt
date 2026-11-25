@@ -1,1 +1,1 @@
-MECARD:N:Shah,Neha;ORG:Sadattva;TEL:+919221757111;EMAIL:conserveheritage@sadattva.in;URL:https://www.instagram.com/sadattva;NOTE:Founder-Director - Sadattva;;
+MECARD:N:Shah,Neha;ORG:Sadattva;TEL:+919221757111;EMAIL:conserveheritage@sadattva.in;URL:https://sadattva.in/;NOTE:Founder-Director - Sadattva;;

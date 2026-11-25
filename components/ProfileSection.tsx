@@ -7,7 +7,7 @@ import { UserProfile, UserRole, Organization, SevaPreference } from '../types';
 import { getMissingProfileFields, getProfileCompletion } from '../services/profileCompletion';
 import ViharPreferencesFields from './ViharPreferencesFields';
 import { dataService } from '../services/dataService';
-import { Printer, ArrowLeft, Check, Loader2, Bell, BellOff, AlertTriangle, CreditCard, LogOut, Camera, BadgeCheck, CalendarDays, ChevronRight } from 'lucide-react';
+import { Printer, ArrowLeft, Check, Loader2, Bell, BellOff, AlertTriangle, CreditCard, LogOut, Camera, BadgeCheck, CalendarDays, ChevronRight, Pencil } from 'lucide-react';
 import IDCardBadge from './IDCardBadge';
 import Avatar from './Avatar';
 import AvatarCropModal from './AvatarCropModal';
@@ -30,6 +30,7 @@ interface ProfileSectionProps {
     onProfileUpdated?: () => Promise<void>;
     onLogout?: () => void;
     onOpenSos?: (sosId: string) => void;
+    onOpenAbout?: () => void;
 }
 
 const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
@@ -37,7 +38,7 @@ const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 const fieldLabelClass = "text-[11px] font-bold text-ink-2 uppercase tracking-wider block mb-1.5";
 const fieldInputClass = "w-full py-2.5 px-3.5 rounded-xl bg-sunken/60 border-none outline-none focus:ring-2 focus:ring-brand font-semibold text-ink text-sm";
 
-const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onProfileUpdated, onLogout, onOpenSos }) => {
+const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onProfileUpdated, onLogout, onOpenSos, onOpenAbout }) => {
     const orgName = orgDetails?.name || user.organization_id;
     // A Sevak sees who their Captain is (read-only).
     const [myCaptain, setMyCaptain] = useState('');
@@ -126,12 +127,21 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
     const [captainName, setCaptainName] = useState(user.full_name);
     const [viceCaptainName, setViceCaptainName] = useState(orgDetails?.vice_captain_name || '');
     const [viceCaptainMobile, setViceCaptainMobile] = useState(orgDetails?.vice_captain_mobile || '');
+    const [captainMobile, setCaptainMobile] = useState(user.mobile || '');
+    const [groupName, setGroupName] = useState(orgDetails?.name || '');
+    const [groupCity, setGroupCity] = useState(orgDetails?.city || '');
+    const [editingOrg, setEditingOrg] = useState(false);
 
-    useEffect(() => {
+    // Back to what is stored (on load, after saving, or on Cancel)
+    const resetOrgFields = () => {
         setCaptainName(user.full_name);
         setViceCaptainName(orgDetails?.vice_captain_name || '');
         setViceCaptainMobile(orgDetails?.vice_captain_mobile || '');
-    }, [user.full_name, orgDetails?.vice_captain_name, orgDetails?.vice_captain_mobile]);
+        setCaptainMobile(user.mobile || '');
+        setGroupName(orgDetails?.name || '');
+        setGroupCity(orgDetails?.city || '');
+    };
+    useEffect(resetOrgFields, [user.full_name, user.mobile, orgDetails?.name, orgDetails?.city, orgDetails?.vice_captain_name, orgDetails?.vice_captain_mobile]);
 
     const handleSave = async () => {
         if (editForm.emergency_number && editForm.emergency_number.replace(/\D/g, '').length !== 10) {
@@ -186,25 +196,41 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                 || [...editForm.seva_preferences].sort().join('|') !== [...(user.seva_preferences || [])].sort().join('|'))))
         : (captainName.trim() !== user.full_name.trim()
             || viceCaptainName.trim() !== (orgDetails?.vice_captain_name || '').trim()
-            || viceCaptainMobile !== (orgDetails?.vice_captain_mobile || ''));
+            || viceCaptainMobile !== (orgDetails?.vice_captain_mobile || '')
+            || captainMobile !== (user.mobile || '')
+            || groupName.trim() !== (orgDetails?.name || '').trim()
+            || groupCity.trim() !== (orgDetails?.city || '').trim());
 
     const handleSaveOrgDetails = async () => {
         if (!captainName.trim()) {
             showToast('Captain name is required', 'error');
             return;
         }
+        if (captainMobile.length !== 10) {
+            showToast('Captain mobile number must be 10 digits', 'error');
+            return;
+        }
         if (viceCaptainMobile && viceCaptainMobile.length !== 10) {
             showToast('Vice Captain mobile number must be 10 digits', 'error');
             return;
         }
+        if (!groupName.trim()) {
+            showToast('Group name is required', 'error');
+            return;
+        }
         setIsSaving(true);
         try {
+            // only what changed is sent
             await dataService.updateOrgLeadership({
                 captainName: captainName.trim(),
                 viceCaptainName: viceCaptainName.trim(),
-                viceCaptainMobile,
+                ...(viceCaptainMobile !== (orgDetails?.vice_captain_mobile || '') ? { viceCaptainMobile } : {}),
+                ...(captainMobile !== (user.mobile || '') ? { captainMobile } : {}),
+                ...(groupName.trim() !== (orgDetails?.name || '').trim() ? { groupName: groupName.trim() } : {}),
+                ...(groupCity.trim() !== (orgDetails?.city || '').trim() ? { city: groupCity.trim() } : {}),
             });
             showToast('Organization details updated!', 'success');
+            setEditingOrg(false);
             if (onProfileUpdated) await onProfileUpdated();
         } catch (err: any) {
             showToast(err.message || 'Failed to update organization details. Has scripts/add_vice_captain_name.sql been run?', 'error');
@@ -494,7 +520,14 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
 
             {/* Your Details */}
             <div className="bg-surface rounded-[22px] p-5 sm:p-6 flex flex-col gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-                <p className="m-0 text-sm font-bold text-ink">{isSevak ? 'Your Details' : 'Organization Details'}</p>
+                <div className="flex items-center justify-between gap-3">
+                    <p className="m-0 text-sm font-bold text-ink">{isSevak ? 'Your Details' : 'Organization Details'}</p>
+                    {!isSevak && !editingOrg && (
+                        <button type="button" onClick={() => setEditingOrg(true)} className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100 text-[13px] font-semibold hover:bg-brand-100">
+                            <Pencil size={14} /> Edit
+                        </button>
+                    )}
+                </div>
 
                 {isSevak ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -620,93 +653,82 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                             </div>
                         )}
                     </div>
+                ) : !editingOrg ? (
+                    // Read view: label and value, like the rest of the app (Edit opens the fields)
+                    <dl className="m-0 divide-y divide-line rounded-2xl bg-sunken/40 ring-1 ring-inset ring-line">
+                        {[
+                            { label: 'Username', value: user.username, note: 'Your sign-in email' },
+                            { label: 'Captain Name', value: user.full_name },
+                            { label: 'Captain Mobile Number', value: user.mobile },
+                            { label: 'Vice Captain Name', value: orgDetails?.vice_captain_name },
+                            { label: 'Vice Captain Mobile Number', value: orgDetails?.vice_captain_mobile },
+                            { label: 'Group Name', value: orgName },
+                            { label: 'City', value: [orgDetails?.city, orgDetails?.town].filter(Boolean).join(', ') },
+                            { label: 'Vihar Year Duration', value: `${currentVY.start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} – ${currentVY.end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} (${currentVY.label})` },
+                        ].map(row => (
+                            <div key={row.label} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 sm:gap-4 px-4 py-3">
+                                <dt className="text-[13px] text-ink-3">{row.label}</dt>
+                                <dd className={`m-0 text-[15px] font-semibold sm:text-right [overflow-wrap:anywhere] ${row.value ? 'text-ink' : 'text-ink-3 font-normal'}`}>
+                                    {row.value || 'Not added'}
+                                    {row.note && <span className="block text-[12px] font-normal text-ink-3">{row.note}</span>}
+                                </dd>
+                            </div>
+                        ))}
+                    </dl>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Username — read-only */}
-                        <div>
+                        {/* Username: the Captain's sign-in email, not changed here */}
+                        <div className="sm:col-span-2">
                             <label className={fieldLabelClass}>Username</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">{user.username}</p>
+                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink-2 text-sm truncate">{user.username}</p>
+                            <p className="mt-1 text-[12px] text-ink-3">Your sign-in email. To change it, contact {BRAND.name} support.</p>
                         </div>
-
-                        {/* Mobile Number — read-only */}
-                        <div>
-                            <label className={fieldLabelClass}>Mobile Number</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm">{user.mobile}</p>
-                        </div>
-
-                        {/* Captain Name */}
                         <div>
                             <label className={fieldLabelClass}>Captain Name</label>
-                            <input
-                                type="text"
-                                value={captainName}
-                                onChange={e => setCaptainName(e.target.value)}
-                                placeholder="Captain's full name"
-                                className={fieldInputClass}
-                            />
+                            <input type="text" maxLength={120} value={captainName} onChange={e => setCaptainName(e.target.value)} placeholder="Captain's full name" className={fieldInputClass} />
                         </div>
-
-                        {/* Vice Captain Name */}
+                        <div>
+                            <label className={fieldLabelClass}>Captain Mobile Number</label>
+                            <input type="tel" inputMode="numeric" maxLength={10} value={captainMobile} onChange={e => setCaptainMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10 digits" className={fieldInputClass} />
+                        </div>
                         <div>
                             <label className={fieldLabelClass}>Vice Captain Name</label>
-                            <input
-                                type="text"
-                                value={viceCaptainName}
-                                onChange={e => setViceCaptainName(e.target.value)}
-                                placeholder="Optional"
-                                className={fieldInputClass}
-                            />
+                            <input type="text" maxLength={120} value={viceCaptainName} onChange={e => setViceCaptainName(e.target.value)} placeholder="Optional" className={fieldInputClass} />
                         </div>
-
-                        {/* Vice Captain Mobile (shown in the Sevak welcome WhatsApp message) */}
                         <div>
                             <label className={fieldLabelClass}>Vice Captain Mobile Number</label>
-                            <input
-                                type="tel"
-                                inputMode="numeric"
-                                maxLength={10}
-                                value={viceCaptainMobile}
-                                onChange={e => setViceCaptainMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                                placeholder="Optional, 10 digits"
-                                className={fieldInputClass}
-                            />
+                            <input type="tel" inputMode="numeric" maxLength={10} value={viceCaptainMobile} onChange={e => setViceCaptainMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="Optional, 10 digits" className={fieldInputClass} />
                         </div>
-
-                        {/* Vihar Seva Group — read-only */}
                         <div>
-                            <label className={fieldLabelClass}>Vihar Seva Group</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">{orgName}</p>
+                            <label className={fieldLabelClass}>Group Name</label>
+                            <input type="text" maxLength={120} value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="e.g. Vihar Seva Group" className={fieldInputClass} />
                         </div>
-
-                        {/* City / Town — read-only */}
                         <div>
                             <label className={fieldLabelClass}>City</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">
-                                {orgDetails?.city || '—'}{orgDetails?.town ? `, ${orgDetails.town}` : ''}
-                            </p>
+                            <input type="text" maxLength={80} value={groupCity} onChange={e => setGroupCity(e.target.value)} placeholder="e.g. Vashi, Navi Mumbai" className={fieldInputClass} />
                         </div>
-
-                        {/* Vihar Year duration — read-only, current VY */}
-                        <div className="sm:col-span-2">
-                            <label className={fieldLabelClass}>Vihar Year Duration</label>
-                            <p className="m-0 py-2.5 px-3.5 rounded-xl bg-sunken/60 font-semibold text-ink text-sm truncate">
-                                {currentVY.start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                {' – '}
-                                {currentVY.end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                <span className="text-ink-2 font-bold ml-1.5">({currentVY.label})</span>
-                            </p>
+                        <div className="sm:col-span-2 flex gap-3 pt-1">
+                            <button type="button" onClick={() => { resetOrgFields(); setEditingOrg(false); }} disabled={isSaving} className="flex-1 h-12 rounded-full text-[15px] font-semibold bg-surface ring-1 ring-inset ring-line text-ink disabled:opacity-50">
+                                Cancel
+                            </button>
+                            <button type="button" onClick={handleSaveOrgDetails} disabled={isSaving || !hasChanges} className="flex flex-1 items-center justify-center gap-2 h-12 rounded-full text-[15px] font-semibold bg-brand text-ink hover:bg-brand-600 disabled:opacity-50">
+                                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                                {isSaving ? 'Saving…' : 'Save'}
+                            </button>
                         </div>
                     </div>
                 )}
 
+                {isSevak && (
                 <button
-                    onClick={isSevak ? handleSave : handleSaveOrgDetails}
+                    onClick={handleSave}
                     disabled={isSaving || !hasChanges}
                     className={`w-full py-3.5 font-extrabold rounded-2xl transition-all flex items-center justify-center gap-2 mt-1 ${hasChanges ? 'bg-brand hover:bg-brand-600 text-white shadow-sm active:scale-[0.98]' : 'bg-line text-ink-3 cursor-not-allowed'} ${isSaving ? 'opacity-60' : ''}`}
                 >
                     {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                     {isSaving ? 'Saving…' : 'Save Changes'}
                 </button>
+                )}
             </div>
 
             {/* Vihar Seva ID Card (Sevaks only; a Captain account has no card) */}
@@ -728,6 +750,20 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ user, orgDetails, onPro
                     <Printer size={16} /> View Card
                 </button>
             </div>
+            )}
+
+            {/* About the app */}
+            {onOpenAbout && (
+                <button type="button" onClick={onOpenAbout} className="w-full flex items-center gap-3 p-4 rounded-[22px] bg-surface ring-1 ring-inset ring-line hover:bg-white transition-colors text-left">
+                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-inset ring-line overflow-hidden">
+                        <img src={BRAND.logo} alt="" className={`h-9 w-9 object-contain ${BRAND.logoPadded ? 'scale-[1.4]' : ''}`} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block text-[15px] font-semibold text-ink">About {BRAND.name}</span>
+                        <span className="block text-[12.5px] text-ink-3">Version, help, privacy and links</span>
+                    </span>
+                    <ChevronRight size={18} className="shrink-0 text-ink-3" />
+                </button>
             )}
 
             {/* App Settings */}

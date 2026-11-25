@@ -105,8 +105,8 @@ async function buildDirectory(sb) {
   return { routes: out, groups };
 }
 
-async function publish(sb, body) {
-  const upload = () => sb.storage.from(BUCKET).upload(FILE, body, {
+async function publish(sb, body, file = FILE) {
+  const upload = () => sb.storage.from(BUCKET).upload(file, body, {
     upsert: true,
     contentType: 'application/json',
     cacheControl: '300',
@@ -123,6 +123,82 @@ async function publish(sb, body) {
     ({ error } = await upload());
   }
   if (error) throw error;
+}
+
+// ---------------------------------------------------------------- public leaderboard (leaderboard.json)
+// Top Vihar Sevaks and groups across every vSeva group, for the landing page. Counts approved Vihars only, for the
+// current Vihar Year (14 Oct to 13 Jul; the Chaturmas months count towards the coming year, as in the app) and
+// all time. A Sevak's Vihars = approved entries they are listed in; their km = the sum of those entries' distances.
+// A group's Vihars = its approved entries; its km = the sum of their distances. Only names and groups are published.
+
+// Vihar Year a date belongs to, by its start year (same rule as services/viharYear.ts)
+const vyStartYear = (iso) => {
+  const y = +iso.slice(0, 4), m = +iso.slice(5, 7), d = +iso.slice(8, 10);
+  if (m > 10 || (m === 10 && d >= 14)) return y;
+  if (m < 7 || (m === 7 && d <= 13)) return y - 1;
+  return y;
+};
+const todayIST = () => new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+const genderOf = (g) => {
+  const s = String(g || '').trim().toLowerCase();
+  if (s === 'female' || s === 'mahila' || g === 'સ્ત્રી') return 'F';
+  if (s === 'male') return 'M';
+  return '';
+};
+const round1 = (x) => Math.round(x * 10) / 10;
+
+async function buildLeaderboard(sb) {
+  const orgs = await readAll(() => sb.from('organizations').select('id, name, city, town').is('brand', null).order('id'));
+  const orgIds = orgs.map((o) => o.id);
+  if (!orgIds.length) return { vy: null, sevaks: [], groups: [] };
+  const currentVY = vyStartYear(todayIST());
+
+  const entries = await readAll(() =>
+    sb.from('vihar_entries')
+      .select('id, organization_id, vihar_date, distance_km, sevaks')
+      .in('organization_id', orgIds)
+      .eq('status', 'approved')
+      .order('id'));
+  const people = await readAll(() =>
+    sb.from('profiles')
+      .select('username, full_name, gender, organization_id')
+      .in('organization_id', orgIds)
+      .order('username'));
+
+  const orgIndex = new Map(orgs.map((o, i) => [o.id, i]));
+  const groups = orgs.map((o) => ({ n: clean(o.name) || 'Vihar Seva Group', c: titleCase(o.city || o.town || ''), vyV: 0, vyK: 0, allV: 0, allK: 0, vyS: new Set() }));
+  const person = new Map(people.filter((p) => p.username).map((p) => [p.username, p]));
+  const sevaks = new Map(); // username -> totals
+
+  for (const e of entries) {
+    const gi = orgIndex.get(e.organization_id);
+    if (gi === undefined || !e.vihar_date) continue;
+    const km = Number(e.distance_km) || 0;
+    const inVY = vyStartYear(e.vihar_date) === currentVY;
+    const g = groups[gi];
+    g.allV += 1; g.allK += km;
+    if (inVY) { g.vyV += 1; g.vyK += km; }
+    for (const u of new Set(e.sevaks || [])) {
+      const p = person.get(u);
+      if (!p) continue; // only people who still have an account
+      let s = sevaks.get(u);
+      if (!s) { s = { n: titleCase(p.full_name || ''), g: genderOf(p.gender), o: orgIndex.get(p.organization_id) ?? gi, vyV: 0, vyK: 0, allV: 0, allK: 0 }; sevaks.set(u, s); }
+      s.allV += 1; s.allK += km;
+      if (inVY) { s.vyV += 1; s.vyK += km; g.vyS.add(u); }
+    }
+  }
+
+  return {
+    vy: { startYear: currentVY, label: `VY ${currentVY}-${String(currentVY + 1).slice(-2)}` },
+    // [name, gender M|F|'', groupIndex, vyVihars, vyKm, allVihars, allKm]
+    sevaks: [...sevaks.values()]
+      .filter((s) => s.n && s.allV > 0)
+      .sort((a, b) => b.allV - a.allV)
+      .map((s) => [s.n, s.g, s.o, s.vyV, round1(s.vyK), s.allV, round1(s.allK)]),
+    // [name, city, vyVihars, vyKm, allVihars, allKm, activeSevaksThisVY]. Every group is kept, in the same order as
+    // the Sevak rows' group index refers to (the page hides groups with no Vihars).
+    groups: groups.map((g) => [g.n, g.c, g.vyV, round1(g.vyK), g.allV, round1(g.allK), g.vyS.size]),
+  };
 }
 
 async function rawHandler(event) {
@@ -144,11 +220,16 @@ async function rawHandler(event) {
       routes,
     };
     await publish(sb, JSON.stringify(doc));
-    return { statusCode: 200, body: JSON.stringify({ generatedAt, stats: doc.stats }) };
+
+    // Top Vihar Sevaks / groups for the landing page, refreshed by the same button
+    const board = await buildLeaderboard(sb);
+    await publish(sb, JSON.stringify({ v: 1, generatedAt, ...board }), 'leaderboard.json');
+
+    return { statusCode: 200, body: JSON.stringify({ generatedAt, stats: { ...doc.stats, sevaks: board.sevaks.length } }) };
   } catch (err) {
     return errorResponse(err);
   }
 }
 
 export const handler = withCors(rawHandler);
-export { buildDirectory }; // also used by scripts to preview the file without publishing
+export { buildDirectory, buildLeaderboard }; // also used by scripts to preview the files without publishing

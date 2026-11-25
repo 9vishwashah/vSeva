@@ -10,7 +10,7 @@
    - Name: `Neha Shah`
    - Organization: `Sadattva`, Title: `Founder-Director`
    - Phone: `+919221757111`, Email: `conserveheritage@sadattva.in`
-   - Website: `https://www.instagram.com/sadattva`
+   - Website: `https://sadattva.in/`
    (This writes a `text/vcard` record, identical to `neha-shah-nfc.vcf` in this folder.)
 3. Tap **Write** and hold the card flat on the back of the phone until it confirms.
 4. Test: tap the card on a *different* Android phone with NFC on and the screen unlocked.

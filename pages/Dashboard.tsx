@@ -7,6 +7,7 @@ import SankalpRing from '../components/SankalpRing';
 import { useMySankalp, useOrgSankalp } from '../services/sankalpService';
 import { useCacheRefresh } from '../hooks/useCacheRefresh';
 import { invalidate } from '../services/requestCache';
+import DateInputDMY from '../components/DateInputDMY';
 import ViharYearSelector from '../components/ViharYearSelector';
 import Modal from '../components/Modal';
 import StatusScreen from '../components/StatusScreen';
@@ -915,8 +916,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-ink-2 mb-1.5">Date</label>
-                  <input type="date" required className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line outline-none focus:ring-2 focus:ring-ink font-medium text-ink text-[16px] placeholder:text-ink-3/70"
-                    value={alertData.date} onChange={e => setAlertData({ ...alertData, date: e.target.value })} />
+                  <DateInputDMY required aria-label="Alert Vihar date" className="w-full h-12 px-4 rounded-field bg-white ring-1 ring-inset ring-line font-medium text-[16px]"
+                    value={alertData.date} onChange={v => setAlertData({ ...alertData, date: v })} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-ink-2 mb-1.5">Time</label>

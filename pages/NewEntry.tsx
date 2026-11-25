@@ -1,3 +1,4 @@
+import DateInputDMY from '../components/DateInputDMY';
 import React, { useState, useEffect, useRef } from 'react';
 import { dataService } from '../services/dataService';
 import { UserProfile, UserRole, ViharEntry, AreaRoute } from '../types';
@@ -482,12 +483,12 @@ const NewEntry: React.FC<NewEntryProps> = ({ currentUser, onSubmit, onCancel, en
             <div className="grid grid-cols-1 min-[440px]:grid-cols-2 gap-3">
               <div className="min-w-0">
                 <label className={labelClass}>Date</label>
-                <input
-                  type="date"
+                <DateInputDMY
                   required
+                  aria-label="Vihar date"
                   className={inputClass + ' min-w-0 px-3'}
                   value={formData.vihar_date}
-                  onChange={e => setFormData({ ...formData, vihar_date: e.target.value })}
+                  onChange={v => setFormData({ ...formData, vihar_date: v })}
                 />
               </div>
               <div className="min-w-0">

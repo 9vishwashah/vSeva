@@ -49,7 +49,7 @@ async function orgInfo(sb, orgId) {
 }
 
 export async function whatsappAdmin(sb, user, scope, body) {
-    if (!scope.all) throw new HttpError(403, 'Only the platform owner can manage WhatsApp reminders.');
+    if (!scope.owner) throw new HttpError(403, 'Only the platform owner can manage WhatsApp reminders.');
     try {
         return await handle(sb, user, body);
     } catch (e) {

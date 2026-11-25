@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase';
 import { dataService } from '../services/dataService';
 import { UpcomingVihar, UserProfile, UserNotification } from '../types';
 import ViharAlertCard from '../components/ViharAlertCard';
-import { Bell, MapPin, ChevronDown, ChevronRight, Check, Users, KeyRound } from 'lucide-react';
+import { Bell, MapPin, ChevronDown, ChevronRight, Check, Users, KeyRound, Siren, MessageCircle, ClipboardCheck, CheckCircle2, XCircle, Cake, BellRing, Footprints, Info } from 'lucide-react';
 import { getNotificationTarget } from '../services/notificationRouting';
 import ResetSevakPasswordModal from '../components/ResetSevakPasswordModal';
 import { useToast } from '../context/ToastContext';
@@ -146,7 +146,27 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
 
   // A Sevak asked for a password reset (Forgot password): the Captain sets the Sevak's new mobile number
   // (their password) in a small dialog.
+  const styleFor = (n: UserNotification): { icon: React.ReactNode; tile: string; tag: string } => {
+    const kind = n.payload?.kind || n.type;
+    switch (kind) {
+      case 'sos': return { icon: <Siren />, tile: 'bg-err-solid text-white', tag: 'SOS' };
+      case 'channel_post':
+      case 'channel_message': return { icon: <MessageCircle />, tile: 'bg-block-sky text-ink', tag: 'Channel' };
+      case 'vihar_submission': return { icon: <ClipboardCheck />, tile: 'bg-block-mustard text-ink', tag: 'Needs approval' };
+      case 'vihar_recorded': return { icon: <CheckCircle2 />, tile: 'bg-block-tea text-block-seashell', tag: 'Vihar recorded' };
+      case 'vihar_rejected': return { icon: <XCircle />, tile: 'bg-err-soft text-err', tag: 'Not approved' };
+      case 'birthday': return { icon: <Cake />, tile: 'bg-block-pink text-ink', tag: 'Birthday' };
+      case 'inactivity': return { icon: <BellRing />, tile: 'bg-block-lavender text-ink', tag: 'Reminder' };
+      case 'password_reset': return { icon: <KeyRound />, tile: 'bg-brand text-ink', tag: 'Password' };
+      case 'alert':
+      case 'alert_upcoming': return { icon: <Footprints />, tile: 'bg-brand text-ink', tag: 'Vihar alert' };
+      case 'info': return { icon: <Info />, tile: 'bg-block-sky text-ink', tag: 'Update' };
+      default: return { icon: <Bell />, tile: 'bg-sunken text-ink', tag: '' };
+    }
+  };
+
   const NotificationRow: React.FC<{ n: UserNotification }> = ({ n }) => {
+    const look = styleFor(n);
     // Where this card leads (null = it is just information, so it isn't clickable)
     const target = onOpenNotification ? getNotificationTarget(n, currentUser.role) : null;
     const open = () => {
@@ -160,14 +180,18 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
       tabIndex={target ? 0 : undefined}
       onClick={target ? open : undefined}
       onKeyDown={target ? (e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }) : undefined}
-      className={`bg-surface rounded-[18px] p-4 flex items-start gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${!n.is_read ? '' : 'opacity-80'} ${target ? 'cursor-pointer transition-transform active:scale-[0.99] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand' : ''}`}
+      className={`relative bg-surface rounded-card p-4 flex items-start gap-3.5 ring-1 ring-inset ${!n.is_read ? 'ring-brand-200' : 'ring-line'} ${target ? 'cursor-pointer transition-transform active:scale-[0.99] hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand' : ''}`}
     >
-      <div className="shrink-0 w-[38px] h-[38px] rounded-xl flex items-center justify-center" style={{ background: '#FFF0E5' }}>
-        <Bell size={17} style={{ color: '#DE6B38' }} />
+      <div className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center [&>svg]:h-[22px] [&>svg]:w-[22px] ${look.tile}`} aria-hidden="true">
+        {look.icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="m-0 text-[13.5px] font-bold text-ink">{n.title}</p>
-        <p className="mt-0.5 text-[12.5px] text-ink-2 whitespace-pre-wrap">{n.message}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {look.tag && <span className="inline-flex h-5 items-center rounded-full bg-sunken px-2 text-[11px] font-semibold text-ink-2">{look.tag}</span>}
+          {!n.is_read && <span className="h-2 w-2 rounded-full bg-brand" aria-label="Unread" />}
+        </div>
+        <p className="mt-1 text-[15px] font-semibold leading-snug text-ink [overflow-wrap:anywhere]">{n.title}</p>
+        <p className="mt-0.5 text-[13.5px] leading-relaxed text-ink-2 whitespace-pre-wrap [overflow-wrap:anywhere]">{n.message}</p>
         {n.type === 'password_reset' && n.payload?.sevak_id && (
           resetDone.has(n.id) ? (
             <p className="mt-2 text-[12px] font-bold text-ok">Password reset — new number set</p>
@@ -181,14 +205,15 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
             </button>
           )
         )}
-        {target && <p className="mt-1.5 text-[12px] font-bold text-brand-700">{target.label} →</p>}
-        <p className="mt-1.5 text-[11px] font-semibold text-ink-3">{new Date(n.created_at).toLocaleString()}</p>
+        {target && <p className="mt-2 text-[13px] font-semibold text-brand-700">{target.label} →</p>}
+        <p className="mt-1.5 text-[12px] text-ink-3">{new Date(n.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</p>
       </div>
       {!n.is_read ? (
         <button
           onClick={e => { e.stopPropagation(); markAsRead(n.id); }}
           title="Mark as read"
-          className="shrink-0 mt-0.5 p-1 rounded-full text-brand-700 hover:bg-brand-50 transition-colors"
+          aria-label="Mark as read"
+          className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-sunken text-ink-2 hover:bg-brand-50 hover:text-brand-700 transition-colors"
         >
           <Check size={16} />
         </button>
@@ -227,8 +252,8 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
           <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink">Notifications</h1>
         </div>
         {hasUnread && (
-          <button onClick={markAllRead} className="text-[12.5px] font-bold text-brand-700 hover:text-brand-700">
-            Mark all read
+          <button onClick={markAllRead} className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100 text-[13px] font-semibold hover:bg-brand-100">
+            <Check size={14} /> Mark all read
           </button>
         )}
       </div>
@@ -291,8 +316,9 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
           )}
 
           {!featured && (
-            <div className="text-center py-8 bg-surface rounded-[22px] border border-dashed border-line text-ink-3 text-sm">
-              No upcoming Vihar alerts right now.
+            <div className="flex items-center gap-3 p-4 bg-surface rounded-card ring-1 ring-inset ring-line">
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand text-ink"><Footprints size={20} /></span>
+              <p className="m-0 text-[14px] text-ink-2">No upcoming Vihar alerts right now.</p>
             </div>
           )}
 
@@ -318,26 +344,28 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, highlightVih
 
           {/* General Notifications — grouped by day */}
           {general.length === 0 ? (
-            <div className="text-center py-8 bg-surface rounded-[22px] border border-dashed border-line text-ink-3 text-sm">
-              Nothing here yet.
+            <div className="text-center py-10 bg-surface rounded-card ring-1 ring-inset ring-line">
+              <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-block-lavender text-ink"><Bell size={24} /></span>
+              <p className="m-0 font-semibold text-ink">You're all caught up</p>
+              <p className="mt-1 text-[13px] text-ink-3">Vihar alerts, reminders and updates will show here.</p>
             </div>
           ) : (
             <>
               {today.length > 0 && (
                 <div className="space-y-2.5">
-                  <p className="m-0 px-1 text-xs font-extrabold uppercase tracking-wide text-ink-2">Today</p>
+                  <p className="m-0 px-1 display text-[1.15rem] font-bold text-ink">Today</p>
                   {today.map(n => <NotificationRow key={n.id} n={n} />)}
                 </div>
               )}
               {yesterday.length > 0 && (
                 <div className="space-y-2.5">
-                  <p className="m-0 px-1 text-xs font-extrabold uppercase tracking-wide text-ink-2">Yesterday</p>
+                  <p className="m-0 px-1 display text-[1.15rem] font-bold text-ink">Yesterday</p>
                   {yesterday.map(n => <NotificationRow key={n.id} n={n} />)}
                 </div>
               )}
               {earlier.length > 0 && (
                 <div className="space-y-2.5">
-                  <p className="m-0 px-1 text-xs font-extrabold uppercase tracking-wide text-ink-2">Earlier</p>
+                  <p className="m-0 px-1 display text-[1.15rem] font-bold text-ink">Earlier</p>
                   {earlier.map(n => <NotificationRow key={n.id} n={n} />)}
                 </div>
               )}

@@ -33,6 +33,7 @@ const ViewEntries = React.lazy(() => import('./pages/ViewEntries'));
 const SuperAdminDashboard = React.lazy(() => import('./pages/SuperAdminDashboard'));
 const SuperAdminOrgDetail = React.lazy(() => import('./pages/SuperAdminOrgDetail'));
 const ProfileSection = React.lazy(() => import('./components/ProfileSection'));
+const AboutApp = React.lazy(() => import('./pages/AboutApp'));
 const Contacts = React.lazy(() => import('./pages/Contacts'));
 const AdminContacts = React.lazy(() => import('./pages/AdminContacts'));
 const ViewReports = React.lazy(() => import('./pages/ViewReports'));
@@ -615,6 +616,8 @@ const App: React.FC = () => {
           />
         )}
 
+        {currentPage === 'about' && <AboutApp onBack={() => handleSetCurrentPage('profile')} />}
+
         {currentPage === 'notifications' && (
           <Notifications currentUser={user} highlightViharId={pendingViharId} onOpenNotification={openNotification} />
         )}
@@ -645,6 +648,7 @@ const App: React.FC = () => {
             }}
             onLogout={handleLogout}
             onOpenSos={(id) => { setSosId(id); handleSetCurrentPage('sos-detail'); }}
+            onOpenAbout={() => handleSetCurrentPage('about')}
           />
         )}
 

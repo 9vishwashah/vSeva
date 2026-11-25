@@ -3,6 +3,7 @@ import { UserRole, UserNotification } from '../types';
 import { LogOut, Home, UserPlus, FilePlus, BarChart2, Table2, Map, Footprints, PhoneCall, ShieldAlert, Bell, MoreHorizontal, ChevronLeft, ChevronRight, ClipboardCheck, WifiOff, Compass, MessageSquare } from 'lucide-react';
 
 import NotificationBell from './NotificationBell';
+import { subscribeNotifications } from '../services/notificationsStore';
 import LanguageDropdown from './LanguageDropdown';
 import Avatar from './Avatar';
 import BottomNavBar from './ui/bottom-nav-bar';
@@ -87,6 +88,15 @@ const Layout: React.FC<LayoutProps> = ({
 
   const moreActive = moreItems.some(i => i.page === currentPage);
 
+  // Unread count for the Notifications menu item (shared list, services/notificationsStore.ts)
+  const [unread, setUnread] = React.useState(0);
+  React.useEffect(() => (userId ? subscribeNotifications(userId, s => setUnread(s.unreadCount)) : undefined), [userId]);
+  const UnreadBadge = ({ dot }: { dot?: boolean }) => unread > 0 ? (
+    dot
+      ? <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-brand ring-2 ring-surface" aria-hidden />
+      : <span className="num ml-auto inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full bg-brand px-1.5 text-[12px] font-bold text-ink" aria-label={`${unread} unread`}>{unread > 99 ? '99+' : unread}</span>
+  ) : null;
+
   const NavItem = ({ page, icon: Icon, label, tone }: { page: string, icon: any, label: string, tone?: 'purple' }) => (
     <button
       onClick={() => setCurrentPage(page)}
@@ -96,8 +106,12 @@ const Layout: React.FC<LayoutProps> = ({
         : (tone === 'purple' ? 'text-purple-700 hover:bg-purple-50' : 'text-ink-2 hover:bg-sunken hover:text-ink')
         }`}
     >
-      <Icon size={17} className={`shrink-0 ${tone === 'purple' ? 'text-purple-600' : ''}`} />
+      <span className="relative inline-flex shrink-0">
+        <Icon size={17} className={tone === 'purple' ? 'text-purple-600' : ''} />
+        {page === 'notifications' && sidebarCollapsed && <UnreadBadge dot />}
+      </span>
       {!sidebarCollapsed && <span>{label}</span>}
+      {page === 'notifications' && !sidebarCollapsed && <UnreadBadge />}
     </button>
   );
 
@@ -260,10 +274,11 @@ const Layout: React.FC<LayoutProps> = ({
 
         <div className={`p-4 border-b border-line ${sidebarCollapsed ? 'px-3' : ''}`}>
           <div className={`flex items-center gap-2.5 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <img src={BRAND.logo} alt={BRAND.name} className="h-9 w-9 object-contain drop-shadow-sm shrink-0" />
+            {/* vSeva's logo art has transparent padding around it, so it is shown larger and scaled up to be readable */}
+            <img src={BRAND.logo} alt={BRAND.name} className={`${sidebarCollapsed ? 'h-11 w-11' : 'h-14 w-14'} object-contain drop-shadow-sm shrink-0 ${BRAND.logoPadded ? 'scale-[1.4]' : ''}`} />
             {!sidebarCollapsed && (
-              <div>
-                <h1 className="display text-[1.4rem] font-extrabold text-ink">{BRAND.shortName}</h1>
+              <div className="min-w-0">
+                <h1 className="display text-[1.6rem] font-extrabold text-brand">{BRAND.shortName}</h1>
                 {(BRAND.cardCredit ?? (BRAND.shortName !== BRAND.name ? BRAND.name : null)) && (
                   <p className="text-[11px] text-ink-3 uppercase tracking-wide">{BRAND.cardCredit ?? BRAND.name}</p>
                 )}
@@ -338,7 +353,6 @@ const Layout: React.FC<LayoutProps> = ({
                 </div>
               )}
             </button>
-            <NotificationBell userId={userId} role={role} onOpenNotification={onOpenNotification} onViewAll={() => setCurrentPage('notifications')} />
           </div>
           {/* Language: one compact dropdown instead of three pills squeezed beside the account name */}
           {!sidebarCollapsed && <LanguageDropdown placement="top" block className="mb-2.5" />}
@@ -371,8 +385,8 @@ const Layout: React.FC<LayoutProps> = ({
         >
           <div className="flex items-center gap-2 min-w-0">
             {/* vSeva's logo art has transparent padding, so it is scaled up to read at the same size */}
-            <img src={BRAND.logo} alt={BRAND.name} className={`h-10 w-10 object-contain shrink-0 ${BRAND.logoPadded ? 'scale-125' : ''}`} />
-            <h1 className="display text-[1.4rem] font-extrabold text-ink truncate">{BRAND.shortName}</h1>
+            <img src={BRAND.logo} alt={BRAND.name} className={`h-11 w-11 object-contain shrink-0 ${BRAND.logoPadded ? 'scale-[1.45]' : ''}`} />
+            <h1 className="display text-[1.5rem] font-extrabold text-brand truncate">{BRAND.shortName}</h1>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <LanguageDropdown />
@@ -456,6 +470,7 @@ const Layout: React.FC<LayoutProps> = ({
                     >
                       <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl [&>svg]:w-5 [&>svg]:h-5 ${active ? 'bg-white/40 text-ink' : (item as any).tone === 'purple' ? 'bg-purple-50 text-purple-600' : 'bg-sunken text-ink'}`}>{item.icon}</span>
                       <span className="text-[15px] font-semibold">{item.label}</span>
+                      {item.page === 'notifications' && <UnreadBadge />}
                     </button>
                   );
                 })}

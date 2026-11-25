@@ -111,7 +111,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
     const [orgAdmins, setOrgAdmins] = useState<Record<string, OrgAdminDetails>>({});
     const [isPinVerified, setIsPinVerified] = useState(isSuperAdminPinVerified());
     // What this signed-in account may see, decided by the server (never by the client).
-    const [scope, setScope] = useState<{ email: string; all: boolean; brands: string[] } | null>(null);
+    const [scope, setScope] = useState<{ email: string; all: boolean; brands: string[]; owner?: boolean } | null>(null);
     const [accessError, setAccessError] = useState<string | null>(null);
     // Managed Organizations: search, filters and sort
     const [orgSearch, setOrgSearch] = useState('');
@@ -478,7 +478,7 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                             <h1 className="text-2xl md:text-3xl display font-bold text-ink">{BRAND.name} Central Control</h1>
                         </div>
                         <p className="text-ink-2">
-                            {scope && !scope.all ? 'Monitoring and onboarding for your groups' : 'Global monitoring and organization lifecycle management'}
+                            {scope && !scope.all && !scope.owner ? 'Monitoring and onboarding for your groups' : 'Global monitoring and organization lifecycle management'}
                             {scope && <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 text-xs font-bold border border-brand-100 align-middle">{scope.all ? 'All brands' : scope.brands.map(b => b.toUpperCase()).join(', ')}</span>}
                         </p>
                     </div>
@@ -891,10 +891,10 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                 </div>
 
                 {/* Public Vihar route directory (vSeva website) — publish / refresh */}
-                {scope?.all && BRAND.id === 'vseva' && <RouteDirectoryAdminCard />}
+                {scope?.owner && BRAND.id === 'vseva' && <RouteDirectoryAdminCard />}
 
                 {/* Public Community Directory — pending listings/edits review */}
-                {scope?.all && BRAND.showsDirectoryAdmin && <SuperAdminDirectoryPanel currentUser={currentUser} />}
+                {scope?.owner && BRAND.showsDirectoryAdmin && <SuperAdminDirectoryPanel currentUser={currentUser} />}
 
             </div>
         </div>

@@ -1,3 +1,4 @@
+import { BRAND } from '@brand';
 import { supabase } from './supabase';
 import { callFn } from './apiBase';
 import { getCached, invalidate, clearAll } from './requestCache';
@@ -9,7 +10,8 @@ async function superAdminCall<T = any>(action: string, extra: Record<string, unk
   if (!session?.access_token) throw new Error('Please sign in again.');
   return callFn<T>('super-admin', {
     headers: { Authorization: `Bearer ${session.access_token}` },
-    body: { action, ...extra },
+    // siteBrand: a branded site's Super Admin page only shows its own brand (netlify/functions/_shared/adminAuth.js)
+    body: { action, ...extra, siteBrand: BRAND.id },
     retry,
   });
 }
@@ -203,7 +205,7 @@ export const dataService = {
     }, SLOW_TTL, { persist: true });
   },
 
-  async updateOrgLeadership(updates: { captainName?: string; viceCaptainName?: string; viceCaptainMobile?: string }): Promise<void> {
+  async updateOrgLeadership(updates: { captainName?: string; viceCaptainName?: string; viceCaptainMobile?: string; captainMobile?: string; groupName?: string; city?: string }): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) throw new Error('Admin session required. Please login again.');
 
@@ -267,7 +269,7 @@ export const dataService = {
     return callFn('route-directory', { body: { action: 'refresh' }, timeoutMs: 60000 });
   },
 
-  async getSuperAdminScope(): Promise<{ email: string; all: boolean; brands: string[] }> {
+  async getSuperAdminScope(): Promise<{ email: string; all: boolean; brands: string[]; owner?: boolean }> {
     return superAdminCall('whoami', {}, true);
   },
 
@@ -337,7 +339,7 @@ export const dataService = {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('Please sign in again.');
       const headers = { Authorization: `Bearer ${session.access_token}` };
-      const data = await getCached(cacheKey, () => callFn<any[]>('get-org-admins', { headers, body: { orgIds }, retry: true }), 30_000);
+      const data = await getCached(cacheKey, () => callFn<any[]>('get-org-admins', { headers, body: { orgIds, siteBrand: BRAND.id }, retry: true }), 30_000);
       (data || []).forEach((p: any) => {
         map[p.organization_id] = {
           full_name: p.full_name,
@@ -690,7 +692,7 @@ export const dataService = {
     try {
       await callFn('approve-org', {
         headers: { Authorization: `Bearer ${session.access_token}` },
-        body: { requestId },
+        body: { requestId, siteBrand: BRAND.id },
       });
     } catch (e: any) {
       throw new Error(e?.message || "Failed to approve organization");
@@ -1133,6 +1135,8 @@ export const dataService = {
 
   // Every sevak's current "consecutive calendar days with a Vihar" streak,
   // sorted highest first — for the Captain's "Highest Streaks" leaderboard.
+  // Highest Streaks (Captain's Statistics): each Sevak's LONGEST run of consecutive calendar days with an approved
+  // Vihar, within the entries passed in (the selected Vihar Year). Sevaks with no Vihar there don't appear.
   getStreakLeaderboard(entries: ViharEntry[], nameMap: Record<string, string>): { username: string; name: string; streak: number }[] {
     const datesByUser: Record<string, string[]> = {};
     entries.forEach(e => {
@@ -1141,22 +1145,21 @@ export const dataService = {
         datesByUser[u].push(e.vihar_date);
       });
     });
+    const dayNumber = (d: string) => Math.round(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 86400000);
 
     return Object.entries(datesByUser)
       .map(([username, dates]) => {
-        const uniqueDatesDesc = Array.from(new Set(dates)).sort((a, b) => b.localeCompare(a));
-        let streak = uniqueDatesDesc.length > 0 ? 1 : 0;
-        for (let i = 0; i < uniqueDatesDesc.length - 1; i++) {
-          const curr = new Date(uniqueDatesDesc[i]);
-          const prev = new Date(uniqueDatesDesc[i + 1]);
-          const diffDays = Math.round((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
-          if (diffDays === 1) streak++;
-          else break;
+        const days = Array.from(new Set(dates.map(dayNumber))).sort((a, b) => a - b);
+        let best = days.length ? 1 : 0;
+        let run = best;
+        for (let i = 1; i < days.length; i++) {
+          run = days[i] - days[i - 1] === 1 ? run + 1 : 1;
+          if (run > best) best = run;
         }
-        return { username, name: nameMap[username] || username.split('@')[0], streak };
+        return { username, name: nameMap[username] || username.split('@')[0], streak: best };
       })
       .filter(s => s.streak > 0)
-      .sort((a, b) => b.streak - a.streak);
+      .sort((a, b) => b.streak - a.streak || a.name.localeCompare(b.name));
   },
 
   calculateRank: (allEntries: ViharEntry[], currentUsername: string): number | string => {

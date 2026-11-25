@@ -7,7 +7,7 @@ import { useToast } from '../context/ToastContext';
 // The website only changes when this button is tapped (netlify/functions/route-directory.js).
 const SRC = `${import.meta.env.VITE_SUPABASE_URL || ''}/storage/v1/object/public/public-data/route-directory.json`;
 
-interface Info { generatedAt: string; stats: { routes: number; groups: number; cities: number } }
+interface Info { generatedAt: string; stats: { routes: number; groups: number; cities: number; sevaks?: number } }
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -32,7 +32,7 @@ const RouteDirectoryAdminCard: React.FC = () => {
     try {
       const res = await dataService.refreshRouteDirectory();
       setInfo(res);
-      showToast(`Route directory updated: ${res.stats.routes} routes from ${res.stats.groups} groups`, 'success');
+      showToast(`Website updated: ${res.stats.routes} routes, ${(res.stats as any).sevaks ?? 0} Sevaks on the leaderboard`, 'success');
     } catch (e: any) {
       showToast(e?.message || 'Could not refresh the route directory', 'error');
     } finally {
@@ -45,13 +45,13 @@ const RouteDirectoryAdminCard: React.FC = () => {
       <div className="flex items-start gap-3 min-w-0 flex-1">
         <span className="w-11 h-11 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0"><Route size={20} /></span>
         <div className="min-w-0">
-          <h2 className="text-lg font-bold text-ink">Public route directory</h2>
+          <h2 className="text-lg font-bold text-ink">Public website data</h2>
           <p className="text-[13px] text-ink-2 mt-0.5">
             {!checked ? 'Checking…'
-              : info ? <>Last updated {fmt(info.generatedAt)} · {info.stats.routes} routes · {info.stats.groups} groups · {info.stats.cities} cities</>
+              : info ? <>Last updated {fmt(info.generatedAt)} · {info.stats.routes} routes · {info.stats.groups} groups · {info.stats.cities} cities{info.stats.sevaks ? ` · ${info.stats.sevaks} Sevaks on the leaderboard` : ''}</>
               : 'Not published yet. Tap Refresh to publish every group’s routes on the website.'}
           </p>
-          <p className="text-[12px] text-ink-3 mt-1">Shows each group&rsquo;s routes with its Captain&rsquo;s name and number. Changes only when you refresh.</p>
+          <p className="text-[12px] text-ink-3 mt-1">The Vihar route directory (with each Captain&rsquo;s name and number) and the Top Vihar Sevaks leaderboard on the website. They change only when you refresh.</p>
         </div>
       </div>
       <div className="flex gap-2 shrink-0">
@@ -60,7 +60,7 @@ const RouteDirectoryAdminCard: React.FC = () => {
         </a>
         <button type="button" onClick={refresh} disabled={busy} className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-brand hover:bg-brand-600 text-ink text-sm font-semibold disabled:opacity-60">
           {busy ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
-          {busy ? 'Refreshing…' : 'Refresh route directory'}
+          {busy ? 'Refreshing…' : 'Refresh website data'}
         </button>
       </div>
     </div>
