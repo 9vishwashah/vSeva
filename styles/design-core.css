@@ -49,6 +49,14 @@
   line-height: 0.95;
 }
 
+/* The display font's tight letter-spacing lets the last glyph overhang its box; with truncate (overflow hidden) its
+   right edge was cut off (e.g. the "2" on a stat tile). A little end padding keeps the whole glyph inside. */
+.vs-core .display.truncate,
+.vs-core .display.overflow-hidden,
+.vs-core .display[class*='line-clamp-'] {
+  padding-inline-end: 0.08em;
+}
+
 /* Numbers line up in every tile and total */
 .vs-core .num {
   font-variant-numeric: tabular-nums;

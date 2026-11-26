@@ -290,7 +290,7 @@ const PendingApprovals: React.FC<PendingApprovalsProps> = ({ currentUser, onEdit
                                                 <div>
                                                     <h4 className="text-[11px] font-bold text-ink-3 uppercase tracking-widest mb-2">Submitted By</h4>
                                                     <p className="text-sm font-bold text-ink">{getName(entry.created_by)}</p>
-                                                    <p className="text-xs text-ink-3">{entry.created_at ? new Date(entry.created_at).toLocaleString() : ''}</p>
+                                                    <p className="text-xs text-ink-3">{entry.created_at ? new Date(entry.created_at).toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : ''}</p>
                                                 </div>
 
                                                 <div className="pt-4 border-t border-line space-y-3">

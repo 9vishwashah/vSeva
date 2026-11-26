@@ -1365,6 +1365,13 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
                   )
                 )} />
             )}
+
+            {/* 4. (Captain) Internal / Highway Vihars: fills the slot Co-Sevak takes for a Sevak */}
+            {currentUser.role === UserRole.ORG_ADMIN && BRAND.viharEntryExtras && (
+              <StatBlock tone="plain" className="app-stagger-in" style={{ animationDelay: '120ms' }} label="Internal / Highway" icon={<Route />}
+                value={isLoading ? <SkeletonLoader /> : n(displayStats.internalVihars || 0)}
+                of={isLoading ? undefined : n(displayStats.highwayVihars || 0)} />
+            )}
           </div>
 
           {/* Secondary stats — Rank / Streak / Total Sevaks / Active Sevaks (kept from existing dashboard, not in the pilot mock but not removed) */}
@@ -1390,7 +1397,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, navigateToProfile, n
               onClick={() => setShowActiveSevaksModal(true)} disabled={isLoading} title=">= 1 Vihar in last 30 days" />
           </div>
 
-          {BRAND.viharEntryExtras && (
+          {/* Sevak: own row (a Captain sees it as a tile in the first row) */}
+          {BRAND.viharEntryExtras && currentUser.role !== UserRole.ORG_ADMIN && (
             <div className="rounded-tile px-4 py-3.5 app-stagger-in flex items-center justify-between gap-3 bg-surface ring-1 ring-inset ring-line" style={{ animationDelay: '260ms' }}>
               <div className="flex items-center gap-5">
                 <div>

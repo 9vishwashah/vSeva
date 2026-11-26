@@ -417,20 +417,21 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
       '',
       'Login Details:',
       `Username: ${username}`,
-      `Password: ${sevak.mobile} (Your Mobile No)`,
+      `Password: ${sevak.mobile}`,
       '',
-      `Captain : ${currentUser.full_name}`,
+      `Captain : *${currentUser.full_name}*`,
       ...(currentUser.mobile ? [`Mobile Number ${currentUser.mobile}`] : []),
-      ...(viceName ? [`Vice Captain : ${viceName}`] : []),
+      ...(viceName ? [`Vice Captain : *${viceName}*`] : []),
       ...(viceName && viceMobile ? [`Mobile Number ${viceMobile}`] : []),
       '',
       ...(BRAND.playStoreUrl
-        ? [`Install ${BRAND.name} App for Android:`, installUrl, '', `Install ${BRAND.name} App for iPhone:`, `${site}/`]
+        ? [`Install ${BRAND.name} App for Android:`, installUrl]
         : [`Install ${BRAND.name} App:`, `${site}/`]),
-      ...(BRAND.instagram ? ['', `Follow ${BRAND.name} on Instagram for updates:`, BRAND.instagram.url] : []),
+      ...(BRAND.instagram ? ['', 'Instagram:', BRAND.instagram.url] : []),
       '',
       BRAND.name,
-      ...(BRAND.cardCredit ? [`developed ${BRAND.cardCredit}`] : []),
+      // cardCredit is "by VJAS" -> "Developed by *VJAS*"
+      ...(BRAND.cardCredit ? [`Developed by *${BRAND.cardCredit.replace(/^by\s+/i, '')}*`] : []),
     ];
     const message = lines.join('\n');
 
