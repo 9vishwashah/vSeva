@@ -4,6 +4,7 @@ import WhatsAppIcon from '../../../components/WhatsAppIcon';
 import { InstallPWA, IOS_GUIDE_EVENT } from '../../../components/InstallPWA';
 import { CONTACT, COMMUNITY_LINKS, GUIDES, NAV, PLAY_STORE_URL, type Screen } from './content';
 import './site.css';
+import vjasLogo from '../../../assets/vjas-logo.webp';
 
 export type SitePage = 'home' | 'docs' | 'contact' | 'support' | 'routes';
 
@@ -315,9 +316,16 @@ export const SiteFooter: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-[color:var(--line)] pt-6 text-[0.85rem] text-[color:var(--muted)] sm:flex-row sm:items-center sm:justify-between">
+        {/* sm:pr-20 keeps the VJAS logo clear of the floating WhatsApp / Instagram / call buttons */}
+        <div className="flex flex-col gap-2 border-t border-[color:var(--line)] pt-6 text-[0.85rem] text-[color:var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:pr-20">
           <p>© {year} VJAS. All rights reserved.</p>
-          <p>Designed and Developed by <span className="font-semibold text-[color:var(--saffron-deep)]">VJAS</span></p>
+          <p className="flex items-center gap-2">
+            Designed and Developed by
+            {/* VJAS logo: opens a WhatsApp chat with VJAS (+91 95945 03214) */}
+            <a href={CONTACT.supportWhatsAppUrl} target="_blank" rel="noopener noreferrer" aria-label="VJAS on WhatsApp" className="inline-flex shrink-0 rounded-md transition-opacity hover:opacity-80">
+              <img src={vjasLogo} alt="VJAS" width={95} height={30} loading="lazy" decoding="async" className="h-[30px] w-auto" />
+            </a>
+          </p>
         </div>
       </div>
     </footer>
