@@ -57,10 +57,9 @@ const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replac
 const headScript = forPath => `<script>(function(){var d=document.documentElement;try{var p=(location.pathname.replace(/\\/+$/,'')||'/').toLowerCase();var s=false;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('sb-')===0&&/-auth-token$/.test(k)){s=true;break}}}catch(e){s=true}var a=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true||/; wv\\)/.test(navigator.userAgent)||!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());var r=${JSON.stringify(forPath)};if(p!==r||(r==='/'&&(s||a||/[?&]vihar=/.test(location.search))))d.classList.add('app-shell');else{d.classList.add('js','vs-site');setTimeout(function(){if(!window.__vsLive)d.classList.remove('js')},5000)}}catch(e){}})();</script>
   <style>.app-shell #root{display:none}</style>`;
 
-// The site's fonts are self-hosted (brands/vseva/site/site.css); all three are preloaded.
-const FONT_PRELOADS = ['SchibstedGrotesk', 'InstrumentSans', 'JetBrainsMono']
-  .map(f => `<link rel="preload" href="/vseva-site/fonts/${f}.woff2" as="font" type="font/woff2" crossorigin>`)
-  .join('\n  ');
+// The site uses the app's own Lekha fonts (Bricolage Grotesque, Geist), from the font stylesheet the page already
+// links (brands/vseva/meta.ts fontsHref). That link is turned into a high-priority, non-blocking preload below.
+const FONT_PRELOADS = '';
 
 const replaceOrFail = (html, re, value, what) => {
   if (!re.test(html)) throw new Error(`[prerender] could not find ${what} in dist/index.html`);
@@ -87,10 +86,13 @@ for (const p of server.PATHS) {
     'JSON-LD',
   );
   html = html.replace('</head>', `  ${FONT_PRELOADS}\n  ${headScript(p)}\n</head>`);
-  // The app's own fonts (Manrope / Playfair) aren't used by these pages: load them without blocking the first paint.
-  html = html.replace(
-    /<link\s+href="(https:\/\/fonts\.googleapis\.com\/css2\?family=Manrope[^"]*)"\s+rel="stylesheet">/,
-    `<link href="$1" rel="stylesheet" media="print" onload="this.media='all'">`,
+  // Font stylesheet: fetched at high priority (a media="print" link is fetched last) but still without blocking the
+  // first paint; text shows in the fallback face for the moment it takes.
+  html = replaceOrFail(
+    html,
+    /<link\s+href="(https:\/\/fonts\.googleapis\.com\/css2\?[^"]*)"\s+rel="stylesheet" media="print" onload="this\.media='all'">/,
+    `<link rel="preload" as="style" href="$1" onload="this.onload=null;this.rel='stylesheet'">`,
+    'font stylesheet',
   );
   html = replaceOrFail(html, /<div id="root"[^>]*><\/div>/, `<div id="root" data-prerendered="${p}">${body}</div>`, '#root');
 

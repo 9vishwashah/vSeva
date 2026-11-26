@@ -1,11 +1,11 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, ArrowUpRight, MapPin, BookOpen, Instagram, BellRing, Cake, Download, FileText, Star } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, MapPin, BookOpen, Instagram, BellRing, Cake, Download, FileText, Star, Trophy } from 'lucide-react';
 import { COMMUNITY_LINKS, FOUNDERS, GUIDES, PLAY_STORE_URL, SCREENS, STATS, TEAM, TICKER, type Screen } from './content';
-import { Eyebrow, GooglePlayIcon, IPhoneShot, Section, SiteShell, StoreButtons } from './ui';
+import { Eyebrow, GooglePlayIcon, IPhoneShot, Section, SiteShell, StoreButtons, useMounted } from './ui';
 import { PAGE_META } from './seo';
 import RouteFinder from './RouteDirectory';
-import Leaderboard from './Leaderboard';
+import Leaderboard, { LeaderboardPeek } from './Leaderboard';
 
 // The map's state outlines are large, so they load only once the section is close to the screen
 const IndiaMap = lazy(() => import('./IndiaMap'));
@@ -42,6 +42,7 @@ const Hero: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
             <div className="vs-rise mt-9" style={{ ['--d' as string]: 4 }}>
               <StoreButtons />
               <p className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[0.95rem] text-[color:var(--ink-2)]">
+                <a href="#leaderboard" className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--mustard)] px-3 py-1 font-semibold text-[color:var(--ink)] no-underline hover:brightness-95"><Trophy size={15} aria-hidden /> Top Vihar Sevaks</a>
                 <a href="/login?register=1" className="vs-link inline-flex items-center gap-1.5">Create Group <ArrowRight size={15} aria-hidden /></a>
                 <span>
                   Already on vSeva?{' '}
@@ -56,8 +57,8 @@ const Hero: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
               {/* The scene: a rising sun and the road, as in the vSeva logo */}
               <div aria-hidden className="vs-sun absolute left-1/2 top-[2%] aspect-square w-[118%] -translate-x-1/2 rounded-full" />
               <svg aria-hidden viewBox="0 0 460 120" preserveAspectRatio="none" className="absolute bottom-[2%] left-[-4%] h-[18%] w-[108%]">
-                <path d="M0 96 C 120 40, 250 120, 460 52" fill="none" stroke="var(--saffron)" strokeOpacity="0.55" strokeWidth="3" strokeDasharray="12 10" strokeLinecap="round" />
-                <circle cx="6" cy="93" r="6" fill="var(--saffron-deep)" /><circle cx="236" cy="86" r="6" fill="var(--saffron-deep)" /><circle cx="452" cy="54" r="6" fill="var(--saffron-deep)" />
+                <path d="M0 96 C 120 40, 250 120, 460 52" fill="none" stroke="var(--ink)" strokeOpacity="0.35" strokeWidth="3" strokeDasharray="12 10" strokeLinecap="round" />
+                <circle cx="6" cy="93" r="6" fill="var(--saffron)" /><circle cx="236" cy="86" r="6" fill="var(--saffron)" /><circle cx="452" cy="54" r="6" fill="var(--saffron)" />
               </svg>
 
               <motion.div style={{ y: back }} className="absolute left-[2%] top-[92px] w-[52%] max-w-[230px]">
@@ -69,12 +70,12 @@ const Hero: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
 
               {/* Floating cards for two real features: the Vihar reminder and the Upcoming Vihar alert */}
               <div className="vs-rise vs-float absolute left-[-3%] top-[2%] z-10 w-[66%] max-w-[300px]" style={{ ['--d' as string]: 5 }}>
-                <div className="rounded-2xl bg-[#2A2522] p-3 text-white shadow-[0_18px_40px_-18px_rgba(60,25,5,0.6)]">
+                <div className="rounded-2xl bg-[color:var(--ink)] p-3 text-white shadow-[0_18px_40px_-18px_rgba(29,29,27,0.6)]">
                   <div className="flex items-center gap-1.5 text-[10px] text-white/70">
                     <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--saffron)]">
                       <img src="/vseva-site/logo-96.webp" alt="" width={12} height={12} className="h-3 w-3 object-contain brightness-0 invert" />
                     </span>
-                    <span className="font-semibold text-[#FFB48A]">vSeva</span> · now
+                    <span className="font-semibold text-[color:var(--saffron)]">vSeva</span> · now
                   </div>
                   <div className="mt-1.5 flex items-start gap-2.5">
                     <div className="min-w-0 flex-1">
@@ -87,17 +88,17 @@ const Hero: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
               </div>
 
               <div className="vs-rise vs-float vs-float-late absolute bottom-[9%] right-[-3%] z-10 w-[58%] max-w-[250px]" style={{ ['--d' as string]: 6 }}>
-                <div className="rounded-2xl border border-[color:var(--line)] bg-white p-3 shadow-[0_18px_40px_-20px_rgba(140,60,20,0.45)]">
+                <div className="rounded-2xl bg-[color:var(--card)] p-3 shadow-[0_18px_40px_-20px_rgba(29,29,27,0.4),inset_0_0_0_1px_var(--line)]">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[color:var(--saffron-tint)]">
-                      <MapPin size={15} className="text-[color:var(--saffron-deep)]" aria-hidden />
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[color:var(--sky)]">
+                      <MapPin size={15} className="text-[color:var(--ink)]" aria-hidden />
                     </span>
                     <div className="min-w-0">
                       <p className="text-[0.8rem] font-bold leading-tight text-[color:var(--ink)]">Upcoming Vihar</p>
                       <p className="text-[0.7rem] leading-tight text-[color:var(--muted)]">Your Captain needs Sevaks</p>
                     </div>
                   </div>
-                  <span className="mt-2.5 flex h-8 items-center justify-center rounded-lg bg-[color:var(--saffron-deep)] text-[0.75rem] font-bold text-white">I’m Interested</span>
+                  <span className="mt-2.5 flex h-8 items-center justify-center rounded-full bg-[color:var(--saffron)] text-[0.75rem] font-bold text-[color:var(--ink)]">I’m Interested</span>
                 </div>
               </div>
             </div>
@@ -128,26 +129,25 @@ const Ticker: React.FC = () => {
 
 /* ───────────── Stats: three milestones on a road ───────────── */
 
+const STAT_TILES = ['vs-tile-mustard', 'vs-tile-sky', 'vs-tile-pink'];
+
 const Stats: React.FC = () => (
   <Section className="py-20 md:py-24" labelledBy="stats-title">
     <div className="grid gap-12 lg:grid-cols-12 lg:items-end">
       <div className="lg:col-span-4" data-reveal>
         <Eyebrow>So far</Eyebrow>
-        <h2 id="stats-title" className="vs-h2 mt-4">Counted the way a road counts.</h2>
+        <h2 id="stats-title" className="vs-h2 mt-4">Every step, counted.</h2>
         <p className="vs-lede mt-5 max-w-[38ch]">Groups, Sevaks and Vihars already on vSeva, one milestone at a time.</p>
       </div>
       <div className="lg:col-span-8">
-        <ul className="grid grid-cols-3 gap-3 sm:gap-6">
+        <ul className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-3 sm:gap-4">
           {STATS.map((s, i) => (
-            <li key={s.label} data-reveal style={{ ['--d' as string]: i }}>
-              <div className="vs-milestone">
-                <span className="vs-milestone-cap">{s.label}</span>
-                <span className="vs-milestone-value">{s.value}</span>
-              </div>
+            <li key={s.label} data-reveal style={{ ['--d' as string]: i }} className={`vs-tile ${STAT_TILES[i % STAT_TILES.length]} flex min-h-[150px] flex-col justify-between sm:min-h-[190px] sm:!p-6`}>
+              <span className="text-[0.9rem] font-semibold opacity-75">{s.label}</span>
+              <span className="vs-num text-[clamp(2.6rem,7vw,4.6rem)]">{s.value}</span>
             </li>
           ))}
         </ul>
-        <div className="vs-road mt-[-1px]" aria-hidden />
       </div>
     </div>
   </Section>
@@ -161,6 +161,8 @@ const STAGES = [
   { name: 'Track', body: 'Kilometres, Sankalp and the Vihar Year at a glance.' },
   { name: 'Connect', body: 'Alerts, VChat, contacts and Seva cards to share.' },
 ];
+
+const STAGE_TILES = ['vs-tile-mustard', 'vs-tile-sky', 'vs-tile-pink', 'vs-tile-tea'];
 
 const Story: React.FC = () => (
   <Section id="story" className="border-t border-[color:var(--line)] py-20 md:py-24" labelledBy="story-title">
@@ -187,7 +189,7 @@ const Story: React.FC = () => (
       <div className="lg:col-span-6" data-reveal style={{ ['--d' as string]: 1 }}>
         {/* Form → app: a simple sketch of a form next to the real Vihar entry screen */}
         <figure className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-5">
-          <div className="rounded-2xl border border-[color:var(--line-strong)] bg-white p-4 sm:p-5" aria-hidden>
+          <div className="rounded-[22px] bg-[color:var(--card)] p-4 shadow-[inset_0_0_0_1px_var(--line)] sm:p-5" aria-hidden>
             <p className="vs-eyebrow !text-[color:var(--muted)]">The form</p>
             {['Date', 'From', 'To', 'Sevaks'].map(f => (
               <div key={f} className="mt-4">
@@ -206,14 +208,14 @@ const Story: React.FC = () => (
       </div>
     </div>
 
-    <ol className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-[color:var(--line)] bg-[color:var(--line)] sm:grid-cols-2 lg:grid-cols-4">
+    <ol className="mt-16 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {STAGES.map((st, i) => (
-        <li key={st.name} className="bg-[color:var(--paper)] p-6" data-reveal style={{ ['--d' as string]: i }}>
-          <p className="flex items-center gap-2 font-[family-name:var(--display)] text-[1.5rem] font-extrabold tracking-[-0.02em]">
+        <li key={st.name} className={`vs-tile ${STAGE_TILES[i]} !p-6`} data-reveal style={{ ['--d' as string]: i }}>
+          <p className="flex items-center gap-2 font-[family-name:var(--display)] text-[1.6rem] font-extrabold tracking-[-0.02em]">
+            <span className="vs-mono text-[0.8rem] font-medium opacity-70">0{i + 1}</span>
             {st.name}
-            {i < STAGES.length - 1 && <ArrowRight size={18} className="text-[color:var(--saffron)]" aria-hidden />}
           </p>
-          <p className="mt-2 text-[0.95rem] text-[color:var(--ink-2)]">{st.body}</p>
+          <p className="mt-2 text-[0.95rem] opacity-85">{st.body}</p>
         </li>
       ))}
     </ol>
@@ -261,6 +263,8 @@ const MORE_FEATURES = [
   { title: 'Works offline', body: 'Install it and vSeva opens even without internet, showing your last-synced Vihars and stats.', href: '/documentation#introduction' },
   { title: 'Three languages', body: 'English, ગુજરાતી and हिंदी. Switch any time from the top of the screen.', href: '/documentation#introduction' },
 ];
+
+const MARKERS = ['saffron', 'sky', 'mustard', 'pink', 'tea', 'lavender'];
 
 const Features: React.FC = () => (
   <Section id="features" className="border-t border-[color:var(--line)] pt-20 md:pt-24" labelledBy="features-title">
@@ -371,10 +375,11 @@ const Features: React.FC = () => (
           <Eyebrow>And around it</Eyebrow>
           <h3 className="vs-h2 mt-4 !text-[clamp(1.9rem,3.6vw,2.9rem)]">Everything else a group needs.</h3>
         </div>
-        <dl className="grid gap-x-10 sm:grid-cols-2 lg:col-span-8">
+        <dl className="grid gap-3 sm:grid-cols-2 lg:col-span-8">
           {MORE_FEATURES.map((f, i) => (
-            <div key={f.title} className="border-t border-[color:var(--line)] py-5" data-reveal style={{ ['--d' as string]: i % 2 }}>
-              <dt className="font-[family-name:var(--display)] text-[1.15rem] font-bold tracking-[-0.01em]">
+            <div key={f.title} className="vs-tile vs-tile-plain !p-5" data-reveal style={{ ['--d' as string]: i % 2 }}>
+              <dt className="flex items-center gap-2.5 font-[family-name:var(--display)] text-[1.15rem] font-bold tracking-[-0.01em]">
+                <span aria-hidden className="h-3 w-3 shrink-0 rounded-full" style={{ background: `var(--${MARKERS[i % MARKERS.length]})` }} />
                 <a href={f.href} className="no-underline hover:text-[color:var(--saffron-deep)]">{f.title}</a>
               </dt>
               <dd className="mt-1.5 text-[0.95rem] text-[color:var(--ink-2)]">{f.body}</dd>
@@ -410,10 +415,10 @@ const ALERTS = [
 ];
 
 const RemindersAlerts: React.FC = () => (
-  <section id="reminders" aria-labelledby="reminders-title" className="overflow-hidden bg-[#2a2522] px-4 py-20 text-white sm:px-6 md:py-28">
+  <section id="reminders" aria-labelledby="reminders-title" className="overflow-hidden bg-[color:var(--ink)] px-4 py-20 text-white sm:px-6 md:py-28">
     <div className="mx-auto grid max-w-[1240px] items-center gap-14 lg:grid-cols-12 lg:gap-8">
       <div className="lg:col-span-6" data-reveal>
-        <p className="vs-eyebrow !text-[#ffb48a]">Reminders &amp; Alerts</p>
+        <p className="vs-eyebrow !text-[color:var(--saffron)]">Reminders &amp; Alerts</p>
         <h2 id="reminders-title" className="vs-h2 mt-4 max-w-[15ch] text-white">The right nudge, at the right time.</h2>
         <p className="mt-5 max-w-[50ch] text-[1.05rem] text-white/80">
           vSeva remembers so the Captain doesn’t have to: a kind word for Sevaks who have been away, a call to walk when a
@@ -422,13 +427,13 @@ const RemindersAlerts: React.FC = () => (
         <ul className="mt-10 space-y-7">
           {ALERTS.map(({ icon: Icon, title, tag, body }, i) => (
             <li key={title} className="grid grid-cols-[44px_1fr] gap-4" data-reveal style={{ ['--d' as string]: i }}>
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--saffron)]">
+              <span className={`flex h-11 w-11 items-center justify-center rounded-2xl text-[color:var(--ink)] ${['bg-[color:var(--saffron)]', 'bg-[color:var(--sky)]', 'bg-[color:var(--pink)]'][i]}`}>
                 <Icon size={20} aria-hidden />
               </span>
               <div>
                 <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="font-[family-name:var(--display)] text-[1.25rem] font-bold tracking-[-0.01em]">{title}</span>
-                  <span className="vs-mono text-[0.72rem] uppercase tracking-[0.12em] text-[#ffb48a]">{tag}</span>
+                  <span className="vs-mono text-[0.72rem] uppercase tracking-[0.12em] text-[color:var(--saffron)]">{tag}</span>
                 </p>
                 <p className="mt-1.5 max-w-[52ch] text-[0.95rem] text-white/75">{body}</p>
               </div>
@@ -440,7 +445,7 @@ const RemindersAlerts: React.FC = () => (
 
       <div className="relative mx-auto w-full max-w-[480px] lg:col-span-6 lg:max-w-none" data-reveal style={{ ['--d' as string]: 1 }}>
         <div className="relative mx-auto h-[560px] max-w-[460px] sm:h-[620px]">
-          <div aria-hidden className="absolute left-1/2 top-[8%] aspect-square w-[105%] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(222,107,56,0.45),rgba(222,107,56,0)_68%)]" />
+          <div aria-hidden className="absolute left-1/2 top-[8%] aspect-square w-[105%] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(232,115,12,0.42),rgba(232,115,12,0)_68%)]" />
           <div className="absolute left-0 top-[64px] w-[48%] max-w-[220px] -rotate-[4deg]">
             <IPhoneShot screen={SCREENS.upcomingVihar} sizes="(max-width: 640px) 46vw, 220px" />
           </div>
@@ -481,7 +486,7 @@ const MapSection: React.FC = () => {
     <Section id="map" className="border-t border-[color:var(--line)] py-20 md:py-24" labelledBy="map-title">
       <div className="max-w-[760px]" data-reveal>
         <Eyebrow>Where vSeva walks</Eyebrow>
-        <h2 id="map-title" className="vs-h2 mt-4">Vihar Seva groups across India.</h2>
+        <h2 id="map-title" className="vs-h2 mt-4">vSeva App users by Vihar groups.</h2>
         <p className="vs-lede mt-5 max-w-[58ch]">From Mumbai’s suburbs to Raipur and Ahmedabad. Tap a pin, or a group in the list, to see who walks there.</p>
       </div>
       <div ref={ref} className="mt-12">
@@ -502,10 +507,12 @@ const GALLERY: { screen: Screen; title: string }[] = [
   { screen: SCREENS.directory, title: 'Community directory' },
   { screen: SCREENS.profileRing, title: 'Profile completion' },
   { screen: SCREENS.addSevaks, title: 'Add Sevaks' },
+  { screen: SCREENS.contacts, title: 'Important contacts' },
+  { screen: SCREENS.reminderSettings, title: 'Vihar reminders' },
 ];
 
 const Gallery: React.FC = () => (
-  <section id="screens" aria-labelledby="screens-title" className="bg-[#f4ece2] py-20 md:py-28">
+  <section id="screens" aria-labelledby="screens-title" className="bg-[color:var(--sunken)] py-20 md:py-28">
     <div className="mx-auto max-w-[1240px] px-4 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-6" data-reveal>
         <div>
@@ -515,19 +522,17 @@ const Gallery: React.FC = () => (
         <p className="max-w-[40ch] text-[0.95rem] text-[color:var(--muted)]">Taken from the vSeva app. Names, numbers and photos are anonymised.</p>
       </div>
     </div>
-    <ul
-      className="vs-strip mt-12"
-      style={{ paddingInline: 'max(1rem, calc((100vw - 1240px) / 2 + 1.5rem))', scrollPaddingInline: 'max(1rem, calc((100vw - 1240px) / 2 + 1.5rem))' }}
-      tabIndex={0}
-      aria-label="App screenshots, scroll sideways for more"
-    >
-      {GALLERY.map(g => (
-        <li key={g.title} className="w-[58vw] max-w-[250px] sm:w-[250px]">
-          <IPhoneShot screen={g.screen} sizes="(max-width: 640px) 58vw, 250px" />
-          <p className="mt-4 text-[0.95rem] font-semibold">{g.title}</p>
-        </li>
-      ))}
-    </ul>
+    {/* An endless, slow carousel (pauses on hover, focus or touch). With reduced motion it is a normal sideways strip. */}
+    <div className="vs-marquee mt-12" tabIndex={0} aria-label="App screenshots">
+      <ul className="vs-marquee-track">
+        {[...GALLERY, ...GALLERY].map((g, i) => (
+          <li key={`${g.title}${i}`} className="vs-marquee-item w-[58vw] max-w-[250px] sm:w-[250px]" aria-hidden={i >= GALLERY.length || undefined}>
+            <IPhoneShot screen={g.screen} sizes="(max-width: 640px) 58vw, 250px" />
+            <p className="mt-4 text-[0.95rem] font-semibold">{g.title}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   </section>
 );
 
@@ -622,7 +627,7 @@ const GetStarted: React.FC = () => (
           </p>
         </div>
         <div className="flex flex-col gap-3 lg:col-span-4 lg:items-end">
-          <a href="/contact#onboarding" className="vs-btn vs-btn-light">Get Your Group Onboarded <ArrowRight size={17} aria-hidden /></a>
+          <a href="/contact#onboarding" className="vs-btn vs-btn-primary">Get Your Group Onboarded <ArrowRight size={17} aria-hidden /></a>
           <a href="/login?register=1" className="text-[0.9rem] text-white underline decoration-white underline-offset-4 hover:opacity-90">
             Ready now? Create Captain Account on the sign-in page
           </a>
@@ -632,7 +637,7 @@ const GetStarted: React.FC = () => (
     </div>
 
     {/* Path B: Sevaks */}
-    <div className="mt-6 rounded-[28px] border border-[color:var(--line-strong)] bg-white p-6 sm:p-8 md:p-12">
+    <div className="mt-6 rounded-[28px] bg-[color:var(--card)] p-6 shadow-[inset_0_0_0_1px_var(--line)] sm:p-8 md:p-12">
       <div className="grid gap-6 lg:grid-cols-12 lg:items-end" data-reveal>
         <div className="lg:col-span-8">
           <p className="vs-eyebrow">Path B · For Sevaks</p>
@@ -658,8 +663,8 @@ const GetStarted: React.FC = () => (
       <ul className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {GUIDES.map((g, i) => (
           <li key={g.href} data-reveal style={{ ['--d' as string]: i }}>
-            <a href={g.href} download className="group flex h-full items-center gap-5 rounded-2xl bg-white p-5 no-underline transition-colors hover:bg-[color:var(--paper)] md:p-6">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[color:var(--saffron-tint)]">
+            <a href={g.href} download className="group flex h-full items-center gap-5 rounded-[22px] bg-[color:var(--card)] p-5 no-underline transition-colors hover:bg-white md:p-6">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--saffron-soft)]">
                 <FileText size={26} className="text-[color:var(--saffron-deep)]" aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
@@ -712,7 +717,7 @@ const PLAY_REVIEWS_URL = `${PLAY_STORE_URL}&showAllReviews=true`;
 
 const RateUs: React.FC = () => (
   <Section id="rate" className="pb-6" labelledBy="rate-title">
-    <div className="grid items-center gap-8 rounded-[28px] border border-[color:var(--line-strong)] bg-white p-6 sm:p-8 md:grid-cols-12 md:p-12" data-reveal>
+    <div className="grid items-center gap-8 rounded-[28px] bg-[color:var(--card)] p-6 shadow-[inset_0_0_0_1px_var(--line)] sm:p-8 md:grid-cols-12 md:p-12" data-reveal>
       <div className="md:col-span-8">
         <div className="flex gap-1 text-[#F5A623]" aria-hidden>
           {[0, 1, 2, 3, 4].map(i => <Star key={i} size={26} fill="currentColor" strokeWidth={0} />)}
@@ -750,7 +755,7 @@ const Community: React.FC = () => (
             <a
               href={l.href}
               {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-              className="group flex h-full flex-col gap-4 rounded-2xl bg-white p-6 no-underline transition-colors hover:bg-[color:var(--paper)] md:p-7"
+              className="group flex h-full flex-col gap-4 rounded-[22px] bg-[color:var(--card)] p-6 no-underline transition-colors hover:bg-white md:p-7"
             >
               <span className="flex items-start justify-between gap-4">
                 {l.image ? (
@@ -764,8 +769,8 @@ const Community: React.FC = () => (
                     className="h-14 w-14 rounded-xl object-cover"
                   />
                 ) : (
-                  <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-[color:var(--saffron-tint)]">
-                    {i === 0 ? <MapPin size={24} className="text-[color:var(--saffron-deep)]" aria-hidden /> : <BookOpen size={24} className="text-[color:var(--saffron-deep)]" aria-hidden />}
+                  <span className={`flex h-14 w-14 items-center justify-center rounded-2xl ${i === 0 ? 'bg-[color:var(--sky)]' : 'bg-[color:var(--mustard)]'}`}>
+                    {i === 0 ? <MapPin size={24} className="text-[color:var(--ink)]" aria-hidden /> : <BookOpen size={24} className="text-[color:var(--ink)]" aria-hidden />}
                   </span>
                 )}
                 <ArrowUpRight size={22} className="shrink-0 text-[color:var(--ink)] transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
@@ -789,16 +794,18 @@ const Community: React.FC = () => (
 /* ───────────── Top Vihar Sevaks ───────────── */
 
 const LeaderboardSection: React.FC = () => (
-  <Section id="leaderboard" className="border-t border-[color:var(--line)] py-20 md:py-24" labelledBy="leaderboard-title">
-    <div className="max-w-[640px]" data-reveal>
-      <Eyebrow>Leaderboard</Eyebrow>
-      <h2 id="leaderboard-title" className="vs-h2 mt-4">Top Vihar Sevaks.</h2>
-      <p className="mt-4 text-[color:var(--ink-2)]">
-        The Sevaks, Sevikas and groups who walk the most, across every Vihar Seva group on vSeva.
-        See this Vihar Year or all time, by Vihars or by kilometres.
+  <Section id="leaderboard" className="pb-20 pt-4 md:pb-24" labelledBy="leaderboard-title">
+    <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
+      <div className="max-w-[640px]">
+        <Eyebrow>Leaderboard</Eyebrow>
+        <h2 id="leaderboard-title" className="vs-h2 mt-4">Top Vihar Sevaks on vSeva.</h2>
+      </div>
+      <p className="max-w-[46ch] text-[color:var(--ink-2)]">
+        The Sevaks, Sevikas and groups who walk the most, across every Vihar Seva group on vSeva. Switch the year, rank
+        by kilometres, or find yourself.
       </p>
     </div>
-    <div className="mt-8" data-reveal style={{ ['--d' as string]: 1 }}>
+    <div className="mt-8">
       <Leaderboard />
     </div>
   </Section>
@@ -830,9 +837,12 @@ interface LandingPageProps {
   onGetStarted: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => (
+const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
+  const mounted = useMounted();
+  return (
   <SiteShell page="home" title={PAGE_META['/'].title} description={PAGE_META['/'].description} onLogin={onGetStarted}>
     <Hero onLogin={onGetStarted} />
+    <LeaderboardSection />
     <Ticker />
     <Stats />
     <MapSection />
@@ -844,10 +854,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => (
     <GetStarted />
     <People />
     <RateUs />
-    <LeaderboardSection />
     <RouteFinderSection />
     <Community />
+    {/* this year's top 5, a moment after the page opens (browser only) */}
+    {mounted && <LeaderboardPeek targetId="leaderboard" />}
   </SiteShell>
-);
+  );
+};
 
 export default LandingPage;

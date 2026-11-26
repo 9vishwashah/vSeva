@@ -318,7 +318,7 @@ const App: React.FC = () => {
   // The brand's public website pages (vSeva: /documentation, /contact, /support-us), prerendered at build time
   if (PUBLIC_PATHS.includes(normalizedPath)) {
     return (
-      <React.Suspense fallback={<div className="min-h-screen bg-[#FBF7F1]" />}>
+      <React.Suspense fallback={<div className="min-h-screen bg-[#F2EEE7]" />}>
         <PublicRoutes path={normalizedPath} />
       </React.Suspense>
     );

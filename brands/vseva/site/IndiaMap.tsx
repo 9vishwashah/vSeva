@@ -127,8 +127,7 @@ const IndiaMap: React.FC = () => {
 
         {/* Legend (over the Arabian Sea, the emptiest corner) and zoom-out */}
         <div className="pointer-events-none absolute bottom-3 left-3 flex flex-col gap-1 rounded-xl bg-white/90 px-2.5 py-2 text-[0.72rem] sm:bottom-4 sm:left-4 sm:text-[0.78rem] text-[color:var(--ink-2)] backdrop-blur">
-          <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-[#f3b48c]" aria-hidden /> States with vSeva groups</span>
-          <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-white bg-[color:var(--saffron-deep)] shadow" aria-hidden /> A Vihar Seva group</span>
+          <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-white bg-[color:var(--saffron-deep)] shadow" aria-hidden /> vSeva App users by Vihar groups</span>
         </div>
         {zoomed && (
           <button type="button" onClick={reset} className="vs-btn vs-btn-sm vs-btn-light absolute right-4 top-4 shadow-[0_6px_20px_-8px_rgba(60,25,5,0.4)]">

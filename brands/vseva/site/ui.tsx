@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { ArrowUpRight, Instagram, LogIn, Menu, Phone, X, Youtube } from 'lucide-react';
+import { ArrowUpRight, Instagram, LogIn, Menu, Phone, Trophy, X, Youtube } from 'lucide-react';
 import WhatsAppIcon from '../../../components/WhatsAppIcon';
 import { InstallPWA, IOS_GUIDE_EVENT } from '../../../components/InstallPWA';
 import { CONTACT, COMMUNITY_LINKS, GUIDES, NAV, PLAY_STORE_URL, type Screen } from './content';
@@ -100,7 +100,7 @@ export const SiteShell: React.FC<ShellProps> = ({ page, title, description, onLo
       <SiteHeader page={page} onLogin={onLogin} />
       <main id="main" className="pb-10">{children}</main>
       <SiteFooter />
-      <FloatingActions raised={mounted && bannerOpen} />
+      <FloatingActions raised={mounted && bannerOpen} page={page} />
       {mounted && bannerOpen && <AppBar onDismiss={() => setBannerOpen(false)} />}
       {/* Only for the iPhone "Add to Home Screen" guide (opened by the iPhone buttons); its own banner is replaced by AppBar */}
       {mounted && <InstallPWA variant="light" guideOnly />}
@@ -111,7 +111,7 @@ export const SiteShell: React.FC<ShellProps> = ({ page, title, description, onLo
 /* Get-the-app bar: Android (Google Play) and iPhone (web app), fixed at the bottom until closed */
 const AppBar: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
   <div
-    className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--line)] bg-white/95 shadow-[0_-6px_24px_rgba(140,60,20,0.12)] backdrop-blur"
+    className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--line)] bg-[color:var(--card)]/95 shadow-[0_-6px_24px_rgba(29,29,27,0.1)] backdrop-blur"
     style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     role="region"
     aria-label="Get the vSeva app"
@@ -241,19 +241,19 @@ export const SiteFooter: React.FC = () => {
   const link = 'text-[0.95rem] text-[color:var(--ink-2)] no-underline transition-colors hover:text-[color:var(--saffron-deep)]';
   const ext = (href: string) => /^https?:/.test(href) ? { target: '_blank', rel: 'noopener noreferrer' } : {};
   return (
-    <footer className="border-t border-[color:var(--line)] bg-white pb-40 text-[color:var(--ink)] md:pb-28">
+    <footer className="border-t border-[color:var(--line)] bg-[color:var(--card)] pb-40 text-[color:var(--ink)] md:pb-28">
       <div className="mx-auto max-w-[1240px] px-4 pt-14 sm:px-6 md:pt-16">
         {/* VJAS business call to action */}
-        <div className="grid gap-8 rounded-[28px] bg-[color:var(--saffron-deep)] p-7 text-white md:grid-cols-12 md:items-end md:p-10">
+        <div className="grid gap-8 rounded-[28px] bg-[color:var(--ink)] p-7 text-white md:grid-cols-12 md:items-end md:p-10">
           <div className="md:col-span-8">
-            <p className="vs-eyebrow !text-white">VJAS · Digital services</p>
+            <p className="vs-eyebrow !text-[color:var(--saffron)]">VJAS · Digital services</p>
             <h2 className="vs-h2 mt-3 text-white">Looking for digital solutions for your business?</h2>
-            <p className="mt-4 max-w-[58ch] text-white">
+            <p className="mt-4 max-w-[58ch] text-white/80">
               From websites and web applications to custom digital solutions, VJAS helps businesses build useful digital experiences.
             </p>
           </div>
           <div className="md:col-span-4 md:text-right">
-            <a href={CONTACT.vjasPhoneUrl} className="vs-btn vs-btn-light max-w-full !whitespace-normal py-3 text-center !leading-snug">
+            <a href={CONTACT.vjasPhoneUrl} className="vs-btn vs-btn-primary max-w-full !whitespace-normal py-3 text-center !leading-snug">
               <Phone size={16} aria-hidden /> Contact VJAS: {CONTACT.vjasPhoneDisplay}
             </a>
           </div>
@@ -262,7 +262,7 @@ export const SiteFooter: React.FC = () => {
         <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <a href="/" className="flex items-center gap-2.5 no-underline" aria-label="vSeva home">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[color:var(--line)] bg-white">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--paper)]">
                 <img src="/vseva-site/logo-96.webp" srcSet="/vseva-site/logo-96.webp 1x, /vseva-site/logo-192.webp 2x" alt="" width={36} height={36} className="h-9 w-9 scale-[1.45] object-contain" loading="lazy" />
               </span>
               <span className="vs-display text-[1.6rem] text-[color:var(--ink)]">vSeva</span>
@@ -334,13 +334,26 @@ export const SiteFooter: React.FC = () => {
 
 /* ───────────── Floating actions ───────────── */
 
-export const FloatingActions: React.FC<{ raised: boolean }> = ({ raised }) => (
+// The trophy opens the "Top 5" leaderboard popup (Leaderboard.tsx listens for this event); on the other pages it goes
+// to the leaderboard on the home page.
+export const OPEN_TOP5_EVENT = 'vs-open-top5';
+
+export const FloatingActions: React.FC<{ raised: boolean; page?: SitePage }> = ({ raised, page }) => (
   <div
     className="fixed right-3 z-30 flex flex-col gap-2.5 sm:right-5"
     style={{ bottom: raised ? 'calc(80px + env(safe-area-inset-bottom))' : 'calc(16px + env(safe-area-inset-bottom))', transition: 'bottom 200ms ease' }}
     aria-label="Quick contact"
     role="group"
   >
+    <a
+      href="/#leaderboard"
+      onClick={e => { if (page === 'home') { e.preventDefault(); window.dispatchEvent(new Event(OPEN_TOP5_EVENT)); } }}
+      className="vs-fab bg-[color:var(--mustard)] !text-[color:var(--ink)]"
+      aria-label="Top 5 Vihar Sevaks"
+      title="Top 5 Vihar Sevaks"
+    >
+      <Trophy size={21} aria-hidden />
+    </a>
     <a href={CONTACT.supportWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="vs-fab bg-[#25D366]" aria-label="WhatsApp vSeva support">
       <WhatsAppIcon size={22} />
     </a>

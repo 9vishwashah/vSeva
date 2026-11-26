@@ -1,5 +1,7 @@
 import { withCors } from './_shared/cors.js';
 import { requireAdmin, errorResponse, HttpError } from './_shared/adminAuth.js';
+// The verified-tick titles the app shows on profiles (Team vSeva, Developer), so the leaderboard shows them too
+import accountBadges from '../../brands/vseva/accountBadges.json' with { type: 'json' };
 
 // Public Vihar route directory (vSeva website: landing page section + /vihar-routes).
 //
@@ -146,6 +148,11 @@ const genderOf = (g) => {
   return '';
 };
 const round1 = (x) => Math.round(x * 10) / 10;
+// Profile photo URL -> its path inside the public "avatars" bucket (keeps the file small); anything else is dropped
+const avatarPath = (url) => {
+  const m = /\/storage\/v1\/object\/public\/avatars\/([^?#]+)/.exec(String(url || ''));
+  return m ? m[1] : '';
+};
 
 async function buildLeaderboard(sb) {
   const orgs = await readAll(() => sb.from('organizations').select('id, name, city, town').is('brand', null).order('id'));
@@ -161,7 +168,7 @@ async function buildLeaderboard(sb) {
       .order('id'));
   const people = await readAll(() =>
     sb.from('profiles')
-      .select('username, full_name, gender, organization_id')
+      .select('username, full_name, gender, organization_id, avatar_url')
       .in('organization_id', orgIds)
       .order('username'));
 
@@ -182,7 +189,7 @@ async function buildLeaderboard(sb) {
       const p = person.get(u);
       if (!p) continue; // only people who still have an account
       let s = sevaks.get(u);
-      if (!s) { s = { n: titleCase(p.full_name || ''), g: genderOf(p.gender), o: orgIndex.get(p.organization_id) ?? gi, vyV: 0, vyK: 0, allV: 0, allK: 0 }; sevaks.set(u, s); }
+      if (!s) { s = { n: titleCase(p.full_name || ''), g: genderOf(p.gender), o: orgIndex.get(p.organization_id) ?? gi, a: avatarPath(p.avatar_url), b: accountBadges[String(u).trim().toLowerCase()] || '', vyV: 0, vyK: 0, allV: 0, allK: 0 }; sevaks.set(u, s); }
       s.allV += 1; s.allK += km;
       if (inVY) { s.vyV += 1; s.vyK += km; g.vyS.add(u); }
     }
@@ -190,11 +197,13 @@ async function buildLeaderboard(sb) {
 
   return {
     vy: { startYear: currentVY, label: `VY ${currentVY}-${String(currentVY + 1).slice(-2)}` },
-    // [name, gender M|F|'', groupIndex, vyVihars, vyKm, allVihars, allKm]
+    // [name, gender M|F|'', groupIndex, vyVihars, vyKm, allVihars, allKm, photo?, badge?]. photo is the profile photo's
+    // path in the public "avatars" bucket (the page adds the bucket's address), '' when there is none; badge is the
+    // verified-tick title (e.g. Team vSeva). Both are left off when a Sevak has neither.
     sevaks: [...sevaks.values()]
       .filter((s) => s.n && s.allV > 0)
       .sort((a, b) => b.allV - a.allV)
-      .map((s) => [s.n, s.g, s.o, s.vyV, round1(s.vyK), s.allV, round1(s.allK)]),
+      .map((s) => [s.n, s.g, s.o, s.vyV, round1(s.vyK), s.allV, round1(s.allK), ...(s.a || s.b ? [s.a] : []), ...(s.b ? [s.b] : [])]),
     // [name, city, vyVihars, vyKm, allVihars, allKm, activeSevaksThisVY]. Every group is kept, in the same order as
     // the Sevak rows' group index refers to (the page hides groups with no Vihars).
     groups: groups.map((g) => [g.n, g.c, g.vyV, round1(g.vyK), g.allV, round1(g.allK), g.vyS.size]),

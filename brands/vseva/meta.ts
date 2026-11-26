@@ -1,4 +1,5 @@
 import type { BrandMeta, Env } from '../types';
+import accountBadges from './accountBadges.json';
 
 // vSeva — the original product. Values here reproduce what was previously
 // hard-coded in index.html / vite.config.ts / the UI, so a vSeva build is
@@ -42,12 +43,8 @@ export const getMeta = (_env: Env): BrandMeta => ({
   sevakViharPreferences: false,
   viharEntryPhoto: false,
   viharEntryExtras: false,
-  accountBadges: {
-    'vishwashah@vsevak.in': 'Developer',
-    'aagamjain': 'Team vSeva',
-    'alpeshshah@vsevak.in': 'Team vSeva',
-    'namyamehta@vsevak.in': 'Team vSeva',
-  },
+  // username -> title (verified tick). Also read by the public leaderboard builder (netlify/functions/route-directory.js).
+  accountBadges,
   instagram: { url: 'https://www.instagram.com/vseva.app', handle: '@vseva.app' },
   playStoreUrl: 'https://play.google.com/store/apps/details?id=in.vjas.vseva&pcampaignid=web_share',
   docsUrl: 'https://vseva.vjas.in/documentation',

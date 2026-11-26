@@ -33,6 +33,8 @@ const Avatar: React.FC<AvatarProps> = ({ name, url, size = 40, variant = 'pale',
         src={url}
         alt={name}
         style={dim}
+        loading="lazy"
+        decoding="async"
         className={`rounded-full object-cover shrink-0 ${className}`}
         onError={() => setErrored(true)}
       />

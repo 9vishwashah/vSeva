@@ -18,7 +18,7 @@ export function render(path: PublicPath): string {
     path === '/' ? (
       <LandingPage onGetStarted={() => undefined} />
     ) : (
-      <React.Suspense fallback={<div className="min-h-screen bg-[#FBF7F1]" />}>
+      <React.Suspense fallback={<div className="min-h-screen bg-[#F2EEE7]" />}>
         <PublicRoutes path={path} />
       </React.Suspense>
     );

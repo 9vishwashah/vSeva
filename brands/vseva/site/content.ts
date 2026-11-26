@@ -104,7 +104,8 @@ export const TEAM = ['Namya Mehta', 'Aagam Jain', 'Divya Mehta'] as const;
 
 // Screens used on the site: public/vseva-site/screens/<name>-400.webp and -760.webp (see scripts/site-images.mjs)
 export type Screen = { name: string; alt: string; width: number; height: number };
-const s = (name: string, alt: string, height = 1553, width = 760): Screen => ({ name, alt, width, height });
+// Current app screens are 760 × 1652 (iPhone 17 Pro, 402 × 874 pt); a couple of older crops keep their own size.
+const s = (name: string, alt: string, height = 1652, width = 760): Screen => ({ name, alt, width, height });
 
 export const SCREENS = {
   sevakHome: s('62-sevak-home', 'Sevak home screen in vSeva with the My Sankalp ring and Your Stats tiles'),
@@ -112,14 +113,14 @@ export const SCREENS = {
   dashboard: s('10-dashboard', 'Captain dashboard with organisation stats and the weekly consistency strip'),
   login: s('01-login', 'vSeva sign-in screen with the Create Captain Account button'),
   register: s('02-register', 'Create Captain Account form asking for the Captain and group details'),
-  requestSubmitted: s('request-submitted', 'Request Submitted screen: every organisation is verified manually within 24 to 48 hours', 1623, 750),
+  requestSubmitted: s('request-submitted', 'Request Submitted screen: every organisation is verified manually within 24 to 48 hours'),
   addSevaks: s('23-add-sevaks', 'Add New Sevak form with full name, mobile number, alias and gender'),
   entryStep1: s('30-entry-step1', 'New Vihar Entry, step 1: date and Vihar session'),
   entryStep2: s('33-entry-step2-filled', 'New Vihar Entry, step 2: Sadhubhagwan count and the From and To route'),
   entryStep3: s('35-entry-step3-selected', 'New Vihar Entry, step 3: Sevaks who walked, wheelchair and car Seva'),
   entryStep4: s('36-entry-step4', 'New Vihar Entry, step 4: instructions, notes and Submit Entry'),
   myVihars: s('64-my-vihars', 'My Vihars list showing an entry pending Captain approval'),
-  contacts: s('69-sevak-contacts', 'Important Contacts with the emergency list and the Sevak contact directory, each with WhatsApp and Call', 964, 435),
+  contacts: s('69-sevak-contacts', 'Important Contacts with the emergency list and the Sevak contact directory, each with WhatsApp and Call'),
   share: s('52-share', 'Share your Seva sheet with Story and Square achievement cards'),
   idCard: s('42-idcard', 'Vihar Seva ID card with a QR code for verification (QR blurred)', 1026),
   alert: s('50-alert-vihar', 'Announce Upcoming Vihar form for alerting every Sevak'),
@@ -129,7 +130,7 @@ export const SCREENS = {
   profileRing: s('43-profile-ring', 'Profile and Settings with the 100% profile completion ring'),
   completePrompt: s('45-complete-prompt', 'Kindly Complete Your Profile prompt with Later and Complete Now', 466, 575),
   sevakMore: s('65-sevak-more', 'More menu for Sevaks: Add Vihar, Group Analytics, VChat, Contacts and more'),
-  shareSheet: s('53-share-sheet', 'Share your Seva sheet with the Vihars card on a dawn-road photo, Story and Square formats and five cards', 1652),
-  reminderSettings: s('55-reminder-settings', 'Vihar reminders settings: remind after 7, 8 and 15 days, the message and suggested lines', 958, 432),
-  upcomingVihar: s('56-upcoming-vihar', 'Announce Upcoming Vihar form with date, time, Morning or Evening, route and Send Alert to All', 914),
+  shareSheet: s('53-share-sheet', 'Share your Seva sheet with the Vihars card on a dawn-road photo, Story and Square formats and five cards'),
+  reminderSettings: s('55-reminder-settings', 'Vihar reminders settings: remind after 7, 8 and 15 days, the message and suggested lines'),
+  upcomingVihar: s('56-upcoming-vihar', 'Announce Upcoming Vihar form with date, time, Morning or Evening, route and Send Alert to All'),
 } satisfies Record<string, Screen>;

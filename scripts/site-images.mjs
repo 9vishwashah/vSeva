@@ -20,6 +20,17 @@ const extra = {
 
 const files = fs.readdirSync(src).filter(f => f.endsWith('.jpg')).map(f => [f.replace(/\.jpg$/, ''), path.join(src, f)]);
 for (const [name, file] of Object.entries(extra)) if (fs.existsSync(file)) files.push([name, file]);
+// The current (Lekha) app screens, captured at iPhone 17 Pro size with sample data (Nov 2026). A screen here replaces
+// the older capture of the same name from the guide or the list above.
+const appScreens = path.join(root, 'scripts/site-sources/app-screens');
+if (fs.existsSync(appScreens)) {
+  for (const f of fs.readdirSync(appScreens).filter(f => /\.(jpg|png)$/.test(f))) {
+    const name = f.replace(/\.(jpg|png)$/, '');
+    const i = files.findIndex(([n]) => n === name);
+    if (i >= 0) files.splice(i, 1);
+    files.push([name, path.join(appScreens, f)]);
+  }
+}
 
 for (const [name, file] of files) {
   for (const width of [400, 760]) {
