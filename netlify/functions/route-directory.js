@@ -173,7 +173,13 @@ async function buildLeaderboard(sb) {
       .order('username'));
 
   const orgIndex = new Map(orgs.map((o, i) => [o.id, i]));
-  const groups = orgs.map((o) => ({ n: clean(o.name) || 'Vihar Seva Group', c: titleCase(o.city || o.town || ''), vyV: 0, vyK: 0, allV: 0, allK: 0, vyS: new Set() }));
+  // c: where the group is, "Town, City" (just one when the city already names the town, e.g. "Vashi, Navi Mumbai")
+  const placeOf = (o) => {
+    const town = titleCase(o.town || ''), city = titleCase(o.city || '');
+    if (town && city && !key(city).includes(key(town))) return `${town}, ${city}`;
+    return city || town;
+  };
+  const groups = orgs.map((o) => ({ n: clean(o.name) || 'Vihar Seva Group', c: placeOf(o), vyV: 0, vyK: 0, allV: 0, allK: 0, vyS: new Set() }));
   const person = new Map(people.filter((p) => p.username).map((p) => [p.username, p]));
   const sevaks = new Map(); // username -> totals
   const newSevak = (u, p, gi) => ({ n: titleCase(p.full_name || ''), g: genderOf(p.gender), o: orgIndex.get(p.organization_id) ?? gi, a: avatarPath(p.avatar_url), b: accountBadges[String(u).trim().toLowerCase()] || '', vyV: 0, vyK: 0, allV: 0, allK: 0 });

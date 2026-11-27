@@ -81,7 +81,6 @@ export const NAV = [
   { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/vihar-routes', label: 'Vihar routes' },
   { href: '/documentation', label: 'Documentation' },
-  { href: '/#story', label: 'Our story' },
   { href: '/contact', label: 'Contact' },
   { href: '/support-us', label: 'Support us' },
 ] as const;

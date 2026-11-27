@@ -13,6 +13,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { drawLeaderboardOg } from './og-leaderboard.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const mode = process.argv.includes('--mode') ? process.argv[process.argv.indexOf('--mode') + 1] : 'production';
@@ -71,11 +72,6 @@ const fontsMatch = FONTS_RE.exec(template);
 if (!fontsMatch) throw new Error('[prerender] could not find the font stylesheet in dist/index.html');
 const FONTS_HREF = fontsMatch[1].replace(/&amp;/g, '&');
 
-// Link previews (1200 x 630) for pages that are shared on their own; the others keep the site-wide picture
-const OG_IMAGES = {
-  '/leaderboard': { url: 'https://vseva.vjas.in/vseva-og-leaderboard.jpg', alt: 'Top Vihar Sevaks: the vSeva leaderboard' },
-};
-
 // 2. The website data (leaderboard, route directory): the public files from Supabase Storage. A failed download only
 //    means those sections load in the browser instead, as before.
 const SUPABASE_URL = env.VITE_SUPABASE_URL || '';
@@ -91,6 +87,24 @@ const getJson = async file => {
 };
 const leaderboard = SUPABASE_URL ? await getJson('leaderboard.json') : null;
 const routes = SUPABASE_URL ? await getJson('route-directory.json') : null;
+// Link previews (1200 x 630) for pages that are shared on their own; the others keep the site-wide picture.
+// /leaderboard's is drawn now with the current top 3 (scripts/og-leaderboard.mjs) over public/vseva-og-leaderboard.jpg
+// (the same artwork without names, kept as the fallback). The ?v= date makes WhatsApp and others fetch a new picture.
+let ogLeaderboard = { url: 'https://vseva.vjas.in/vseva-og-leaderboard.jpg', alt: 'Top Vihar Sevaks Globally: the vSeva leaderboard' };
+if (leaderboard?.sevaks?.length) {
+  try {
+    const drawn = await drawLeaderboardOg(leaderboard, path.join(dist, 'vseva-og-leaderboard.jpg'), root);
+    ogLeaderboard = {
+      url: `https://vseva.vjas.in/vseva-og-leaderboard.jpg?v=${String(leaderboard.generatedAt || '').slice(0, 10)}`,
+      alt: `Top Vihar Sevaks Globally (${drawn.label}): ${drawn.names.join(', ')}`,
+    };
+    console.log(`[prerender] leaderboard preview: ${drawn.label} · ${drawn.names.join(', ')}`);
+  } catch (e) {
+    console.warn(`[prerender] leaderboard preview not drawn (${e.message}); using the picture without names`);
+  }
+}
+const OG_IMAGES = { '/leaderboard': ogLeaderboard };
+
 const dataFor = p => (p === '/' ? { leaderboard, routes } : p === '/vihar-routes' ? { routes } : p === '/leaderboard' ? { leaderboard } : {});
 const embed = data => (Object.values(data).some(Boolean) ? `<script>window.__VS_DATA__=${JSON.stringify(data).replace(/</g, '\\u003c')}</script>` : '');
 

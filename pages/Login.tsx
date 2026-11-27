@@ -240,7 +240,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onAdminLogin }) => {
         <div className="h-[72px] w-[72px] [@media(max-height:700px)]:h-14 [@media(max-height:700px)]:w-14 rounded-[22px] bg-white ring-1 ring-inset ring-line flex items-center justify-center overflow-hidden">
           <img src={BRAND.logo} alt={BRAND.name} className={`h-full w-full object-contain ${BRAND.logoPadded ? 'scale-[1.45]' : 'p-1'}`} />
         </div>
-        <h1 className={`display mt-4 font-extrabold text-ink ${BRAND.name.length > 10 ? 'text-[1.75rem] sm:text-[2rem]' : 'text-[2.6rem]'}`}>{BRAND.name}</h1>
+        <h1 className={`display mt-4 font-extrabold text-brand ${BRAND.name.length > 10 ? 'text-[1.75rem] sm:text-[2rem]' : 'text-[2.6rem]'}`}>{BRAND.name}</h1>
         <p className="mt-2 text-[15px] text-ink-2">{t('login.subtitle')}</p>
         <p className="mt-3 [@media(max-height:700px)]:hidden rounded-2xl bg-brand-50 px-3.5 py-2 text-[13px] font-medium leading-snug text-brand-700">
           Please enter the username and password given by your Captain.

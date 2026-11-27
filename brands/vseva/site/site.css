@@ -404,7 +404,7 @@
 .vs-seg::-webkit-scrollbar { display: none; }
 .vs-seg button { height: 38px; padding: 0 0.95rem; border-radius: 999px; font-size: 0.88rem; font-weight: 600; color: var(--ink-2); white-space: nowrap; transition: background-color 160ms ease, color 160ms ease; }
 .vs-seg button:hover { color: var(--ink); }
-.vs-seg button[aria-checked='true'] { background: var(--ink); color: #fff; }
+.vs-seg button[aria-checked='true'] { background: var(--saffron); color: var(--ink); }
 .vs-seg-dark { background: rgba(255, 255, 255, 0.12); }
 .vs-seg-dark button { color: rgba(255, 255, 255, 0.78); }
 .vs-seg-dark button:hover { color: #fff; }

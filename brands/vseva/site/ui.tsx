@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { ArrowUpRight, Instagram, LogIn, Menu, Phone, Trophy, X, Youtube } from 'lucide-react';
+import { ArrowUpRight, Forward, Instagram, LogIn, Menu, Phone, Trophy, X, Youtube } from 'lucide-react';
 import WhatsAppIcon from '../../../components/WhatsAppIcon';
 import { InstallPWA, IOS_GUIDE_EVENT } from '../../../components/InstallPWA';
 import { CONTACT, COMMUNITY_LINKS, GUIDES, NAV, PLAY_STORE_URL, type Screen } from './content';
@@ -133,7 +133,7 @@ const AppBar: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
     aria-label="Get the vSeva app"
   >
     <div className="mx-auto flex min-h-[64px] max-w-[1240px] items-center gap-3 px-3 sm:px-6">
-      <img src="/vseva-site/logo-96.webp" alt="" width={36} height={36} className="hidden h-9 w-9 shrink-0 scale-[1.4] object-contain min-[400px]:block" />
+      <img src="/vseva-site/logo-mark-96.webp" alt="" width={40} height={40} className="hidden h-10 w-10 shrink-0 object-contain min-[400px]:block" />
       <p className="hidden min-w-0 flex-1 leading-tight sm:block">
         <span className="block font-[family-name:var(--display)] text-[1rem] font-bold text-[color:var(--ink)]">Get the vSeva app</span>
         <span className="block text-[0.8rem] text-[color:var(--muted)]">Android on Google Play · iPhone as a web app · opens even offline</span>
@@ -188,8 +188,8 @@ export const SiteHeader: React.FC<{ page: SitePage; onLogin?: () => void }> = ({
     <header className="vs-header" data-scrolled={scrolled || open ? 'true' : 'false'}>
       <div className="mx-auto flex h-full max-w-[1240px] items-center justify-between gap-4 px-4 sm:px-6">
         <a href="/" className="flex items-center gap-2.5 no-underline" aria-label="vSeva home">
-          <img src="/vseva-site/logo-96.webp" srcSet="/vseva-site/logo-96.webp 1x, /vseva-site/logo-192.webp 2x" alt="" width={48} height={48} className="h-12 w-12 scale-[1.4] object-contain" />
-          <span className="vs-display text-[1.7rem] tracking-[-0.03em] text-[color:var(--ink)]">vSeva</span>
+          <img src="/vseva-site/logo-mark-96.webp" srcSet="/vseva-site/logo-mark-96.webp 1x, /vseva-site/logo-mark-192.webp 2x" alt="" width={52} height={52} className="h-[52px] w-[52px] object-contain" />
+          <span className="vs-display text-[1.7rem] tracking-[-0.03em] text-[color:var(--saffron)]">vSeva</span>
         </a>
 
         <nav aria-label="Main" className="hidden items-center gap-7 xl:flex">
@@ -279,9 +279,9 @@ export const SiteFooter: React.FC = () => {
           <div className="lg:col-span-4">
             <a href="/" className="flex items-center gap-2.5 no-underline" aria-label="vSeva home">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--paper)]">
-                <img src="/vseva-site/logo-96.webp" srcSet="/vseva-site/logo-96.webp 1x, /vseva-site/logo-192.webp 2x" alt="" width={36} height={36} className="h-9 w-9 scale-[1.45] object-contain" loading="lazy" />
+                <img src="/vseva-site/logo-mark-96.webp" srcSet="/vseva-site/logo-mark-96.webp 1x, /vseva-site/logo-mark-192.webp 2x" alt="" width={40} height={40} className="h-10 w-10 object-contain" loading="lazy" />
               </span>
-              <span className="vs-display text-[1.6rem] text-[color:var(--ink)]">vSeva</span>
+              <span className="vs-display text-[1.6rem] text-[color:var(--saffron)]">vSeva</span>
             </a>
             <p className="mt-4 max-w-[34ch] text-[0.95rem] text-[color:var(--ink-2)]">
               Every Step Counts. A digital platform for recording, managing and understanding the Vihar Seva journey.
@@ -351,9 +351,10 @@ export const SiteFooter: React.FC = () => {
 
 /* ───────────── Floating actions ───────────── */
 
-// The trophy opens the "Top 5" leaderboard popup on the home page (Leaderboard.tsx listens for this event); on the other
-// pages it opens /leaderboard (on that page itself, it scrolls back to the top of the board).
+// The trophy opens the "Top 5" leaderboard popup on the home page (Leaderboard.tsx listens for this event) and
+// /leaderboard from the other pages. On /leaderboard itself, its place is taken by "Share on WhatsApp".
 export const OPEN_TOP5_EVENT = 'vs-open-top5';
+const LEADERBOARD_SHARE = `https://wa.me/?text=${encodeURIComponent('Top Vihar Sevaks and Vihar Seva groups on vSeva. See who walked the most this Vihar Year:\nhttps://vseva.vjas.in/leaderboard')}`;
 
 export const FloatingActions: React.FC<{ raised: boolean; page?: SitePage }> = ({ raised, page }) => (
   <div
@@ -362,18 +363,28 @@ export const FloatingActions: React.FC<{ raised: boolean; page?: SitePage }> = (
     aria-label="Quick contact"
     role="group"
   >
-    <a
-      href="/leaderboard"
-      onClick={e => {
-        if (page === 'home') { e.preventDefault(); window.dispatchEvent(new Event(OPEN_TOP5_EVENT)); }
-        else if (page === 'leaderboard') { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-      }}
-      className="vs-fab bg-[color:var(--mustard)] !text-[color:var(--ink)]"
-      aria-label="Top 5 Vihar Sevaks"
-      title="Top 5 Vihar Sevaks"
-    >
-      <Trophy size={21} aria-hidden />
-    </a>
+    {page === 'leaderboard' ? (
+      <a
+        href={LEADERBOARD_SHARE}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="vs-fab bg-[#25D366] !text-[color:var(--ink)]"
+        aria-label="Share the leaderboard on WhatsApp"
+        title="Share on WhatsApp"
+      >
+        <Forward size={22} aria-hidden />
+      </a>
+    ) : (
+      <a
+        href="/leaderboard"
+        onClick={e => { if (page === 'home') { e.preventDefault(); window.dispatchEvent(new Event(OPEN_TOP5_EVENT)); } }}
+        className="vs-fab bg-[color:var(--mustard)] !text-[color:var(--ink)]"
+        aria-label="Top 5 Vihar Sevaks"
+        title="Top 5 Vihar Sevaks"
+      >
+        <Trophy size={21} aria-hidden />
+      </a>
+    )}
     <a href={CONTACT.supportWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="vs-fab bg-[#25D366]" aria-label="WhatsApp vSeva support">
       <WhatsAppIcon size={22} />
     </a>
