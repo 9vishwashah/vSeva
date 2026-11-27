@@ -408,30 +408,24 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
     const site = BRAND.siteUrl || window.location.origin;
     const installUrl = BRAND.playStoreUrl ? `${site}/install` : site;
     const viceName = orgDetails?.vice_captain_name?.trim();
-    const viceMobile = orgDetails?.vice_captain_mobile?.trim();
+    // Hinglish, signed off by the Captain and Vice Captain (owner's wording, 27 Nov 2026)
     const lines = [
       `Pranam *${sevak.full_name}*`,
       '',
-      `You have been successfully added to ${BRAND.name} App by`,
-      `*${groupName}*`,
+      `Aapko *${groupName}* ne ${BRAND.name} App me successfully add kar diya hai.`,
       '',
       'Login Details:',
       `Username: ${username}`,
       `Password: ${sevak.mobile}`,
       '',
-      `Captain : *${currentUser.full_name}*`,
-      ...(currentUser.mobile ? [`Mobile Number ${currentUser.mobile}`] : []),
-      ...(viceName ? [`Vice Captain : *${viceName}*`] : []),
-      ...(viceName && viceMobile ? [`Mobile Number ${viceMobile}`] : []),
-      '',
       ...(BRAND.playStoreUrl
-        ? [`Install ${BRAND.name} App for Android:`, installUrl]
-        : [`Install ${BRAND.name} App:`, `${site}/`]),
-      ...(BRAND.instagram ? ['', 'Instagram:', BRAND.instagram.url] : []),
+        ? [`Android ke liye ${BRAND.name} App install karein:`, installUrl]
+        : [`${BRAND.name} App install karein:`, `${site}/`]),
+      ...(BRAND.instagram ? ['', 'Instagram pe follow karein:', BRAND.instagram.url] : []),
       '',
-      BRAND.name,
-      // cardCredit is "by VJAS" -> "Developed by *VJAS*"
-      ...(BRAND.cardCredit ? [`Developed by *${BRAND.cardCredit.replace(/^by\s+/i, '')}*`] : []),
+      'For More Detail Contact,',
+      `*${currentUser.full_name}*`,
+      ...(viceName ? [`*${viceName}*`] : []),
     ];
     const message = lines.join('\n');
 
@@ -442,13 +436,30 @@ const AddSevak: React.FC<AddSevakProps> = ({ currentUser }) => {
   // Vihar date (within the selected Vihar Year) so it reads as personal.
   const generateViharReminderMessage = (sevak: UserProfile) => {
     const lastDate = lastViharMap[sevak.username];
-    const lastDateLabel = lastDate
-      ? new Date(`${lastDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-      : 'not yet recorded this Vihar Year';
-    const message = `Jai Jinendra ${sevak.full_name},
-This is a gentle reminder regarding your Vihar Seva.
-Your last Vihar was on ${lastDateLabel}.
-Kindly do Vihar and continue your Seva.`;
+    const site = BRAND.siteUrl || window.location.origin;
+    const viceName = orgDetails?.vice_captain_name?.trim();
+    // Hinglish (owner's wording, 27 Nov 2026). No Vihar yet this Vihar Year: say so instead of a date.
+    const lastLine = lastDate
+      ? `Aapka pichhla Vihar *${new Date(`${lastDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}* ko hua tha.`
+      : 'Is Vihar Year me aapka koi Vihar abhi tak record nahi hua hai.';
+    const groupName = orgDetails?.name || 'aapke Vihar Seva group';
+    const message = [
+      `Pranam ${sevak.full_name}`,
+      '',
+      `Aapko ${groupName} ke sambandh mein ek vinamra yaad dilayi ja rahi hai.`,
+      '',
+      lastLine,
+      '',
+      '*Aapse nivedan hai ki kripya Vihar karein aur apni Seva ko nirantar jaari rakhein.*',
+      '',
+      ...(BRAND.playStoreUrl
+        ? [`${BRAND.name} App Android par install karein:`, `${site}/install`]
+        : [`${BRAND.name} App install karein:`, `${site}/`]),
+      '',
+      '*Adhik jaankari ke liye sampark karein:*',
+      currentUser.full_name,
+      ...(viceName ? [viceName] : []),
+    ].join('\n');
     return encodeURIComponent(message);
   };
 
@@ -464,86 +475,76 @@ Kindly do Vihar and continue your Seva.`;
   return (
     <div className="max-w-4xl mx-auto space-y-5 md:space-y-4">
 
-      <div>
-        <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink flex items-center gap-2">
-          <UserPlus size={20} className="text-brand-700" />
-          Add New Sevak
-        </h1>
-        <p className="text-xs text-ink-2">Create a profile and login credentials for a new volunteer</p>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="display text-[1.7rem] sm:text-[2.3rem] font-extrabold text-ink flex items-center gap-2">
+            <UserPlus size={20} className="text-brand-700 shrink-0" />
+            Add New Sevak
+          </h1>
+          <p className="text-xs text-ink-2">Create a profile and login credentials for a new volunteer</p>
+        </div>
+        {!loadingSevaks && (
+          <span className="mb-0.5 shrink-0 text-xs font-bold text-brand-700 bg-brand-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+            {sevaks.length} {sevaks.length === 1 ? 'Member' : 'Members'}
+          </span>
+        )}
       </div>
 
-      {/* Existing Members Table */}
-      <div className="bg-surface rounded-xl shadow-sm border border-line overflow-hidden">
-        <div className="p-6 border-b border-line bg-sunken/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-ink flex items-center gap-2">
-              <Users size={24} className="text-brand-700" />
-              Organization Members
-              {!loadingSevaks && (
-                <span className="text-xs font-bold text-brand-700 bg-brand-100 px-2.5 py-1 rounded-full whitespace-nowrap">
-                  {sevaks.length} {sevaks.length === 1 ? 'Member' : 'Members'}
-                </span>
-              )}
-            </h2>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64">
-              <input
-                type="text"
-                placeholder="Search sevaks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 bg-white ring-1 ring-inset ring-line rounded-full focus:ring-2 focus:ring-brand outline-none text-sm"
-              />
-              <Search className="absolute left-3 top-2.5 text-ink-3" size={18} />
-            </div>
-            
-            <button
-              type="button"
-              onClick={openAdd}
-              className="flex items-center justify-center gap-2 h-10 px-4 bg-brand hover:bg-brand-600 text-ink rounded-full transition active:translate-y-px text-sm font-semibold whitespace-nowrap"
-            >
-              <UserPlus size={16} />
-              Add Sevak
-            </button>
-            {/* Side by side on phones so the toolbar stays short */}
-            <div className="grid grid-cols-2 gap-3 sm:flex">
-            <button
-              onClick={() => setShowBulkImport(true)}
-              className="flex items-center justify-center gap-2 h-10 px-4 bg-surface ring-1 ring-inset ring-line text-ink rounded-full hover:bg-sunken/60 transition-colors text-sm font-semibold whitespace-nowrap"
-              title="Add many Sevaks from a CSV or Excel file"
-            >
-              <Upload size={16} className="text-ink-2" />
-              Bulk upload
-            </button>
-            <button
-              onClick={() => setShowExportChoice(true)}
-              className="flex items-center justify-center gap-2 h-10 px-4 bg-surface ring-1 ring-inset ring-line text-ink rounded-full hover:bg-sunken/60 transition-colors text-sm font-semibold whitespace-nowrap"
-              title="Download the member list"
-            >
-              <Download size={16} className="text-ink-2" />
-              Export
-            </button>
-            </div>
-          </div>
+      {/* Toolbar: search, then Add / Bulk upload / Export in one row (no card around it, so the list starts higher) */}
+      <div className="space-y-2.5 sm:flex sm:items-center sm:gap-3 sm:space-y-0">
+        <div className="relative w-full sm:flex-1">
+          <input
+            type="text"
+            placeholder="Search sevaks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-11 pl-10 pr-4 bg-white ring-1 ring-inset ring-line rounded-full focus:ring-2 focus:ring-brand outline-none text-sm"
+          />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" size={18} />
         </div>
+        <div className="grid grid-cols-[1.25fr_1fr_1fr] gap-2 sm:flex">
+          <button
+            type="button"
+            onClick={openAdd}
+            className="flex min-w-0 items-center justify-center gap-1.5 h-11 px-3 bg-brand hover:bg-brand-600 text-ink rounded-full transition active:translate-y-px text-sm font-semibold whitespace-nowrap"
+          >
+            <UserPlus size={16} className="shrink-0" />
+            Add Sevak
+          </button>
+          <button
+            onClick={() => setShowBulkImport(true)}
+            className="flex min-w-0 items-center justify-center gap-1.5 h-11 px-3 bg-surface ring-1 ring-inset ring-line text-ink rounded-full hover:bg-sunken/60 transition-colors text-sm font-semibold whitespace-nowrap"
+            title="Add many Sevaks from a CSV or Excel file"
+          >
+            <Upload size={15} className="shrink-0 text-ink-2" />
+            <span className="truncate min-[400px]:hidden">Upload</span>
+            <span className="hidden truncate min-[400px]:inline">Bulk upload</span>
+          </button>
+          <button
+            onClick={() => setShowExportChoice(true)}
+            className="flex min-w-0 items-center justify-center gap-1.5 h-11 px-3 bg-surface ring-1 ring-inset ring-line text-ink rounded-full hover:bg-sunken/60 transition-colors text-sm font-semibold whitespace-nowrap"
+            title="Download the member list"
+          >
+            <Download size={15} className="shrink-0 text-ink-2" />
+            <span className="truncate">Export</span>
+          </button>
+        </div>
+      </div>
 
-        <div className="overflow-x-auto">
+      {/* Members: one card each, straight on the page */}
+      <div>
           {loadingSevaks ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 bg-gray-50/50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[...Array(4)].map((_, i) => (
                 <Skeleton key={i} className="h-[110px] w-full rounded-[20px]" />
               ))}
             </div>
           ) : sevaksLoadError ? (
-            <div className="p-4">
-              <StatusScreen variant={sevaksLoadError} onRetry={fetchData} compact />
-            </div>
+            <StatusScreen variant={sevaksLoadError} onRetry={fetchData} compact />
           ) : sevaks.length === 0 ? (
             <div className="p-8 text-center text-ink-2">No members found. Add your first member above.</div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 bg-gray-50/50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {filteredSevaks.length === 0 ? (
                 <div className="col-span-full p-12 text-center text-ink-3 font-medium">
                   No members found matching "{searchQuery}"
@@ -577,7 +578,7 @@ Kindly do Vihar and continue your Seva.`;
                       </div>
 
                       {/* Bottom Row: Completion Ring + Profile + WhatsApp + Last Vihar reminder */}
-                      <div className="mt-3 flex gap-2 items-center">
+                      <div className="mt-3 flex min-w-0 gap-2 items-center">
                         {/* Circular Progress - now in bottom row */}
                         <div className="w-12 h-12 flex-shrink-0" title={`${pct}% profile complete`}>
                           <CircularProgressBar
@@ -591,7 +592,7 @@ Kindly do Vihar and continue your Seva.`;
                         </div>
                         <button
                           onClick={() => openModal(sevak)}
-                          className="flex-1 h-10 px-3 bg-brand-50 hover:bg-brand-100 text-brand-700 ring-1 ring-inset ring-brand-100 rounded-full font-semibold text-[14px] transition-colors flex justify-center items-center gap-2"
+                          className="shrink-0 h-9 px-3 bg-brand-50 hover:bg-brand-100 text-brand-700 ring-1 ring-inset ring-brand-100 rounded-full font-semibold text-[13px] transition-colors flex justify-center items-center"
                         >
                           Profile
                         </button>
@@ -599,7 +600,7 @@ Kindly do Vihar and continue your Seva.`;
                           href={`https://wa.me/91${sevak.mobile}?text=${generateWhatsAppMessage(sevak)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-center w-10 h-10 bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C4B] rounded-full transition-colors shrink-0"
+                          className="flex items-center justify-center w-9 h-9 bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C4B] rounded-full transition-colors shrink-0"
                           title="Notify via WhatsApp"
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -609,12 +610,12 @@ Kindly do Vihar and continue your Seva.`;
                           href={`https://wa.me/91${sevak.mobile}?text=${generateViharReminderMessage(sevak)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={`flex items-center gap-1.5 h-10 px-3 rounded-full transition-colors hover:brightness-95 shrink-0 ${viharButtonClasses(viharColor)}`}
+                          className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 h-9 px-3 rounded-full transition-colors hover:brightness-95 ${viharButtonClasses(viharColor)}`}
                           title="Send Vihar reminder via WhatsApp"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Footprints size={14} className="shrink-0" />
-                          <span className="text-[13px] font-semibold whitespace-nowrap">{viharLabel}</span>
+                          <span className="truncate text-[13px] font-semibold">{viharLabel}</span>
                         </a>
                       </div>
                     </div>
@@ -623,7 +624,6 @@ Kindly do Vihar and continue your Seva.`;
               )}
             </div>
           )}
-        </div>
       </div>
 
 
