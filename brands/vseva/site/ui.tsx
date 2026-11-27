@@ -6,7 +6,7 @@ import { CONTACT, COMMUNITY_LINKS, GUIDES, NAV, PLAY_STORE_URL, type Screen } fr
 import './site.css';
 import vjasLogo from '../../../assets/vjas-logo.webp';
 
-export type SitePage = 'home' | 'docs' | 'contact' | 'support' | 'routes';
+export type SitePage = 'home' | 'docs' | 'contact' | 'support' | 'routes' | 'leaderboard';
 
 // iPhone: there is no App Store app, so open the "Add to Home Screen" guide for the web app (InstallPWA)
 export const installOnIPhone = () => window.dispatchEvent(new Event(IOS_GUIDE_EVENT));
@@ -76,6 +76,12 @@ interface ShellProps {
 export const SiteShell: React.FC<ShellProps> = ({ page, title, description, onLogin, children }) => {
   const mounted = useMounted();
   const [bannerOpen, setBannerOpen] = useState(true);
+  // Signed in on this browser (supabase-js keeps the session under "sb-<project>-auth-token"): the website still shows
+  // (a shared link opens the website, not the app), with a way into the app
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    try { setSignedIn(Object.keys(localStorage).some(k => k.startsWith('sb-') && k.endsWith('-auth-token'))); } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -97,6 +103,16 @@ export const SiteShell: React.FC<ShellProps> = ({ page, title, description, onLo
   return (
     <div className="vs min-h-screen">
       <a href="#main" className="vs-skip">Skip to content</a>
+      {signedIn && (
+        <div className="bg-[color:var(--ink)] text-white">
+          <div className="mx-auto flex min-h-[44px] max-w-[1240px] items-center justify-between gap-3 px-4 text-[0.88rem] sm:px-6">
+            <span className="text-white/80">You&rsquo;re signed in to vSeva.</span>
+            <a href="/login" className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--saffron)] px-3.5 py-1.5 font-semibold text-[color:var(--ink)] no-underline hover:bg-[color:var(--saffron-press)]">
+              Open my dashboard <ArrowUpRight size={15} aria-hidden />
+            </a>
+          </div>
+        </div>
+      )}
       <SiteHeader page={page} onLogin={onLogin} />
       <main id="main" className="pb-10">{children}</main>
       <SiteFooter />
@@ -133,7 +149,7 @@ const AppBar: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
 /* ───────────── Header ───────────── */
 
 const isCurrent = (href: string, page: SitePage) =>
-  (href === '/documentation' && page === 'docs') || (href === '/contact' && page === 'contact') || (href === '/support-us' && page === 'support') || (href === '/vihar-routes' && page === 'routes');
+  (href === '/documentation' && page === 'docs') || (href === '/contact' && page === 'contact') || (href === '/support-us' && page === 'support') || (href === '/vihar-routes' && page === 'routes') || (href === '/leaderboard' && page === 'leaderboard');
 
 const LoginLink: React.FC<{ onLogin?: () => void; className: string }> = ({ onLogin, className }) => (
   <a
@@ -287,6 +303,7 @@ export const SiteFooter: React.FC = () => {
           <nav aria-label="Footer: vSeva" className={`${col} lg:col-span-2`}>
             <p className="vs-eyebrow">vSeva</p>
             <a className={link} href="/#features">Features</a>
+            <a className={link} href="/leaderboard">Leaderboard</a>
             <a className={link} href="/#how-it-works">How it works</a>
             <a className={link} href="/#get-started">Get started</a>
             <a className={link} href="/#story">Our story</a>
@@ -334,8 +351,8 @@ export const SiteFooter: React.FC = () => {
 
 /* ───────────── Floating actions ───────────── */
 
-// The trophy opens the "Top 5" leaderboard popup (Leaderboard.tsx listens for this event); on the other pages it goes
-// to the leaderboard on the home page.
+// The trophy opens the "Top 5" leaderboard popup on the home page (Leaderboard.tsx listens for this event); on the other
+// pages it opens /leaderboard (on that page itself, it scrolls back to the top of the board).
 export const OPEN_TOP5_EVENT = 'vs-open-top5';
 
 export const FloatingActions: React.FC<{ raised: boolean; page?: SitePage }> = ({ raised, page }) => (
@@ -346,8 +363,11 @@ export const FloatingActions: React.FC<{ raised: boolean; page?: SitePage }> = (
     role="group"
   >
     <a
-      href="/#leaderboard"
-      onClick={e => { if (page === 'home') { e.preventDefault(); window.dispatchEvent(new Event(OPEN_TOP5_EVENT)); } }}
+      href="/leaderboard"
+      onClick={e => {
+        if (page === 'home') { e.preventDefault(); window.dispatchEvent(new Event(OPEN_TOP5_EVENT)); }
+        else if (page === 'leaderboard') { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      }}
       className="vs-fab bg-[color:var(--mustard)] !text-[color:var(--ink)]"
       aria-label="Top 5 Vihar Sevaks"
       title="Top 5 Vihar Sevaks"

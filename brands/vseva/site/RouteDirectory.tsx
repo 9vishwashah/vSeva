@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeftRight, ArrowRight, ArrowUpRight, ChevronDown, Map as MapIcon, MapPin, Phone, RefreshCw, Route, Search, SearchX, Users } from 'lucide-react';
 import WhatsAppIcon from '../../../components/WhatsAppIcon';
+import { getSiteData } from './siteData';
 
 // Public Vihar route finder (landing page section + /vihar-routes). Reads the one public file published by the
 // Super Admin "Refresh route directory" button (netlify/functions/route-directory.js), so it changes only then.
 
-interface Group { n: string; c: string; cap: string; m: string }
-type RouteRow = [string, string, number, number[], string | null, string | null]; // from, to, km, groups, via, maps
-interface Directory { v: number; generatedAt: string; stats: { routes: number; groups: number; cities: number }; groups: Group[]; routes: RouteRow[] }
+export interface Group { n: string; c: string; cap: string; m: string }
+export type RouteRow = [string, string, number, number[], string | null, string | null]; // from, to, km, groups, via, maps
+export interface Directory { v: number; generatedAt: string; stats: { routes: number; groups: number; cities: number }; groups: Group[]; routes: RouteRow[] }
 
 const PUBLIC_SRC = `${import.meta.env.VITE_SUPABASE_URL || ''}/storage/v1/object/public/public-data/route-directory.json`;
 // Local development only: point the page at a preview file (localStorage "routeDirectorySrc"), never in production.
@@ -49,15 +50,20 @@ const fmtUpdated = (iso: string) => {
 
 interface Shown { from: string; to: string; km: number; groups: number[]; via: string | null; maps: string | null; reverse: boolean }
 
-function useDirectory() {
-  const [dir, setDir] = useState<Directory | null>(null);
-  const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
+// The copy the build wrote into the page (siteData.ts), if any, so the routes are in the HTML and show at once
+const embeddedDirectory = (): Directory | null => getSiteData().routes || null;
+let dirPromise: Promise<Directory> | null = null;
+const loadDirectory = () => (dirPromise ??= fetch(sourceUrl()).then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status))))));
+
+export function useDirectory() {
+  const [dir, setDir] = useState<Directory | null>(embeddedDirectory);
+  const [state, setState] = useState<'loading' | 'ready' | 'missing'>(() => (embeddedDirectory() ? 'ready' : 'loading'));
   useEffect(() => {
     let alive = true;
-    fetch(sourceUrl())
-      .then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d: Directory) => { if (alive) { setDir(d); setState('ready'); } })
-      .catch(() => { if (alive) setState('missing'); });
+    // Also when the page carries a copy: the directory may have been refreshed since this page was built
+    loadDirectory()
+      .then(d => { if (alive && (!dir || d.generatedAt !== dir.generatedAt)) { setDir(d); setState('ready'); } })
+      .catch(() => { dirPromise = null; if (alive && !dir) setState('missing'); });
     return () => { alive = false; };
   }, []);
   return { dir, state };

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, BadgeCheck, Crown, Footprints, RefreshCw, Search, Trophy, X } from 'lucide-react';
 import { OPEN_TOP5_EVENT } from './ui';
 import Avatar from '../../../components/Avatar';
+import { getSiteData } from './siteData';
 
 // Public leaderboard (landing page): top Vihar Sevaks and groups across every vSeva group. Reads the file the
 // Super Admin "Refresh website data" button publishes (netlify/functions/route-directory.js, buildLeaderboard), so it
@@ -23,15 +24,18 @@ const sourceUrl = () => {
 
 let boardPromise: Promise<Board> | null = null;
 const loadBoard = () => (boardPromise ??= fetch(sourceUrl()).then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status))))));
+// The copy the build wrote into the page (siteData.ts), if any: the board shows at once, already in the HTML
+const embeddedBoard = (): Board | null => getSiteData().leaderboard || null;
 
 const useBoard = () => {
-  const [board, setBoard] = useState<Board | null>(null);
-  const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
+  const [board, setBoard] = useState<Board | null>(embeddedBoard);
+  const [state, setState] = useState<'loading' | 'ready' | 'missing'>(() => (embeddedBoard() ? 'ready' : 'loading'));
   useEffect(() => {
     let alive = true;
+    // Also when the page carries a copy: a Super Admin may have refreshed the board since this page was built
     loadBoard()
-      .then(b => { if (alive) { setBoard(b); setState('ready'); } })
-      .catch(() => { boardPromise = null; if (alive) setState('missing'); });
+      .then(b => { if (alive && (!board || b.generatedAt !== board.generatedAt)) { setBoard(b); setState('ready'); } })
+      .catch(() => { boardPromise = null; if (alive && !board) setState('missing'); });
     return () => { alive = false; };
   }, []);
   return { board, state };
@@ -47,22 +51,26 @@ const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(s
 const sevakCol = (p: Period, m: Metric) => (p === 'vy' ? (m === 'vihars' ? 3 : 4) : (m === 'vihars' ? 5 : 6));
 const groupCol = (p: Period, m: Metric) => (p === 'vy' ? (m === 'vihars' ? 2 : 3) : (m === 'vihars' ? 4 : 5));
 
-interface RankedSevak { rank: number; name: string; group: string; city: string; value: number; photo: string | null; badge: string }
+interface RankedSevak { rank: number; name: string; group: string; city: string; value: number; photo: string | null; badge: string; idx: number }
 interface RankedGroup { rank: number; name: string; city: string; value: number; active: number }
 
 // Every Sevak with a value in the chosen view, ranked (equal values share a rank)
+// One Sevak row as the page shows a person (rank and value are filled in by the view)
+const personOf = (b: Board, s: SevakRow, idx: number): RankedSevak => {
+  const g = b.groups[s[2]];
+  return { rank: 0, name: s[0], group: g?.[0] || '', city: g?.[1] || '', value: 0, photo: photoUrl(s[7]), badge: s[8] || '', idx };
+};
+
 // Ties (common early in a Vihar Year) are broken by the other measure of the same period, then by all-time Vihars, then
 // by name, and every row gets its own position, so the list never reads "1, 1, 1".
 const rankSevaks = (b: Board, who: Who, metric: Metric, period: Period): RankedSevak[] => {
   const col = sevakCol(period, metric);
   const other = sevakCol(period, metric === 'vihars' ? 'km' : 'vihars');
   return b.sevaks
-    .filter(s => (who === 'all' || s[1] === who) && (s[col] as number) > 0)
-    .sort((x, y) => (y[col] as number) - (x[col] as number) || (y[other] as number) - (x[other] as number) || y[5] - x[5] || x[0].localeCompare(y[0]))
-    .map((s, i) => {
-      const g = b.groups[s[2]];
-      return { rank: i + 1, name: s[0], group: g?.[0] || '', city: g?.[1] || '', value: s[col] as number, photo: photoUrl(s[7]), badge: s[8] || '' };
-    });
+    .map((s, idx) => ({ s, idx }))
+    .filter(({ s }) => (who === 'all' || s[1] === who) && (s[col] as number) > 0)
+    .sort(({ s: x }, { s: y }) => (y[col] as number) - (x[col] as number) || (y[other] as number) - (x[other] as number) || y[5] - x[5] || x[0].localeCompare(y[0]))
+    .map(({ s, idx }, i) => ({ ...personOf(b, s, idx), rank: i + 1, value: s[col] as number }));
 };
 
 const rankGroups = (b: Board, metric: Metric, period: Period): RankedGroup[] => {
@@ -127,11 +135,21 @@ export const Leaderboard: React.FC = () => {
   // "Find yourself": search every ranked Sevak and group in the current view
   const q = query.trim().toLowerCase();
   const found = useMemo(() => {
-    if (q.length < 2) return null;
-    const s = sevaks.filter(x => x.name.toLowerCase().includes(q)).slice(0, 6);
-    const g = groups.filter(x => `${x.name} ${x.city}`.toLowerCase().includes(q)).slice(0, 4);
-    return { s, g };
-  }, [q, sevaks, groups]);
+    if (q.length < 2 || !board) return null;
+    const rankOf = new Map(sevaks.map(x => [x.idx, x]));
+    const all = board.sevaks
+      .map((row, idx) => rankOf.get(idx) || personOf(board, row, idx))
+      .filter(x => x.name.toLowerCase().includes(q))
+      // ranked people first (by rank), then the rest by name
+      .sort((a, b) => (a.rank || 1e9) - (b.rank || 1e9) || a.name.localeCompare(b.name));
+    const groupRank = new Map(groups.map(x => [`${x.name}|${x.city}`, x]));
+    const g = board.groups
+      .map(([name, city, , , , , active]) => groupRank.get(`${name}|${city}`) || { rank: 0, name, city, value: 0, active })
+      .filter(x => `${x.name} ${x.city}`.toLowerCase().includes(q))
+      .sort((a, b) => (a.rank || 1e9) - (b.rank || 1e9) || a.name.localeCompare(b.name))
+      .slice(0, 6);
+    return { s: all.slice(0, 12), more: Math.max(0, all.length - 12), g };
+  }, [q, board, sevaks, groups]);
 
   const viewKey = `${who}${metric}${period}`; // replays the entry animation when the view changes
 
@@ -236,31 +254,36 @@ export const Leaderboard: React.FC = () => {
                   />
                 </div>
                 {found && (
-                  <ul className="mt-3 space-y-1.5" aria-live="polite">
+                  <ul className="vs-scroll mt-3 max-h-[360px] space-y-1.5 overflow-y-auto overscroll-contain pr-1" aria-live="polite">
                     {found.s.length === 0 && found.g.length === 0 && (
                       <li className="rounded-2xl bg-[color:var(--card)]/80 px-3 py-2.5 text-[0.9rem] text-[color:var(--ink-2)]">
-                        No one by that name in this view. Try All time, or Everyone.
+                        No Sevak or group by that name on vSeva yet.
                       </li>
                     )}
                     {found.s.map(s => (
-                      <li key={`s${s.name}${s.rank}`} className="flex items-center gap-3 rounded-2xl bg-[color:var(--card)] px-3 py-2">
-                        <span className="vs-num w-10 shrink-0 text-center text-[1.05rem]">#{s.rank}</span>
+                      <li key={`s${s.idx}`} className="flex items-center gap-3 rounded-2xl bg-[color:var(--card)] px-3 py-2">
+                        <span className={`vs-num w-10 shrink-0 text-center ${s.rank ? 'text-[1.05rem]' : 'text-[0.95rem] text-[color:var(--muted)]'}`}>{s.rank ? `#${s.rank}` : '–'}</span>
                         <Avatar name={s.name} url={s.photo} size={34} />
                         <span className="min-w-0 flex-1">
                           <span className="flex min-w-0 items-center gap-1"><span className="truncate text-[0.92rem] font-semibold">{s.name}</span>{s.badge && <Verified title={s.badge} size={15} />}</span>
                           <span className="block truncate text-[0.74rem] text-[color:var(--muted)]">{s.group}{s.city ? ` · ${s.city}` : ''}</span>
                         </span>
-                        <Value v={s.value} metric={metric} className="text-[1.05rem]" unitClass="text-[color:var(--muted)]" />
+                        {s.rank
+                          ? <Value v={s.value} metric={metric} className="text-[1.05rem]" unitClass="text-[color:var(--muted)]" />
+                          : <span className="shrink-0 text-right text-[0.78rem] font-semibold text-[color:var(--muted)]">{period === 'vy' ? `None in ${vyLabel}` : 'No Vihars yet'}</span>}
                       </li>
                     ))}
+                    {found.more > 0 && (
+                      <li className="px-3 py-1 text-[0.82rem] font-medium text-[color:var(--ink)]/75">and {found.more} more. Type more of the name to narrow it down.</li>
+                    )}
                     {found.g.map(g => (
                       <li key={`g${g.name}${g.rank}`} className="flex items-center gap-3 rounded-2xl bg-[color:var(--ink)] px-3 py-2 text-white">
-                        <span className="vs-num w-10 shrink-0 text-center text-[1.05rem]">#{g.rank}</span>
+                        <span className="vs-num w-10 shrink-0 text-center text-[1.05rem]">{g.rank ? `#${g.rank}` : '–'}</span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[0.92rem] font-semibold">{g.name}</span>
                           <span className="block truncate text-[0.74rem] text-white/70">Group{g.city ? ` · ${g.city}` : ''}</span>
                         </span>
-                        <Value v={g.value} metric={metric} className="text-[1.05rem]" unitClass="text-white/70" />
+                        {g.rank ? <Value v={g.value} metric={metric} className="text-[1.05rem]" unitClass="text-white/70" /> : <span className="shrink-0 text-[0.78rem] font-semibold text-white/70">{period === 'vy' ? `None in ${vyLabel}` : 'No Vihars yet'}</span>}
                       </li>
                     ))}
                   </ul>

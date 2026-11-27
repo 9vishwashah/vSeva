@@ -281,9 +281,10 @@ export const dataService = {
     await superAdminCall('reject', { id });
   },
 
-  // Everything about one organisation (group + Captain, every Sevak, Vihar entries, Sankalps) — server-scoped to the caller's brand.
-  async getSuperAdminOrgDetail(orgId: string): Promise<any> {
-    return superAdminCall('org_detail', { orgId }, true);
+  // Everything the Super Admin dashboard shows, in ONE request: the caller's scope, pending Captain requests, and every
+  // group's activity with its Captain (netlify/functions/super-admin.js 'dashboard'). Server-scoped to the caller's brand.
+  async getSuperAdminDashboard(): Promise<{ scope: { email: string; all: boolean; brands: string[]; owner?: boolean }; pending: any[]; stats: any[] }> {
+    return superAdminCall('dashboard', {}, true);
   },
 
   // Super Admin → "Open as Captain": signs this browser into the Captain's account with a one-time token from the
@@ -319,46 +320,8 @@ export const dataService = {
     if (error) throw new Error(error.message || 'Could not save your WhatsApp choice');
   },
 
-  async getOrgActivityStats(): Promise<{ org_id: string; org_name: string; city: string; created_at: string; total_sevaks: number; total_entries: number; last_updated: string | null; brand?: string }[]> {
-    return getCached('orgActivityStats', async () => {
-      try {
-        return (await superAdminCall<any[]>('stats', {}, true)) || [];
-      } catch (error) {
-        console.error("Error fetching org activity stats:", error);
-        throw error;
-      }
-    }, 30_000);
-  },
-
-  async getOrgAdmins(orgIds: string[]): Promise<Record<string, { full_name: string; mobile: string; town: string; state: string; email: string; yearly_goal?: number }>> {
-    const map: Record<string, { full_name: string; mobile: string; town: string; state: string; email: string; yearly_goal?: number }> = {};
-    if (!orgIds || orgIds.length === 0) return map;
-
-    const cacheKey = `orgAdmins:${[...orgIds].sort().join(',')}`;
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Please sign in again.');
-      const headers = { Authorization: `Bearer ${session.access_token}` };
-      const data = await getCached(cacheKey, () => callFn<any[]>('get-org-admins', { headers, body: { orgIds, siteBrand: BRAND.id }, retry: true }), 30_000);
-      (data || []).forEach((p: any) => {
-        map[p.organization_id] = {
-          full_name: p.full_name,
-          mobile: p.mobile,
-          town: p.town || '',
-          state: p.state || '',
-          // A Captain signs in with their email, stored as the username
-          email: typeof p.username === 'string' && p.username.includes('@') ? p.username : '',
-          yearly_goal: typeof p.yearly_goal === 'number' ? p.yearly_goal : undefined
-        };
-      });
-    } catch (e) {
-      console.error("Error fetching org admins:", e);
-    }
-    return map;
-  },
-
-  // The Captain's name for the signed-in user's own organisation (a Sevak can't read other profiles, and
-  // get-org-admins is Super-Admin-only). Returns '' if it can't be found.
+  // The Captain's name for the signed-in user's own organisation (a Sevak can't read other profiles).
+  // Returns '' if it can't be found.
   async getMyCaptainName(): Promise<string> {
     return getCached('myCaptainName', async () => {
       const { data, error } = await supabase.rpc('get_my_org_captain');

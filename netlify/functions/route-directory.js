@@ -176,6 +176,7 @@ async function buildLeaderboard(sb) {
   const groups = orgs.map((o) => ({ n: clean(o.name) || 'Vihar Seva Group', c: titleCase(o.city || o.town || ''), vyV: 0, vyK: 0, allV: 0, allK: 0, vyS: new Set() }));
   const person = new Map(people.filter((p) => p.username).map((p) => [p.username, p]));
   const sevaks = new Map(); // username -> totals
+  const newSevak = (u, p, gi) => ({ n: titleCase(p.full_name || ''), g: genderOf(p.gender), o: orgIndex.get(p.organization_id) ?? gi, a: avatarPath(p.avatar_url), b: accountBadges[String(u).trim().toLowerCase()] || '', vyV: 0, vyK: 0, allV: 0, allK: 0 });
 
   for (const e of entries) {
     const gi = orgIndex.get(e.organization_id);
@@ -189,10 +190,15 @@ async function buildLeaderboard(sb) {
       const p = person.get(u);
       if (!p) continue; // only people who still have an account
       let s = sevaks.get(u);
-      if (!s) { s = { n: titleCase(p.full_name || ''), g: genderOf(p.gender), o: orgIndex.get(p.organization_id) ?? gi, a: avatarPath(p.avatar_url), b: accountBadges[String(u).trim().toLowerCase()] || '', vyV: 0, vyK: 0, allV: 0, allK: 0 }; sevaks.set(u, s); }
+      if (!s) { s = newSevak(u, p, gi); sevaks.set(u, s); }
       s.allV += 1; s.allK += km;
       if (inVY) { s.vyV += 1; s.vyK += km; g.vyS.add(u); }
     }
+  }
+  // Everyone else in a vSeva group too, with 0 Vihars: they don't rank, but "Find yourself" finds them
+  for (const [u, p] of person) {
+    const gi = orgIndex.get(p.organization_id);
+    if (!sevaks.has(u) && gi !== undefined) sevaks.set(u, newSevak(u, p, gi));
   }
 
   return {
@@ -200,9 +206,10 @@ async function buildLeaderboard(sb) {
     // [name, gender M|F|'', groupIndex, vyVihars, vyKm, allVihars, allKm, photo?, badge?]. photo is the profile photo's
     // path in the public "avatars" bucket (the page adds the bucket's address), '' when there is none; badge is the
     // verified-tick title (e.g. Team vSeva). Both are left off when a Sevak has neither.
+    // Everyone in a vSeva group is listed (0-Vihar Sevaks last), so the page can find any name.
     sevaks: [...sevaks.values()]
-      .filter((s) => s.n && s.allV > 0)
-      .sort((a, b) => b.allV - a.allV)
+      .filter((s) => s.n)
+      .sort((a, b) => b.allV - a.allV || a.n.localeCompare(b.n))
       .map((s) => [s.n, s.g, s.o, s.vyV, round1(s.vyK), s.allV, round1(s.allK), ...(s.a || s.b ? [s.a] : []), ...(s.b ? [s.b] : [])]),
     // [name, city, vyVihars, vyKm, allVihars, allKm, activeSevaksThisVY]. Every group is kept, in the same order as
     // the Sevak rows' group index refers to (the page hides groups with no Vihars).

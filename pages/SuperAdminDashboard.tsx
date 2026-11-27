@@ -4,7 +4,7 @@ import {
     Check, X, MessageCircle, RefreshCw, Loader2,
     ChevronDown, ChevronUp, Users, PieChart, 
     ShieldCheck, Building2, LayoutDashboard, Lock,
-    Download, FileText, Search, ArrowUpDown, SlidersHorizontal, LogOut
+    Download, FileText, Search, ArrowUpDown, SlidersHorizontal, LogOut, LogIn, Phone
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { clearAll as clearRequestCache } from '../services/requestCache';
@@ -16,6 +16,7 @@ import SuperAdminDirectoryPanel from '../components/directory/SuperAdminDirector
 import RouteDirectoryAdminCard from '../components/RouteDirectoryAdminCard';
 import { deliverPdf } from '../services/pdfDelivery';
 import SuperAdminPinGate, { isSuperAdminPinVerified, clearSuperAdminPin } from '../components/SuperAdminPinGate';
+import Modal from '../components/Modal';
 
 interface RegistrationRequest {
     id: string;
@@ -39,11 +40,13 @@ interface RegistrationRequest {
 }
 
 interface OrgAdminDetails {
+    id: string; // the Captain's account, for "Open as Captain"
     full_name: string;
     mobile: string;
     town: string;
     state: string;
     email: string;
+    is_active?: boolean;
 }
 
 interface OrgStat {
@@ -55,7 +58,11 @@ interface OrgStat {
     total_entries: number;
     last_updated: string | null;
     brand?: string;
+    captain?: OrgAdminDetails | null;
 }
+
+// The last dashboard data, kept for this browser tab so reopening the page shows the table at once while it refreshes
+const DASHBOARD_CACHE = 'sa_dashboard_v1';
 
 // Managed Organizations table: sorting and the activity filter.
 type OrgSortKey = 'serial' | 'name' | 'sevaks' | 'vihars' | 'activity';
@@ -122,64 +129,69 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ currentUser }
     const [sortKey, setSortKey] = useState<OrgSortKey>('serial');
     const [sortDir, setSortDir] = useState<SortDir>('asc');
     const { showToast } = useToast();
-
-    const fetchRequests = async () => {
-        setLoading(true);
-        setRequestsError(null);
+    const [openAs, setOpenAs] = useState<{ org: OrgStat; captain: OrgAdminDetails } | null>(null);
+    const [openingAs, setOpeningAs] = useState(false);
+    const confirmOpenAs = async () => {
+        if (!openAs) return;
+        setOpeningAs(true);
         try {
-            // Server-authorised and brand-scoped (netlify/functions/super-admin.js)
-            const data = await dataService.getPendingRegistrationRequests();
-            setRequests(data || []);
-        } catch (err: any) {
-            console.error(err);
-            showToast("Failed to fetch requests", "error");
-            setRequestsError(navigator.onLine ? 'error' : 'offline');
-        } finally {
-            setLoading(false);
+            await dataService.openAsCaptain(openAs.captain.id);
+            window.location.href = '/';
+        } catch (e: any) {
+            showToast(e?.message || 'Could not open this account', 'error');
+            setOpeningAs(false);
         }
     };
 
-    const fetchStats = async () => {
+    // Everything on this page comes from ONE request (super-admin 'dashboard': scope, pending requests, groups with
+    // their Captains), so every row shows complete at once instead of Captain details arriving later.
+    const applyDashboard = (d: { scope: any; pending: any[]; stats: OrgStat[] }) => {
+        setScope(d.scope);
+        setRequests(d.pending || []);
+        setOrgStats(d.stats || []);
+        const admins: Record<string, OrgAdminDetails> = {};
+        for (const s of d.stats || []) if (s.captain) admins[s.org_id] = s.captain;
+        setOrgAdmins(admins);
+    };
+
+    const loadDashboard = async () => {
+        setLoading(true);
         setStatsLoading(true);
+        setRequestsError(null);
         setStatsError(null);
         try {
-            const data = await dataService.getOrgActivityStats();
-            setOrgStats(data);
-
-            // Fetch Admin Details for these Orgs
-            if (data.length > 0) {
-                const orgIds = data.map(o => o.org_id);
-                const admins = await dataService.getOrgAdmins(orgIds);
-                setOrgAdmins(admins);
-            }
-        } catch (err) {
+            const d = await dataService.getSuperAdminDashboard();
+            applyDashboard(d);
+            setAccessError(null);
+            try { sessionStorage.setItem(DASHBOARD_CACHE, JSON.stringify(d)); } catch { /* storage full or blocked */ }
+        } catch (err: any) {
             console.error(err);
-            setStatsError(navigator.onLine ? 'error' : 'offline');
+            const msg = err?.message || '';
+            if (/authori[sz]ed|sign in|session/i.test(msg)) {
+                setAccessError(msg || 'Could not verify Super Admin access.');
+            } else {
+                const kind = navigator.onLine ? 'error' : 'offline';
+                setRequestsError(kind);
+                setStatsError(kind);
+                showToast('Could not load the dashboard', 'error');
+            }
         } finally {
+            setLoading(false);
             setStatsLoading(false);
         }
     };
-
-    const handleRefresh = () => {
-        fetchRequests();
-        fetchStats();
-    };
+    const fetchRequests = loadDashboard;
+    const fetchStats = loadDashboard;
+    const handleRefresh = loadDashboard;
 
     useEffect(() => {
         if (!isPinVerified) return;
-        let cancelled = false;
-        (async () => {
-            try {
-                const s = await dataService.getSuperAdminScope();
-                if (cancelled) return;
-                setScope(s);
-                setAccessError(null);
-                handleRefresh();
-            } catch (err: any) {
-                if (!cancelled) setAccessError(err?.message || 'Could not verify Super Admin access.');
-            }
-        })();
-        return () => { cancelled = true; };
+        // Show this tab's last copy straight away (if any), then load fresh
+        try {
+            const cached = sessionStorage.getItem(DASHBOARD_CACHE);
+            if (cached) applyDashboard(JSON.parse(cached));
+        } catch { /* ignore */ }
+        loadDashboard();
     }, [isPinVerified]);
 
     const toggleRow = (id: string) => {
@@ -439,7 +451,7 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
     const sortHeader = (k: OrgSortKey, label: string, className = '') => {
         const active = sortKey === k;
         return (
-            <th className={`p-5 ${className}`} aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+            <th className={`px-3 py-2.5 ${className}`} aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
                 <button type="button" onClick={() => sortBy(k)} className={`inline-flex items-center gap-1 uppercase font-bold tracking-wider hover:text-ink ${active ? 'text-brand-700' : ''}`} title={`Sort by ${label}`}>
                     {label}
                     {active ? (sortDir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={11} className="opacity-40" />}
@@ -498,7 +510,7 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                             <Lock size={20} />
                         </button>
                         <button
-                            onClick={async () => { clearSuperAdminPin(); await supabase.auth.signOut(); clearRequestCache(); window.location.href = '/super-admin'; }}
+                            onClick={async () => { clearSuperAdminPin(); try { sessionStorage.removeItem(DASHBOARD_CACHE); } catch { /* ignore */ } await supabase.auth.signOut(); clearRequestCache(); window.location.href = '/super-admin'; }}
                             className="p-2 text-ink-3 hover:text-err hover:bg-err-soft rounded-xl transition-all"
                             title={scope?.email ? `Sign out (${scope.email})` : 'Sign out'}
                             aria-label="Sign out"
@@ -756,122 +768,139 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                         </div>
                     </div>
 
+                    {/* One compact row per group: everything readable at a glance (fixed column widths; long text wraps
+                        inside its cell, emails are cut with the full address on hover) */}
                     <div className="bg-surface rounded-3xl shadow-sm border border-line overflow-hidden">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left">
+                            <table className="w-full min-w-[980px] table-fixed text-left text-[13px]">
+                                <colgroup>
+                                    <col className="w-[70px]" />
+                                    <col />
+                                    <col className="w-[26%]" />
+                                    <col className="w-[76px]" />
+                                    <col className="w-[76px]" />
+                                    <col className="w-[124px]" />
+                                    <col className="w-[230px]" />
+                                </colgroup>
                                 <thead className="bg-sunken/60 text-ink-2 text-[11px] uppercase font-bold tracking-wider">
                                     <tr>
-                                        {sortHeader('serial', 'Org ID', 'w-16')}
-                                        {sortHeader('name', 'Group Name')}
-                                        <th className="p-5">Captain</th>
-                                        <th className="p-5">Mobile</th>
-                                        <th className="p-5">Email ID</th>
-                                        <th className="p-5">Town</th>
-                                        <th className="p-5">City</th>
-                                        <th className="p-5">State</th>
+                                        {sortHeader('serial', 'ID')}
+                                        {sortHeader('name', 'Group')}
+                                        <th className="px-3 py-2.5">Captain</th>
                                         {sortHeader('sevaks', 'Sevaks', 'text-center')}
                                         {sortHeader('vihars', 'Vihars', 'text-center')}
-                                        {sortHeader('activity', 'Last Activity', 'text-right')}
-                                        <th className="p-5 text-center">Action</th>
+                                        {sortHeader('activity', 'Last activity')}
+                                        <th className="px-3 py-2.5 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-line">
-                                    {visibleStats.length > 0 ? visibleStats
-                                        .map((stat) => {
+                                    {visibleStats.length > 0 ? visibleStats.map((stat) => {
                                         const admin = orgAdmins[stat.org_id];
+                                        const place = [admin?.town, stat.city, admin?.state].filter(Boolean).join(', ');
+                                        const last = stat.last_updated ? new Date(stat.last_updated) : null;
+                                        const daysAgo = last ? Math.floor((Date.now() - last.getTime()) / DAY_MS) : null;
                                         return (
-                                            <tr key={stat.org_id} className="hover:bg-gray-50/50 transition-colors">
-                                                <td className="p-5">
-                                                    <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-black tracking-wide bg-brand text-ink shadow-sm shadow-black/5 select-all">
+                                            <tr key={stat.org_id} className="align-middle hover:bg-sunken/30 transition-colors">
+                                                <td className="px-3 py-2">
+                                                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[11px] font-black tracking-wide bg-brand text-ink select-all">
                                                         {serialById.get(stat.org_id)}
                                                     </span>
                                                 </td>
-                                                <td className="p-5 font-bold text-ink">
-                                                    <a href={`/super-admin/org/${stat.org_id}`} className="text-ink hover:text-brand-700 hover:underline underline-offset-2" title="Open full details">
+                                                <td className="px-3 py-2 min-w-0">
+                                                    <p className="m-0 font-bold text-ink leading-snug [overflow-wrap:anywhere]">
                                                         {stat.org_name}
-                                                    </a>
-                                                    {scope?.all && <PlatformBadge brand={stat.brand} />}
+                                                        {scope?.all && <PlatformBadge brand={stat.brand} />}
+                                                    </p>
+                                                    {place && <p className="m-0 text-[12px] text-ink-3 leading-snug truncate" title={place}>{place}</p>}
                                                 </td>
-                                                <td className="p-5 text-sm text-ink font-medium">
-                                                    {admin?.full_name || '-'}
+                                                <td className="px-3 py-2 min-w-0">
+                                                    <p className="m-0 font-semibold text-ink leading-snug truncate" title={admin?.full_name}>{admin?.full_name || '-'}</p>
+                                                    <p className="m-0 text-[12px] text-ink-2 leading-snug truncate">
+                                                        {admin?.mobile && <span className="font-mono">{admin.mobile}</span>}
+                                                        {admin?.mobile && admin?.email && <span className="text-ink-3"> · </span>}
+                                                        {admin?.email && <a href={`mailto:${admin.email}`} title={admin.email} className="hover:text-brand-700 hover:underline underline-offset-2">{admin.email}</a>}
+                                                    </p>
                                                 </td>
-                                                <td className="p-5 text-sm text-ink-2 font-mono">
-                                                    {admin?.mobile || '-'}
+                                                <td className="px-3 py-2 text-center">
+                                                    <span className="inline-block min-w-[2.5rem] px-2 py-0.5 bg-brand-50 text-brand-700 text-xs font-bold rounded-md">{stat.total_sevaks}</span>
                                                 </td>
-                                                <td className="p-5 text-sm text-ink-2">
-                                                    {admin?.email ? (
-                                                        <a href={`mailto:${admin.email}`} className="hover:text-brand-700 hover:underline underline-offset-2 break-all">{admin.email}</a>
-                                                    ) : '-'}
+                                                <td className="px-3 py-2 text-center">
+                                                    <span className="inline-block min-w-[2.5rem] px-2 py-0.5 bg-info-soft text-info text-xs font-bold rounded-md">{stat.total_entries}</span>
                                                 </td>
-                                                <td className="p-5 text-sm text-ink-2">
-                                                    {admin?.town || '-'}
+                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                    {last ? (
+                                                        <>
+                                                            <p className="m-0 font-medium text-ink leading-snug">{daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo} days ago`}</p>
+                                                            <p className="m-0 text-[11px] text-ink-3 leading-snug">{last.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                                        </>
+                                                    ) : <span className="text-ink-3 italic">No activity</span>}
                                                 </td>
-                                                <td className="p-5 text-sm text-ink-2">
-                                                    {stat.city || '-'}
-                                                </td>
-                                                <td className="p-5 text-sm text-ink-2">
-                                                    {admin?.state || '-'}
-                                                </td>
-                                                <td className="p-5 text-center">
-                                                    <span className="inline-block px-3 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100">
-                                                        {stat.total_sevaks}
-                                                    </span>
-                                                </td>
-                                                <td className="p-5 text-center">
-                                                    <span className="inline-block px-3 py-1 bg-info-soft text-info text-xs font-bold rounded-lg border border-info-soft">
-                                                        {stat.total_entries}
-                                                    </span>
-                                                </td>
-                                                <td className="p-5 text-right text-sm text-ink-2 font-medium whitespace-nowrap">
-                                                    {stat.last_updated ? new Date(stat.last_updated).toLocaleDateString() : (
-                                                        <span className="text-ink-3 italic">No activity</span>
-                                                    )}
-                                                </td>
-                                                <td className="p-5 text-center">
-                                                    {admin?.mobile && (
-                                                        <button
-                                                            onClick={() => {
-                                                                const captainName = admin.full_name || 'Captain';
-                                                                const lastActivityDate = stat.last_updated ? new Date(stat.last_updated).toLocaleDateString() : 'None';
-                                                                const message = [
-                                                                    '\uD83D\uDE4F Jai Jinendra \uD83D\uDE4F',
-                                                                    '',
-                                                                    `Pranam ${captainName},`,
-                                                                    '',
-                                                                    `A gentle reminder that your Captain Profile Activity is currently showing as ${lastActivityDate}.`,
-                                                                    '',
-                                                                    'Kindly request you to please update your profile by adding Vihar entries or adding Sevaks at your convenience.',
-                                                                    '',
-                                                                    'In case of any difficulty, please feel free to get in touch or use the link below for assistance:',
-                                                                    '',
-                                                                    `\uD83D\uDD17 ${BRAND.siteUrl || window.location.origin}`,
-                                                                ].join('\n');
-                                                                const encodedMsg = encodeURIComponent(message);
-                                                                const phone = `91${admin.mobile}`;
-                                                                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-                                                                // Mobile: wa.me deep link → mobile app
-                                                                // Desktop: whatsapp:// protocol → opens native WhatsApp desktop app
-                                                                const waLink = isMobile
-                                                                    ? `https://wa.me/${phone}?text=${encodedMsg}`
-                                                                    : `whatsapp://send?phone=${phone}&text=${encodedMsg}`;
-                                                                window.open(waLink, '_blank');
-                                                            }}
-                                                            className="inline-flex items-center justify-center p-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl shadow-sm transition-all active:scale-95"
-                                                            title="Send WhatsApp Reminder"
-                                                        >
-                                                            <MessageCircle size={16} />
-                                                        </button>
-                                                    )}
+                                                <td className="px-3 py-2">
+                                                    <div className="flex items-center justify-end gap-1.5">
+                                                        {admin?.mobile && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const captainName = admin.full_name || 'Captain';
+                                                                        const lastActivityDate = stat.last_updated ? new Date(stat.last_updated).toLocaleDateString() : 'None';
+                                                                        const message = [
+                                                                            '\uD83D\uDE4F Jai Jinendra \uD83D\uDE4F',
+                                                                            '',
+                                                                            `Pranam ${captainName},`,
+                                                                            '',
+                                                                            `A gentle reminder that your Captain Profile Activity is currently showing as ${lastActivityDate}.`,
+                                                                            '',
+                                                                            'Kindly request you to please update your profile by adding Vihar entries or adding Sevaks at your convenience.',
+                                                                            '',
+                                                                            'In case of any difficulty, please feel free to get in touch or use the link below for assistance:',
+                                                                            '',
+                                                                            `\uD83D\uDD17 ${BRAND.siteUrl || window.location.origin}`,
+                                                                        ].join('\n');
+                                                                        const encodedMsg = encodeURIComponent(message);
+                                                                        const phone = `91${admin.mobile}`;
+                                                                        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                                                                        // Mobile: wa.me opens the WhatsApp app; desktop: whatsapp:// opens WhatsApp Desktop
+                                                                        const waLink = isMobile
+                                                                            ? `https://wa.me/${phone}?text=${encodedMsg}`
+                                                                            : `whatsapp://send?phone=${phone}&text=${encodedMsg}`;
+                                                                        window.open(waLink, '_blank');
+                                                                    }}
+                                                                    className="inline-flex h-8 w-8 items-center justify-center bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg transition-all active:scale-95"
+                                                                    title="Send WhatsApp reminder"
+                                                                    aria-label={`Send WhatsApp reminder to ${admin.full_name || 'the Captain'}`}
+                                                                >
+                                                                    <MessageCircle size={15} />
+                                                                </button>
+                                                                <a
+                                                                    href={`tel:+91${admin.mobile}`}
+                                                                    className="inline-flex h-8 w-8 items-center justify-center bg-sunken hover:bg-line text-ink rounded-lg transition-all active:scale-95"
+                                                                    title={`Call ${admin.mobile}`}
+                                                                    aria-label={`Call ${admin.full_name || 'the Captain'}`}
+                                                                >
+                                                                    <Phone size={15} />
+                                                                </a>
+                                                            </>
+                                                        )}
+                                                        {admin?.id && admin.is_active !== false && (
+                                                            <button
+                                                                onClick={() => setOpenAs({ org: stat, captain: admin })}
+                                                                className="inline-flex h-8 items-center gap-1.5 px-3 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold rounded-lg whitespace-nowrap transition-all active:scale-95"
+                                                                title={`Open ${stat.org_name} as its Captain`}
+                                                            >
+                                                                <LogIn size={14} /> Open as Captain
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
                                     }) : (
                                         <tr>
-                                            <td colSpan={12} className="p-20 text-center">
+                                            <td colSpan={7} className="p-16 text-center">
                                                 {statsLoading ? (
                                                     <div className="flex flex-col items-center gap-3">
-                                                        <Loader2 className="animate-spin text-info" size={32} />
-                                                        <span className="text-ink-2 font-medium">Retrieving stats...</span>
+                                                        <Loader2 className="animate-spin text-info" size={28} />
+                                                        <span className="text-ink-2 font-medium">Loading groups…</span>
                                                     </div>
                                                 ) : statsError ? (
                                                     <StatusScreen variant={statsError} onRetry={fetchStats} compact bare />
@@ -889,6 +918,36 @@ Connect on Instagram ${BRAND.instagram.url}` : ''}`;
                         </div>
                     </div>
                 </div>
+
+                {/* Open as Captain: ask first, in the page */}
+                <Modal open={!!openAs} onClose={() => !openingAs && setOpenAs(null)} maxWidth="max-w-md" className="p-6">
+                    {openAs && (
+                        <div>
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700"><LogIn size={22} /></div>
+                            <h2 className="display text-[1.5rem] font-extrabold text-ink">Open as Captain?</h2>
+                            <p className="mt-2 text-sm text-ink-2 leading-relaxed">
+                                You will be signed in as <b className="text-ink">{openAs.captain.full_name}</b> ({openAs.org.org_name}) in this browser and
+                                leave Super Admin. Their password is not changed, and this is recorded. To come back, sign out and open /super-admin.
+                            </p>
+                            <div className="mt-5 flex gap-2">
+                                <button
+                                    onClick={confirmOpenAs}
+                                    disabled={openingAs}
+                                    className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-full bg-brand text-ink font-semibold hover:bg-brand-600 disabled:opacity-60"
+                                >
+                                    {openingAs ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />} Open account
+                                </button>
+                                <button
+                                    onClick={() => setOpenAs(null)}
+                                    disabled={openingAs}
+                                    className="flex-1 h-11 rounded-full bg-surface ring-1 ring-inset ring-line text-ink font-semibold hover:bg-sunken/60 disabled:opacity-60"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </Modal>
 
                 {/* Public Vihar route directory (vSeva website) — publish / refresh */}
                 {scope?.owner && BRAND.id === 'vseva' && <RouteDirectoryAdminCard />}

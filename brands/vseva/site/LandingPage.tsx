@@ -1,5 +1,4 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, ArrowUpRight, MapPin, BookOpen, Instagram, BellRing, Cake, Download, FileText, Star, Trophy } from 'lucide-react';
 import { COMMUNITY_LINKS, FOUNDERS, GUIDES, PLAY_STORE_URL, SCREENS, STATS, TEAM, TICKER, type Screen } from './content';
 import { Eyebrow, GooglePlayIcon, IPhoneShot, Section, SiteShell, StoreButtons, useMounted } from './ui';
@@ -12,16 +11,10 @@ const IndiaMap = lazy(() => import('./IndiaMap'));
 
 /* ───────────── Hero ───────────── */
 
+// (No animation library here: the landing page's first download stays small. The hero's motion is CSS only.)
 const Hero: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  // A small depth shift between the two phones while scrolling past the hero (off for reduced motion)
-  const front = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : -60]);
-  const back = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 40]);
-
   return (
-    <div ref={ref} className="relative overflow-hidden">
+    <div className="relative overflow-hidden">
       <Section className="pb-16 pt-10 md:pb-24 md:pt-16">
         <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-7">
@@ -61,12 +54,12 @@ const Hero: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
                 <circle cx="6" cy="93" r="6" fill="var(--saffron)" /><circle cx="236" cy="86" r="6" fill="var(--saffron)" /><circle cx="452" cy="54" r="6" fill="var(--saffron)" />
               </svg>
 
-              <motion.div style={{ y: back }} className="absolute left-[2%] top-[92px] w-[52%] max-w-[230px]">
+              <div className="absolute left-[2%] top-[92px] w-[52%] max-w-[230px]">
                 <IPhoneShot screen={SCREENS.groupAnalytics} sizes="(max-width: 640px) 50vw, 230px" />
-              </motion.div>
-              <motion.div style={{ y: front }} className="absolute right-[2%] top-[18px] w-[62%] max-w-[296px]">
+              </div>
+              <div className="absolute right-[2%] top-[18px] w-[62%] max-w-[296px]">
                 <IPhoneShot screen={SCREENS.sevakHome} priority sizes="(max-width: 640px) 62vw, 300px" />
-              </motion.div>
+              </div>
 
               {/* Floating cards for two real features: the Vihar reminder and the Upcoming Vihar alert */}
               <div className="vs-rise vs-float absolute left-[-3%] top-[2%] z-10 w-[66%] max-w-[300px]" style={{ ['--d' as string]: 5 }}>

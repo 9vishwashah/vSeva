@@ -8,12 +8,16 @@ import LandingPage from './LandingPage';
 import PublicRoutes from '../PublicRoutes';
 import { PAGE_META, canonical, structuredData, type PublicPath } from './seo';
 import { SCREENS } from './content';
+import type { SiteData } from './siteData';
 
 export const PATHS = Object.keys(PAGE_META) as PublicPath[];
 export { PAGE_META, canonical, structuredData };
 export const HERO_IMAGE = `/vseva-site/screens/${SCREENS.sevakHome.name}-760.webp`;
 
-export function render(path: PublicPath): string {
+// data: the leaderboard / route directory for this page (siteData.ts). The page reads it the way the browser will, from
+// __VS_DATA__, so the HTML and the browser's first render match.
+export function render(path: PublicPath, data: SiteData = {}): string {
+  (globalThis as any).__VS_DATA__ = data;
   const page =
     path === '/' ? (
       <LandingPage onGetStarted={() => undefined} />

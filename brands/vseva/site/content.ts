@@ -78,6 +78,7 @@ export const COMMUNITY_LINKS: CommunityLink[] = [
 export const NAV = [
   { href: '/#features', label: 'Features' },
   { href: '/#how-it-works', label: 'How it works' },
+  { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/vihar-routes', label: 'Vihar routes' },
   { href: '/documentation', label: 'Documentation' },
   { href: '/#story', label: 'Our story' },
@@ -134,3 +135,27 @@ export const SCREENS = {
   reminderSettings: s('55-reminder-settings', 'Vihar reminders settings: remind after 7, 8 and 15 days, the message and suggested lines'),
   upcomingVihar: s('56-upcoming-vihar', 'Announce Upcoming Vihar form with date, time, Morning or Evening, route and Send Alert to All'),
 } satisfies Record<string, Screen>;
+
+// Questions answered on /vihar-routes (shown on the page and repeated as FAQPage structured data in seo.ts)
+export const ROUTE_FAQ: { q: string; a: string }[] = [
+  {
+    q: 'What is a Vihar route?',
+    a: 'A Vihar route is the walk Sadhu and Sadhvi Bhagwant take from one place to the next, usually from one Derasar or Upashray to another. Vihar Seva groups walk these routes with them, so they know each route, its distance and the way.',
+  },
+  {
+    q: 'How do I find the distance of a Vihar route?',
+    a: 'Type where the Vihar starts and where it ends in the Vihar route directory on this page, even part of a name. It shows every matching route shared by Vihar Seva groups on vSeva, with the distance in kilometres and walking directions in Google Maps.',
+  },
+  {
+    q: 'Can I contact the group that walks a route?',
+    a: 'Yes. Every route shows the Vihar Seva group that shared it and its Captain, with Call and WhatsApp buttons, so you can ask about the route or request Sevaks for a Vihar.',
+  },
+  {
+    q: 'How does a Vihar Seva group add its routes?',
+    a: 'Groups on vSeva keep their routes in the app (Manage Routes). Every group’s routes are published in this directory, and it is refreshed regularly. To bring your group onto vSeva, contact the vSeva team.',
+  },
+  {
+    q: 'Is the Vihar route directory free?',
+    a: 'Yes. Anyone can search the directory without signing in.',
+  },
+];

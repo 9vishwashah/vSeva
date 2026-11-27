@@ -6,36 +6,76 @@ import { whatsappAdmin } from './_shared/whatsappAdmin.js';
 // reject action (approval lives in approve-org.js). Every result is narrowed to
 // the caller's brand scope on the server — the client can't widen it.
 //
-//   { action: 'whoami' }            -> { email, all, brands }
+//   { action: 'dashboard' }         -> everything the dashboard shows in one request: { scope, pending, stats }
+//   { action: 'whoami' }            -> { email, all, brands, owner }
 //   { action: 'pending' }           -> pending Captain requests (never includes the stored password)
-//   { action: 'stats' }             -> per-organisation activity for the orgs in scope
+//   { action: 'stats' }             -> per-organisation activity for the orgs in scope, each with its Captain
 //   { action: 'reject', id }        -> marks a pending request rejected
-//   { action: 'org_detail', orgId } -> everything about ONE organisation: group + Captain details, every
-//                                      Sevak's profile, Vihar entries and Sankalps (brand-scoped)
 //   { action: 'open_as', userId }   -> one-time sign-in token for that Captain's account ("Open as Captain"):
 //                                      Captains only, brand-scoped, never another Super Admin, recorded in
 //                                      admin_audit_log; the Captain's password is never read or changed
 
-const PROFILE_COLUMNS =
-    'id, full_name, username, mobile, gender, date_of_birth, blood_group, emergency_number, emergency_contact_name, occupation, occupation_details, address, is_active, last_login_at, created_at';
-const ENTRY_COLUMNS =
-    'id, vihar_date, vihar_from, vihar_to, sevaks, group_sadhu, group_sadhvi, no_sadhubhagwan, no_sadhvijibhagwan, wheelchair, samuday, distance_km, vihar_type, status, notes, created_at';
-const MAX_ENTRIES = 20000;
-
-// PostgREST returns at most 1000 rows per request, so page through them.
-async function fetchAll(buildQuery, max = MAX_ENTRIES) {
-    const rows = [];
-    for (let from = 0; from < max; from += 1000) {
-        const { data, error } = await buildQuery().range(from, from + 999);
-        if (error) throw error;
-        rows.push(...(data || []));
-        if (!data || data.length < 1000) return { rows, truncated: false };
-    }
-    return { rows, truncated: true };
-}
-
 const REQUEST_COLUMNS =
     'id, vihar_group_name, sangh_name, captain_name, vice_captain_name, full_address, city, town, pin_code, district, state, mobile, email, status, created_at';
+
+// Pending Captain registration requests for the caller's brand(s)
+async function pendingRequests(sb, scope) {
+    // `brand` is selected separately so this still works if the column hasn't been added yet (vSeva-only, pre-migration).
+    let { data, error } = await scopeQuery(
+        sb.from('registration_requests').select(`${REQUEST_COLUMNS}, brand`).eq('status', 'pending'),
+        scope
+    ).order('created_at', { ascending: false });
+    if (error && scope.all && /brand/.test(error.message || '')) {
+        ({ data, error } = await sb
+            .from('registration_requests')
+            .select(REQUEST_COLUMNS)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false }));
+    }
+    if (error) throw error;
+    return data || [];
+}
+
+// Every group's activity (get_org_activity_stats) with its Captain's contact details, in one go: the four reads run
+// side by side and are joined here, so the dashboard shows each row complete (no Captain details arriving later).
+async function orgStatsWithCaptains(sb, scope) {
+    const [orgsRes, statsRes, captainsRes, statesRes] = await Promise.all([
+        scopeQuery(sb.from('organizations').select('id, brand'), scope),
+        sb.rpc('get_org_activity_stats'),
+        sb.from('profiles').select('id, organization_id, full_name, mobile, town, username, yearly_goal, is_active, created_at').eq('role', 'admin').order('created_at'),
+        sb.from('registration_requests').select('email, state'),
+    ]);
+    let orgs = orgsRes.data;
+    if (orgsRes.error) {
+        if (!(scope.all && /brand/.test(orgsRes.error.message || ''))) throw orgsRes.error;
+        const r = await sb.from('organizations').select('id');
+        if (r.error) throw r.error;
+        orgs = r.data;
+    }
+    if (statsRes.error) throw statsRes.error;
+    if (captainsRes.error) throw captainsRes.error;
+
+    const brandById = new Map((orgs || []).map((o) => [o.id, o.brand || 'vseva']));
+    const stateByEmail = new Map((statesRes.data || []).filter((r) => r.email && r.state).map((r) => [r.email, r.state]));
+    const captainByOrg = new Map();
+    for (const c of captainsRes.data || []) {
+        if (!brandById.has(c.organization_id) || captainByOrg.has(c.organization_id)) continue; // the first Captain
+        const email = typeof c.username === 'string' && c.username.includes('@') ? c.username : '';
+        captainByOrg.set(c.organization_id, {
+            id: c.id,
+            full_name: c.full_name || '',
+            mobile: c.mobile || '',
+            town: c.town || '',
+            email,
+            state: stateByEmail.get(c.username) || '',
+            yearly_goal: typeof c.yearly_goal === 'number' ? c.yearly_goal : undefined,
+            is_active: c.is_active !== false,
+        });
+    }
+    return (statsRes.data || [])
+        .filter((row) => brandById.has(row.org_id))
+        .map((row) => ({ ...row, brand: brandById.get(row.org_id), captain: captainByOrg.get(row.org_id) || null }));
+}
 
 async function rawHandler(event) {
     try {
@@ -52,6 +92,12 @@ async function rawHandler(event) {
         switch (body.action) {
             case 'whoami':
                 return ok({ email: user.email, all: scope.all, brands: scope.brands, owner: !!scope.owner });
+
+            // Everything the Super Admin dashboard shows, in one request (scope, pending requests, groups + Captains)
+            case 'dashboard': {
+                const [pending, stats] = await Promise.all([pendingRequests(sb, scope), orgStatsWithCaptains(sb, scope)]);
+                return ok({ scope: { email: user.email, all: scope.all, brands: scope.brands, owner: !!scope.owner }, pending, stats });
+            }
 
             case 'open_as': {
                 if (!body.userId) throw new HttpError(400, 'userId is required');
@@ -83,99 +129,11 @@ async function rawHandler(event) {
                 return ok({ tokenHash: link.properties.hashed_token, email, name: target.full_name, orgName: org.name });
             }
 
-            case 'pending': {
-                // `brand` is selected separately so this still works if the column
-                // hasn't been added yet (vSeva-only, pre-migration).
-                let { data, error } = await scopeQuery(
-                    sb.from('registration_requests').select(`${REQUEST_COLUMNS}, brand`).eq('status', 'pending'),
-                    scope
-                ).order('created_at', { ascending: false });
-                if (error && scope.all && /brand/.test(error.message || '')) {
-                    ({ data, error } = await sb
-                        .from('registration_requests')
-                        .select(REQUEST_COLUMNS)
-                        .eq('status', 'pending')
-                        .order('created_at', { ascending: false }));
-                }
-                if (error) throw error;
-                return ok(data || []);
-            }
+            case 'pending':
+                return ok(await pendingRequests(sb, scope));
 
-            case 'stats': {
-                let orgsQuery = sb.from('organizations').select('id, brand');
-                let { data: orgs, error: orgsError } = await scopeQuery(orgsQuery, scope);
-                if (orgsError && scope.all && /brand/.test(orgsError.message || '')) {
-                    ({ data: orgs, error: orgsError } = await sb.from('organizations').select('id'));
-                }
-                if (orgsError) throw orgsError;
-                const brandById = new Map((orgs || []).map((o) => [o.id, o.brand || 'vseva']));
-
-                const { data: stats, error: statsError } = await sb.rpc('get_org_activity_stats');
-                if (statsError) throw statsError;
-
-                return ok(
-                    (stats || [])
-                        .filter((row) => brandById.has(row.org_id))
-                        .map((row) => ({ ...row, brand: brandById.get(row.org_id) }))
-                );
-            }
-
-            case 'org_detail': {
-                if (!body.orgId) throw new HttpError(400, 'orgId is required');
-                let { data: org, error: orgError } = await sb.from('organizations').select('*').eq('id', body.orgId).maybeSingle();
-                if (orgError) throw orgError;
-                if (!org) throw new HttpError(404, 'Organisation not found');
-                if (!inScope(scope, org.brand)) throw new HttpError(403, 'This organisation belongs to a different brand.');
-
-                const { data: captains, error: captainError } = await sb
-                    .from('profiles')
-                    .select(PROFILE_COLUMNS)
-                    .eq('organization_id', org.id)
-                    .eq('role', 'admin');
-                if (captainError) throw captainError;
-                const captain = (captains || [])[0] || null;
-
-                // Sangh name / address / state live on the registration request (matched by the Captain's email).
-                let registration = null;
-                if (captain?.username) {
-                    const { data: reqs } = await sb
-                        .from('registration_requests')
-                        .select('sangh_name, vihar_group_name, full_address, city, town, pin_code, state, email, mobile, created_at')
-                        .eq('email', captain.username)
-                        .order('created_at', { ascending: false })
-                        .limit(1);
-                    registration = (reqs || [])[0] || null;
-                }
-
-                const { rows: sevaks } = await fetchAll(() =>
-                    sb.from('profiles').select(PROFILE_COLUMNS).eq('organization_id', org.id).eq('role', 'sevak').order('created_at', { ascending: true }), 5000);
-                const { rows: entries, truncated } = await fetchAll(() =>
-                    sb.from('vihar_entries').select(ENTRY_COLUMNS).eq('organization_id', org.id).order('vihar_date', { ascending: false }).order('id', { ascending: false }));
-
-                // Sankalps are optional (the table only exists once the Sankalp feature is migrated).
-                let orgSankalps = [];
-                let sevakSankalps = [];
-                {
-                    const o = await sb.from('org_sankalps').select('vihar_year, target, sevaks_can_edit').eq('organization_id', org.id);
-                    if (!o.error) orgSankalps = o.data || [];
-                    const ids = sevaks.map((s) => s.id);
-                    if (ids.length) {
-                        const s = await sb.from('sevak_sankalps').select('user_id, vihar_year, target').in('user_id', ids);
-                        if (!s.error) sevakSankalps = s.data || [];
-                    }
-                }
-
-                return ok({
-                    org: { ...org, brand: org.brand || 'vseva' },
-                    captain,
-                    registration,
-                    sevaks,
-                    entries,
-                    entriesTruncated: truncated,
-                    orgSankalps,
-                    sevakSankalps,
-                });
-            }
+            case 'stats':
+                return ok(await orgStatsWithCaptains(sb, scope));
 
             case 'reject': {
                 if (!body.id) throw new HttpError(400, 'id is required');

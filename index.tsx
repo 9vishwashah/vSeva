@@ -1,36 +1,37 @@
 import './index.css';
+import '@brand/siteStyles'; // vSeva: the public website's styles, needed before any JavaScript runs on prerendered pages
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
 import { ToastProvider } from './context/ToastContext';
 import { LanguageProvider } from './context/LanguageContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Failed to find the root element');
 
-const tree = (
-  <React.StrictMode>
-    <LanguageProvider>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
-    </LanguageProvider>
-  </React.StrictMode>
-);
-
 // The public website pages are prerendered into the HTML at build time (scripts/prerender.mjs) and marked with
-// the path they were rendered for. When this is that page for a signed-out visitor, React takes over the existing
-// HTML. Otherwise (a signed-in or installed app, or any other route served the same HTML) the inline script in
-// <head> has already hidden it with .app-shell, and the app renders fresh exactly as before.
+// the path they were rendered for. When this is that page for a signed-out visitor, only the website's own code
+// loads and takes over the existing HTML (brands/vseva/siteClient.tsx); the app (App.tsx) is never downloaded.
+// Otherwise (a signed-in or installed app, or any other route served the same HTML) the inline script in <head> has
+// already hidden it with .app-shell, and the app loads and renders fresh exactly as before.
 const prerenderedFor = rootElement.getAttribute('data-prerendered');
 const here = (window.location.pathname.replace(/\/+$/, '') || '/').toLowerCase();
 const html = document.documentElement;
 if (prerenderedFor && prerenderedFor === here && !html.classList.contains('app-shell')) {
-  ReactDOM.hydrateRoot(rootElement, tree);
+  import('@brand/siteClient').then(m => m.hydrateSite(rootElement, here));
 } else {
   if (prerenderedFor) rootElement.replaceChildren();
   html.classList.remove('app-shell');
-  ReactDOM.createRoot(rootElement).render(tree);
+  import('./App').then(({ default: App }) => {
+    ReactDOM.createRoot(rootElement).render(
+      <React.StrictMode>
+        <LanguageProvider>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
+        </LanguageProvider>
+      </React.StrictMode>,
+    );
+  });
 }
 
 // Android app: confirm this bundle started, then look for a newer one (services/liveUpdate.ts). No-op on the web.

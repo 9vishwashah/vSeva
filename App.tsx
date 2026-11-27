@@ -31,7 +31,6 @@ const PublicSevakProfile = React.lazy(() => import('./pages/PublicSevakProfile')
 const ManageRoutes = React.lazy(() => import('./pages/ManageRoutes'));
 const ViewEntries = React.lazy(() => import('./pages/ViewEntries'));
 const SuperAdminDashboard = React.lazy(() => import('./pages/SuperAdminDashboard'));
-const SuperAdminOrgDetail = React.lazy(() => import('./pages/SuperAdminOrgDetail'));
 const ProfileSection = React.lazy(() => import('./components/ProfileSection'));
 const AboutApp = React.lazy(() => import('./pages/AboutApp'));
 const Contacts = React.lazy(() => import('./pages/Contacts'));
@@ -352,10 +351,10 @@ const App: React.FC = () => {
     );
   }
 
-  // /super-admin (dashboard) and /super-admin/org/<id> (one organisation's full details)
-  const superAdminOrgId = /^\/super-admin\/org\/([0-9a-f-]{36})$/.exec(normalizedPath)?.[1] ?? null;
-  // normalizedPath: also /super-admin/ (trailing slash) and any capitals, which used to fall back to the normal login
-  const isSuperAdmin = normalizedPath === '/super-admin' || !!superAdminOrgId;
+  // /super-admin (dashboard). The old per-group pages (/super-admin/org/<id>) were removed; their links land on the
+  // dashboard. normalizedPath: also /super-admin/ (trailing slash) and any capitals.
+  const isSuperAdmin = normalizedPath === '/super-admin' || normalizedPath.startsWith('/super-admin/');
+  if (isSuperAdmin && normalizedPath !== '/super-admin') window.history.replaceState(null, '', '/super-admin');
 
   const checkSession = async () => {
       setLoading(true);
@@ -508,7 +507,7 @@ const App: React.FC = () => {
     }
     return (
       <React.Suspense fallback={<BrandSplash />}>
-        {superAdminOrgId ? <SuperAdminOrgDetail orgId={superAdminOrgId} /> : <SuperAdminDashboard currentUser={user ?? (adminAccount && { id: adminAccount.id, full_name: adminAccount.email })} />}
+        <SuperAdminDashboard currentUser={user ?? (adminAccount && { id: adminAccount.id, full_name: adminAccount.email })} />
       </React.Suspense>
     );
   }

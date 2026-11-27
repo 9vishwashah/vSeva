@@ -84,7 +84,7 @@ export default defineConfig(({ mode }) => {
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
             // Authenticated Super Admin functions (see netlify/functions/_shared/adminAuth.js)
-            const authedFn = req.url && /^\/\.netlify\/functions\/(super-admin|approve-org|get-org-admins|sevak-login-lookup|update-user-phone|route-directory)(\?|$)/.exec(req.url);
+            const authedFn = req.url && /^\/\.netlify\/functions\/(super-admin|approve-org|sevak-login-lookup|update-user-phone|route-directory)(\?|$)/.exec(req.url);
             if (authedFn) {
               try {
                 const { handler } = await import(`./netlify/functions/${authedFn[1]}.js`);
@@ -190,34 +190,6 @@ export default defineConfig(({ mode }) => {
                 res.end(result.body);
               } catch (e: any) {
                 console.error("Local mock error stats:", e);
-                res.statusCode = 500;
-                res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
-              }
-              return;
-            } else if (req.url && req.url.startsWith('/.netlify/functions/get-org-admins')) {
-              try {
-                const { handler } = await import('./netlify/functions/get-org-admins.js');
-                
-                let body = '';
-                req.on('data', chunk => { body += chunk.toString(); });
-                await new Promise(resolve => req.on('end', resolve));
-
-                process.env.SUPABASE_URL = _env.VITE_SUPABASE_URL || '';
-                process.env.SUPABASE_SERVICE_ROLE_KEY = _env.SUPABASE_SERVICE_ROLE_KEY || _env.VITE_SUPABASE_ANON_KEY || '';
-
-                const event = {
-                  httpMethod: req.method,
-                  body,
-                  headers: req.headers,
-                };
-
-                const result = await handler(event, {});
-                
-                res.statusCode = result.statusCode || 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(result.body);
-              } catch (e: any) {
-                console.error("Local mock error get-org-admins:", e);
                 res.statusCode = 500;
                 res.end(JSON.stringify({ error: e.message || 'Internal error in mock' }));
               }
